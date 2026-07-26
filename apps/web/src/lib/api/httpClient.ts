@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { API_ORIGIN } from './routes';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
 // Mutable getter — set once by HttpClientProvider at app startup
 let _getToken: (() => Promise<string | null>) | null = null;
@@ -54,6 +55,10 @@ const createClient = (baseURL: string): AxiosInstance => {
       } else {
         console.error('Request Error:', error.message);
       }
+      // No-op in the open-source build. In the commercial build this is the
+      // only place server errors become visible without also throwing in the
+      // UI; the reporter decides what is worth reporting and redacts the URL.
+      appLifecycle.reportApiError(error);
       return Promise.reject(error);
     }
   );
