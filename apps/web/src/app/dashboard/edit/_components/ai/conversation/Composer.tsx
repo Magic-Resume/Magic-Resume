@@ -192,6 +192,9 @@ export default function Composer({
                   <button
                     key={s.id}
                     type="button"
+                    // Neutral marker: which catalog event this maps to is decided
+                    // in the tracking manifest, not here.
+                    data-track-id={`ai-skill-${s.id}`}
                     onMouseEnter={() => setHighlight(i)}
                     onClick={() => chooseSkill(s.id)}
                     className={cn(

@@ -514,7 +514,16 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
 
   return (
     <>
-      <main className="flex h-screen min-w-0 overflow-hidden bg-desk text-white flex-1">
+      <main
+        // Which resume is being edited. Everything reported from inside the
+        // editor — including the AI panel and the share dialog — picks this up
+        // without each control carrying it. Ids only; other keys are dropped.
+        data-track-context={JSON.stringify({
+          resumeId: activeResume.id,
+          templateId: currentTemplateId,
+        })}
+        className="flex h-screen min-w-0 overflow-hidden bg-desk text-white flex-1"
+      >
         {/* 左侧:大纲轨 + 可折叠表单面板(入场:opacity-only,不动 fixed 定位) */}
         <div className="editor-enter-left">
           <EditorFormPanel

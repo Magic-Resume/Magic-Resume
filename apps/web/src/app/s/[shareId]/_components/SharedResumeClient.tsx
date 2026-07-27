@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { Loader2, ZoomIn, ZoomOut, MessageSquare, RotateCcw, Eye, Wand2 } from 'lucide-react';
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { FloatingDock } from "@/components/ui/floating-dock";
 import { useSharedResume } from '../_hooks/useSharedResume';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import { SharedResumeHeader } from './SharedResumeHeader';
 import { CommentLayer } from './CommentLayer';
 import { ResumeTransformView } from './ResumeTransformView';
@@ -46,6 +47,18 @@ export default function SharedResumeClient() {
     currentUserId,
     isSaving
   } = useSharedResume();
+
+  // Reported once the shared resume actually resolved, not on mount: a dead or
+  // private link renders this same component, and counting those as views would
+  // overstate how often sharing works. Note this fires in the *visitor's*
+  // browser — usually a signed-out person who is not the owner — so it counts a
+  // different population than the owner-side sharing events.
+  const shareViewReported = useRef(false);
+  useEffect(() => {
+    if (loading || !resume || shareViewReported.current) return;
+    shareViewReported.current = true;
+    appLifecycle.sharedResumeViewed();
+  }, [loading, resume]);
 
   // Filter Toolbar Configuration based on permissions
   const dockItems = useMemo(() => [
