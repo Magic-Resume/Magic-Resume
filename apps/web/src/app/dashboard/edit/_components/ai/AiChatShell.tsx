@@ -1229,7 +1229,7 @@ export default function AiChatShell({
     setOverlayOpen(false);
     setAwaitingReply(false);
     setDraftReady(null);
-  }, [resetAiSession, resumeId]);
+  }, [resetAiSession, resumeId, reportInterviewEnded]);
 
   const requestResetSession = useCallback(() => {
     setResetConfirmOpen(true);
