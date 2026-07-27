@@ -10,11 +10,15 @@ export function HttpClientProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     configureHttpClient(getToken);
+    // No-op in the open-source build. In the commercial build the analytics
+    // client sends this token with each batch, and the server reads the user
+    // from it — so events get attributed without the browser ever putting an
+    // account id in the payload.
+    appLifecycle.configureAnalyticsAuth(getToken);
   }, [getToken]);
 
-  // No-op in the open-source build. In the commercial build this is what lets
-  // browser events be tied to the same user as the server-derived ones; whether
-  // the id is actually sent stays a runtime decision there.
+  // Resets the analytics session on sign-out, so the next person on a shared
+  // device is not attributed to the previous one.
   useEffect(() => {
     appLifecycle.identifyUser(userId);
   }, [userId]);

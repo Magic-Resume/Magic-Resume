@@ -143,6 +143,9 @@ export const appLifecycle = {
   identifyUser: (userId: string | null | undefined) => {
     ignore(userId);
   },
+  configureAnalyticsAuth: (getter: () => Promise<string | null>) => {
+    ignore(getter);
+  },
   reportApiError: (error: unknown) => {
     ignore(error);
   },
