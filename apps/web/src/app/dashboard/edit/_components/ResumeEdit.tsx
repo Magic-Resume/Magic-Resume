@@ -406,6 +406,9 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(sectionOrder, oldIndex, newIndex);
         updateSectionOrder(newOrder);
+        // The sections themselves were reordered. Reordering entries inside one
+        // section is a different, much more frequent action and is not this.
+        appLifecycle.editorSectionReordered();
       }
     }
   }
@@ -468,6 +471,9 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                   />
                 ) : (
                   <SectionListWithModal
+                    // Stable kind (`experience`, `education`…) for analytics —
+                    // `label` is an i18n key and shifts with copy changes.
+                    sectionKey={key}
                     label={meta.labelKey || key}
                     fields={(dynamicFormFields[key as keyof typeof dynamicFormFields] || []).map(f => ({ name: f.key, label: t(f.labelKey), placeholder: f.placeholderKey ? t(f.placeholderKey) : '', required: f.required }))}
                     richtextKey="summary"
