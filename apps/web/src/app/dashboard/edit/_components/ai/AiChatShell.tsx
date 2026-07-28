@@ -38,7 +38,7 @@ import { useAiSessionStore } from '@/store/useAiSessionStore';
 import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import i18nInstance from '@/i18n';
-import { useEntitlement } from '@/lib/billing/useEntitlement';
+import { useEntitlement } from '@/lib/extensions/billing-client';
 import { isCloudMode } from '@/lib/config/app';
 
 type AiChatShellProps = {

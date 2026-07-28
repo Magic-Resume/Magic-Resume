@@ -22,7 +22,7 @@ import { isCloudMode } from '@/lib/config/app';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
 import { useResumeStore } from '@/store/useResumeStore';
-import { useEntitlement } from '@/lib/billing/useEntitlement';
+import { useEntitlement } from '@/lib/extensions/billing-client';
 import type { Entitlement } from '@/lib/billing/types';
 import { cn } from '@/lib/utils';
 

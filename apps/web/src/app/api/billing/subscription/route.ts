@@ -1,4 +1,4 @@
-import { proxyBilling } from '@/lib/billing/proxy';
+import { proxyBilling } from '@/lib/extensions/billing-proxy';
 
 /** The caller's current subscription (status / period end / cancel flag). */
 export function GET() {
