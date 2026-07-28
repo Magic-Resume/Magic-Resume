@@ -1,6 +1,6 @@
 ---
 import type { Copy } from '@/i18n/ui';
-import { APP_LINKS } from '@/consts';
+import { dashboardLink } from '@/consts';
 import Icon from '@/components/Icon.astro';
 
 interface Props {
@@ -25,7 +25,7 @@ const c = copy.cta;
     </p>
     <div class="mt-9 flex flex-col items-center gap-4">
       <a
-        href={APP_LINKS.dashboard}
+        href={dashboardLink('cta_section')}
         class="group flex items-center gap-2 rounded-lg bg-ink px-7 py-3 text-[15px] font-semibold text-workbench transition-opacity hover:opacity-85"
       >
         {c.button}

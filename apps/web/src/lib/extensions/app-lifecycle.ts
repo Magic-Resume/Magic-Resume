@@ -1,12 +1,5 @@
 import type { FileSizeBucket } from '@/lib/utils/fileSize';
 
-export type GithubStarLocation =
-  | 'footer'
-  | 'hero'
-  | 'hero_glass_button'
-  | 'hero_macbook_badge'
-  | 'footer_mobile';
-
 export type ResumeImportSource = 'json' | 'pdf';
 
 export type ResumeImportCompletedPayload = {
@@ -15,20 +8,19 @@ export type ResumeImportCompletedPayload = {
   sizeBucket?: FileSizeBucket;
 };
 
-export type DashboardViewedPayload = {
-  resumeCount: number;
-};
-
-export type EditorViewedPayload = {
-  templateId?: string;
-};
-
 export type ResumeSaveRequestedPayload = {
   source: 'manual' | 'auto';
 };
 
-export type ResumeJsonDownloadedPayload = {
-  source: 'editor' | 'json_page' | 'json_modal';
+/** A render-time crash caught by a React error boundary. */
+export type ReactErrorPayload = {
+  message: string;
+  name?: string;
+  stack?: string;
+  /** Next's digest id for a server-side exception. */
+  digest?: string;
+  /** Which boundary caught it, e.g. `app/dashboard`. */
+  component?: string;
 };
 
 export type ResumeTemplateSelectedPayload = {
@@ -63,43 +55,28 @@ const ignore = <T,>(value: T) => {
   void value;
 };
 
+/**
+ * Seam the commercial overlay implements. Anything a *marker* covers is absent
+ * here on purpose: a `data-magic-*` attribute plus a line of tracking manifest
+ * already reports it, and routing it through this object as well would double
+ * count. Page-level impressions (dashboard, editor, settings, a shared resume)
+ * are all markers now.
+ */
 export const appLifecycle = {
-  getStartedClicked: noop,
-  githubStarClicked: (location: GithubStarLocation) => {
-    ignore(location);
-  },
-  dashboardViewed: (payload: DashboardViewedPayload) => {
-    ignore(payload);
-  },
-  resumeCreateRequested: noop,
   resumeCreated: noop,
-  resumeImportRequested: noop,
   resumeImportCompleted: (payload: ResumeImportCompletedPayload) => {
-    ignore(payload);
-  },
-  editorViewed: (payload: EditorViewedPayload) => {
     ignore(payload);
   },
   resumeSaveRequested: (payload: ResumeSaveRequestedPayload) => {
     ignore(payload);
   },
-  resumeJsonDownloaded: (payload: ResumeJsonDownloadedPayload) => {
-    ignore(payload);
-  },
   resumeTemplateSelected: (payload: ResumeTemplateSelectedPayload) => {
     ignore(payload);
   },
-  settingsViewed: noop,
   settingsSaved: (payload: LifecyclePayload) => {
     ignore(payload);
   },
-  aiCreateViewed: noop,
-  aiOptimizeViewed: noop,
-  aiAnalyzeViewed: noop,
-  aiInterviewViewed: noop,
-  aiOptimizationStarted: (hasInputContext: boolean) => {
-    ignore(hasInputContext);
-  },
+  aiOptimizationStarted: noop,
   aiOptimizationApplied: (payload: LifecyclePayload) => {
     ignore(payload);
   },
@@ -124,8 +101,6 @@ export const appLifecycle = {
     ignore(payload);
   },
   shareLinkCreated: noop,
-  shareLinkCopied: noop,
-  sharedResumeViewed: noop,
   editorSectionAdded: (payload: EditorSectionPayload) => {
     ignore(payload);
   },
@@ -148,6 +123,9 @@ export const appLifecycle = {
   },
   reportApiError: (error: unknown) => {
     ignore(error);
+  },
+  reactErrorCaught: (payload: ReactErrorPayload) => {
+    ignore(payload);
   },
 };
 

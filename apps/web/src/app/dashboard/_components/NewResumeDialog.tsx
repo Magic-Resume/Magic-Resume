@@ -32,6 +32,7 @@ export default function NewResumeDialog({ open, onOpenChange, newName, setNewNam
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="w-full max-w-md bg-raised border border-neutral-800 rounded-3xl shadow-2xl p-8 pointer-events-auto"
+              data-magic-new-resume-panel
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white">{t('newResumeDialog.title')}</h2>

@@ -1,6 +1,6 @@
 ---
 import type { Copy } from '@/i18n/ui';
-import { APP_LINKS, GITHUB } from '@/consts';
+import { dashboardLink, GITHUB } from '@/consts';
 import { formatStars } from '@/lib/github';
 import Icon from '@/components/Icon.astro';
 import LangSwitcher from '@/components/LangSwitcher.astro';
@@ -54,7 +54,7 @@ const nav = copy.nav;
       </a>
       <LangSwitcher />
       <a
-        href={APP_LINKS.dashboard}
+        href={dashboardLink('header')}
         class="flex items-center gap-1 rounded-md bg-ink px-3 py-1.5 text-[13px] font-semibold text-workbench transition-opacity hover:opacity-85"
       >
         {nav.goToApp}

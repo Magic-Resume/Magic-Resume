@@ -243,6 +243,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="w-full max-w-lg bg-raised border border-neutral-800 rounded-3xl shadow-2xl p-8 pointer-events-auto"
+              data-magic-import-panel
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-2">
