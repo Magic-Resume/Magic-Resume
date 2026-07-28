@@ -33,6 +33,7 @@ import {
 import { resolveResumePatchBatch } from './lib/resumePatch';
 import { useResumeDraftStore } from '@/store/useResumeDraftStore';
 import { useSettingStore } from '@/store/useSettingStore';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import { useAiSessionStore } from '@/store/useAiSessionStore';
 import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -51,6 +52,27 @@ type AiChatShellProps = {
 };
 
 const CLOSED_CANVAS: CanvasState = { open: false, skillId: null, view: 'preview', status: 'idle' };
+
+/**
+ * Report that a skill run began. Every skill enters through one function, so
+ * this is the only place a start is announced.
+ */
+function reportSkillStarted(id: SkillId) {
+  if (id === 'optimize') appLifecycle.aiOptimizationStarted(false);
+  else if (id === 'analyze') appLifecycle.aiAnalysisStarted();
+  else if (id === 'create') appLifecycle.aiCreateStarted();
+  else if (id === 'interview') appLifecycle.aiInterviewStarted();
+}
+
+/**
+ * Report that a skill run failed, for the two skills whose failure rate is
+ * worth watching. Only a coarse reason travels — never the upstream message,
+ * which on this product can echo the user's own résumé back.
+ */
+function reportSkillFailed(id: SkillId | null, reason: 'quota' | 'unknown') {
+  if (id === 'optimize') appLifecycle.aiOptimizationFailed({ reason });
+  else if (id === 'analyze') appLifecycle.aiAnalysisFailed({ reason });
+}
 /** Localized at call time — module-level, so it reads the i18n instance directly. */
 const aiServiceErrorMessage = () => i18nInstance.t('aiLab.error.serviceUnavailable');
 
@@ -196,6 +218,24 @@ export default function AiChatShell({
   // the new session (design P0 · CC4 / LC3).
   const controllerRef = useRef<AbortController | null>(null);
   const runGenRef = useRef(0);
+  // Which skill the in-flight run belongs to. The run functions are shared, so
+  // a failure surfacing in the stream has no other way to say what it was for.
+  const activeSkillRef = useRef<SkillId | null>(null);
+  const interviewStartedAtRef = useRef<number | null>(null);
+
+  /**
+   * Close out an interview, carrying how long it ran. Guarded by the start
+   * timestamp so the many other paths that close the overlay — resetting the
+   * session, unmounting — don't each report an interview that never began.
+   */
+  const reportInterviewEnded = useCallback(() => {
+    const startedAt = interviewStartedAtRef.current;
+    if (startedAt === null) return;
+    interviewStartedAtRef.current = null;
+    appLifecycle.aiInterviewEnded({
+      durationSec: Math.round((Date.now() - startedAt) / 1000),
+    });
+  }, []);
   if (aiSession?.sessionId) sessionIdRef.current = aiSession.sessionId;
   // True once this session opened server-side state (create / general), so the
   // "new chat" button can reclaim it. Modal close deliberately keeps the session.
@@ -572,6 +612,10 @@ export default function AiChatShell({
               } else {
                 setResumeDraft(draft);
                 setDraftReady(draft);
+                // A create run produced a usable draft. Reported here rather
+                // than when the stream ends, because a run can finish without
+                // ever yielding one.
+                if (activeSkillRef.current === 'create') appLifecycle.aiCreateCompleted();
               }
             } else {
               console.warn(
@@ -590,6 +634,9 @@ export default function AiChatShell({
               setAnalysis(result);
               setLivingOpen(false);
               setCanvas({ open: true, skillId: 'analyze', view: 'score', status: 'ready' });
+              // The analysis actually produced a result — a run that streams and
+              // then yields nothing is not a success.
+              appLifecycle.aiAnalysisSucceeded();
               // The analysis landed → mark every checklist step done (defensive: the
               // assemble step's plan_update may race the artifact event).
               if (planCardRef.current) {
@@ -657,6 +704,13 @@ export default function AiChatShell({
         if (controller.signal.aborted || !isCurrent()) {
           return;
         }
+        // Past the abort guard this is a genuine failure. Reporting it above
+        // would have counted every cancelled run as one, which is the number
+        // most likely to be mistaken for a broken model.
+        reportSkillFailed(
+          activeSkillRef.current,
+          isQuotaOrCustomConfigError(err) ? 'quota' : 'unknown',
+        );
         if (isQuotaOrCustomConfigError(err)) {
           const refreshedAccess = await resolveAiAccessConfig({ forceRefresh: true }).catch(() => null);
           if (refreshedAccess?.ok && refreshedAccess.config.source === 'internal') {
@@ -840,6 +894,17 @@ export default function AiChatShell({
   // cancel → `reject` (docs/specs/genui-systematization/design.md §5).
   const handleWidgetAction = useCallback(
     (widgetId: string, result: WidgetActionResult) => {
+      // A submitted form carrying a `jd` field is how a target job description
+      // reaches the model — there is no file upload. Only its size bucket is
+      // reported; the description itself is the user's material.
+      if (result.type === 'submit') {
+        const jd = (result.values as Record<string, unknown> | undefined)?.jd;
+        if (typeof jd === 'string' && jd.trim()) {
+          appLifecycle.aiJdUploaded({
+            sizeBucket: jd.length < 500 ? 'small' : jd.length < 2000 ? 'medium' : 'large',
+          });
+        }
+      }
       setMessages((prev) =>
         prev.map((m) =>
           m.widget?.widgetId === widgetId
@@ -988,7 +1053,13 @@ export default function AiChatShell({
       setStarted(true);
       const t = text.trim();
 
+      // One place to report every skill start, since this is the single entry
+      // point. Which run failed later is resolved through `activeSkillRef`.
+      activeSkillRef.current = id;
+      reportSkillStarted(id);
+
       if (skill.surface === 'immersive') {
+        interviewStartedAtRef.current = Date.now();
         setOverlayOpen(true);
         return;
       }
@@ -1154,10 +1225,11 @@ export default function AiChatShell({
     const nextSession = resetAiSession(resumeId);
     sessionIdRef.current = nextSession.sessionId;
     sessionUsedRef.current = false;
+    reportInterviewEnded();
     setOverlayOpen(false);
     setAwaitingReply(false);
     setDraftReady(null);
-  }, [resetAiSession, resumeId]);
+  }, [resetAiSession, resumeId, reportInterviewEnded]);
 
   const requestResetSession = useCallback(() => {
     setResetConfirmOpen(true);

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { resumeApi } from '@/lib/api/resume';
 import { mcpApi, PersonalAccessToken } from '@/lib/api/mcp';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import {
   formatMcpDate,
   getApiErrorMessage,
@@ -85,6 +86,9 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
       setPlainToken(created.token);
       setTokens((current) => [created, ...current]);
       toast.success(t('settings.mcp.notifications.created'));
+      // After the token exists — the click alone does not mean one was issued.
+      // No token material, not even its name, which the user types.
+      appLifecycle.settingsMcpTokenGenerated();
     } catch (error) {
       console.error('Failed to create MCP token:', error);
       toast.error(getApiErrorMessage(error) || t('settings.mcp.notifications.createFailed'));

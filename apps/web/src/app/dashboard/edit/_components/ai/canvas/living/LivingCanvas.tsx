@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import { AnimatePresence } from 'framer-motion';
 import { ListChecks } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -514,6 +515,9 @@ export default function LivingCanvas({
   const acceptAll = useCallback(() => {
     const changes = order.map((p) => pendingRef.current[p]).filter(Boolean) as PendingChange[];
     if (!changes.length) return;
+    // Suggestions were actually taken into the résumé. This is the outcome that
+    // says whether the AI was useful; a run that merely finished does not.
+    appLifecycle.aiOptimizationApplied({ changes: changes.length });
     let nextSections = sectionsRef.current;
     let nextInfo = infoRef.current;
     let infoTouched = false;

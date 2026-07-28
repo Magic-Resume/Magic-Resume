@@ -406,6 +406,9 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(sectionOrder, oldIndex, newIndex);
         updateSectionOrder(newOrder);
+        // The sections themselves were reordered. Reordering entries inside one
+        // section is a different, much more frequent action and is not this.
+        appLifecycle.editorSectionReordered();
       }
     }
   }
@@ -468,6 +471,9 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                   />
                 ) : (
                   <SectionListWithModal
+                    // Stable kind (`experience`, `education`…) for analytics —
+                    // `label` is an i18n key and shifts with copy changes.
+                    sectionKey={key}
                     label={meta.labelKey || key}
                     fields={(dynamicFormFields[key as keyof typeof dynamicFormFields] || []).map(f => ({ name: f.key, label: t(f.labelKey), placeholder: f.placeholderKey ? t(f.placeholderKey) : '', required: f.required }))}
                     richtextKey="summary"
@@ -514,7 +520,16 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
 
   return (
     <>
-      <main className="flex h-screen min-w-0 overflow-hidden bg-desk text-white flex-1">
+      <main
+        // Which resume is being edited. Everything reported from inside the
+        // editor — including the AI panel and the share dialog — picks this up
+        // without each control carrying it. Ids only; other keys are dropped.
+        data-track-context={JSON.stringify({
+          resumeId: activeResume.id,
+          templateId: currentTemplateId,
+        })}
+        className="flex h-screen min-w-0 overflow-hidden bg-desk text-white flex-1"
+      >
         {/* 左侧:大纲轨 + 可折叠表单面板(入场:opacity-only,不动 fixed 定位) */}
         <div className="editor-enter-left">
           <EditorFormPanel
