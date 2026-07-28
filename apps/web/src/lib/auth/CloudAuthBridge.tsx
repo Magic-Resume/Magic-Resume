@@ -8,7 +8,7 @@ import { useAuth, useUser, useClerk } from '@clerk/nextjs';
 import { AppAuthContext, AppUser } from './context';
 
 export function CloudAuthBridge({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, userId, getToken } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const { user } = useUser();
   const { redirectToSignIn, signOut } = useClerk();
 
@@ -25,6 +25,7 @@ export function CloudAuthBridge({ children }: { children: React.ReactNode }) {
   return (
     <AppAuthContext.Provider
       value={{
+        isLoaded,
         isSignedIn: isSignedIn ?? false,
         userId: userId ?? null,
         getToken: () => getToken(),

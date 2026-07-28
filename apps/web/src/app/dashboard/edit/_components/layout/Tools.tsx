@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useSettingStore } from "@/store/useSettingStore";
 import { isCloudMode } from "@/lib/config/app";
 import { exportResumeToPdf, preloadResumePdfExport } from "@/lib/utils/pdf-export";
+import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 
 export type ToolsProps = {
   isMobile: boolean;
@@ -83,12 +84,26 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
     if (isExporting) return;
     setIsExporting(true);
     const toastId = toast.loading(t('tools.exportingPDF'));
+    const startedAt = Date.now();
     try {
       await exportResumeToPdf(resume, pdfLocale);
       toast.success(t('tools.exportPDFSuccess'), { id: toastId });
+      appLifecycle.resumeExported({
+        format: 'pdf',
+        source: 'tools',
+        durationMs: Date.now() - startedAt,
+      });
     } catch (error) {
       console.error('PDF export failed:', error);
       toast.error(t('tools.exportPDFError'), { id: toastId });
+      // Failures matter as much as successes here: export is where the product
+      // delivers its value, so its success rate is the number worth watching.
+      appLifecycle.resumeExported({
+        format: 'pdf',
+        source: 'tools',
+        success: false,
+        durationMs: Date.now() - startedAt,
+      });
     } finally {
       setIsExporting(false);
     }

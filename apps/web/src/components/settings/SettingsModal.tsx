@@ -23,6 +23,7 @@ import { useTheme, type ThemePreference } from "@/components/providers/ThemeProv
 import { useAccountUiStore, type SettingsSection } from "@/store/useAccountUiStore";
 import { isCloudMode } from "@/lib/config/app";
 import { cn } from "@/lib/utils";
+import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 
 type Category = {
   key: SettingsSection;
@@ -58,6 +59,7 @@ export function SettingsModal() {
     setCloudSync,
     setSyncDisclaimerAgreed,
     hasLlmConfig,
+    provider,
     isDirty,
     saveSettings,
     resetSettings,
@@ -71,6 +73,13 @@ export function SettingsModal() {
     if (settingsOpen) loadSettings();
   }, [settingsOpen, loadSettings]);
 
+  // Reported here rather than at the buttons that open it: settings can be
+  // reached from several places (the sidebar, the cloud-sync prompt on the
+  // dashboard), and only this component knows it actually opened.
+  useEffect(() => {
+    if (settingsOpen) appLifecycle.settingsViewed();
+  }, [settingsOpen]);
+
   const categories = useMemo(() => CATEGORIES.filter((c) => !c.cloudOnly || isCloudMode), []);
   const active = categories.some((c) => c.key === settingsSection) ? settingsSection : "general";
   const currentLang = i18n.language.startsWith("en") ? "en" : "zh";
@@ -78,19 +87,29 @@ export function SettingsModal() {
   const handleSave = () => {
     saveSettings();
     toast.success(t("settings.notifications.settingsSaved"));
+    appLifecycle.settingsSaved({ section: active });
+    // Which provider was picked — never the key, the base URL, or the model.
+    if (hasLlmConfig()) appLifecycle.settingsApiKeyConfigured({ provider });
   };
   const handleReset = () => {
     resetSettings();
     toast.info(t("settings.notifications.changesReset"));
   };
   const handleCloudSyncToggle = (checked: boolean) => {
+    // Turning it on may stop at the disclaimer, so the event belongs where the
+    // setting actually changes — here for the paths that apply it directly,
+    // and in the disclaimer confirm below for the one that does not.
     if (checked && !syncDisclaimerAgreed) setShowDisclaimer(true);
-    else setCloudSync(checked);
+    else {
+      setCloudSync(checked);
+      appLifecycle.settingsCloudSyncToggled({ enabled: checked });
+    }
   };
   const handleConfirmDisclaimer = () => {
     setSyncDisclaimerAgreed(true);
     setCloudSync(true);
     setShowDisclaimer(false);
+    appLifecycle.settingsCloudSyncToggled({ enabled: true });
   };
 
   // Active-channel marker: a bottom underline on the mobile tab strip, a left bar

@@ -9,6 +9,16 @@ export interface AppUser {
 }
 
 export interface AppAuthContextValue {
+  /**
+   * Whether the auth provider has resolved yet.
+   *
+   * Distinguishes "not signed in" from "not known yet". Before this is true,
+   * `userId` is null for a reason that says nothing about the visitor, and a
+   * consumer that reads it as a signed-out state acts on a fact that is not in
+   * evidence. Always true in self-hosted mode, where there is nothing to wait
+   * for.
+   */
+  isLoaded: boolean;
   isSignedIn: boolean;
   userId: string | null;
   getToken: () => Promise<string | null>;
@@ -19,6 +29,7 @@ export interface AppAuthContextValue {
 
 // Default: self-hosted values (no auth, always locally "signed in")
 const defaultValue: AppAuthContextValue = {
+  isLoaded: true,
   isSignedIn: true,
   userId: null,
   getToken: async () => null,

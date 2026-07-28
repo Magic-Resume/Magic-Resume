@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Globe, Link, Copy, Check, Lock } from "lucide-react";
 
 import { useResumeStore } from "@/store/useResumeStore";
+import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 import { isLocalResumeId } from "@/lib/api/resume";
 
 import { toast } from "sonner";
@@ -46,6 +47,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
         await updateSharing(checked, shareRole);
+        // Only once the link actually exists — the toggle is the intent, the
+        // successful write is the fact. Turning sharing off is not a creation.
+        if (checked) appLifecycle.shareLinkCreated();
     } finally {
         setLoading(false);
     }
@@ -194,6 +198,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                             />
                         </div>
                         <button
+                            data-track-id="share-link-copy"
                             className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
                             onClick={copyToClipboard}
                         >

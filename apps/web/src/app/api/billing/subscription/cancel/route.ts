@@ -1,4 +1,4 @@
-import { proxyBilling } from '@/lib/billing/proxy';
+import { proxyBilling } from '@/lib/extensions/billing-proxy';
 
 /** Cancel the caller's subscription at period end. */
 export function POST() {

@@ -225,6 +225,13 @@ const ResumeCard = React.memo(
         layout
       >
         <div
+          // Which resume a click inside this card refers to. Anything reported
+          // from within picks these up, so individual controls don't each have
+          // to carry them. Ids only — the collector drops anything else.
+          data-track-context={JSON.stringify({
+            resumeId: resume.id,
+            templateId: resume.template,
+          })}
           className={cn(
             // content-visibility:auto — skip layout/paint of off-screen cards, so a
             // reflow during the sidebar animation only costs the visible ones. The

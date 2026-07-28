@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useSettingStore } from "@/store/useSettingStore";
 import { exportResumeToPdf, preloadResumePdfExport } from "@/lib/utils/pdf-export";
 import { Resume } from "@/types/frontend/resume";
+import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 
 type EditorDockProps = {
   zoomIn: (step?: number) => void;
@@ -46,12 +47,24 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
     if (isExporting) return;
     setIsExporting(true);
     const toastId = toast.loading(t("tools.exportingPDF"));
+    const startedAt = Date.now();
     try {
       await exportResumeToPdf(resume, pdfLocale);
       toast.success(t("tools.exportPDFSuccess"), { id: toastId });
+      appLifecycle.resumeExported({
+        format: "pdf",
+        source: "dock",
+        durationMs: Date.now() - startedAt,
+      });
     } catch (error) {
       console.error("PDF export failed:", error);
       toast.error(t("tools.exportPDFError"), { id: toastId });
+      appLifecycle.resumeExported({
+        format: "pdf",
+        source: "dock",
+        success: false,
+        durationMs: Date.now() - startedAt,
+      });
     } finally {
       setIsExporting(false);
     }
