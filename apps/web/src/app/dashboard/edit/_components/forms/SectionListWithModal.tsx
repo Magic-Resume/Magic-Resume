@@ -34,6 +34,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { ModalShell } from '@/components/ui/ModalShell';
 
 import { useResumeStore } from '@/store/useResumeStore';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
 interface BaseItem {
   id: UniqueIdentifier;
@@ -136,6 +137,8 @@ function SortableItem<T extends BaseItem>({ id, item, index, handleEdit, handleD
 type Field = { name: string; label: string; placeholder: string; required?: boolean };
 
 interface SectionListWithModalProps<T extends BaseItem> {
+  /** Stable section kind (`experience`, `education`…), used for analytics. */
+  sectionKey: string;
   label: string;
   fields: Field[];
   richtextKey: string;
@@ -148,6 +151,7 @@ interface SectionListWithModalProps<T extends BaseItem> {
 }
 
 export default function SectionListWithModal<T extends BaseItem>({
+  sectionKey,
   label,
   fields,
   richtextKey,
@@ -223,17 +227,22 @@ export default function SectionListWithModal<T extends BaseItem>({
     }
     setItems(newItems as T[]);
     handleCloseModal();
-    const notificationMessage = currentIndex !== null
+    const isNew = currentIndex === null;
+    const notificationMessage = !isNew
       ? t('sections.notifications.sectionUpdated', { label: translatedLabel })
       : t('sections.notifications.sectionAdded', { label: translatedLabel });
     toast.success(notificationMessage);
-  }, [currentItem, fields, richtextKey, items, currentIndex, setItems, handleCloseModal, t, translatedLabel]);
+    // Only a genuinely new entry — editing an existing one is not an addition.
+    // The section kind travels, never the entry the user typed.
+    if (isNew) appLifecycle.editorSectionAdded({ section: sectionKey });
+  }, [currentItem, fields, richtextKey, items, currentIndex, setItems, handleCloseModal, t, translatedLabel, sectionKey]);
 
   const handleDelete = useCallback((index: number) => {
     const newItems = items.filter((_, i) => i !== index);
     setItems(newItems);
     toast.success(t('sections.notifications.itemRemoved'));
-  }, [items, setItems, t]);
+    appLifecycle.editorSectionRemoved({ section: sectionKey });
+  }, [items, setItems, t, sectionKey]);
 
   const handleCopy = useCallback((index: number) => {
     const itemToCopy = items[index];

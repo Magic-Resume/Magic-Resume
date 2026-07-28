@@ -2,7 +2,7 @@
 
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { AccountModal } from "@/lib/auth";
-import { PricingModal } from "@/components/billing/PricingModal";
+import { PricingModal } from "@/lib/extensions/billing-ui";
 
 /**
  * Mounts the global settings + account + pricing overlays once, high in the

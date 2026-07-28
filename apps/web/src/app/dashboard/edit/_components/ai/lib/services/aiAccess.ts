@@ -2,7 +2,7 @@ import { useSettingStore } from "@/store/useSettingStore";
 import {
   fetchEntitlement,
   invalidateEntitlementCache,
-} from "@/lib/billing/entitlementClient";
+} from "@/lib/extensions/billing-client";
 import type { Entitlement } from "@/lib/billing/types";
 import type { AgentLlmConfig } from "./types";
 

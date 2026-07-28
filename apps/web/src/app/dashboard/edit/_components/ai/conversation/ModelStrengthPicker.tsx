@@ -12,7 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useSettingStore, type Strength } from "@/store/useSettingStore";
-import { useEntitlement } from "@/lib/billing/useEntitlement";
+import { useEntitlement } from "@/lib/extensions/billing-client";
 
 const STRENGTHS: Strength[] = ["low", "medium", "high"];
 
