@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.4.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.3.0...v2.4.0) (2026-07-29)
+
+## ✨ New Features
+- [`1f22274`](https://github.com/Magic-Resume/Magic-Resume/commit/1f22274)  feat(web): mark the pages a conversion passes through (#153) (#154) (Issues: [`#153`](https://github.com/Magic-Resume/Magic-Resume/issues/153) [`#154`](https://github.com/Magic-Resume/Magic-Resume/issues/154))
+
 # [v2.3.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.2.1...v2.3.0) (2026-07-23)
 
 ## ✨ New Features
