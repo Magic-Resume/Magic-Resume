@@ -143,9 +143,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   );
 
   const handleDownloadJson = () => {
-    if (activeResume) {
-      appLifecycle.resumeJsonDownloaded({ source: 'editor' });
-    }
     if (!activeResume) return;
     const sanitized = getSanitizedResume(activeResume);
     const jsonString = JSON.stringify(sanitized, null, 2);
@@ -217,12 +214,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   }, [id, loadResumeForEdit, isStoreLoading, resumes, router]); // resumes 依然保留，但靠内部 activeResume?.id === id 熔断
 
   // 编辑器查看生命周期
-  useEffect(() => {
-    if (activeResume && !isStoreLoading) {
-      appLifecycle.editorViewed({ templateId: activeResume.template });
-    }
-  }, [activeResume?.id, activeResume?.template, isStoreLoading]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // 同步activeResume的template到currentTemplateId
   useEffect(() => {
     if (activeResume?.template && activeResume.template !== currentTemplateId) {
@@ -521,10 +512,11 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   return (
     <>
       <main
+        data-magic-editor-canvas
         // Which resume is being edited. Everything reported from inside the
         // editor — including the AI panel and the share dialog — picks this up
         // without each control carrying it. Ids only; other keys are dropped.
-        data-track-context={JSON.stringify({
+        data-magic-context={JSON.stringify({
           resumeId: activeResume.id,
           templateId: currentTemplateId,
         })}

@@ -58,7 +58,7 @@ const CLOSED_CANVAS: CanvasState = { open: false, skillId: null, view: 'preview'
  * this is the only place a start is announced.
  */
 function reportSkillStarted(id: SkillId) {
-  if (id === 'optimize') appLifecycle.aiOptimizationStarted(false);
+  if (id === 'optimize') appLifecycle.aiOptimizationStarted();
   else if (id === 'analyze') appLifecycle.aiAnalysisStarted();
   else if (id === 'create') appLifecycle.aiCreateStarted();
   else if (id === 'interview') appLifecycle.aiInterviewStarted();

@@ -91,6 +91,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
               exit={{ opacity: 0, scale: 0.98, y: 12 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="w-full max-w-md rounded-2xl bg-desk p-6 shadow-[0_24px_70px_-20px_rgb(0_0_0/0.8)] ring-1 ring-white/[0.07] pointer-events-auto"
+              data-magic-share-panel
             >
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -198,7 +199,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                             />
                         </div>
                         <button
-                            data-track-id="share-link-copy"
+                            data-magic-share-link-copy
                             className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
                             onClick={copyToClipboard}
                         >

@@ -121,6 +121,7 @@ function CreatePanel({ onClick }: { onClick: () => void }) {
   return (
     <motion.button
       type="button"
+      data-magic-dashboard-create
       onClick={onClick}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
@@ -157,6 +158,7 @@ function ImportPanel({ onClick }: { onClick: () => void }) {
   return (
     <motion.button
       type="button"
+      data-magic-dashboard-import
       onClick={onClick}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
@@ -228,7 +230,7 @@ const ResumeCard = React.memo(
           // Which resume a click inside this card refers to. Anything reported
           // from within picks these up, so individual controls don't each have
           // to carry them. Ids only — the collector drops anything else.
-          data-track-context={JSON.stringify({
+          data-magic-context={JSON.stringify({
             resumeId: resume.id,
             templateId: resume.template,
           })}

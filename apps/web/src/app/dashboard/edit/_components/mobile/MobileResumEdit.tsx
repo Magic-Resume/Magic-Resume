@@ -138,6 +138,7 @@ export default function MobileResumEdit({
         >
             <div className="relative">
                 <button
+                    data-magic-json-download
                     onClick={handleCopyJson}
                     className="absolute top-3 right-3 p-2 text-gray-400 rounded-md hover:bg-neutral-700 hover:text-white transition-colors"
                     aria-label={t('mobileEdit.copyJson')}

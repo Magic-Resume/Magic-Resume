@@ -48,6 +48,7 @@ export default function JsonModal({ isJsonModalOpen, closeJsonModal, handleDownl
                             </div>
                             <div className="flex items-center gap-1">
                                 <button
+                                    data-magic-json-download
                                     onClick={handleDownloadJson}
                                     className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[13px] text-neutral-400 hover:bg-white/5 hover:text-sky-300 transition-colors cursor-pointer"
                                     aria-label={t('common.ui.downloadJson')}

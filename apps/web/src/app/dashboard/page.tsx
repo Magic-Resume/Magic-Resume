@@ -7,7 +7,6 @@ import { useResumeStore } from '@/store/useResumeStore';
 import { useSettingStore } from '@/store/useSettingStore';
 import ResumeList from './_components/ResumeList';
 import RenameResumeDialog from './_components/RenameResumeDialog';
-import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -29,8 +28,6 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         await Promise.all([loadResumes(), loadSettings()]);
-        const currentResumes = useResumeStore.getState().resumes;
-        appLifecycle.dashboardViewed({ resumeCount: currentResumes.length });
       } catch (error) {
         console.error('Failed to initialize dashboard:', error);
       } finally {
@@ -55,13 +52,14 @@ export default function Dashboard() {
     }
   }, [resumeToRename, newName, renameResume]);
 
+  // 这两个按钮不再手动上报：`data-magic-dashboard-create` /
+  // `data-magic-dashboard-import` 加上清单映射就是全部，事件名和要不要收都在
+  // 清单里改。它们是纯粹的点击意图，没有任何只有代码知道的东西要一起带走。
   const handleAdd = useCallback(() => {
-    appLifecycle.resumeCreateRequested();
     router.push('/dashboard/new');
   }, [router]);
 
   const handleImport = useCallback(() => {
-    appLifecycle.resumeImportRequested();
     router.push('/dashboard/import');
   }, [router]);
 
@@ -74,7 +72,7 @@ export default function Dashboard() {
   }, [duplicateResume]);
 
   return (
-    <main className="flex flex-col h-full">
+    <main className="flex flex-col h-full" data-magic-dashboard-list>
       <RenameResumeDialog
         open={renameDialogOpen}
         onOpenChange={setRenameDialogOpen}
