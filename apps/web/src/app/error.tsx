@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RotateCcw, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
 export default function Error({
   error,
@@ -18,6 +19,16 @@ export default function Error({
   useEffect(() => {
     // Log the error to an error reporting service
     console.error('Global Error Boundary caught:', error);
+    // A render-time crash never reaches `window.onerror` — React catches it and
+    // hands it to this boundary instead. Without this call the most severe
+    // failure the app has (a blank screen) is the one failure it never reports.
+    appLifecycle.reactErrorCaught({
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      digest: error.digest,
+      component: 'app',
+    });
   }, [error]);
 
   return (

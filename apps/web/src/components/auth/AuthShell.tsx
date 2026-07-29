@@ -16,12 +16,21 @@ export function AuthShell({
   switchPrompt,
   switchHref,
   switchLabel,
+  mark,
   children,
 }: {
   title: string;
   switchPrompt: string;
   switchHref: string;
   switchLabel: string;
+  /**
+   * Neutral marker id placed on the shell as `data-magic-<mark>`.
+   *
+   * Sign-in and sign-up share this component, so the id has to come from the
+   * caller. It says nothing about what is measured — that lives in the tracking
+   * manifest.
+   */
+  mark?: string;
   children: React.ReactNode;
 }) {
   const reduce = useReducedMotion();
@@ -32,7 +41,10 @@ export function AuthShell({
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-desk px-6 py-16">
+    <main
+      className="relative flex min-h-screen items-center justify-center bg-desk px-6 py-16"
+      {...(mark ? { [`data-magic-${mark}`]: '' } : {})}
+    >
       {/* 深色下一抹极淡 sky 辉光,呼应「黑工作台上的一点光」;浅色下不显。 */}
       <div
         aria-hidden

@@ -14,6 +14,14 @@ interface ModalShellProps {
   className?: string;
   /** Extra controls rendered left of the close button in the header. */
   headerRight?: React.ReactNode;
+  /**
+   * Neutral marker id placed on the panel as `data-magic-<mark>`.
+   *
+   * Several dialogs share this shell, so the id comes from the caller. It names
+   * the element and nothing else — what gets measured is decided in the
+   * tracking manifest.
+   */
+  mark?: string;
   children: React.ReactNode;
 }
 
@@ -23,7 +31,7 @@ interface ModalShellProps {
  * top-seam is the instrument-signature detail (see design spec). Body is a flex
  * column that fills remaining height — callers own the inner layout.
  */
-export function ModalShell({ open, onOpenChange, title, className, headerRight, children }: ModalShellProps) {
+export function ModalShell({ open, onOpenChange, title, className, headerRight, mark, children }: ModalShellProps) {
   const reduce = useReducedMotion();
 
   return (
@@ -56,6 +64,7 @@ export function ModalShell({ open, onOpenChange, title, className, headerRight, 
                     "relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-desk shadow-2xl shadow-black/60",
                     className,
                   )}
+                  {...(mark ? { [`data-magic-${mark}`]: '' } : {})}
                 >
                   {/* sky top-seam — reuses the via-sky rule motif from the settings page */}
                   <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
