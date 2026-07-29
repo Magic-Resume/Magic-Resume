@@ -158,6 +158,11 @@ const resolveTitle = (component: ComponentDefinition, locale?: string): string =
   const title = String(component.props?.title ?? 'Section');
   if (!locale?.toLowerCase().startsWith('zh')) return title;
 
+  const explicitChineseTitle = component.props?.titleZh;
+  if (typeof explicitChineseTitle === 'string' && explicitChineseTitle.trim()) {
+    return explicitChineseTitle;
+  }
+
   const sectionKey = component.dataBinding.startsWith('sections.')
     ? component.dataBinding.slice('sections.'.length)
     : '';
@@ -406,6 +411,90 @@ const HeaderBlock = ({ info, component, context }: {
   );
 };
 
+const CenteredPhotoHeaderBlock = ({ info, component, context }: {
+  info: InfoType;
+  component: ComponentDefinition;
+  context: RenderContext;
+}) => {
+  const props = component.props ?? {};
+  const avatarWidth = cssSizeToPoints(Number(props.avatarWidth ?? 86));
+  const avatarHeight = cssSizeToPoints(Number(props.avatarHeight ?? 119));
+  const separator = typeof props.contactSeparator === 'string' ? props.contactSeparator : '|';
+  const showCustomFields = props.showCustomFields === true;
+  const nameFontSize = cssSizeToPoints(context.typography.fontSize.xxl, 22);
+  const contactFontSize = cssSizeToPoints(context.typography.fontSize.md, 10);
+  const headlineFontSize = cssSizeToPoints(context.typography.fontSize.lg, 12);
+  const contacts: Array<{ key: string; value: string; href: string }> = [
+    { key: 'phone', value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '' },
+    { key: 'email', value: info.email, href: info.email ? `mailto:${info.email}` : '' },
+    { key: 'address', value: info.address, href: '' },
+    { key: 'website', value: info.website, href: safeWebsiteUrl(info.website) },
+  ].filter((item) => item.value);
+
+  if (showCustomFields) {
+    for (const [index, field] of (info.customFields ?? []).entries()) {
+      const value = field?.value?.trim();
+      if (!value) continue;
+      contacts.push({ key: field.id || `custom-${index}`, value, href: '' });
+    }
+  }
+
+  const avatar = info.avatar ? (
+    <Image
+      src={info.avatar}
+      style={{
+        width: avatarWidth,
+        height: avatarHeight,
+        borderRadius: props.avatarRounded === true ? Math.min(avatarWidth, avatarHeight) / 2 : 0,
+        objectFit: 'cover',
+      }}
+    />
+  ) : null;
+
+  return (
+    <View
+      wrap={false}
+      style={[
+        { flexDirection: 'row', alignItems: 'flex-start' },
+        toPdfComponentStyle(component.style),
+      ]}
+    >
+      <View style={{ width: avatarWidth, flexShrink: 0 }} />
+      <View style={{ flexGrow: 1, flexShrink: 1, alignItems: 'center', paddingTop: 3 }}>
+        <Text style={{ color: context.colors.text, fontSize: nameFontSize, fontWeight: 700, textAlign: 'center' }}>
+          {info.fullName || (context.locale?.startsWith('zh') ? '你的名字' : 'Your Name')}
+        </Text>
+        {contacts.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 7 }}>
+            {contacts.map((item, index) => (
+              <React.Fragment key={item.key}>
+                {index > 0 ? (
+                  <Text style={{ color: context.colors.text, fontSize: contactFontSize, marginHorizontal: 3 }}>
+                    {separator}
+                  </Text>
+                ) : null}
+                <ContactText
+                  value={item.value}
+                  href={item.href}
+                  style={{ color: context.colors.text, fontSize: contactFontSize, textDecoration: 'none' }}
+                />
+              </React.Fragment>
+            ))}
+          </View>
+        ) : null}
+        {info.headline ? (
+          <Text style={{ color: context.colors.text, fontSize: headlineFontSize, marginTop: 7, textAlign: 'center' }}>
+            {info.headline}
+          </Text>
+        ) : null}
+      </View>
+      <View style={{ width: avatarWidth, minHeight: avatarHeight, flexShrink: 0, alignItems: 'flex-end' }}>
+        {avatar}
+      </View>
+    </View>
+  );
+};
+
 const ProfileBlock = ({ info, component, sidebar, context }: {
   info: InfoType;
   component: ComponentDefinition;
@@ -628,6 +717,124 @@ const ListSectionBlock = ({ component, items, context }: {
   );
 };
 
+const getThreeColumnRatio = (component: ComponentDefinition): [number, number, number] => {
+  const value = component.props?.columnRatio;
+  if (!Array.isArray(value) || value.length !== 3) return [1.65, 0.85, 1.15];
+  const parsed = value.map(Number);
+  return parsed.every((item) => Number.isFinite(item) && item > 0)
+    ? parsed as [number, number, number]
+    : [1.65, 0.85, 1.15];
+};
+
+const ThreeColumnSectionBlock = ({ component, items, context }: {
+  component: ComponentDefinition;
+  items: SectionItem[];
+  context: RenderContext;
+}) => {
+  const fields = component.fieldMap ?? {};
+  const bodyFontSize = cssSizeToPoints(context.typography.fontSize.sm, 9);
+  const ratios = getThreeColumnRatio(component);
+  const columnStyle = (index: number, textAlign: 'left' | 'center' | 'right'): Style => ({
+    flexBasis: 0,
+    flexGrow: ratios[index],
+    flexShrink: 1,
+    minWidth: 0,
+    textAlign,
+  });
+
+  return (
+    <View style={toPdfComponentStyle(component.style)}>
+      <SectionTitle title={resolveTitle(component, context.locale)} icon={getSectionIcon(component)} context={context} />
+      <View style={{ gap: cssSizeToPoints(context.spacing.sm, 4) }}>
+        {items.map((item, index) => {
+          const record = item as Record<string, unknown>;
+          const subtitles = [
+            getFieldValue(record, fields.leftSubtitle),
+            getFieldValue(record, fields.centerSubtitle),
+            getFieldValue(record, fields.rightSubtitle),
+          ];
+          const description = getFieldValue(record, fields.description);
+
+          return (
+            <View key={item.id || index}>
+              <View wrap={false} minPresenceAhead={bodyFontSize * 2.5} style={{ flexDirection: 'row', gap: 8 }}>
+                <Text style={[columnStyle(0, 'left'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
+                  {getFieldValue(record, fields.leftTitle)}
+                </Text>
+                <Text style={[columnStyle(1, 'center'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
+                  {getFieldValue(record, fields.centerTitle)}
+                </Text>
+                <Text style={[columnStyle(2, 'right'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
+                  {getFieldValue(record, fields.rightTitle)}
+                </Text>
+              </View>
+              {subtitles.some(Boolean) ? (
+                <View wrap={false} style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={[columnStyle(0, 'left'), { color: context.colors.text, fontSize: bodyFontSize }]}>{subtitles[0]}</Text>
+                  <Text style={[columnStyle(1, 'center'), { color: context.colors.text, fontSize: bodyFontSize }]}>{subtitles[1]}</Text>
+                  <Text style={[columnStyle(2, 'right'), { color: context.colors.text, fontSize: bodyFontSize }]}>{subtitles[2]}</Text>
+                </View>
+              ) : null}
+              <Description
+                value={description}
+                color={context.colors.text}
+                fontFamily={context.richTextFontFamily}
+                fontSize={bodyFontSize}
+                marginTop={description ? 2 : 0}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+const InlineKeyValueSectionBlock = ({ component, items, context }: {
+  component: ComponentDefinition;
+  items: SectionItem[];
+  context: RenderContext;
+}) => {
+  const fields = component.fieldMap ?? {};
+  const bodyFontSize = cssSizeToPoints(context.typography.fontSize.sm, 9);
+  const suffix = typeof component.props?.labelSuffix === 'string' ? component.props.labelSuffix : ':';
+
+  return (
+    <View style={toPdfComponentStyle(component.style)}>
+      <SectionTitle title={resolveTitle(component, context.locale)} icon={getSectionIcon(component)} context={context} />
+      <View style={{ gap: cssSizeToPoints(context.spacing.xs, 2) }}>
+        {items.map((item, index) => {
+          const record = item as Record<string, unknown>;
+          const label = getFieldValue(record, fields.itemName);
+          const detail = getFieldValue(record, fields.summary) || getFieldValue(record, fields.itemDetail);
+          const renderedLabel = /[:：]$/.test(label) ? label : `${label}${suffix}`;
+
+          return (
+            <View key={item.id || index} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 3 }}>
+              {label ? (
+                <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700, flexShrink: 0 }}>
+                  {renderedLabel}
+                </Text>
+              ) : null}
+              {detail ? (
+                <View style={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
+                  <PdfRichText
+                    html={detail}
+                    color={context.colors.text}
+                    fontFamily={context.richTextFontFamily}
+                    fontSize={bodyFontSize}
+                    lineHeight={1.35}
+                  />
+                </View>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
 const CompactListBlock = ({ component, items, sidebar, context }: {
   component: ComponentDefinition;
   items: SectionItem[];
@@ -734,6 +941,7 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
   if (component.dataBinding === 'info') {
     if (component.type === 'ProfileCard') return <ProfileBlock info={data.info} component={component} sidebar={sidebar} context={context} />;
     if (component.type === 'ContactInfo') return <ContactBlock info={data.info} component={component} sidebar={sidebar} context={context} />;
+    if (component.type === 'CenteredPhotoHeader') return <CenteredPhotoHeaderBlock info={data.info} component={component} context={context} />;
     return <HeaderBlock info={data.info} component={component} context={context} />;
   }
 
@@ -742,6 +950,8 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
 
   if (component.type === 'CompactList') return <CompactListBlock component={component} items={items} sidebar={sidebar} context={context} />;
   if (component.type === 'Timeline') return <TimelineBlock component={component} items={items} context={context} />;
+  if (component.type === 'ThreeColumnSection') return <ThreeColumnSectionBlock component={component} items={items} context={context} />;
+  if (component.type === 'InlineKeyValueSection') return <InlineKeyValueSectionBlock component={component} items={items} context={context} />;
   if (component.type === 'ListSection') return <ListSectionBlock component={component} items={items} context={context} />;
   return <DefaultSectionBlock component={component} items={items} context={context} />;
 };

@@ -13,6 +13,7 @@ export const templateIds = [
   'red-accent',
   'golden-elegant',
   'product-ops-focus',
+  'compact-cn-photo',
 ] as const;
 
 export const templateSchema = z.enum(templateIds);
