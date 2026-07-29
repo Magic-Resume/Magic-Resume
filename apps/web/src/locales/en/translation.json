@@ -1329,6 +1329,7 @@
     "confirm": "Confirm"
   },
   "pricing": {
+    "buyPack": "Buy credit pack",
     "title": "Upgrade plan",
     "popular": "Popular",
     "current": "Your current plan",
@@ -1350,6 +1351,21 @@
       "dailyUnlimited": "Unlimited daily",
       "weekly": "{{count}} generations/week",
       "weeklyUnlimited": "Unlimited weekly"
+    }
+  },
+  "billing": {
+    "return": {
+      "waitingTitle": "Confirming your payment",
+      "waitingDetail": "Alipay is reporting the result back. This usually takes a few seconds — please keep this page open.",
+      "paidTitle": "Payment received",
+      "paidDetail": "{{credits}} credits added.",
+      "alreadyPaidTitle": "This order is already paid",
+      "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
+      "timeoutTitle": "No confirmation yet",
+      "timeoutDetail": "If you completed the payment, nothing is lost — Alipay retries its notification for several hours. Check your balance from the dashboard shortly.",
+      "errorTitle": "Could not confirm this order",
+      "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
+      "backToDashboard": "Back to dashboard"
     }
   },
   "aiLab": {

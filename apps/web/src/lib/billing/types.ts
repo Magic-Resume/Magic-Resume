@@ -17,6 +17,25 @@ export interface PlanSummary {
   // unit and are never sent to the client — the API exposes only a percentage.
 }
 
+/**
+ * A one-off credit-pack purchase. `credits` is a string because it is a BigInt
+ * server-side and would lose precision as a JSON number.
+ */
+export interface OrderSummary {
+  id: string;
+  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  credits: string;
+  paidAt?: string | null;
+}
+
+/** What the server hands back when an order is created and needs paying. */
+export interface OrderCheckout {
+  orderId: string;
+  /** `redirect` → send the browser to payUrl; `qrcode` → render payUrl as a QR. */
+  kind: 'redirect' | 'qrcode';
+  payUrl: string;
+}
+
 export interface SubscriptionSummary {
   id: string;
   planId: string;

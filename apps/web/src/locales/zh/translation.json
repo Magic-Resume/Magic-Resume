@@ -1380,6 +1380,7 @@
     "confirm": "确定"
   },
   "pricing": {
+    "buyPack": "购买令牌包",
     "title": "升级套餐",
     "popular": "热门",
     "current": "你当前的套餐",
@@ -1401,6 +1402,21 @@
       "dailyUnlimited": "每日不限次数",
       "weekly": "每周 {{count}} 次生成",
       "weeklyUnlimited": "每周不限次数"
+    }
+  },
+  "billing": {
+    "return": {
+      "waitingTitle": "正在确认支付结果",
+      "waitingDetail": "支付宝正在回传结果，通常几秒内完成，请不要关闭本页。",
+      "paidTitle": "支付成功",
+      "paidDetail": "已到账 {{credits}} credits。",
+      "alreadyPaidTitle": "这笔订单已支付",
+      "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额。",
+      "timeoutTitle": "暂未收到到账通知",
+      "timeoutDetail": "如果你已完成付款，款项不会丢失——支付宝会在数小时内重试通知。稍后回到工作台查看余额即可。",
+      "errorTitle": "无法确认订单",
+      "missingOrder": "链接里没有订单号，无法查询支付结果。",
+      "backToDashboard": "返回工作台"
     }
   },
   "aiLab": {
