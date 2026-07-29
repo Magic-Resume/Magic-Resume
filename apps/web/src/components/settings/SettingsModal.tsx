@@ -73,13 +73,6 @@ export function SettingsModal() {
     if (settingsOpen) loadSettings();
   }, [settingsOpen, loadSettings]);
 
-  // Reported here rather than at the buttons that open it: settings can be
-  // reached from several places (the sidebar, the cloud-sync prompt on the
-  // dashboard), and only this component knows it actually opened.
-  useEffect(() => {
-    if (settingsOpen) appLifecycle.settingsViewed();
-  }, [settingsOpen]);
-
   const categories = useMemo(() => CATEGORIES.filter((c) => !c.cloudOnly || isCloudMode), []);
   const active = categories.some((c) => c.key === settingsSection) ? settingsSection : "general";
   const currentLang = i18n.language.startsWith("en") ? "en" : "zh";
@@ -119,6 +112,7 @@ export function SettingsModal() {
 
   return (
     <ModalShell
+      mark="settings-panel"
       open={settingsOpen}
       onOpenChange={(open) => !open && closeSettings()}
       title={t("account.settings.title")}

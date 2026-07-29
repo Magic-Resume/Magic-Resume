@@ -5,7 +5,6 @@ import { useResumeStore, getSanitizedResume } from '@/store/useResumeStore';
 import JsonModal from '@/app/dashboard/edit/_components/modals/JsonModal';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import { useEffect } from 'react';
 
 export default function JsonModalPage() {
@@ -25,9 +24,6 @@ export default function JsonModalPage() {
   const handleClose = () => router.push(`/dashboard/edit/${id}`);
 
   const handleDownloadJson = () => {
-    if (activeResume) {
-      appLifecycle.resumeJsonDownloaded({ source: 'json_page' });
-    }
     if (!activeResume) return;
     const sanitized = getSanitizedResume(activeResume);
     const jsonString = JSON.stringify(sanitized, null, 2);

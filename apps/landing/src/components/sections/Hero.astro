@@ -1,6 +1,6 @@
 ---
 import type { Copy, Locale } from '@/i18n/ui';
-import { APP_LINKS, GITHUB } from '@/consts';
+import { dashboardLink, GITHUB } from '@/consts';
 import Icon from '@/components/Icon.astro';
 import EditorMockup from '@/components/islands/EditorMockup';
 
@@ -39,7 +39,7 @@ const post = idx >= 0 ? h.title.slice(idx + h.titleAccent.length) : '';
 
       <div class="reveal mt-8 flex flex-wrap items-center justify-center gap-3" style="--reveal-delay:3">
         <a
-          href={APP_LINKS.dashboard}
+          href={dashboardLink('hero')}
           class="group flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-workbench transition-opacity hover:opacity-85"
         >
           {h.ctaPrimary}

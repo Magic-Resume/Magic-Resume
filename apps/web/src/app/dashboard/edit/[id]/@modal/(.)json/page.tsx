@@ -5,7 +5,6 @@ import JsonModal from '@/app/dashboard/edit/_components/modals/JsonModal';
 import { useInterceptModalRoute } from '@/hooks/useInterceptModalRoute';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
 export default function JsonModalPage() {
   const { open, close } = useInterceptModalRoute();
@@ -13,9 +12,6 @@ export default function JsonModalPage() {
   const { t } = useTranslation();
 
   const handleDownloadJson = () => {
-    if (activeResume) {
-      appLifecycle.resumeJsonDownloaded({ source: 'json_modal' });
-    }
     if (!activeResume) return;
     const sanitized = getSanitizedResume(activeResume);
     const jsonString = JSON.stringify(sanitized, null, 2);

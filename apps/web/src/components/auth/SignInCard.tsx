@@ -168,6 +168,7 @@ export default function SignInCard() {
 
   return (
     <AuthShell
+      mark="sign-in-form"
       title={t("auth.signIn.title")}
       switchPrompt={t("auth.signIn.switchPrompt")}
       switchHref="/sign-up"

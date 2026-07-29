@@ -1,6 +1,41 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Magic-Resume commercial overlay alias. Roots are provided only by private commercial builds.
+  webpack: (config, { webpack }) => {
+    const runtimeRoot = process.env.MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT;
+    const billingRoot = process.env.MAGIC_RESUME_COMMERCIAL_BILLING_ROOT;
+    if (!runtimeRoot && !billingRoot) return config;
+
+    const slots: Record<string, string> = {};
+    if (runtimeRoot) {
+      slots['@/lib/commercial/runtime'] = path.join(runtimeRoot, 'src/runtime.tsx');
+      slots['@/lib/extensions/app-lifecycle'] = path.join(runtimeRoot, 'src/app-lifecycle.ts');
+    }
+    if (billingRoot) {
+      slots['@/lib/extensions/billing-client'] = path.join(billingRoot, 'src/billing-client.ts');
+      slots['@/lib/extensions/billing-ui'] = path.join(billingRoot, 'src/billing-ui.tsx');
+      slots['@/lib/extensions/billing-proxy'] = path.join(billingRoot, 'src/billing-proxy.ts');
+    }
+
+    // Replacement at the module-factory stage, not `resolve.alias`. These
+    // requests start with `@/`, which tsconfig `paths` already claims, and
+    // Next's JsConfigPathsPlugin resolves it during `described-resolve` —
+    // before AliasPlugin ever runs. An alias keyed on `@/lib/...` is therefore
+    // dead code: it never matches, and the slot silently stays on its
+    // open-source stub.
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(
+        /^@\/lib\/(commercial\/runtime|extensions\/(app-lifecycle|billing-client|billing-ui|billing-proxy))$/,
+        (resource: { request: string }) => {
+          const target = slots[resource.request];
+          if (target) resource.request = target;
+        }
+      )
+    );
+    return config;
+  },
   output: "standalone",
   transpilePackages: ['@magic-resume/resume-templates'],
   
