@@ -2,6 +2,23 @@
 
 export type PlanKind = 'credit_pack' | 'subscription';
 
+/** Channels a plan can be paid through. `manual` is bookkeeping, never offered. */
+export type PayChannel = 'alipay' | 'wechat' | 'paypal';
+
+/**
+ * What one channel charges for a plan.
+ *
+ * This — not `PlanSummary.priceCents` — is the number to show once a channel is
+ * picked. The plan-level price is a base list price and may be denominated in a
+ * currency this buyer will never be charged in (¥19 domestically vs $2.90
+ * overseas are two offers on one plan, not two plans).
+ */
+export interface PlanOffer {
+  channel: PayChannel;
+  priceCents: number;
+  currency: string;
+}
+
 export interface PlanSummary {
   id: string;
   name: string;
@@ -13,6 +30,12 @@ export interface PlanSummary {
   weeklyLimit: number;
   interval?: string | null;
   isDefault: boolean;
+  /**
+   * Present on the plan list; absent where the API returns "which plan am I on"
+   * (entitlement, subscription.plan) rather than a catalogue. Absent means "not
+   * loaded" — it is never an empty array standing for "sold nowhere".
+   */
+  offers?: PlanOffer[];
   // `includedCredits` intentionally omitted: credits are the internal billing
   // unit and are never sent to the client — the API exposes only a percentage.
 }
