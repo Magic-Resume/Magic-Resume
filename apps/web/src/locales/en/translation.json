@@ -1353,7 +1353,7 @@
       "waitingTitle": "Confirming your payment",
       "waitingDetail": "Alipay is reporting the result back. This usually takes a few seconds — please keep this page open.",
       "paidTitle": "Payment received",
-      "paidDetail": "{{credits}} credits added.",
+      "paidDetail": "You are all set — head back to the dashboard to carry on.",
       "alreadyPaidTitle": "This order is already paid",
       "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
       "timeoutTitle": "No confirmation yet",

@@ -100,14 +100,20 @@ export interface PlanSummary {
 }
 
 /**
- * A one-off credit-pack purchase. `credits` is a string because it is a BigInt
- * server-side and would lose precision as a JSON number.
+ * An order, as its buyer may see it.
+ *
+ * No `credits`: that is the internal billing unit, withheld here for the same
+ * reason `PlanSummary` omits `includedCredits`. The server stopped sending it
+ * at all, so the field cannot be rendered by accident.
  */
 export interface OrderSummary {
   id: string;
   status: 'pending' | 'paid' | 'failed' | 'refunded';
-  credits: string;
+  amountCents: number;
+  currency: string;
+  channel: string;
   paidAt?: string | null;
+  createdAt?: string;
 }
 
 /** What the server hands back when an order is created and needs paying. */

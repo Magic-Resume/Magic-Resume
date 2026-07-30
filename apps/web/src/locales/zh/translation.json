@@ -1404,7 +1404,7 @@
       "waitingTitle": "正在确认支付结果",
       "waitingDetail": "支付宝正在回传结果，通常几秒内完成，请不要关闭本页。",
       "paidTitle": "支付成功",
-      "paidDetail": "已到账 {{credits}} credits。",
+      "paidDetail": "权益已生效，回工作台即可继续使用。",
       "alreadyPaidTitle": "这笔订单已支付",
       "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额。",
       "timeoutTitle": "暂未收到到账通知",

@@ -42,7 +42,6 @@ function ReturnState() {
   const orderId = params.get('orderId');
 
   const [phase, setPhase] = useState<Phase>('waiting');
-  const [order, setOrder] = useState<OrderSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Kept in a ref, not state: the polling effect must not restart (and reset the
   // clock) every time the attempt count changes.
@@ -52,12 +51,11 @@ function ReturnState() {
   const settle = useCallback(
     (next: OrderSummary | null) => {
       if (!next || next.status !== 'paid') return false;
-      setOrder(next);
 
       // Paid on the very first look means the order was already settled before
       // this page opened — a refresh or a revisited link, not money arriving.
-      // Repeating "1000 credits added" there reads as a second top-up, which is
-      // exactly what did NOT happen: fulfilment is idempotent on the order id.
+      // Announcing an arrival there reads as a second charge, which is exactly
+      // what did NOT happen: fulfilment is idempotent on the order id.
       const arrivedNow = attempts.current > 1;
       setPhase(arrivedNow ? 'paid' : 'already_paid');
       if (arrivedNow) {
@@ -122,11 +120,9 @@ function ReturnState() {
       <Panel
         icon={<CheckCircle2 className="h-10 w-10 text-emerald-500" />}
         title={t('billing.return.paidTitle')}
-        detail={
-          order?.credits
-            ? t('billing.return.paidDetail', { credits: order.credits })
-            : undefined
-        }
+        // Unconditional now, and it names no quantity: the buyer's own number of
+        // credits is not something they can price, and it is not sent here.
+        detail={t('billing.return.paidDetail')}
         action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
       />
     );
