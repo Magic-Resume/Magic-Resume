@@ -4,6 +4,7 @@ import { bronzorTemplate } from './config/bronzor-template';
 import { chikoritaTemplate } from './config/chikorita-template';
 import { classicTemplate } from './config/classic-template';
 import { cleanMinimalTemplate } from './config/clean-minimal-template';
+import { compactCnPhotoTemplate } from './config/compact-cn-photo-template';
 import { dittoTemplate } from './config/ditto-template';
 import { gengarTemplate } from './config/gengar-template';
 import { goldenElegantTemplate } from './config/golden-elegant-template';
@@ -55,6 +56,7 @@ export const templateRegistry: Record<TemplateId, TemplateManifest> = {
   'red-accent': createManifest(redAccentTemplate),
   'golden-elegant': createManifest(goldenElegantTemplate),
   'product-ops-focus': createManifest(productOpsFocusTemplate),
+  'compact-cn-photo': createManifest(compactCnPhotoTemplate),
 };
 
 export const templateManifestList = Object.values(templateRegistry);
