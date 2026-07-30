@@ -103,7 +103,10 @@ export interface ComponentDefinition {
 
 export type ComponentType = 
   | 'Header'
+  | 'CenteredPhotoHeader'
   | 'DefaultSection'
+  | 'ThreeColumnSection'
+  | 'InlineKeyValueSection'
   | 'ClassicHeader'
   | 'ClassicSection'
   | 'ClassicSkills'
@@ -151,6 +154,14 @@ export interface FieldMapping {
   sideTitle?: string | string[];
   sideSubtitle?: string | string[];
   secondarySideSubtitle?: string | string[];
+
+  // ThreeColumnSection fields
+  leftTitle?: string | string[];
+  leftSubtitle?: string | string[];
+  centerTitle?: string | string[];
+  centerSubtitle?: string | string[];
+  rightTitle?: string | string[];
+  rightSubtitle?: string | string[];
   
   // ListSection字段
   itemName?: string | string[];
@@ -158,4 +169,4 @@ export interface FieldMapping {
   summary?: string | string[];
   
   custom?: Record<string, string | string[]>;
-} 
+}

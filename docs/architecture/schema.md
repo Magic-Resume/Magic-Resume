@@ -41,6 +41,7 @@ Current IDs:
 - `red-accent`
 - `golden-elegant`
 - `product-ops-focus`
+- `compact-cn-photo`
 
 `resumeSchema.template` falls back to `classic` for unknown values to keep older Core content compatible. Direct `templateSchema` parsing still rejects unknown IDs.
 
