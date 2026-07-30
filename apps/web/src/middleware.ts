@@ -16,13 +16,34 @@ const isProtectedRoute = createRouteMatcher([
   '/billing(.*)',
 ]);
 
+/**
+ * Where to send someone back after they sign in.
+ *
+ * Clerk redirects to `unauthenticatedUrl` literally and adds nothing of its
+ * own, so a bare `/sign-in` discards the path and the query string. That was
+ * survivable while `/billing` was unprotected — the page rendered, its API
+ * calls 401'd — but protecting it turned a lapsed session into a lost order:
+ * `?orderId=` never came back, so the return page could not poll, and could not
+ * run the sync that is the only thing capturing a PayPal payment from the
+ * browser.
+ *
+ * Same-origin only, and rebuilt from the request rather than echoed, so this
+ * cannot be turned into an open redirect.
+ */
+function signInUrl(req: NextRequest): string {
+  const url = new URL('/sign-in', req.url);
+  url.searchParams.set(
+    'redirect_url',
+    `${req.nextUrl.pathname}${req.nextUrl.search}`,
+  );
+  return url.toString();
+}
+
 // cloud: unauthenticated users on protected routes go to the sign-in page
 // (unauthenticatedUrl avoids Clerk's default 404 on protect).
 const cloudHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    await auth.protect({
-      unauthenticatedUrl: new URL('/sign-in', req.url).toString(),
-    });
+    await auth.protect({ unauthenticatedUrl: signInUrl(req) });
   }
 });
 
