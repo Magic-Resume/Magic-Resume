@@ -1380,27 +1380,39 @@
     "confirm": "确定"
   },
   "pricing": {
+    "buyPack": "购买令牌包",
     "title": "升级套餐",
     "popular": "热门",
+    "qrcodeUnsupported": "当前版本暂不支持扫码支付，请改用其他支付方式",
     "current": "你当前的套餐",
     "upgradeTo": "升级至 {{name}}",
     "included": "已包含",
     "free": "免费",
     "perMonth": "/月",
+    "perYear": "/年",
+    "regionMainland": "中国大陆",
+    "regionInternational": "其他地区",
+    "regionPrompt": "选择地区",
     "created": "订阅已创建",
     "error": "操作失败，请重试",
-    "footnote": "档位、价格与功能由后台配置，可随时调整。",
-    "tagline": {
-      "free": "体验核心能力",
-      "paid": "解锁全部能力"
-    },
-    "features": {
-      "models": "{{count}} 个可用模型",
-      "coreModel": "核心模型",
-      "daily": "每日 {{count}} 次生成",
-      "dailyUnlimited": "每日不限次数",
-      "weekly": "每周 {{count}} 次生成",
-      "weeklyUnlimited": "每周不限次数"
+    "loadFailed": "套餐加载失败",
+    "channelPrompt": "请先选择地区",
+    "channelUnavailable": "该地区暂不出售此套餐",
+    "manualRenewal": "按月购买，到期邮件提醒，不自动扣款"
+  },
+  "billing": {
+    "return": {
+      "waitingTitle": "正在确认支付结果",
+      "waitingDetail": "支付结果正在回传，通常几秒内完成，请不要关闭本页。",
+      "paidTitle": "支付成功",
+      "paidDetail": "权益已生效，回工作台即可继续使用。",
+      "alreadyPaidTitle": "这笔订单已支付",
+      "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额。",
+      "timeoutTitle": "暂未收到到账通知",
+      "timeoutDetail": "如果你已完成付款，款项不会丢失——支付渠道会在数小时内重试通知。稍后回到工作台查看余额即可。",
+      "errorTitle": "无法确认订单",
+      "missingOrder": "链接里没有订单号，无法查询支付结果。",
+      "backToDashboard": "返回工作台"
     }
   },
   "aiLab": {
@@ -1528,7 +1540,11 @@
       "addCustom": "在设置里添加自定义模型",
       "noModel": "请先在设置里配置模型",
       "strengthLabel": "推理强度",
-      "strength": { "low": "低", "medium": "中", "high": "高" }
+      "strength": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      }
     },
     "widgets": {
       "unsupported": "（无法渲染的卡片：{{kind}}）",

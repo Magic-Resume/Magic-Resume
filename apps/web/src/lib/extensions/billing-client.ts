@@ -1,6 +1,12 @@
 'use client';
 
-import type { Entitlement, PlanSummary, SubscriptionSummary } from '@/lib/billing/types';
+import type {
+  Entitlement,
+  OrderCheckout,
+  OrderSummary,
+  PlanSummary,
+  SubscriptionSummary,
+} from '@/lib/billing/types';
 
 /**
  * Billing slot — the open-source build has none.
@@ -33,6 +39,8 @@ const SELF_HOSTED_ENTITLEMENT: Entitlement = {
   reason: 'self_hosted',
   currentPlan: null,
   remainingPercent: null,
+  // Nothing was ever paid here, so there is no channel to prefer.
+  lastPaidChannel: null,
 };
 
 export async function fetchPlans(): Promise<PlanSummary[]> {
@@ -43,13 +51,41 @@ export async function fetchSubscription(): Promise<SubscriptionSummary | null> {
   return null;
 }
 
-export async function createSubscription(planId: string): Promise<string | null> {
+export async function createSubscription(
+  planId: string,
+  channel?: string,
+): Promise<string | null> {
   ignore(planId);
+  ignore(channel);
   return null;
 }
 
 export async function cancelSubscription(): Promise<void> {
   // Nothing to cancel.
+}
+
+/**
+ * Credit packs are a cloud-only concept: a self-hosted build has no channel to
+ * charge through and no wallet to credit. These return "no such thing" rather
+ * than throwing, matching how the plan/subscription stubs above answer.
+ */
+export async function createOrder(
+  planId: string,
+  channel: string,
+): Promise<OrderCheckout | null> {
+  ignore(planId);
+  ignore(channel);
+  return null;
+}
+
+export async function fetchOrder(orderId: string): Promise<OrderSummary | null> {
+  ignore(orderId);
+  return null;
+}
+
+export async function syncOrder(orderId: string): Promise<OrderSummary | null> {
+  ignore(orderId);
+  return null;
 }
 
 export function peekEntitlement(): Entitlement | null {
