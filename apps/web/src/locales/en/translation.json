@@ -1141,47 +1141,92 @@
   "dynamicForm": {
     "fields": {
       "education": {
-        "school": { "label": "School", "placeholder": "School Name" },
-        "degree": { "label": "Degree", "placeholder": "Degree" },
-        "major": { "label": "Major", "placeholder": "Major" },
-        "date": { "label": "Date or Date Range", "placeholder": "2019-2023" },
-        "location": { "label": "Location", "placeholder": "City" }
+        "school": {
+          "label": "School",
+          "placeholder": "School Name"
+        },
+        "degree": {
+          "label": "Degree",
+          "placeholder": "Degree"
+        },
+        "major": {
+          "label": "Major",
+          "placeholder": "Major"
+        },
+        "date": {
+          "label": "Date or Date Range",
+          "placeholder": "2019-2023"
+        },
+        "location": {
+          "label": "Location",
+          "placeholder": "City"
+        }
       },
       "experience": {
-        "company": { "label": "Company", "placeholder": "Company Name" },
-        "position": { "label": "Position", "placeholder": "Position" },
+        "company": {
+          "label": "Company",
+          "placeholder": "Company Name"
+        },
+        "position": {
+          "label": "Position",
+          "placeholder": "Position"
+        },
         "date": {
           "label": "Date or Date Range",
           "placeholder": "March 2023 - Present"
         },
-        "location": { "label": "Location", "placeholder": "City" },
-        "website": { "label": "Website", "placeholder": "Website URL" }
+        "location": {
+          "label": "Location",
+          "placeholder": "City"
+        },
+        "website": {
+          "label": "Website",
+          "placeholder": "Website URL"
+        }
       },
       "profiles": {
         "platform": {
           "label": "Platform",
           "placeholder": "e.g., LinkedIn, GitHub"
         },
-        "url": { "label": "URL", "placeholder": "URL" }
+        "url": {
+          "label": "URL",
+          "placeholder": "URL"
+        }
       },
       "skills": {
-        "name": { "label": "Skill Name", "placeholder": "Skill Name" },
+        "name": {
+          "label": "Skill Name",
+          "placeholder": "Skill Name"
+        },
         "level": {
           "label": "Level",
           "placeholder": "e.g., Expert, Intermediate, Beginner"
         }
       },
       "projects": {
-        "name": { "label": "Project Name", "placeholder": "Project Name" },
-        "role": { "label": "Role", "placeholder": "Your Role" },
+        "name": {
+          "label": "Project Name",
+          "placeholder": "Project Name"
+        },
+        "role": {
+          "label": "Role",
+          "placeholder": "Your Role"
+        },
         "date": {
           "label": "Date or Date Range",
           "placeholder": "Jan 2022 - Dec 2022"
         },
-        "link": { "label": "Link", "placeholder": "Project Link" }
+        "link": {
+          "label": "Link",
+          "placeholder": "Project Link"
+        }
       },
       "languages": {
-        "language": { "label": "Language", "placeholder": "Language" },
+        "language": {
+          "label": "Language",
+          "placeholder": "Language"
+        },
         "level": {
           "label": "Level",
           "placeholder": "e.g., Native, Fluent, Intermediate"
@@ -1192,8 +1237,14 @@
           "label": "Certificate Name",
           "placeholder": "Certificate Name"
         },
-        "issuer": { "label": "Issuer", "placeholder": "Issuing Organization" },
-        "date": { "label": "Date", "placeholder": "Date Received" }
+        "issuer": {
+          "label": "Issuer",
+          "placeholder": "Issuing Organization"
+        },
+        "date": {
+          "label": "Date",
+          "placeholder": "Date Received"
+        }
       }
     }
   },
@@ -1329,27 +1380,39 @@
     "confirm": "Confirm"
   },
   "pricing": {
+    "buyPack": "Buy credit pack",
     "title": "Upgrade plan",
     "popular": "Popular",
+    "qrcodeUnsupported": "Scan-to-pay is not available in this version yet; please use another payment method",
     "current": "Your current plan",
     "upgradeTo": "Upgrade to {{name}}",
     "included": "Included",
     "free": "Free",
     "perMonth": "/mo",
+    "perYear": "/yr",
+    "regionMainland": "Chinese mainland",
+    "regionInternational": "Rest of world",
+    "regionPrompt": "Choose region",
     "created": "Subscription created",
     "error": "Something went wrong, please try again",
-    "footnote": "Tiers, prices and features are configured in the backend and may change.",
-    "tagline": {
-      "free": "Explore the essentials",
-      "paid": "Unlock everything"
-    },
-    "features": {
-      "models": "{{count}} models available",
-      "coreModel": "Core model",
-      "daily": "{{count}} generations/day",
-      "dailyUnlimited": "Unlimited daily",
-      "weekly": "{{count}} generations/week",
-      "weeklyUnlimited": "Unlimited weekly"
+    "loadFailed": "Could not load plans",
+    "channelPrompt": "Choose a region first",
+    "channelUnavailable": "Not sold in this region",
+    "manualRenewal": "One month at a time — we email you before it ends, no auto-debit"
+  },
+  "billing": {
+    "return": {
+      "waitingTitle": "Confirming your payment",
+      "waitingDetail": "The payment result is on its way back. This usually takes a few seconds — please keep this page open.",
+      "paidTitle": "Payment received",
+      "paidDetail": "You are all set — head back to the dashboard to carry on.",
+      "alreadyPaidTitle": "This order is already paid",
+      "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
+      "timeoutTitle": "No confirmation yet",
+      "timeoutDetail": "If you completed the payment, nothing is lost — the payment provider retries its notification for several hours. Check your balance from the dashboard shortly.",
+      "errorTitle": "Could not confirm this order",
+      "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
+      "backToDashboard": "Back to dashboard"
     }
   },
   "aiLab": {
@@ -1477,7 +1540,11 @@
       "addCustom": "Add a custom model in settings",
       "noModel": "Configure a model in settings first",
       "strengthLabel": "Reasoning",
-      "strength": { "low": "Low", "medium": "Medium", "high": "High" }
+      "strength": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      }
     },
     "widgets": {
       "unsupported": "(Unable to render card: {{kind}})",
