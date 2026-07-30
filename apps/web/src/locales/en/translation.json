@@ -1351,13 +1351,13 @@
   "billing": {
     "return": {
       "waitingTitle": "Confirming your payment",
-      "waitingDetail": "Alipay is reporting the result back. This usually takes a few seconds — please keep this page open.",
+      "waitingDetail": "The payment result is on its way back. This usually takes a few seconds — please keep this page open.",
       "paidTitle": "Payment received",
       "paidDetail": "You are all set — head back to the dashboard to carry on.",
       "alreadyPaidTitle": "This order is already paid",
       "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
       "timeoutTitle": "No confirmation yet",
-      "timeoutDetail": "If you completed the payment, nothing is lost — Alipay retries its notification for several hours. Check your balance from the dashboard shortly.",
+      "timeoutDetail": "If you completed the payment, nothing is lost — the payment provider retries its notification for several hours. Check your balance from the dashboard shortly.",
       "errorTitle": "Could not confirm this order",
       "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
       "backToDashboard": "Back to dashboard"
