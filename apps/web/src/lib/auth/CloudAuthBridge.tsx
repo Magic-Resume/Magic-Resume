@@ -31,7 +31,12 @@ export function CloudAuthBridge({ children }: { children: React.ReactNode }) {
         getToken: () => getToken(),
         user: appUser,
         redirectToSignIn,
-        signOut: () => signOut({ redirectUrl: '/' }),
+        // Land on /sign-in, not '/'. Routing logout through '/' let its server
+        // component read a not-yet-cleared session and bounce the user straight
+        // back into /dashboard or /coming-soon — logout that never reached the
+        // login page. /sign-in renders unconditionally in cloud mode, so it is
+        // a redirect target no stale-session race can send anywhere else.
+        signOut: () => signOut({ redirectUrl: '/sign-in' }),
       }}
     >
       {children}
