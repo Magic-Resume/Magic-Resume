@@ -1388,11 +1388,15 @@
     "included": "已包含",
     "free": "免费",
     "perMonth": "/月",
+    "perYear": "/年",
+    "regionMainland": "中国大陆",
+    "regionInternational": "其他地区",
+    "regionPrompt": "选择地区",
     "created": "订阅已创建",
     "error": "操作失败，请重试",
     "loadFailed": "套餐加载失败",
-    "channelPrompt": "请选择支付方式",
-    "channelUnavailable": "该支付方式暂不支持此套餐",
+    "channelPrompt": "请先选择地区",
+    "channelUnavailable": "该地区暂不出售此套餐",
     "manualRenewal": "按月购买，到期邮件提醒，不自动扣款"
   },
   "billing": {

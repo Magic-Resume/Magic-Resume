@@ -1337,11 +1337,15 @@
     "included": "Included",
     "free": "Free",
     "perMonth": "/mo",
+    "perYear": "/yr",
+    "regionMainland": "Chinese mainland",
+    "regionInternational": "Rest of world",
+    "regionPrompt": "Choose region",
     "created": "Subscription created",
     "error": "Something went wrong, please try again",
     "loadFailed": "Could not load plans",
-    "channelPrompt": "Choose a payment method",
-    "channelUnavailable": "Not sold through this payment method",
+    "channelPrompt": "Choose a region first",
+    "channelUnavailable": "Not sold in this region",
     "manualRenewal": "One month at a time \u2014 we email you before it ends, no auto-debit"
   },
   "billing": {
