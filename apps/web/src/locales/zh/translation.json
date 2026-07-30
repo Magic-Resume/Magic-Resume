@@ -1391,6 +1391,9 @@
     "created": "订阅已创建",
     "error": "操作失败，请重试",
     "footnote": "档位、价格与功能由后台配置，可随时调整。",
+    "channelPrompt": "请选择支付方式",
+    "channelUnavailable": "该支付方式暂不支持此套餐",
+    "manualRenewal": "按月购买，到期邮件提醒，不自动扣款",
     "tagline": {
       "free": "体验核心能力",
       "paid": "解锁全部能力"

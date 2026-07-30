@@ -15,7 +15,8 @@
     "build:standalone": "next build && next export",
     "i18n:check": "tsx scripts/i18n-check.ts",
     "privacy:scan": "node scripts/privacy-scan.mjs",
-    "test": "npm run privacy:scan"
+    "test:unit": "tsx src/app.test.ts",
+    "test": "npm run privacy:scan && npm run test:unit"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.22.0",

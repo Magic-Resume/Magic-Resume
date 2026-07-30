@@ -1340,6 +1340,9 @@
     "created": "Subscription created",
     "error": "Something went wrong, please try again",
     "footnote": "Tiers, prices and features are configured in the backend and may change.",
+    "channelPrompt": "Choose a payment method",
+    "channelUnavailable": "Not sold through this payment method",
+    "manualRenewal": "One month at a time \u2014 we email you before it ends, no auto-debit",
     "tagline": {
       "free": "Explore the essentials",
       "paid": "Unlock everything"

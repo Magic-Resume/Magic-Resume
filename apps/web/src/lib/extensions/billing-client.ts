@@ -39,6 +39,8 @@ const SELF_HOSTED_ENTITLEMENT: Entitlement = {
   reason: 'self_hosted',
   currentPlan: null,
   remainingPercent: null,
+  // Nothing was ever paid here, so there is no channel to prefer.
+  lastPaidChannel: null,
 };
 
 export async function fetchPlans(): Promise<PlanSummary[]> {
@@ -49,8 +51,12 @@ export async function fetchSubscription(): Promise<SubscriptionSummary | null> {
   return null;
 }
 
-export async function createSubscription(planId: string): Promise<string | null> {
+export async function createSubscription(
+  planId: string,
+  channel?: string,
+): Promise<string | null> {
   ignore(planId);
+  ignore(channel);
   return null;
 }
 

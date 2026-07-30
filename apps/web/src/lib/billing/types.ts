@@ -2,9 +2,6 @@
 
 export type PlanKind = 'credit_pack' | 'subscription';
 
-/** Channels a plan can be paid through. `manual` is bookkeeping, never offered. */
-export type PayChannel = 'alipay' | 'wechat' | 'paypal';
-
 /**
  * What one channel charges for a plan.
  *
@@ -12,9 +9,13 @@ export type PayChannel = 'alipay' | 'wechat' | 'paypal';
  * picked. The plan-level price is a base list price and may be denominated in a
  * currency this buyer will never be charged in (¥19 domestically vs $2.90
  * overseas are two offers on one plan, not two plans).
+ *
+ * `channel` stays an unconstrained string here, as it is elsewhere in this file:
+ * a self-hosted build has no business knowing which payment providers exist.
+ * The commercial overlay narrows it.
  */
 export interface PlanOffer {
-  channel: PayChannel;
+  channel: string;
   priceCents: number;
   currency: string;
 }
@@ -97,4 +98,12 @@ export interface Entitlement {
   resetAt?: string | null;
   /** Supported models the composer can offer for internal runs (allowlist-filtered). */
   availableModels?: string[];
+  /**
+   * The channel of this user's last successful payment, or null.
+   *
+   * A UX default for the channel selector and nothing else — the server prices
+   * an order from `(planId, channel)` and has no notion of regions. `manual`
+   * (off-platform bookkeeping) is never reported: there is no cashier behind it.
+   */
+  lastPaidChannel?: string | null;
 }
