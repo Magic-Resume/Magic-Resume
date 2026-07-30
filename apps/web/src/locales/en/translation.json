@@ -1342,21 +1342,7 @@
     "loadFailed": "Could not load plans",
     "channelPrompt": "Choose a payment method",
     "channelUnavailable": "Not sold through this payment method",
-    "manualRenewal": "One month at a time \u2014 we email you before it ends, no auto-debit",
-    "tagline": {
-      "free": "Explore the essentials",
-      "paid": "Unlock everything"
-    },
-    "features": {
-      "models": "{{count}} models available",
-      "allModels": "Every model available",
-      "rpm": "{{count}} requests per minute",
-      "rpmUnlimited": "Unmetered request rate",
-      "daily": "{{count}} generations/day",
-      "dailyUnlimited": "Unlimited daily",
-      "weekly": "{{count}} generations/week",
-      "weeklyUnlimited": "Unlimited weekly"
-    }
+    "manualRenewal": "One month at a time \u2014 we email you before it ends, no auto-debit"
   },
   "billing": {
     "return": {

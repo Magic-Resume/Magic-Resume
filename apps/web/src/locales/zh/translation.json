@@ -1393,21 +1393,7 @@
     "loadFailed": "套餐加载失败",
     "channelPrompt": "请选择支付方式",
     "channelUnavailable": "该支付方式暂不支持此套餐",
-    "manualRenewal": "按月购买，到期邮件提醒，不自动扣款",
-    "tagline": {
-      "free": "体验核心能力",
-      "paid": "解锁全部能力"
-    },
-    "features": {
-      "models": "{{count}} 个可用模型",
-      "allModels": "全部模型可用",
-      "rpm": "每分钟 {{count}} 次请求",
-      "rpmUnlimited": "请求频率不限",
-      "daily": "每日 {{count}} 次生成",
-      "dailyUnlimited": "每日不限次数",
-      "weekly": "每周 {{count}} 次生成",
-      "weeklyUnlimited": "每周不限次数"
-    }
+    "manualRenewal": "按月购买，到期邮件提醒，不自动扣款"
   },
   "billing": {
     "return": {
