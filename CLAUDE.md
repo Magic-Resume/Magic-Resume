@@ -114,6 +114,7 @@ Format: `<emoji> <type>(<scope>?): <subject>` — e.g. `:sparkles: feat(web): ad
 ## Guardrails
 
 - Do not modify Clerk auth (`clerkMiddleware`, `ClerkProvider`, `useAuth`, cloud sync) unless explicitly requested.
+  - Recorded exception: the sign-in redirect carries `redirect_url` (`middleware.ts` → `afterAuthUrl`). `/billing(.*)` is a protected route, and without it a lapsed session loses `?orderId=` — the return page then cannot poll or sync, which is the only thing that captures a PayPal payment from the browser. Same-origin paths only.
 - Do not add new deployment modes or local/cloud switches unless explicitly requested.
 - MCP tools must remain schema-aware and patch-based. The `@magic-resume/mcp` package must not import from Next.js, React components, browser APIs, or IndexedDB.
 - When adding shared schema or type changes, prefer `packages/resume-schema` over duplicating shapes in `apps/web`.

@@ -32,6 +32,16 @@ const SYNC_AT_ATTEMPTS = new Set([4, 10, 20]);
  * the payment channel for our own problem.
  */
 const FAILURES_BEFORE_ERROR = 3;
+/**
+ * How far before this page opened a payment can have settled and still count as
+ * "this checkout".
+ *
+ * Alipay's `notify_url` is server-to-server and routinely lands while the buyer
+ * is still on the channel's page, so `paidAt` is often a little *older* than
+ * this page. That window is a checkout's worth of time; a genuinely revisited
+ * link is hours or days old, not minutes.
+ */
+const RECENT_PAYMENT_MS = 15 * 60_000;
 
 type Phase = 'waiting' | 'paid' | 'already_paid' | 'timeout' | 'error';
 
@@ -47,22 +57,33 @@ function ReturnState() {
   // clock) every time the attempt count changes.
   const attempts = useRef(0);
   const failures = useRef(0);
+  const openedAt = useRef(Date.now());
+  // The effect must not list `t` as a dependency — see the poll below — but it
+  // still needs the current translations.
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const settle = useCallback(
     (next: OrderSummary | null) => {
       if (!next || next.status !== 'paid') return false;
 
-      // Paid on the very first look means the order was already settled before
-      // this page opened — a refresh or a revisited link, not money arriving.
-      // Announcing an arrival there reads as a second charge, which is exactly
-      // what did NOT happen: fulfilment is idempotent on the order id.
-      const arrivedNow = attempts.current > 1;
+      // Judged on when the payment settled, not on how many times we have
+      // asked. "Paid on the first poll" was read as "this is a revisit", but it
+      // is also the most common *successful* path: Alipay's notify is
+      // server-to-server and usually beats the browser back here. Real buyers
+      // were told "此前已完成付款并到账，本次没有重复扣款" about a purchase
+      // they had just made.
+      const paidAt = next.paidAt ? Date.parse(next.paidAt) : NaN;
+      const arrivedNow =
+        Number.isNaN(paidAt) || paidAt >= openedAt.current - RECENT_PAYMENT_MS;
       setPhase(arrivedNow ? 'paid' : 'already_paid');
-      if (arrivedNow) {
-        // The wallet just changed, so the cached entitlement is stale — drop it
-        // before anything reads "you have no credits" from the old snapshot.
-        invalidateEntitlementCache();
-      }
+
+      // Unconditional. This used to sit inside the `arrivedNow` branch, so the
+      // misjudgement above also left the cached entitlement stale: the buyer
+      // pressed "back to workspace" and saw their pre-purchase balance and
+      // plan. Dropping a cache is idempotent — there is nothing to save by
+      // skipping it.
+      invalidateEntitlementCache();
       return true;
     },
     [],
@@ -71,7 +92,7 @@ function ReturnState() {
   useEffect(() => {
     if (!orderId) {
       setPhase('error');
-      setError(t('billing.return.missingOrder'));
+      setError(tRef.current('billing.return.missingOrder'));
       return;
     }
 
@@ -83,18 +104,35 @@ function ReturnState() {
       attempts.current += 1;
 
       try {
-        if (settle(await fetchOrder(orderId))) return;
-
-        if (SYNC_AT_ATTEMPTS.has(attempts.current)) {
-          if (settle(await syncOrder(orderId))) return;
-        }
+        const order = await fetchOrder(orderId);
+        // The main poll answered, so the failure streak is broken. This used to
+        // sit after the sync below and inside the same `try`, which meant a
+        // throwing sync both incremented the counter and skipped the reset —
+        // three optional calls failing turned a perfectly healthy poll into
+        // `error`, showing the buyer a raw upstream string at ~40s when the
+        // honest ending was the 60s timeout copy.
         failures.current = 0;
+        if (!alive) return;
+        if (settle(order)) return;
       } catch (e) {
         failures.current += 1;
         setError(e instanceof Error ? e.message : String(e));
         if (failures.current >= FAILURES_BEFORE_ERROR) {
           setPhase('error');
           return;
+        }
+      }
+
+      if (!alive) return;
+      if (SYNC_AT_ATTEMPTS.has(attempts.current)) {
+        try {
+          const synced = await syncOrder(orderId);
+          if (!alive) return;
+          if (settle(synced)) return;
+        } catch {
+          // A best-effort fallback for a notification that never arrived. Its
+          // failure says nothing about whether we are still waiting, so it gets
+          // no say in the phase and no share of the poll's failure budget.
         }
       }
 
@@ -111,7 +149,14 @@ function ReturnState() {
       alive = false;
       clearTimeout(timer);
     };
-  }, [orderId, settle, t]);
+    // `t` is deliberately absent. react-i18next hands back a new `t` when its
+    // resources finish loading, which in practice happens at least once after
+    // mount — and that restarted this effect, resetting `startedAt` and firing
+    // an extra immediate poll, quietly extending the 60s ceiling the timeout
+    // copy promises. It is read through `tRef` instead, for the same reason
+    // `attempts` is a ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, settle]);
 
   const backToDashboard = () => router.push('/dashboard');
 

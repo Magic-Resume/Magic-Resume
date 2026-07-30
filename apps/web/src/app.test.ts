@@ -20,6 +20,7 @@ import {
   normalizeCloudResumes,
   shellQuote,
 } from '@/lib/settings/mcpAccess';
+import { afterAuthUrl } from '@/components/auth/afterAuthUrl';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { hexToRgb, rgbToHex } from '@/lib/utils/color';
 import { parseCssPixelValue } from '@/lib/utils/css';
@@ -493,12 +494,34 @@ function testAiLib() {
   assert.equal(translatePatchBatch.lang, 'English');
 }
 
+function testAfterAuthUrl() {
+  // The middleware puts the original path in `redirect_url`. Nothing read it,
+  // so a lapsed session on /billing/return?orderId=… came back to /dashboard
+  // and the order id was gone — no polling, and no sync, which is the only
+  // thing that captures a PayPal payment from the browser.
+  assert.equal(
+    afterAuthUrl('redirect_url=%2Fbilling%2Freturn%3ForderId%3Dcmxyz'),
+    '/billing/return?orderId=cmxyz',
+  );
+  assert.equal(afterAuthUrl(''), '/dashboard');
+  assert.equal(afterAuthUrl(null), '/dashboard');
+  assert.equal(afterAuthUrl('foo=bar'), '/dashboard');
+
+  // Same-origin paths only: a freshly signed-in session must not be bounced
+  // off the site by a crafted link.
+  assert.equal(afterAuthUrl('redirect_url=https%3A%2F%2Fevil.example'), '/dashboard');
+  assert.equal(afterAuthUrl('redirect_url=%2F%2Fevil.example'), '/dashboard');
+  assert.equal(afterAuthUrl('redirect_url=%2F%5Cevil.example'), '/dashboard');
+  assert.equal(afterAuthUrl('redirect_url=javascript%3Aalert(1)'), '/dashboard');
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
   testUtilityFunctions();
   testMcpAccessHelpers();
   testAiLib();
+  testAfterAuthUrl();
 }
 
 main().catch((error) => {
