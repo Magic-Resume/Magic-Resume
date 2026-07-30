@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.5.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.4.0...v2.5.0) (2026-07-30)
+
+## ✨ New Features
+- [`438aa8b`](https://github.com/Magic-Resume/Magic-Resume/commit/438aa8b)  feat: add compact Chinese photo resume template (#156) (Issues: [`#156`](https://github.com/Magic-Resume/Magic-Resume/issues/156))
+
 # [v2.4.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.3.0...v2.4.0) (2026-07-29)
 
 ## ✨ New Features

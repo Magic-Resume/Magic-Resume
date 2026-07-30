@@ -36,6 +36,7 @@ Font.registerHyphenationCallback(magicPdfHyphenationCallback);
 
 assert.deepEqual(magicPdfHyphenationCallback('中文'), ['中', '', '文', '']);
 assert.deepEqual(magicPdfHyphenationCallback('Reactive'), ['Reactive']);
+assert.deepEqual(magicPdfHyphenationCallback(' '), [' ']);
 
 const iconElement = PdfLucideIcon({ icon: Mail, color: '#3b82f6', size: 12 });
 for (const primitive of React.Children.toArray(iconElement.props.children)) {

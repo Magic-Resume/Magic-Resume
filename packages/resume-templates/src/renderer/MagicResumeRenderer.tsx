@@ -4,7 +4,10 @@ import { Resume } from '../types/resume';
 import get from 'lodash.get';
 
 import { Header } from '../templateLayout/Header';
+import { CenteredPhotoHeader } from '../templateLayout/CenteredPhotoHeader';
 import { DefaultSection } from '../templateLayout/DefaultSection';
+import { ThreeColumnSection } from '../templateLayout/ThreeColumnSection';
+import { InlineKeyValueSection } from '../templateLayout/InlineKeyValueSection';
 import { ListSection } from '../templateLayout/ListSection';
 import { ProfileCard } from '../templateLayout/ProfileCard';
 import { ContactInfo } from '../templateLayout/ContactInfo';
@@ -17,7 +20,10 @@ import { getWebFontStack } from '../font-family';
 
 const componentRegistry = {
   Header,
+  CenteredPhotoHeader,
   DefaultSection,
+  ThreeColumnSection,
+  InlineKeyValueSection,
   Section: DefaultSection,
   ListSection,
   ProfileCard,
@@ -219,7 +225,14 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
             return null;
           }
 
-          const needsArrayData = ['DefaultSection', 'ListSection', 'Timeline', 'CompactList'];
+          const needsArrayData = [
+            'DefaultSection',
+            'ThreeColumnSection',
+            'InlineKeyValueSection',
+            'ListSection',
+            'Timeline',
+            'CompactList',
+          ];
           if (needsArrayData.includes(component.type)) {
             if (!Array.isArray(sectionData) || sectionData.length === 0) {
               return null;
@@ -233,6 +246,10 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
           const rawTitle = (component.props?.title as string) || 'Section';
           const resolvedTitle = (() => {
             if (!isChineseLocale) return rawTitle;
+            const explicitChineseTitle = component.props?.titleZh;
+            if (typeof explicitChineseTitle === 'string' && explicitChineseTitle.trim()) {
+              return explicitChineseTitle;
+            }
             if (sectionKey) {
               const mappedByKey = ZH_TITLE_BY_SECTION_KEY[sectionKey];
               if (mappedByKey) return mappedByKey;

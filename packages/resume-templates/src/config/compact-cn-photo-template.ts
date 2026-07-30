@@ -1,0 +1,204 @@
+import type { MagicTemplateDSL } from '../types/magic-dsl';
+
+export const compactCnPhotoTemplate: MagicTemplateDSL = {
+  id: 'compact-cn-photo',
+  name: 'Compact CN Photo',
+  version: '1.0.0',
+  description: 'Dense Chinese single-column layout with centered identity, a right-side photo, and aligned experience headings',
+  thumbnailUrl: '/templates/jpg/compact-cn-photo.jpg',
+  tags: ['compact', 'chinese', 'single-column', 'photo', 'ats-friendly'],
+  status: 'PUBLISHED',
+  createdAt: '2026-07-29T00:00:00.000Z',
+  updatedAt: '2026-07-29T00:00:00.000Z',
+
+  designTokens: {
+    colors: {
+      primary: '#000000',
+      secondary: '#000000',
+      text: '#000000',
+      textSecondary: '#333333',
+      background: '#ffffff',
+      border: '#000000',
+    },
+    typography: {
+      fontFamily: {
+        primary: '"Source Han Sans SC", "Microsoft YaHei", sans-serif',
+      },
+      fontSize: {
+        xs: '10px',
+        sm: '12px',
+        md: '13.333px',
+        lg: '14px',
+        xl: '18px',
+        xxl: '29.333px',
+      },
+      fontWeight: {
+        normal: 400,
+        medium: 500,
+        bold: 700,
+      },
+      lineHeight: 1.35,
+      letterSpacing: '0px',
+    },
+    spacing: {
+      xs: '2px',
+      sm: '4px',
+      md: '6px',
+      lg: '8px',
+      xl: '12px',
+    },
+    borderRadius: {
+      none: '0',
+      sm: '0',
+      md: '0',
+      lg: '0',
+    },
+  },
+
+  layout: {
+    type: 'single-column',
+    pageSize: 'A4',
+    containerWidth: '794px',
+    padding: '28px',
+    gap: '0px',
+    showTitleDivider: true,
+    showTitleIcon: false,
+  },
+
+  components: [
+    {
+      id: 'header',
+      type: 'CenteredPhotoHeader',
+      dataBinding: 'info',
+      position: { area: 'main' },
+      props: {
+        avatarWidth: 86,
+        avatarHeight: 119,
+        avatarRounded: false,
+        contactSeparator: '|',
+      },
+      style: {
+        color: '#000000',
+        marginBottom: '8px',
+      },
+    },
+    {
+      id: 'skills-section',
+      type: 'InlineKeyValueSection',
+      dataBinding: 'sections.skills',
+      position: { area: 'main' },
+      props: {
+        title: 'Skills',
+        titleZh: '技能',
+        labelSuffix: ':',
+      },
+      fieldMap: {
+        itemName: ['name', 'skill'],
+        itemDetail: ['level'],
+        summary: ['description', 'summary', 'level'],
+      },
+    },
+    {
+      id: 'summary-section',
+      type: 'DefaultSection',
+      dataBinding: 'sections.summary',
+      position: { area: 'main' },
+      props: { title: 'Summary', titleZh: '个人简介' },
+      fieldMap: {
+        description: ['summary', 'description'],
+      },
+    },
+    {
+      id: 'experience-section',
+      type: 'ThreeColumnSection',
+      dataBinding: 'sections.experience',
+      position: { area: 'main' },
+      props: {
+        title: 'Experience',
+        titleZh: '工作经历',
+        columnRatio: [1.65, 0.85, 1.15],
+      },
+      fieldMap: {
+        leftTitle: ['company'],
+        centerTitle: ['position'],
+        rightTitle: ['date'],
+        leftSubtitle: ['location'],
+        description: ['summary', 'description'],
+      },
+    },
+    {
+      id: 'projects-section',
+      type: 'ThreeColumnSection',
+      dataBinding: 'sections.projects',
+      position: { area: 'main' },
+      props: {
+        title: 'Projects',
+        titleZh: '项目经历',
+        columnRatio: [1.65, 0.85, 1.15],
+      },
+      fieldMap: {
+        leftTitle: ['name', 'project', 'title'],
+        centerTitle: ['role', 'position'],
+        rightTitle: ['date'],
+        leftSubtitle: ['location'],
+        description: ['summary', 'description'],
+      },
+    },
+    {
+      id: 'education-section',
+      type: 'ThreeColumnSection',
+      dataBinding: 'sections.education',
+      position: { area: 'main' },
+      props: {
+        title: 'Education',
+        titleZh: '教育经历',
+        columnRatio: [1.65, 1.15, 0.55],
+      },
+      fieldMap: {
+        leftTitle: ['school'],
+        centerTitle: ['date'],
+        rightTitle: ['location'],
+        leftSubtitle: ['degree'],
+        centerSubtitle: ['major'],
+        description: ['summary', 'description'],
+      },
+    },
+    {
+      id: 'languages-section',
+      type: 'InlineKeyValueSection',
+      dataBinding: 'sections.languages',
+      position: { area: 'main' },
+      props: { title: 'Languages', titleZh: '语言能力', labelSuffix: ':' },
+      fieldMap: {
+        itemName: ['language', 'name'],
+        itemDetail: ['level'],
+        summary: ['summary', 'description', 'level'],
+      },
+    },
+    {
+      id: 'certificates-section',
+      type: 'ThreeColumnSection',
+      dataBinding: 'sections.certificates',
+      position: { area: 'main' },
+      props: { title: 'Certificates', titleZh: '证书资质', columnRatio: [1.65, 0.85, 1.15] },
+      fieldMap: {
+        leftTitle: ['certificate', 'name'],
+        centerTitle: ['issuer'],
+        rightTitle: ['date'],
+        description: ['summary', 'description'],
+      },
+    },
+    {
+      id: 'profiles-section',
+      type: 'InlineKeyValueSection',
+      dataBinding: 'sections.profiles',
+      position: { area: 'main' },
+      props: { title: 'Profiles', titleZh: '个人主页', labelSuffix: ':' },
+      fieldMap: {
+        itemName: ['platform', 'name'],
+        itemDetail: ['url', 'username'],
+        summary: ['summary', 'description', 'url', 'username'],
+      },
+    },
+  ],
+};
