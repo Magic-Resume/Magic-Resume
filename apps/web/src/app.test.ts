@@ -21,6 +21,11 @@ import {
   shellQuote,
 } from '@/lib/settings/mcpAccess';
 import { migrateResume } from '@/lib/utils/resumeMigrations';
+import {
+  customSectionKey,
+  isCustomSection,
+  normalizeResumeSectionOrder,
+} from '@/lib/utils/resumeSectionOrder';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { hexToRgb, rgbToHex } from '@/lib/utils/color';
 import { parseCssPixelValue } from '@/lib/utils/css';
@@ -292,9 +297,10 @@ function testImportResumeValidation() {
   assert.deepEqual(normalized.sections.education, []);
   // A custom section survives with its content. The id is reissued — imported
   // ids are whatever the source said, and the app mints its own with nanoid.
-  assert.equal(normalized.sections.customSection.length, 1);
-  assert.equal(normalized.sections.customSection[0].title, 'Notes');
-  assert.match(normalized.sections.customSection[0].id, /^[A-Za-z0-9_-]{21}$/);
+  const customItems = normalized.sections.customSection as { id: string; title: string }[];
+  assert.equal(customItems.length, 1);
+  assert.equal(customItems[0].title, 'Notes');
+  assert.match(customItems[0].id, /^[A-Za-z0-9_-]{21}$/);
   assert.deepEqual(normalized.sectionOrder.map(({ key }) => key), [
     'basics',
     'experience',
@@ -567,6 +573,42 @@ function testResumeMigrations() {
   assert.equal(migrateResume(clean), clean);
 }
 
+function testCustomSections() {
+  // Only sections the app did not define can be renamed or deleted. A built-in's
+  // label is an i18n key (`sections.skills`), so renaming one would swap a
+  // translated string for a literal and break every other language; deleting one
+  // would remove a form the editor expects to exist.
+  for (const builtin of ['basics', 'experience', 'education', 'projects', 'skills', 'languages', 'certificates']) {
+    assert.equal(isCustomSection(builtin), false, `${builtin} must be protected`);
+  }
+  assert.equal(isCustomSection('personalStrengths'), true);
+  assert.equal(isCustomSection('个人优势'), true);
+
+  // Keys are derived from the title for readable JSON, but never trusted to be
+  // unique or even expressible in ascii.
+  assert.equal(customSectionKey('Personal Highlights', []), 'personal-highlights');
+  assert.equal(customSectionKey('  Awards!  ', []), 'awards');
+  // A Chinese title slugs to nothing — it still needs a key.
+  assert.equal(customSectionKey('个人优势', []), 'section');
+  assert.equal(customSectionKey('个人优势', ['section']), 'section-2');
+  assert.equal(customSectionKey('Awards', ['awards', 'awards-2']), 'awards-3');
+
+  // A custom section survives order normalisation with its label intact, which
+  // is what the editor and the renderer both title it from.
+  const order = normalizeResumeSectionOrder(
+    [{ key: 'personalStrengths', label: '个人优势' }],
+    { personalStrengths: [], skills: [] },
+  );
+  assert.deepEqual(
+    order.find((s) => s.key === 'personalStrengths'),
+    { key: 'personalStrengths', label: '个人优势' },
+  );
+  // …and the built-ins are still all present, so no form disappears.
+  for (const builtin of ['basics', 'skills', 'experience']) {
+    assert.ok(order.some((s) => s.key === builtin), `${builtin} missing from order`);
+  }
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
@@ -575,6 +617,7 @@ async function main() {
   testAiLib();
   testImportedItemIds();
   testResumeMigrations();
+  testCustomSections();
 }
 
 main().catch((error) => {
