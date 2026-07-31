@@ -15,7 +15,9 @@
     "build:standalone": "next build && next export",
     "i18n:check": "tsx scripts/i18n-check.ts",
     "privacy:scan": "node scripts/privacy-scan.mjs",
-    "test": "npm run privacy:scan"
+    "test": "npm run privacy:scan && npm run test:unit && npm run verify:sections",
+    "verify:sections": "tsx scripts/verify-custom-sections.tsx",
+    "test:unit": "tsx src/app.test.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.22.0",
@@ -94,6 +96,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/bundle-analyzer": "^15.3.3",
+    "@react-pdf/renderer": "4.5.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.31",
     "@types/react": "^19.1.6",
