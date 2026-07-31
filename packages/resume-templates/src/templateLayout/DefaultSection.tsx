@@ -75,6 +75,21 @@ export const DefaultSection = React.memo(function DefaultSection({ title, items,
                     <div>{getFieldValue(item, fieldMap.secondarySideSubtitle)}</div>
                   </div>
                 </div>
+                {/* Hand-added fields, rendered explicitly rather than via the
+                    fieldMap — see ListSection for why. */}
+                {Array.isArray(item.customFields) && item.customFields.length > 0 && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                    {item.customFields
+                      .filter((f) => f?.name || f?.value)
+                      .map((f) => (
+                        <div key={f.id}>
+                          {f.name ? <span className="font-medium">{f.name}</span> : null}
+                          {f.name && f.value ? '：' : ''}
+                          {f.value}
+                        </div>
+                      ))}
+                  </div>
+                )}
                 {description &&
                   (sectionKey && itemId ? (
                     <Editable

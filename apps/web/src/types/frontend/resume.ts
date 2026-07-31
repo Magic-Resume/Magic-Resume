@@ -98,7 +98,13 @@ export type CustomInfoField = {
 export type SectionItem = {
   id: string;
   visible: boolean;
-  [key: string]: string | boolean;
+  /**
+   * Name/value pairs the user added to this item. Explicitly typed rather than
+   * folded into the index signature below, because they render through their
+   * own block — a key no template's fieldMap declares is dropped silently.
+   */
+  customFields?: CustomInfoField[];
+  [key: string]: string | boolean | CustomInfoField[] | undefined;
 };
 
 export type Section = {

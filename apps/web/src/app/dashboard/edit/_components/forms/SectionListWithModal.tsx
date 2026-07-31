@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { nanoid } from 'nanoid';
+import CustomFieldsEditor from './CustomFieldsEditor';
+import type { CustomInfoField } from '@/types/frontend/resume';
 import { Button } from '@/components/ui/button';
 import {
   DndContext,
@@ -359,6 +361,13 @@ export default function SectionListWithModal<T extends BaseItem>({
               ))}
             </div>
           )}
+          <CustomFieldsEditor
+            fields={(currentItem?.customFields as unknown as CustomInfoField[]) || []}
+            onChange={(next) =>
+              currentItem && setCurrentItem({ ...currentItem, customFields: next })
+            }
+            title={t('basicForm.customFields.title')}
+          />
           <div className="space-y-2">
             <Label className="text-[13px] font-medium text-neutral-300">
               {t('modals.dynamicForm.descriptionLabel')}
