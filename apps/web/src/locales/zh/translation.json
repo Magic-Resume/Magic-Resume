@@ -1245,6 +1245,16 @@
           "label": "获得时间",
           "placeholder": "获得时间"
         }
+      },
+      "custom": {
+        "name": {
+          "label": "标题",
+          "placeholder": "条目标题"
+        },
+        "date": {
+          "label": "时间",
+          "placeholder": "例如：2023.06"
+        }
       }
     }
   },
@@ -1528,7 +1538,11 @@
       "addCustom": "在设置里添加自定义模型",
       "noModel": "请先在设置里配置模型",
       "strengthLabel": "推理强度",
-      "strength": { "low": "低", "medium": "中", "high": "高" }
+      "strength": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      }
     },
     "widgets": {
       "unsupported": "（无法渲染的卡片：{{kind}}）",
@@ -1672,5 +1686,16 @@
     "profile": "个人信息",
     "contact": "联系方式",
     "awards": "奖项"
+  },
+  "customSection": {
+    "add": "添加自定义模块",
+    "createTitle": "添加自定义模块",
+    "renameTitle": "重命名模块",
+    "rename": "重命名",
+    "hint": "模块标题会原样显示在简历上。",
+    "placeholder": "例如：个人优势、获奖经历",
+    "iconLabel": "图标（可选）",
+    "deleteTitle": "删除模块",
+    "deleteHint": "「{{name}}」及其中的条目会一并删除，此操作无法撤销。"
   }
 }

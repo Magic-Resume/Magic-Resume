@@ -9,7 +9,11 @@ import sidebarMenu from '@/lib/constants/sidebarMenu';
 import SectionListWithModal from './forms/SectionListWithModal';
 import ResumePreviewPanel from './preview/ResumePreviewPanel';
 import FormSection from './forms/FormSection';
-import { dynamicFormFields } from '@/lib/constants/dynamicFormFields';
+import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
+import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
+import CustomSectionDialog from './forms/CustomSectionDialog';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -56,6 +60,9 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     updateInfo,
     setSectionOrder: updateSectionOrder,
     updateSectionItems,
+    addCustomSection,
+    updateCustomSection,
+    removeCustomSection,
     updateTemplate,
     rightCollapsed,
     setRightCollapsed,
@@ -79,6 +86,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
+  // Create and rename share one dialog: they differ only in starting values.
+  const [creatingSection, setCreatingSection] = useState(false);
+  const [editingSection, setEditingSection] = useState<{ key: string; label: string; icon?: string } | null>(null);
+  const [deletingSection, setDeletingSection] = useState<{ key: string; label: string } | null>(null);
   const [currentTemplateId, setCurrentTemplateId] = useState(activeResume?.template || 'classic');
   const [resumeNotFound, setResumeNotFound] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -439,16 +450,43 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={sectionOrder?.map(s => s.key) || []} strategy={verticalListSortingStrategy}>
-          {(sectionOrder || []).map(({ key }) => {
-            const meta = sectionMeta(key);
+          {(sectionOrder || []).map(({ key, label, icon: iconName }) => {
+            const meta = sectionMeta(key, iconName);
             const Icon = meta.icon;
-            const title = meta.labelKey ? t(meta.labelKey) : key;
+            // Fall back to the stored label, not the raw key: a custom section
+            // has no i18n key, and `OutlineRail` next to this already reads it
+            // that way — the two disagreeing is what showed `personalStrengths`
+            // as a heading here and 「个人优势」 two panels over.
+            const title = meta.labelKey ? t(meta.labelKey) : label || key;
+            const custom = isCustomSection(key);
             return (
               <FormSection
                 key={key}
                 sectionId={key}
                 icon={<Icon size={15} />}
                 title={title}
+                actions={custom ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label={t('customSection.rename', { defaultValue: '重命名' })}
+                      title={t('customSection.rename', { defaultValue: '重命名' })}
+                      onClick={() => setEditingSection({ key, label: label || key, icon: iconName })}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t('common.delete', { defaultValue: '删除' })}
+                      title={t('common.delete', { defaultValue: '删除' })}
+                      onClick={() => setDeletingSection({ key, label: label || key })}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </>
+                ) : undefined}
                 open={openSections[key] ?? true}
                 onToggle={() => toggleSection(key)}
                 registerRef={(el) => { sectionRefs.current[key] = el; }}
@@ -466,7 +504,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                     // `label` is an i18n key and shifts with copy changes.
                     sectionKey={key}
                     label={meta.labelKey || key}
-                    fields={(dynamicFormFields[key as keyof typeof dynamicFormFields] || []).map(f => ({ name: f.key, label: t(f.labelKey), placeholder: f.placeholderKey ? t(f.placeholderKey) : '', required: f.required }))}
+                    fields={formFieldsFor(key).map(f => ({ name: f.key, label: t(f.labelKey), placeholder: f.placeholderKey ? t(f.placeholderKey) : '', required: f.required }))}
                     richtextKey="summary"
                     richtextPlaceholder="..."
                     /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -481,6 +519,50 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
             );
           })}
         </SortableContext>
+
+        <button
+          type="button"
+          onClick={() => setCreatingSection(true)}
+          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2.5 text-[13px] text-neutral-500 transition-colors duration-150 hover:border-sky-400/40 hover:text-sky-300"
+        >
+          <Plus size={14} />
+          {t('customSection.add', { defaultValue: '添加自定义模块' })}
+        </button>
+
+        <CustomSectionDialog
+          open={creatingSection || editingSection !== null}
+          initial={editingSection ? { label: editingSection.label, icon: editingSection.icon } : undefined}
+          onOpenChange={(open) => {
+            if (open) return;
+            setCreatingSection(false);
+            setEditingSection(null);
+          }}
+          onSubmit={({ label, icon }) => {
+            if (editingSection) {
+              updateCustomSection(editingSection.key, { label, icon });
+            } else {
+              const key = addCustomSection(label, icon);
+              // Open it straight away — a new section with no visible form
+              // reads as though nothing happened.
+              if (key) setOpenSections(prev => ({ ...prev, [key]: true }));
+            }
+          }}
+        />
+
+        <ConfirmDialog
+          isOpen={deletingSection !== null}
+          onClose={() => setDeletingSection(null)}
+          title={t('customSection.deleteTitle', { defaultValue: '删除模块' })}
+          description={t('customSection.deleteHint', {
+            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销。',
+            name: deletingSection?.label ?? '',
+          })}
+          confirmText={t('common.delete', { defaultValue: '删除' })}
+          onConfirm={() => {
+            if (deletingSection) removeCustomSection(deletingSection.key);
+            setDeletingSection(null);
+          }}
+        />
       </DndContext>
     );
   }

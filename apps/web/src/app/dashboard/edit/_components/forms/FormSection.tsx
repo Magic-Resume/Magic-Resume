@@ -19,6 +19,7 @@ export default function FormSection({
   onToggle,
   registerRef,
   disabled = false,
+  actions,
   children,
 }: {
   sectionId: string;
@@ -28,6 +29,13 @@ export default function FormSection({
   onToggle: () => void;
   registerRef?: (el: HTMLElement | null) => void;
   disabled?: boolean;
+  /**
+   * Header controls, rendered before the chevron. Only custom sections get
+   * any — a built-in cannot be renamed (its label is an i18n key) or deleted
+   * (the editor expects its form to exist), so showing disabled controls for
+   * them would advertise something that is not on offer.
+   */
+  actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -95,6 +103,10 @@ export default function FormSection({
             )}
           />
         </button>
+
+        {actions && (
+          <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
+        )}
       </div>
 
       <AnimatePresence initial={false}>

@@ -1141,47 +1141,92 @@
   "dynamicForm": {
     "fields": {
       "education": {
-        "school": { "label": "School", "placeholder": "School Name" },
-        "degree": { "label": "Degree", "placeholder": "Degree" },
-        "major": { "label": "Major", "placeholder": "Major" },
-        "date": { "label": "Date or Date Range", "placeholder": "2019-2023" },
-        "location": { "label": "Location", "placeholder": "City" }
+        "school": {
+          "label": "School",
+          "placeholder": "School Name"
+        },
+        "degree": {
+          "label": "Degree",
+          "placeholder": "Degree"
+        },
+        "major": {
+          "label": "Major",
+          "placeholder": "Major"
+        },
+        "date": {
+          "label": "Date or Date Range",
+          "placeholder": "2019-2023"
+        },
+        "location": {
+          "label": "Location",
+          "placeholder": "City"
+        }
       },
       "experience": {
-        "company": { "label": "Company", "placeholder": "Company Name" },
-        "position": { "label": "Position", "placeholder": "Position" },
+        "company": {
+          "label": "Company",
+          "placeholder": "Company Name"
+        },
+        "position": {
+          "label": "Position",
+          "placeholder": "Position"
+        },
         "date": {
           "label": "Date or Date Range",
           "placeholder": "March 2023 - Present"
         },
-        "location": { "label": "Location", "placeholder": "City" },
-        "website": { "label": "Website", "placeholder": "Website URL" }
+        "location": {
+          "label": "Location",
+          "placeholder": "City"
+        },
+        "website": {
+          "label": "Website",
+          "placeholder": "Website URL"
+        }
       },
       "profiles": {
         "platform": {
           "label": "Platform",
           "placeholder": "e.g., LinkedIn, GitHub"
         },
-        "url": { "label": "URL", "placeholder": "URL" }
+        "url": {
+          "label": "URL",
+          "placeholder": "URL"
+        }
       },
       "skills": {
-        "name": { "label": "Skill Name", "placeholder": "Skill Name" },
+        "name": {
+          "label": "Skill Name",
+          "placeholder": "Skill Name"
+        },
         "level": {
           "label": "Level",
           "placeholder": "e.g., Expert, Intermediate, Beginner"
         }
       },
       "projects": {
-        "name": { "label": "Project Name", "placeholder": "Project Name" },
-        "role": { "label": "Role", "placeholder": "Your Role" },
+        "name": {
+          "label": "Project Name",
+          "placeholder": "Project Name"
+        },
+        "role": {
+          "label": "Role",
+          "placeholder": "Your Role"
+        },
         "date": {
           "label": "Date or Date Range",
           "placeholder": "Jan 2022 - Dec 2022"
         },
-        "link": { "label": "Link", "placeholder": "Project Link" }
+        "link": {
+          "label": "Link",
+          "placeholder": "Project Link"
+        }
       },
       "languages": {
-        "language": { "label": "Language", "placeholder": "Language" },
+        "language": {
+          "label": "Language",
+          "placeholder": "Language"
+        },
         "level": {
           "label": "Level",
           "placeholder": "e.g., Native, Fluent, Intermediate"
@@ -1192,8 +1237,24 @@
           "label": "Certificate Name",
           "placeholder": "Certificate Name"
         },
-        "issuer": { "label": "Issuer", "placeholder": "Issuing Organization" },
-        "date": { "label": "Date", "placeholder": "Date Received" }
+        "issuer": {
+          "label": "Issuer",
+          "placeholder": "Issuing Organization"
+        },
+        "date": {
+          "label": "Date",
+          "placeholder": "Date Received"
+        }
+      },
+      "custom": {
+        "name": {
+          "label": "Title",
+          "placeholder": "Item title"
+        },
+        "date": {
+          "label": "Date",
+          "placeholder": "e.g. 2023.06"
+        }
       }
     }
   },
@@ -1477,7 +1538,11 @@
       "addCustom": "Add a custom model in settings",
       "noModel": "Configure a model in settings first",
       "strengthLabel": "Reasoning",
-      "strength": { "low": "Low", "medium": "Medium", "high": "High" }
+      "strength": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      }
     },
     "widgets": {
       "unsupported": "(Unable to render card: {{kind}})",
@@ -1621,5 +1686,16 @@
     "profile": "Profile",
     "contact": "Contact",
     "awards": "Awards"
+  },
+  "customSection": {
+    "add": "Add custom section",
+    "createTitle": "Add custom section",
+    "renameTitle": "Rename section",
+    "rename": "Rename",
+    "hint": "The title appears on the resume exactly as you write it.",
+    "placeholder": "e.g. Highlights, Awards",
+    "iconLabel": "Icon (optional)",
+    "deleteTitle": "Delete section",
+    "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone."
   }
 }

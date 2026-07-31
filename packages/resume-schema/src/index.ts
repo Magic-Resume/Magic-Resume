@@ -55,6 +55,13 @@ export const sectionItemSchema = z
 export const sectionOrderItemSchema = z.object({
   key: z.string(),
   label: z.string(),
+  /**
+   * Icon name from `SECTION_ICONS` in @magic-resume/resume-templates. A name
+   * rather than a component because a resume is persisted, synced and exported
+   * as JSON. Absent means "guess" — the renderer still matches on the section
+   * key and on keywords in the title.
+   */
+  icon: z.string().optional(),
 });
 
 export const resumeSchema = z.object({
