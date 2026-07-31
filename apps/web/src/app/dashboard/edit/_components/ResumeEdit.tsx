@@ -13,7 +13,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Plus, SquarePen, Trash2 } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -474,7 +474,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                       onClick={() => setEditingSection({ key, label: label || key, icon: iconName })}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200"
                     >
-                      <Pencil size={13} />
+                      <SquarePen size={13} />
                     </button>
                     <button
                       type="button"
