@@ -75,10 +75,20 @@ export const InlineKeyValueSection = React.memo(function InlineKeyValueSection({
             ?? getFieldEntry(item, fieldMap.itemDetail);
 
           return (
-            <div key={itemId || index} className="flex min-w-0 items-start gap-x-1">
-              {label && <div className="shrink-0 font-bold">{withSuffix(label, labelSuffix)}</div>}
+            <div key={itemId || index} className="flex min-w-0 max-w-full items-start gap-x-1">
+              {label && (
+                <div
+                  className="shrink-0 font-bold"
+                  style={{ maxWidth: '40%', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                >
+                  {withSuffix(label, labelSuffix)}
+                </div>
+              )}
               {detail && (
-                <div className="min-w-0 flex-1">
+                <div
+                  className="min-w-0 flex-1"
+                  style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                >
                   {sectionKey && itemId ? (
                     <Editable
                       target={{

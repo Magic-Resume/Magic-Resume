@@ -36,6 +36,10 @@ Font.registerHyphenationCallback(magicPdfHyphenationCallback);
 
 assert.deepEqual(magicPdfHyphenationCallback('中文'), ['中', '', '文', '']);
 assert.deepEqual(magicPdfHyphenationCallback('Reactive'), ['Reactive']);
+assert.deepEqual(
+  magicPdfHyphenationCallback('LongUnbrokenIdentifier'),
+  Array.from('LongUnbrokenIdentifier').flatMap((character) => [character, '']),
+);
 assert.deepEqual(magicPdfHyphenationCallback(' '), [' ']);
 
 const iconElement = PdfLucideIcon({ icon: Mail, color: '#3b82f6', size: 12 });

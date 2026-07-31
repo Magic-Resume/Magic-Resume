@@ -15,7 +15,13 @@ export function WysiwygContent({ dirtyHtml, className }: Props) {
     <div
       className={`wysiwyg ${className || ''}`}
       dangerouslySetInnerHTML={{ __html: cleanHtml }}
-      style={{ color: 'inherit' }}
+      style={{
+        color: 'inherit',
+        maxWidth: '100%',
+        minWidth: 0,
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word',
+      }}
     />
   );
-} 
+}

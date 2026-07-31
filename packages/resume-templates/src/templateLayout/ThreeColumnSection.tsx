@@ -17,7 +17,25 @@ interface Props {
   titleIcon?: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
   sectionKey?: string;
   columnRatio?: [number, number, number];
+  shiftCenterToRightWhenRightEmpty?: boolean;
 }
+
+type ColumnValue = string | null;
+
+const shiftCenterToEmptyRight = (
+  values: [ColumnValue, ColumnValue, ColumnValue],
+  enabled: boolean,
+): [ColumnValue, ColumnValue, ColumnValue] => (
+  enabled && values[1] && !values[2]
+    ? [values[0], '', values[1]]
+    : values
+);
+
+const breakableTextStyle: React.CSSProperties = {
+  minWidth: 0,
+  overflowWrap: 'anywhere',
+  wordBreak: 'break-word',
+};
 
 export const ThreeColumnSection = React.memo(function ThreeColumnSection({
   title,
@@ -29,6 +47,7 @@ export const ThreeColumnSection = React.memo(function ThreeColumnSection({
   titleIcon: TitleIcon,
   sectionKey,
   columnRatio = [1.65, 0.85, 1.15],
+  shiftCenterToRightWhenRightEmpty = false,
 }: Props) {
   if (!items || items.length === 0) return null;
 
@@ -68,25 +87,30 @@ export const ThreeColumnSection = React.memo(function ThreeColumnSection({
         {items.map((item, index) => {
           const itemId = item.id != null ? String(item.id) : null;
           const description = getFieldEntry(item, fieldMap.description);
-          const subtitles = [
+          const titles = shiftCenterToEmptyRight([
+            getFieldValue(item, fieldMap.leftTitle),
+            getFieldValue(item, fieldMap.centerTitle),
+            getFieldValue(item, fieldMap.rightTitle),
+          ], shiftCenterToRightWhenRightEmpty);
+          const subtitles = shiftCenterToEmptyRight([
             getFieldValue(item, fieldMap.leftSubtitle),
             getFieldValue(item, fieldMap.centerSubtitle),
             getFieldValue(item, fieldMap.rightSubtitle),
-          ];
+          ], shiftCenterToRightWhenRightEmpty);
           const hasSubtitles = subtitles.some(Boolean);
 
           return (
             <div key={itemId || index} className="min-w-0">
               <div className="grid items-start gap-x-3 font-bold" style={{ gridTemplateColumns: columns }}>
-                <div className="min-w-0 text-left">{getFieldValue(item, fieldMap.leftTitle)}</div>
-                <div className="min-w-0 text-center">{getFieldValue(item, fieldMap.centerTitle)}</div>
-                <div className="min-w-0 text-right">{getFieldValue(item, fieldMap.rightTitle)}</div>
+                <div className="min-w-0 text-left" style={breakableTextStyle}>{titles[0]}</div>
+                <div className="min-w-0 text-center" style={breakableTextStyle}>{titles[1]}</div>
+                <div className="min-w-0 text-right" style={breakableTextStyle}>{titles[2]}</div>
               </div>
               {hasSubtitles && (
                 <div className="grid items-start gap-x-3" style={{ gridTemplateColumns: columns }}>
-                  <div className="min-w-0 text-left">{subtitles[0]}</div>
-                  <div className="min-w-0 text-center">{subtitles[1]}</div>
-                  <div className="min-w-0 text-right">{subtitles[2]}</div>
+                  <div className="min-w-0 text-left" style={breakableTextStyle}>{subtitles[0]}</div>
+                  <div className="min-w-0 text-center" style={breakableTextStyle}>{subtitles[1]}</div>
+                  <div className="min-w-0 text-right" style={breakableTextStyle}>{subtitles[2]}</div>
                 </div>
               )}
               {description && (

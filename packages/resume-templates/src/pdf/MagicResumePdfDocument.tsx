@@ -734,6 +734,12 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
   const fields = component.fieldMap ?? {};
   const bodyFontSize = cssSizeToPoints(context.typography.fontSize.sm, 9);
   const ratios = getThreeColumnRatio(component);
+  const shiftCenterToRightWhenRightEmpty = component.props?.shiftCenterToRightWhenRightEmpty === true;
+  const shiftCenterToEmptyRight = (values: [string, string, string]): [string, string, string] => (
+    shiftCenterToRightWhenRightEmpty && values[1] && !values[2]
+      ? [values[0], '', values[1]]
+      : values
+  );
   const columnStyle = (index: number, textAlign: 'left' | 'center' | 'right'): Style => ({
     flexBasis: 0,
     flexGrow: ratios[index],
@@ -748,24 +754,29 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
       <View style={{ gap: cssSizeToPoints(context.spacing.sm, 4) }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
-          const subtitles = [
+          const titles = shiftCenterToEmptyRight([
+            getFieldValue(record, fields.leftTitle),
+            getFieldValue(record, fields.centerTitle),
+            getFieldValue(record, fields.rightTitle),
+          ]);
+          const subtitles = shiftCenterToEmptyRight([
             getFieldValue(record, fields.leftSubtitle),
             getFieldValue(record, fields.centerSubtitle),
             getFieldValue(record, fields.rightSubtitle),
-          ];
+          ]);
           const description = getFieldValue(record, fields.description);
 
           return (
             <View key={item.id || index}>
               <View wrap={false} minPresenceAhead={bodyFontSize * 2.5} style={{ flexDirection: 'row', gap: 8 }}>
                 <Text style={[columnStyle(0, 'left'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
-                  {getFieldValue(record, fields.leftTitle)}
+                  {titles[0]}
                 </Text>
                 <Text style={[columnStyle(1, 'center'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
-                  {getFieldValue(record, fields.centerTitle)}
+                  {titles[1]}
                 </Text>
                 <Text style={[columnStyle(2, 'right'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
-                  {getFieldValue(record, fields.rightTitle)}
+                  {titles[2]}
                 </Text>
               </View>
               {subtitles.some(Boolean) ? (
@@ -810,14 +821,19 @@ const InlineKeyValueSectionBlock = ({ component, items, context }: {
           const renderedLabel = /[:：]$/.test(label) ? label : `${label}${suffix}`;
 
           return (
-            <View key={item.id || index} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 3 }}>
+            <View
+              key={item.id || index}
+              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 3, maxWidth: '100%', minWidth: 0 }}
+            >
               {label ? (
-                <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700, flexShrink: 0 }}>
+                <Text
+                  style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700, flexShrink: 0, maxWidth: '40%' }}
+                >
                   {renderedLabel}
                 </Text>
               ) : null}
               {detail ? (
-                <View style={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
+                <View style={{ flexBasis: 0, flexGrow: 1, flexShrink: 1, maxWidth: '100%', minWidth: 0 }}>
                   <PdfRichText
                     html={detail}
                     color={context.colors.text}
@@ -1031,7 +1047,7 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
         </Page>
       ) : (
         <Page size={pageSize} style={[baseStyle, pageMinHeightStyle]}>
-          <View style={{ padding, gap: sectionGap }}>
+          <View style={{ padding, gap: sectionGap, maxWidth: '100%', minWidth: 0, width: '100%' }}>
             {main.map((component) => <ComponentBlock key={component.id} component={component} data={data} sidebar={false} context={context} />)}
           </View>
         </Page>
