@@ -86,6 +86,23 @@ export const ListSection = React.memo(function ListSection({ title, items, field
                 {getFieldValue(item, fieldMap.date) && (
                   <div>{getFieldValue(item, fieldMap.date)}</div>
                 )}
+                {/* Fields the user added by hand. Rendered explicitly, not
+                    through the fieldMap: `getFieldValue` drops any key a
+                    fieldMap does not declare, so a field somebody typed would
+                    otherwise be stored and invisible. */}
+                {Array.isArray(item.customFields) && item.customFields.length > 0 && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                    {item.customFields
+                      .filter((f) => f?.name || f?.value)
+                      .map((f) => (
+                        <div key={f.id}>
+                          {f.name ? <span className="font-medium">{f.name}</span> : null}
+                          {f.name && f.value ? '：' : ''}
+                          {f.value}
+                        </div>
+                      ))}
+                  </div>
+                )}
                 {summary &&
                   (sectionKey && itemId ? (
                     <Editable
