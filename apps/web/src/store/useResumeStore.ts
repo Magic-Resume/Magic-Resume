@@ -13,6 +13,7 @@ import { isAxiosError } from 'axios';
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
 import { normalizeResumeSectionOrder } from '@/lib/utils/resumeSectionOrder';
+import { migrateResume } from '@/lib/utils/resumeMigrations';
 import {
   Resume,
   InfoType,
@@ -698,22 +699,11 @@ const useResumeStore = create<ResumeState>()(
         const updatedResumes = get().resumes;
         const resume = updatedResumes.find(r => r.id === id);
         if (resume) {
-          // Data migration on the fly: Ensure 'basics' section exists
-          const hasBasics = resume.sectionOrder.some(s => s.key === 'basics');
-          
+          // Repairs for resumes written by an older build — see migrateResume.
+          const migrated = migrateResume(resume);
           set(state => {
             if (!state.activeResume || state.activeResume.id !== id) {
-                if (!hasBasics) {
-                    state.activeResume = {
-                        ...resume,
-                        sectionOrder: [
-                          { key: 'basics', label: 'Basics' },
-                          ...resume.sectionOrder,
-                        ],
-                    };
-                } else {
-                    state.activeResume = { ...resume };
-                }
+              state.activeResume = { ...migrated };
             }
           });
         }
@@ -724,22 +714,11 @@ const useResumeStore = create<ResumeState>()(
     // 如果数据已经加载完成，从当前列表查找
     const resume = resumes.find(r => r.id === id);
     if (resume) {
-      const hasBasics = resume.sectionOrder.some(s => s.key === 'basics');
-      
+      const migrated = migrateResume(resume);
       set(state => {
         // Only set if not already matched to avoid unnecessary re-renders
         if (state.activeResume?.id !== id) {
-            if (!hasBasics) {
-                state.activeResume = {
-                    ...resume,
-                    sectionOrder: [
-                      { key: 'basics', label: 'Basics' },
-                      ...resume.sectionOrder,
-                    ],
-                };
-            } else {
-                state.activeResume = { ...resume };
-            }
+          state.activeResume = { ...migrated };
         }
       });
     } else {
