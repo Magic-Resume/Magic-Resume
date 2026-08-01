@@ -235,11 +235,36 @@ export const warmupMagicResumePdfExport = async (template?: MagicTemplateDSL): P
       .then(() => undefined);
 };
 
-const blobToDataUrl = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onerror = () => reject(reader.error ?? new Error('Failed to read image data.'));
-  reader.onload = () => resolve(String(reader.result));
-  reader.readAsDataURL(blob);
+// 兜底转码:react-pdf(4.5.1)只认 PNG/JPEG,传 webp 会报 "Base64 image invalid format: webp"
+// (表现为「占了位却不画像素」)。我们自己传的头像现在已是 JPEG(直接跳过此转码),这里只兜底
+// 处理非 PNG/JPEG 的来源:用户粘贴的 webp/avif URL、以及历史遗留的 webp 对象。转成 JPEG(照片
+// 体积远小于 PNG)。关键:先 fetch 成 blob 再用 objectURL 画进 canvas —— objectURL 同源,不会
+// 污染 canvas,toDataURL 才不会抛 SecurityError(直接把远程 URL 塞进 <img> 画则会被污染)。
+const imageBlobToJpegDataUrl = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(blob);
+  const img = new window.Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || 1;
+      canvas.height = img.naturalHeight || 1;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas 2D context unavailable.');
+      // JPEG 无 alpha:先铺白底,透明区(如透明 PNG/webp)否则会变黑。
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg', 0.9));
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error('Failed to encode avatar image.'));
+    }
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    reject(new Error('Failed to decode avatar image.'));
+  };
+  img.src = url;
 });
 
 // Cache the remote-avatar → data-URL conversion by URL. The live preview
@@ -251,9 +276,12 @@ const fetchAvatarDataUrl = (avatar: string): Promise<string> => {
   let promise = avatarDataUrlCache.get(avatar);
   if (!promise) {
     promise = (async () => {
-      const response = await fetch(avatar, { cache: 'force-cache' });
+      // `reload`(强制走网络)而非 `force-cache`:头像对象带 immutable 一年强缓存,若浏览器
+      // 早前用 <img>(no-cors)缓存过它,force-cache 会复用那份「无 CORS 头」的旧响应,导致这里
+      // 的 cors fetch 被拦、头像被静默丢弃。会话内已有 avatarDataUrlCache 去重,重取不影响性能。
+      const response = await fetch(avatar, { cache: 'reload' });
       if (!response.ok) throw new Error(`Avatar request failed with ${response.status}.`);
-      return blobToDataUrl(await response.blob());
+      return imageBlobToJpegDataUrl(await response.blob());
     })();
     // Never cache a rejection — allow the next render to retry a failed fetch.
     void promise.catch(() => avatarDataUrlCache.delete(avatar));
@@ -264,10 +292,16 @@ const fetchAvatarDataUrl = (avatar: string): Promise<string> => {
 
 const prepareResumeImages = async (data: Resume): Promise<Resume> => {
   const avatar = data.info.avatar;
-  if (!avatar || avatar.startsWith('data:')) return data;
+  if (!avatar) return data;
+
+  // 已是 react-pdf 认得的 PNG/JPEG data URL 就直接用;远程 URL 与 webp data URL(self-hosted
+  // 内嵌)都要转成 PNG,否则 react-pdf 报 "Base64 image invalid format"。
+  if (/^data:image\/(png|jpe?g);/i.test(avatar)) return data;
 
   try {
-    const dataUrl = await fetchAvatarDataUrl(avatar);
+    const dataUrl = avatar.startsWith('data:')
+      ? await imageBlobToJpegDataUrl(await (await fetch(avatar)).blob())
+      : await fetchAvatarDataUrl(avatar);
     return { ...data, info: { ...data.info, avatar: dataUrl } };
   } catch {
     // A remote avatar should not prevent the rest of the resume from exporting.

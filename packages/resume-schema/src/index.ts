@@ -14,6 +14,12 @@ export const templateIds = [
   'golden-elegant',
   'product-ops-focus',
   'compact-cn-photo',
+  'executive-band',
+  'timeline-pro',
+  'skills-first',
+  'serif-minimal',
+  'slate-sidebar',
+  'cn-formal-photo',
 ] as const;
 
 export const templateSchema = z.enum(templateIds);
