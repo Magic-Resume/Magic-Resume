@@ -1146,8 +1146,15 @@
         "skills": "Skills",
         "languages": "Languages",
         "certificates": "Certificates"
-      }
+      },
+      "analyzingScan": "This PDF has no selectable text — reading it page by page",
+      "pageUnit": "{{count}} page(s)"
     }
+  },
+  "agentErrors": {
+    "agent_run_failed": "The parse did not finish. Try again; if it keeps failing, try another PDF or check your model settings.",
+    "insufficient_quota": "Your account is out of credits. Top up or finish your custom model settings, then try again.",
+    "model_unavailable": "The configured model is unavailable. Check the model name and base URL in settings."
   },
   "dynamicForm": {
     "fields": {
@@ -1401,27 +1408,39 @@
     "confirm": "Confirm"
   },
   "pricing": {
+    "buyPack": "Buy credit pack",
     "title": "Upgrade plan",
     "popular": "Popular",
+    "qrcodeUnsupported": "Scan-to-pay is not available in this version yet; please use another payment method",
     "current": "Your current plan",
     "upgradeTo": "Upgrade to {{name}}",
     "included": "Included",
     "free": "Free",
     "perMonth": "/mo",
+    "perYear": "/yr",
+    "regionMainland": "Chinese mainland",
+    "regionInternational": "Rest of world",
+    "regionPrompt": "Choose region",
     "created": "Subscription created",
     "error": "Something went wrong, please try again",
-    "footnote": "Tiers, prices and features are configured in the backend and may change.",
-    "tagline": {
-      "free": "Explore the essentials",
-      "paid": "Unlock everything"
-    },
-    "features": {
-      "models": "{{count}} models available",
-      "coreModel": "Core model",
-      "daily": "{{count}} generations/day",
-      "dailyUnlimited": "Unlimited daily",
-      "weekly": "{{count}} generations/week",
-      "weeklyUnlimited": "Unlimited weekly"
+    "loadFailed": "Could not load plans",
+    "channelPrompt": "Choose a region first",
+    "channelUnavailable": "Not sold in this region",
+    "manualRenewal": "One month at a time — we email you before it ends, no auto-debit"
+  },
+  "billing": {
+    "return": {
+      "waitingTitle": "Confirming your payment",
+      "waitingDetail": "The payment result is on its way back. This usually takes a few seconds — please keep this page open.",
+      "paidTitle": "Payment received",
+      "paidDetail": "You are all set — head back to the dashboard to carry on.",
+      "alreadyPaidTitle": "This order is already paid",
+      "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
+      "timeoutTitle": "No confirmation yet",
+      "timeoutDetail": "If you completed the payment, nothing is lost — the payment provider retries its notification for several hours. Check your balance from the dashboard shortly.",
+      "errorTitle": "Could not confirm this order",
+      "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
+      "backToDashboard": "Back to dashboard"
     }
   },
   "aiLab": {
