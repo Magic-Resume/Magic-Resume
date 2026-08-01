@@ -851,7 +851,18 @@
       "valuePlaceholder": "Value (e.g., your-linkedin-url)",
       "addButton": "Add Custom Field"
     },
-    "avatarAlt": "Avatar"
+    "avatarAlt": "Avatar",
+    "avatarUpload": {
+      "button": "Upload photo",
+      "clear": "Remove photo",
+      "success": "Photo updated",
+      "errors": {
+        "UNSUPPORTED_TYPE": "Unsupported image type (PNG / JPG / WebP / GIF only)",
+        "TOO_LARGE": "Image is too large, pick a smaller one",
+        "PROCESS_FAILED": "Couldn't process the image, try another",
+        "UPLOAD_FAILED": "Upload failed, please retry"
+      }
+    }
   },
   "header": {
     "version": "Version Management",
@@ -1251,6 +1262,16 @@
         "date": {
           "label": "Date",
           "placeholder": "Date Received"
+        }
+      },
+      "custom": {
+        "name": {
+          "label": "Title",
+          "placeholder": "Item title"
+        },
+        "date": {
+          "label": "Date",
+          "placeholder": "e.g. 2023.06"
         }
       }
     }
@@ -1695,5 +1716,16 @@
     "profile": "Profile",
     "contact": "Contact",
     "awards": "Awards"
+  },
+  "customSection": {
+    "add": "Add custom section",
+    "createTitle": "Add custom section",
+    "renameTitle": "Rename section",
+    "rename": "Rename",
+    "hint": "The title appears on the resume exactly as you write it.",
+    "placeholder": "e.g. Highlights, Awards",
+    "iconLabel": "Icon (optional)",
+    "deleteTitle": "Delete section",
+    "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone."
   }
 }

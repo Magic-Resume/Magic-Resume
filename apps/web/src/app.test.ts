@@ -21,6 +21,12 @@ import {
   shellQuote,
 } from '@/lib/settings/mcpAccess';
 import { afterAuthUrl } from '@/components/auth/afterAuthUrl';
+import { migrateResume } from '@/lib/utils/resumeMigrations';
+import {
+  customSectionKey,
+  isCustomSection,
+  normalizeResumeSectionOrder,
+} from '@/lib/utils/resumeSectionOrder';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { hexToRgb, rgbToHex } from '@/lib/utils/color';
 import { parseCssPixelValue } from '@/lib/utils/css';
@@ -290,7 +296,12 @@ function testImportResumeValidation() {
   assert.equal(normalized.sections.experience[0].visible, true);
   assert.equal(normalized.sections.experience[0].extraBackendField, 'kept');
   assert.deepEqual(normalized.sections.education, []);
-  assert.deepEqual(normalized.sections.customSection, [{ id: 'custom-1', title: 'Notes' }]);
+  // A custom section survives with its content. The id is reissued — imported
+  // ids are whatever the source said, and the app mints its own with nanoid.
+  const customItems = normalized.sections.customSection as { id: string; title: string }[];
+  assert.equal(customItems.length, 1);
+  assert.equal(customItems[0].title, 'Notes');
+  assert.match(customItems[0].id, /^[A-Za-z0-9_-]{21}$/);
   assert.deepEqual(normalized.sectionOrder.map(({ key }) => key), [
     'basics',
     'experience',
@@ -494,6 +505,111 @@ function testAiLib() {
   assert.equal(translatePatchBatch.lang, 'English');
 }
 
+function testImportedItemIds() {
+  // An imported id used to be whatever the source said — for a PDF, whatever
+  // the model wrote, and the model copies the prompt example, so real resumes
+  // arrived full of `skill-1` / `exp-1`. Nothing deduplicated them either, so a
+  // model numbering two sections from 1 produced colliding React keys and a
+  // drag list that reordered the wrong row.
+  const normalized = validateAndNormalizeImportedResume({
+    info: {},
+    sections: {
+      experience: [{ id: 'exp-1' }, { id: 'exp-1' }],
+      skills: [{ id: 'skill-1' }],
+      personalStrengths: [{ id: 'skill-1' }],
+    },
+    sectionOrder: [{ key: 'experience', label: 'Experience' }],
+  });
+
+  const ids = Object.values(normalized.sections).flatMap((items) =>
+    (items as { id: string }[]).map((i) => i.id),
+  );
+  assert.equal(ids.length, 4);
+  // Same shape the app mints for itself (nanoid, 21 URL-safe chars).
+  for (const id of ids) assert.match(id, /^[A-Za-z0-9_-]{21}$/);
+  assert.equal(new Set(ids).size, ids.length, 'ids must be unique');
+  // A custom section survives the reissue, keys and all.
+  assert.ok(normalized.sections.personalStrengths);
+}
+
+function testResumeMigrations() {
+  // `summary` is the only rich-text field the editor edits and twelve of the
+  // thirteen templates render. Prose stranded in `description` by an older
+  // import is stored, invisible and un-editable.
+  const migrated = migrateResume({
+    id: 'r1',
+    sectionOrder: [{ key: 'basics', label: 'Basics' }],
+    sections: {
+      skills: [
+        { id: 'a', visible: true, description: '<p>正文</p>' },
+        { id: 'b', visible: true, summary: '<p>已有</p>', description: '次要' },
+        { id: 'c', visible: true, summary: '   ', description: '<p>空白也算空</p>' },
+      ],
+    },
+  } as never);
+
+  assert.equal(migrated.sections.skills[0].summary, '<p>正文</p>');
+  // Never overwrite a summary the resume already had.
+  assert.equal(migrated.sections.skills[1].summary, '<p>已有</p>');
+  assert.equal(migrated.sections.skills[2].summary, '<p>空白也算空</p>');
+  // Left in place — product-ops-focus reads it.
+  assert.equal(migrated.sections.skills[0].description, '<p>正文</p>');
+
+  // `basics` drives the editor's first form; a resume written before it existed
+  // opens without the name/contact fields.
+  const noBasics = migrateResume({
+    id: 'r2',
+    sectionOrder: [{ key: 'experience', label: 'Experience' }],
+    sections: {},
+  } as never);
+  assert.equal(noBasics.sectionOrder[0].key, 'basics');
+
+  // Nothing to repair → the same object back, so callers can skip the write
+  // and avoid a spurious "modified" sync status.
+  const clean = {
+    id: 'r3',
+    sectionOrder: [{ key: 'basics', label: 'Basics' }],
+    sections: { skills: [{ id: 'a', visible: true, summary: '<p>x</p>' }] },
+  } as never;
+  assert.equal(migrateResume(clean), clean);
+}
+
+function testCustomSections() {
+  // Only sections the app did not define can be renamed or deleted. A built-in's
+  // label is an i18n key (`sections.skills`), so renaming one would swap a
+  // translated string for a literal and break every other language; deleting one
+  // would remove a form the editor expects to exist.
+  for (const builtin of ['basics', 'experience', 'education', 'projects', 'skills', 'languages', 'certificates']) {
+    assert.equal(isCustomSection(builtin), false, `${builtin} must be protected`);
+  }
+  assert.equal(isCustomSection('personalStrengths'), true);
+  assert.equal(isCustomSection('个人优势'), true);
+
+  // Keys are derived from the title for readable JSON, but never trusted to be
+  // unique or even expressible in ascii.
+  assert.equal(customSectionKey('Personal Highlights', []), 'personal-highlights');
+  assert.equal(customSectionKey('  Awards!  ', []), 'awards');
+  // A Chinese title slugs to nothing — it still needs a key.
+  assert.equal(customSectionKey('个人优势', []), 'section');
+  assert.equal(customSectionKey('个人优势', ['section']), 'section-2');
+  assert.equal(customSectionKey('Awards', ['awards', 'awards-2']), 'awards-3');
+
+  // A custom section survives order normalisation with its label intact, which
+  // is what the editor and the renderer both title it from.
+  const order = normalizeResumeSectionOrder(
+    [{ key: 'personalStrengths', label: '个人优势' }],
+    { personalStrengths: [], skills: [] },
+  );
+  assert.deepEqual(
+    order.find((s) => s.key === 'personalStrengths'),
+    { key: 'personalStrengths', label: '个人优势' },
+  );
+  // …and the built-ins are still all present, so no form disappears.
+  for (const builtin of ['basics', 'skills', 'experience']) {
+    assert.ok(order.some((s) => s.key === builtin), `${builtin} missing from order`);
+  }
+}
+
 function testAfterAuthUrl() {
   // The middleware puts the original path in `redirect_url`. Nothing read it,
   // so a lapsed session on /billing/return?orderId=… came back to /dashboard
@@ -522,6 +638,9 @@ async function main() {
   testMcpAccessHelpers();
   testAiLib();
   testAfterAuthUrl();
+  testImportedItemIds();
+  testResumeMigrations();
+  testCustomSections();
 }
 
 main().catch((error) => {

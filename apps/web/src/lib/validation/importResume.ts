@@ -1,4 +1,5 @@
 import { z, type ZodError } from 'zod';
+import { nanoid } from 'nanoid';
 import { normalizeResumeSectionOrder } from '@/lib/utils/resumeSectionOrder';
 
 const importedResumeInfoSchema = z.object({
@@ -60,6 +61,31 @@ export const importedResumeSchema = z.object({
 
 export type ImportedResume = z.infer<typeof importedResumeSchema> & Record<string, unknown>;
 
+/**
+ * Give every imported item the same kind of id the app mints for itself.
+ *
+ * An imported id is whatever the source said — for a PDF that is whatever the
+ * model wrote, and the model copies the prompt's example, so real resumes
+ * arrived full of `skill-1` / `exp-1`. Those are not the app's ids (it uses
+ * `nanoid()` in `SectionListWithModal`), and nothing anywhere deduplicated
+ * them: a model that numbers two sections from 1, or repeats itself, produces
+ * colliding React keys and a drag-and-drop list that reorders the wrong row.
+ *
+ * Reissuing here rather than in the backend normalizer puts it on the one path
+ * both imports share — PDF and JSON — and makes the guarantee independent of
+ * whatever produced the file.
+ */
+function reissueItemIds(
+  sections: Record<string, Array<Record<string, unknown>>>,
+): Record<string, Array<Record<string, unknown>>> {
+  return Object.fromEntries(
+    Object.entries(sections).map(([key, items]) => [
+      key,
+      (items ?? []).map((item) => ({ ...item, id: nanoid() })),
+    ]),
+  );
+}
+
 export function validateAndNormalizeImportedResume(data: unknown): ImportedResume {
   const parsed = importedResumeSchema.parse(data);
   const raw = { ...(data as Record<string, unknown>) };
@@ -68,11 +94,15 @@ export function validateAndNormalizeImportedResume(data: unknown): ImportedResum
   delete raw.shareId;
   delete raw.shareRole;
 
+  const sections = reissueItemIds(
+    parsed.sections as Record<string, Array<Record<string, unknown>>>,
+  );
+
   return {
     ...raw,
     info: parsed.info,
-    sections: parsed.sections,
-    sectionOrder: normalizeResumeSectionOrder(parsed.sectionOrder, parsed.sections),
+    sections: sections as typeof parsed.sections,
+    sectionOrder: normalizeResumeSectionOrder(parsed.sectionOrder, sections),
   };
 }
 

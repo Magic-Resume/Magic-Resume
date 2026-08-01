@@ -34,6 +34,55 @@ const componentRegistry = {
   TwoColumnLayout,
 };
 
+/**
+ * Field aliases for a section no template described.
+ *
+ * Deliberately generous and ordered by how a heading usually reads: a custom
+ * section is whatever the candidate wrote — 个人优势, 获奖经历, 开源贡献 — so the
+ * right field cannot be known ahead of time. `summary` leads the rich-text
+ * aliases because it is the field the editor edits; `description` follows it so
+ * older imports still show.
+ */
+const CUSTOM_SECTION_FIELD_MAP = {
+  itemName: ['name', 'title', 'skill', 'role', 'company', 'school'],
+  itemDetail: ['level', 'position', 'degree', 'issuer'],
+  date: ['date'],
+  summary: ['summary', 'description'],
+};
+
+/**
+ * A `ListSection` for a section key the template does not declare.
+ *
+ * Returns null when there is nothing to show, so an empty custom section does
+ * not print a bare heading. `ListSection` is the right shape: bold item name
+ * plus rich text, which is what skills / languages / certificates already use
+ * and what a custom section almost always is.
+ */
+function synthesiseCustomSection(
+  data: Resume,
+  sectionOrderItem: { key: string; label?: string },
+) {
+  const items = (data.sections as Record<string, unknown> | undefined)?.[
+    sectionOrderItem.key
+  ];
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  return {
+    id: `custom-section-${sectionOrderItem.key}`,
+    type: 'ListSection' as const,
+    dataBinding: `sections.${sectionOrderItem.key}`,
+    position: { area: 'main' as const },
+    // The label is the heading as the candidate wrote it, so it is already in
+    // their language — the renderer's zh title mapping must not touch it.
+    props: {
+      title: sectionOrderItem.label || sectionOrderItem.key,
+      titleZh: sectionOrderItem.label || sectionOrderItem.key,
+      containerClassName: 'grid gap-x-6 gap-y-1',
+    },
+    fieldMap: CUSTOM_SECTION_FIELD_MAP,
+  };
+}
+
 interface Props {
   template: MagicTemplateDSL;
   data: Resume;
@@ -177,6 +226,17 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
   );
   
   const LayoutContainer = getLayoutComponent(layout.type);
+
+  // `sectionOrder` is where an explicit icon choice lives; the component list
+  // is keyed by dataBinding and knows nothing about it.
+  const iconBySectionKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of data.sectionOrder ?? []) {
+      const icon = (item as { icon?: string }).icon;
+      if (item?.key && icon) map.set(item.key, icon);
+    }
+    return map;
+  }, [data.sectionOrder]);
   
   const sortedComponents = useMemo(() => {
     const sidebarComponents = components.filter(comp => comp.position?.area === 'sidebar');
@@ -186,15 +246,24 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
     const sectionComponents = mainComponents.filter(comp => comp.dataBinding.startsWith('sections.'));
     
     const sortedMainSections = [] as typeof components;
-    
+
     if (data.sectionOrder && Array.isArray(data.sectionOrder)) {
       data.sectionOrder.forEach(sectionOrderItem => {
-        const matchingComponent = sectionComponents.find(comp => 
+        const matchingComponent = sectionComponents.find(comp =>
           comp.dataBinding === `sections.${sectionOrderItem.key}`
         );
         if (matchingComponent) {
           sortedMainSections.push(matchingComponent);
+          return;
         }
+        // A section this template never declared — a custom one the resume
+        // brought with it. Templates list their components by hand, so an
+        // unknown key used to render nowhere at all: the data survived every
+        // layer above this and then silently vanished at the last one.
+        // Synthesised here rather than added to thirteen template configs, so
+        // templates written later inherit the behaviour for free.
+        const synthesised = synthesiseCustomSection(data, sectionOrderItem);
+        if (synthesised) sortedMainSections.push(synthesised);
       });
     }
     
@@ -266,7 +335,11 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
             position: component.position,
             ...component.props,
             title: resolvedTitle,
-            titleIcon: getSectionIcon(sectionKey, rawTitle),
+            titleIcon: getSectionIcon(
+              sectionKey,
+              rawTitle,
+              sectionKey ? iconBySectionKey.get(sectionKey) : undefined,
+            ),
             sectionKey,
           };
 

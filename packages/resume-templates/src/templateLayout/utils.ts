@@ -1,4 +1,5 @@
 import get from 'lodash.get';
+import { sectionIconByName, type SectionIconComponent } from '../sectionIcons';
 import React from 'react';
 import {
   Briefcase, GraduationCap, FolderOpen, Wrench,
@@ -56,7 +57,7 @@ export const getFieldEntry = (
   return null;
 };
 
-const SECTION_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+const SECTION_ICON_MAP: Record<string, SectionIconComponent> = {
   experience: Briefcase,
   education: GraduationCap,
   projects: FolderOpen,
@@ -67,7 +68,7 @@ const SECTION_ICON_MAP: Record<string, React.ComponentType<{ size?: number; clas
   contact: Globe,
 };
 
-const TITLE_ICON_KEYWORDS: Record<string, React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+const TITLE_ICON_KEYWORDS: Record<string, SectionIconComponent> = {
   '工作': Briefcase, 'experience': Briefcase, 'work': Briefcase,
   '教育': GraduationCap, 'education': GraduationCap,
   '项目': FolderOpen, 'project': FolderOpen,
@@ -78,7 +79,16 @@ const TITLE_ICON_KEYWORDS: Record<string, React.ComponentType<{ size?: number; c
   '联系': Globe, 'contact': Globe,
 };
 
-export function getSectionIcon(sectionKey?: string, title?: string): React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }> | null {
+export function getSectionIcon(
+  sectionKey?: string,
+  title?: string,
+  /** Explicit choice from `sectionOrder.icon`, when the user made one. */
+  iconName?: string,
+): SectionIconComponent | null {
+  // An explicit choice outranks every guess below it.
+  const chosen = sectionIconByName(iconName);
+  if (chosen) return chosen;
+
   if (sectionKey) {
     const icon = SECTION_ICON_MAP[sectionKey];
     if (icon) return icon;

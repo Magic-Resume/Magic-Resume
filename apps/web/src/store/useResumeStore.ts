@@ -12,7 +12,8 @@ import { compare as compareJsonDocs } from 'fast-json-patch';
 import { isAxiosError } from 'axios';
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
-import { normalizeResumeSectionOrder } from '@/lib/utils/resumeSectionOrder';
+import { normalizeResumeSectionOrder, isCustomSection, customSectionKey } from '@/lib/utils/resumeSectionOrder';
+import { migrateResume } from '@/lib/utils/resumeMigrations';
 import {
   Resume,
   InfoType,
@@ -94,6 +95,12 @@ type ResumeState = {
   updateInfo: (info: Partial<InfoType>) => void;
   setSectionOrder: (sectionOrder: SectionOrder[]) => void;
   updateSectionItems: (key: string, items: SectionItem[]) => void;
+  /** Create a section the app does not define. Returns its generated key. */
+  addCustomSection: (title: string, icon?: string) => string | null;
+  /** Retitle / re-icon a section. Built-ins are refused — see isCustomSection. */
+  updateCustomSection: (key: string, patch: { label?: string; icon?: string }) => void;
+  /** Delete a custom section and its items. Built-ins are refused. */
+  removeCustomSection: (key: string) => void;
   updateSections: (sections: Section) => void;
   updateTemplate: (template: string) => void;
   updateCustomTemplate: (customTemplate: CustomTemplateConfig) => void;
@@ -698,22 +705,11 @@ const useResumeStore = create<ResumeState>()(
         const updatedResumes = get().resumes;
         const resume = updatedResumes.find(r => r.id === id);
         if (resume) {
-          // Data migration on the fly: Ensure 'basics' section exists
-          const hasBasics = resume.sectionOrder.some(s => s.key === 'basics');
-          
+          // Repairs for resumes written by an older build — see migrateResume.
+          const migrated = migrateResume(resume);
           set(state => {
             if (!state.activeResume || state.activeResume.id !== id) {
-                if (!hasBasics) {
-                    state.activeResume = {
-                        ...resume,
-                        sectionOrder: [
-                          { key: 'basics', label: 'Basics' },
-                          ...resume.sectionOrder,
-                        ],
-                    };
-                } else {
-                    state.activeResume = { ...resume };
-                }
+              state.activeResume = { ...migrated };
             }
           });
         }
@@ -724,22 +720,11 @@ const useResumeStore = create<ResumeState>()(
     // 如果数据已经加载完成，从当前列表查找
     const resume = resumes.find(r => r.id === id);
     if (resume) {
-      const hasBasics = resume.sectionOrder.some(s => s.key === 'basics');
-      
+      const migrated = migrateResume(resume);
       set(state => {
         // Only set if not already matched to avoid unnecessary re-renders
         if (state.activeResume?.id !== id) {
-            if (!hasBasics) {
-                state.activeResume = {
-                    ...resume,
-                    sectionOrder: [
-                      { key: 'basics', label: 'Basics' },
-                      ...resume.sectionOrder,
-                    ],
-                };
-            } else {
-                state.activeResume = { ...resume };
-            }
+          state.activeResume = { ...migrated };
         }
       });
     } else {
@@ -919,6 +904,96 @@ const useResumeStore = create<ResumeState>()(
       const resumeIndex = state.resumes.findIndex(r => r.id === state.activeResume?.id);
       if (resumeIndex !== -1) {
         state.resumes[resumeIndex].sections[key] = items;
+        state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
+      }
+
+      const isCloudSyncOn = useSettingStore.getState().cloudSync;
+      state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
+    });
+  },
+
+  /**
+   * Sections the app does not define are the user's to create, rename and
+   * delete; the built-in six are not. A built-in's label is an i18n key
+   * (`sections.skills`), so renaming one would swap a translated string for a
+   * literal and break every other language, and deleting one would remove a
+   * form the editor expects to exist. The guards below are that rule, not a
+   * defensive flourish.
+   */
+  addCustomSection: (title, icon) => {
+    const { activeResume } = get();
+    if (!activeResume) return null;
+
+    const label = title.trim();
+    if (!label) return null;
+
+    const key = customSectionKey(label, Object.keys(activeResume.sections ?? {}));
+
+    set(state => {
+      if (!state.activeResume) return;
+      state.activeResume.sections[key] = [];
+      state.activeResume.sectionOrder.push({ key, label, ...(icon ? { icon } : {}) });
+      state.activeResume.updatedAt = Date.now();
+
+      const resumeIndex = state.resumes.findIndex(r => r.id === state.activeResume?.id);
+      if (resumeIndex !== -1) {
+        state.resumes[resumeIndex].sections[key] = [];
+        state.resumes[resumeIndex].sectionOrder = state.activeResume.sectionOrder;
+        state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
+      }
+
+      const isCloudSyncOn = useSettingStore.getState().cloudSync;
+      state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
+    });
+
+    return key;
+  },
+
+  updateCustomSection: (key, patch) => {
+    const { activeResume } = get();
+    if (!activeResume || !isCustomSection(key)) return;
+
+    const label = patch.label?.trim();
+    const current = activeResume.sectionOrder.find(s => s.key === key);
+    if (!current) return;
+    if ((label ?? current.label) === current.label && (patch.icon ?? current.icon) === current.icon) {
+      return;
+    }
+
+    set(state => {
+      if (!state.activeResume) return;
+      const target = state.activeResume.sectionOrder.find(s => s.key === key);
+      if (!target) return;
+      if (label) target.label = label;
+      if (patch.icon !== undefined) target.icon = patch.icon;
+      state.activeResume.updatedAt = Date.now();
+
+      const resumeIndex = state.resumes.findIndex(r => r.id === state.activeResume?.id);
+      if (resumeIndex !== -1) {
+        state.resumes[resumeIndex].sectionOrder = state.activeResume.sectionOrder;
+        state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
+      }
+
+      const isCloudSyncOn = useSettingStore.getState().cloudSync;
+      state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
+    });
+  },
+
+  removeCustomSection: (key) => {
+    const { activeResume } = get();
+    if (!activeResume || !isCustomSection(key)) return;
+    if (!activeResume.sectionOrder.some(s => s.key === key)) return;
+
+    set(state => {
+      if (!state.activeResume) return;
+      delete state.activeResume.sections[key];
+      state.activeResume.sectionOrder = state.activeResume.sectionOrder.filter(s => s.key !== key);
+      state.activeResume.updatedAt = Date.now();
+
+      const resumeIndex = state.resumes.findIndex(r => r.id === state.activeResume?.id);
+      if (resumeIndex !== -1) {
+        delete state.resumes[resumeIndex].sections[key];
+        state.resumes[resumeIndex].sectionOrder = state.activeResume.sectionOrder;
         state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
       }
 
