@@ -47,6 +47,7 @@ export default function BasicForm({
         <AvatarField
           value={info.avatar}
           onChange={handleInfoChange}
+          onValueChange={(avatar) => updateInfo({ avatar })}
           alt={t('basicForm.avatarAlt')}
         />
       </div>
