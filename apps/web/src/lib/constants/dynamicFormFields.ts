@@ -51,6 +51,19 @@ const certificatesFields: FieldConfig[] = [
     { key: 'date', labelKey: 'dynamicForm.fields.certificates.date.label', type: 'input', placeholderKey: 'dynamicForm.fields.certificates.date.placeholder' },
 ];
 
+/**
+ * Fields for a section the app does not know about — one the resume brought
+ * with it, or one the user created.
+ *
+ * Kept to the two that mean the same thing in any section: a heading and a
+ * date. Everything else a custom section wants goes in the rich-text box
+ * (bound to `summary` for every section) or in the item's own custom fields.
+ */
+const customSectionFields: FieldConfig[] = [
+    { key: 'name', labelKey: 'dynamicForm.fields.custom.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.custom.name.placeholder', required: true },
+    { key: 'date', labelKey: 'dynamicForm.fields.custom.date.label', type: 'input', placeholderKey: 'dynamicForm.fields.custom.date.placeholder' },
+];
+
 export const dynamicFormFields: Record<string, FieldConfig[]> = {
     education: educationFields,
     experience: experienceFields,
@@ -60,4 +73,9 @@ export const dynamicFormFields: Record<string, FieldConfig[]> = {
     languages: languagesFields,
     certificates: certificatesFields,
 };
+
+/** Fields for `key`, falling back to the generic set for a custom section. */
+export function formFieldsFor(key: string): FieldConfig[] {
+    return dynamicFormFields[key] ?? customSectionFields;
+}
   

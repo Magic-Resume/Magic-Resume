@@ -46,3 +46,42 @@ export function normalizeResumeSectionOrder(
 
   return [{ key: 'basics', label: 'Basics' }, ...normalized];
 }
+
+/**
+ * A section the app did not define — imported from a resume, or created by the
+ * user.
+ *
+ * The distinction is load-bearing: only these can be renamed or deleted. A
+ * built-in section's label is an i18n key (`sections.skills`), so renaming one
+ * would replace a translated string with a literal and break every other
+ * language; and deleting one would take away a form the editor expects.
+ */
+export function isCustomSection(key: string): boolean {
+  return key !== 'basics' && !DEFAULT_LABELS.has(key);
+}
+
+/**
+ * A stable, collision-free key for a new custom section.
+ *
+ * Derived from the title so the JSON stays readable, but never trusted to be
+ * unique or even non-empty — a title can be Chinese, punctuation, or a
+ * duplicate of an existing section.
+ */
+export function customSectionKey(
+  title: string,
+  existingKeys: Iterable<string>,
+): string {
+  const taken = new Set(existingKeys);
+  const slug = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 24);
+  const base = slug || 'section';
+
+  let key = base;
+  let n = 2;
+  while (taken.has(key)) key = `${base}-${n++}`;
+  return key;
+}

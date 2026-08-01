@@ -1,6 +1,5 @@
 import React from 'react';
 import { InfoType } from '../types/resume';
-import Image from 'next/image';
 import { MapPin, Phone, Mail, Globe } from 'lucide-react';
 
 interface Props {
@@ -42,14 +41,15 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
       >
         {info.avatar && (
           <div className="flex justify-center">
-            <Image
+            {/* 原生 img:任意来源头像都能渲染,不受 next/image 域名白名单限制 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={info.avatar}
               alt="Profile"
               width={120}
               height={120}
               className="w-30 h-30 rounded-full object-cover border-4 shadow-lg"
               style={{ borderColor }}
-              unoptimized
             />
           </div>
         )}
@@ -83,14 +83,15 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
     >
       {info.avatar && (
         <div className="flex justify-center">
-          <Image
+          {/* 原生 img:任意来源头像都能渲染,不受 next/image 域名白名单限制 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={info.avatar}
             alt="Profile"
             width={120}
             height={120}
             className="w-30 h-30 rounded-full object-cover border-4 shadow-lg"
             style={{ borderColor }}
-            unoptimized
           />
         </div>
       )}

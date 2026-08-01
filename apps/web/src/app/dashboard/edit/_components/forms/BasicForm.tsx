@@ -2,8 +2,8 @@
 import React from 'react';
 import type { InfoType } from '@/types/frontend/resume';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2 } from 'lucide-react';
-import { TextField, AvatarField, FieldLabel, fieldInputClass } from './fields';
+import { TextField, AvatarField, FieldLabel } from './fields';
+import CustomFieldsEditor from './CustomFieldsEditor';
 
 type BasicFormProps = {
   info: InfoType;
@@ -22,28 +22,6 @@ export default function BasicForm({
 
   const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateInfo({ [e.target.name]: e.target.value });
-  };
-
-  const handleCustomFieldChange = (id: string, key: 'name' | 'value', value: string) => {
-    const nextCustomFields = customFields.map(field =>
-      field.id === id ? { ...field, [key]: value } : field
-    );
-    updateInfo({ customFields: nextCustomFields });
-  };
-
-  const handleAddCustomField = () => {
-    updateInfo({
-      customFields: [
-        ...customFields,
-        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: '', value: '' },
-      ],
-    });
-  };
-
-  const handleRemoveCustomField = (id: string) => {
-    updateInfo({
-      customFields: customFields.filter(field => field.id !== id),
-    });
   };
 
   type BasicField = {
@@ -69,6 +47,7 @@ export default function BasicForm({
         <AvatarField
           value={info.avatar}
           onChange={handleInfoChange}
+          onValueChange={(avatar) => updateInfo({ avatar })}
           alt={t('basicForm.avatarAlt')}
         />
       </div>
@@ -86,44 +65,11 @@ export default function BasicForm({
       ))}
 
       {enableCustomFields && (
-        <div className="flex flex-col gap-2.5 pt-1">
-          <FieldLabel>{t('basicForm.customFields.title')}</FieldLabel>
-          <div className="flex flex-col gap-2">
-            {customFields.map(field => (
-              <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
-                <input
-                  value={field.name}
-                  onChange={(e) => handleCustomFieldChange(field.id, 'name', e.target.value)}
-                  placeholder={t('basicForm.customFields.namePlaceholder')}
-                  className={fieldInputClass}
-                />
-                <input
-                  value={field.value}
-                  onChange={(e) => handleCustomFieldChange(field.id, 'value', e.target.value)}
-                  placeholder={t('basicForm.customFields.valuePlaceholder')}
-                  className={fieldInputClass}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCustomField(field.id)}
-                  aria-label={t('common.delete')}
-                  title={t('common.delete')}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors duration-150 hover:border-red-500/40 hover:text-red-400"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={handleAddCustomField}
-            className="flex w-fit items-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] px-3 py-2 text-[12.5px] font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
-          >
-            <Plus size={14} />
-            {t('basicForm.customFields.addButton')}
-          </button>
-        </div>
+        <CustomFieldsEditor
+          fields={customFields}
+          onChange={(next) => updateInfo({ customFields: next })}
+          title={t('basicForm.customFields.title')}
+        />
       )}
     </div>
   );
