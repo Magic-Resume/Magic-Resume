@@ -851,7 +851,18 @@
       "valuePlaceholder": "Value (e.g., your-linkedin-url)",
       "addButton": "Add Custom Field"
     },
-    "avatarAlt": "Avatar"
+    "avatarAlt": "Avatar",
+    "avatarUpload": {
+      "button": "Upload photo",
+      "clear": "Remove photo",
+      "success": "Photo updated",
+      "errors": {
+        "UNSUPPORTED_TYPE": "Unsupported image type (PNG / JPG / WebP / GIF only)",
+        "TOO_LARGE": "Image is too large, pick a smaller one",
+        "PROCESS_FAILED": "Couldn't process the image, try another",
+        "UPLOAD_FAILED": "Upload failed, please retry"
+      }
+    }
   },
   "header": {
     "version": "Version Management",
