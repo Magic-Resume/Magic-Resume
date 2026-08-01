@@ -177,6 +177,21 @@ const nextConfig: NextConfig = {
   },
   output: "standalone",
   transpilePackages: ['@magic-resume/resume-templates'],
+
+  // 分享出去的简历页里是真名 / 电话 / 邮箱 / 履历。页面自己已经声明了
+  // `robots: { index: false, follow: false }`，这里再发一遍响应头：meta 只在
+  // HTML 文档里有效，而这条对 OG 图、预取、任何非 HTML 响应同样成立，
+  // 也不依赖爬虫解析到 <head>。
+  async headers() {
+    return [
+      {
+        source: '/s/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+    ];
+  },
   
   // 图片优化
   images: {

@@ -28,6 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return {
             title,
             description,
+            // 分享链接是给收件人看的，不是给搜索引擎看的：这一页上有真名、电话、
+            // 邮箱、教育与履历，一旦进了索引就再也收不回来。OG / Twitter 卡片
+            // 不受影响，聊天工具里的预览照常。
+            robots: { index: false, follow: false },
             openGraph: {
                 title,
                 description,
@@ -51,6 +55,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: 'Magic Resume',
     description: 'Magic Resume - AI 智能简历制作器',
+    // 取不到简历时也一样不进索引：失败分支同样落在 /s/*，且下一次请求可能就取到了。
+    robots: { index: false, follow: false },
     openGraph: {
       title: 'Magic Resume',
       description: 'Magic Resume - AI 智能简历制作器',
