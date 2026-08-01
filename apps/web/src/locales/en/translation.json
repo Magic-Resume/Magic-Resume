@@ -1135,8 +1135,15 @@
         "skills": "Skills",
         "languages": "Languages",
         "certificates": "Certificates"
-      }
+      },
+      "analyzingScan": "This PDF has no selectable text — reading it page by page",
+      "pageUnit": "{{count}} page(s)"
     }
+  },
+  "agentErrors": {
+    "agent_run_failed": "The parse did not finish. Try again; if it keeps failing, try another PDF or check your model settings.",
+    "insufficient_quota": "Your account is out of credits. Top up or finish your custom model settings, then try again.",
+    "model_unavailable": "The configured model is unavailable. Check the model name and base URL in settings."
   },
   "dynamicForm": {
     "fields": {

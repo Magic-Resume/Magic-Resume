@@ -167,11 +167,18 @@ export function PdfScanProgress({
   charCount,
   litFields,
   complete,
+  visionPages,
 }: {
   phase: PdfPhase;
   charCount: number;
   litFields: Set<string>;
   complete: boolean;
+  /**
+   * Pages being read as images, when the PDF carried no text. Reading pictures
+   * takes visibly longer than reading text, and an unexplained pause looks like
+   * a hang — so say which path this is on.
+   */
+  visionPages?: number;
 }) {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion() ?? false;
@@ -184,14 +191,26 @@ export function PdfScanProgress({
   const heading = complete
     ? t('importDialog.pdf.done', { defaultValue: '解析完成' })
     : phase === 'analyzing'
-      ? t('importDialog.pdf.analyzing', { defaultValue: '解析中' })
+      ? visionPages
+        ? t('importDialog.pdf.analyzingScan', {
+            defaultValue: '这份 PDF 没有可复制的文字，正在逐页识别',
+          })
+        : t('importDialog.pdf.analyzing', { defaultValue: '解析中' })
       : t('importDialog.pdf.extracting', { defaultValue: '读取 PDF' });
 
   return (
     <div className="text-left">
       <div className="mb-4 flex items-baseline justify-between">
         <span className="text-sm font-medium text-neutral-100">{heading}</span>
-        {phase === 'analyzing' && !complete && charCount > 0 && (
+        {phase === 'analyzing' && !complete && visionPages ? (
+          <span className="text-xs tabular-nums text-neutral-500">
+            {t('importDialog.pdf.pageUnit', {
+              defaultValue: '{{count}} 页',
+              count: visionPages,
+            })}
+          </span>
+        ) : null}
+        {phase === 'analyzing' && !complete && !visionPages && charCount > 0 && (
           <span className="text-xs tabular-nums text-neutral-500">
             <CountUp value={charCount} animate={!reduceMotion} />{' '}
             {t('importDialog.pdf.charUnit', { defaultValue: '字' })}

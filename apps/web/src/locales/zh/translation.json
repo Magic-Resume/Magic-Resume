@@ -1135,8 +1135,15 @@
         "skills": "技能",
         "languages": "语言能力",
         "certificates": "证书"
-      }
+      },
+      "analyzingScan": "这份 PDF 没有可复制的文字，正在逐页识别",
+      "pageUnit": "{{count}} 页"
     }
+  },
+  "agentErrors": {
+    "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置。",
+    "insufficient_quota": "账户额度不足，请先充值或完善自定义大模型配置后再试。",
+    "model_unavailable": "当前配置的模型不可用，请到设置里检查模型名称与 Base URL。"
   },
   "dynamicForm": {
     "fields": {

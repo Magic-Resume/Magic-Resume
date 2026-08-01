@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import { getFileSizeBucket } from '@/lib/utils/fileSize';
+import { agentErrorMessage } from '@/lib/utils/agentErrorMessage';
 import {
   formatResumeImportError,
   validateAndNormalizeImportedResume,
@@ -55,6 +56,8 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
   const [pdfCharCount, setPdfCharCount] = useState(0);
   const [pdfLitFields, setPdfLitFields] = useState<Set<string>>(new Set());
   const [pdfComplete, setPdfComplete] = useState(false);
+  // >0 when the PDF had no readable text and is being read as page images.
+  const [pdfVisionPages, setPdfVisionPages] = useState(0);
   const pdfAbortRef = useRef<AbortController | null>(null);
   const { t } = useTranslation();
   const resetPdfProgress = useCallback(() => {
@@ -62,6 +65,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
     setPdfCharCount(0);
     setPdfLitFields(new Set());
     setPdfComplete(false);
+    setPdfVisionPages(0);
   }, []);
 
   const handleClose = useCallback((open: boolean) => {
@@ -127,10 +131,22 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
     for await (const ev of streamPdfParse(formData, controller.signal)) {
       if (ev.type === 'tool_result') {
         const payload = ev.payload as
-          | { kind?: string; phase?: PdfPhase; charCount?: number; fields?: string[] }
+          | {
+              kind?: string;
+              phase?: PdfPhase;
+              charCount?: number;
+              fields?: string[];
+              mode?: string;
+              pageCount?: number;
+            }
           | undefined;
         if (payload?.kind !== 'pdf_progress') continue;
         if (payload.phase) setPdfPhase(payload.phase);
+        // The scan path reads page images instead of text, which takes long
+        // enough that not saying so reads as a hang.
+        if (payload.mode === 'vision' && payload.pageCount) {
+          setPdfVisionPages(payload.pageCount);
+        }
         if (typeof payload.charCount === 'number') setPdfCharCount(payload.charCount);
         if (payload.fields?.length) {
           setPdfLitFields((prev) => {
@@ -143,7 +159,11 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
         // Final product: prefer `data`, fall back to the chat-shaped `payload.resume`.
         resume = ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume ?? null;
       } else if (ev.type === 'error' || ev.type === 'run_failed') {
-        throw new Error(ev.error || t('importDialog.errors.parseFailed'));
+        // `ev.error` is a machine code — it was going straight into the toast,
+        // so a failed parse read "agent_run_failed".
+        throw new Error(
+          agentErrorMessage(ev, t, t('importDialog.errors.parseFailed')),
+        );
       }
     }
 
@@ -353,6 +373,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                           charCount={pdfCharCount}
                           litFields={pdfLitFields}
                           complete={pdfComplete}
+                          visionPages={pdfVisionPages}
                         />
                       ) : isImporting ? (
                         <div className="flex flex-col items-center justify-center text-sky-500">
