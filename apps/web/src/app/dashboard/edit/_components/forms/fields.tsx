@@ -97,7 +97,7 @@ export function AvatarField({
     if (!file) return;
     setUploading(true);
     try {
-      const next = await processAndStoreAvatar(file, value);
+      const next = await processAndStoreAvatar(file);
       onValueChange?.(next);
       toast.success(t("basicForm.avatarUpload.success"));
     } catch (err) {

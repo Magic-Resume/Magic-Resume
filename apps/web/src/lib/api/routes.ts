@@ -53,6 +53,10 @@ export const API_ROUTES = {
     pats:      '/api/users/me/personal-access-tokens',
     patRevoke: (tokenId: string) => `/api/users/me/personal-access-tokens/${tokenId}/revoke`,
   },
+  // 头像上传后端在 Magic-Core(platform-api),经 gateway 路由到 platform-api
+  uploads: {
+    avatar: '/api/uploads/avatar',
+  },
   notifications: {
     list:     '/api/notifications',
     markRead: (id: string) => `/api/notifications/${id}/read`,
@@ -84,5 +88,4 @@ export const WEB_AGENT_ROUTES = {
   chatSession:      '/api/chat-agent/session',
   chatEdit:         '/api/chat-agent/edit',
   pdfParse:         '/api/pdf/parse',
-  avatarUpload:     '/api/uploads/avatar',
 } as const;
