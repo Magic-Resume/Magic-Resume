@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSignIn } from "@clerk/nextjs";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -11,15 +11,20 @@ import { AuthButton, AuthField, AuthTextLink, FieldError, OtpField } from "./Aut
 import { SocialButtons, type OAuthProvider } from "./SocialButtons";
 import { getClerkErrorMessage } from "./authErrors";
 import { readLastMethod, writeLastMethod, type AuthMethod } from "./lastMethod";
+import { afterAuthUrl } from "./afterAuthUrl";
 
 const SSO_CALLBACK_URL = "/sso-callback";
-const AFTER_AUTH_URL = "/dashboard";
+
 
 type Step = "start" | "email" | "password" | "code" | "forgot" | "reset";
 
 export default function SignInCard() {
   const { t } = useTranslation();
   const router = useRouter();
+  // Honour the middleware's `redirect_url`, so a lapsed session on
+  // /billing/return?orderId=… comes back to that order rather than the
+  // dashboard, which would strand the payment.
+  const afterAuth = afterAuthUrl(useSearchParams()?.toString());
   const { isLoaded, signIn, setActive } = useSignIn();
   const reduce = useReducedMotion();
 
@@ -44,7 +49,7 @@ export default function SignInCard() {
     if (!createdSessionId) return;
     writeLastMethod("email");
     await setActive?.({ session: createdSessionId });
-    router.push(AFTER_AUTH_URL);
+    router.push(afterAuth);
   };
 
   const handleOAuth = async (provider: OAuthProvider) => {
@@ -56,7 +61,7 @@ export default function SignInCard() {
       await signIn.authenticateWithRedirect({
         strategy: `oauth_${provider}`,
         redirectUrl: SSO_CALLBACK_URL,
-        redirectUrlComplete: AFTER_AUTH_URL,
+        redirectUrlComplete: afterAuth,
       });
     } catch (err) {
       setPendingOAuth(null);

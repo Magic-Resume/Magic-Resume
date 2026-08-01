@@ -15,9 +15,9 @@
     "build:standalone": "next build && next export",
     "i18n:check": "tsx scripts/i18n-check.ts",
     "privacy:scan": "node scripts/privacy-scan.mjs",
-    "test": "npm run privacy:scan && npm run test:unit && npm run verify:sections",
+    "test:unit": "tsx src/app.test.ts",
     "verify:sections": "tsx scripts/verify-custom-sections.tsx",
-    "test:unit": "tsx src/app.test.ts"
+    "test": "npm run privacy:scan && npm run test:unit && npm run verify:sections"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1100.0",
