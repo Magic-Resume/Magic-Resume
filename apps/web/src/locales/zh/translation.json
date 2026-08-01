@@ -851,7 +851,18 @@
       "valuePlaceholder": "值（例如，your-linkedin-url）",
       "addButton": "添加自定义字段"
     },
-    "avatarAlt": "头像"
+    "avatarAlt": "头像",
+    "avatarUpload": {
+      "button": "上传头像",
+      "clear": "移除头像",
+      "success": "头像已更新",
+      "errors": {
+        "UNSUPPORTED_TYPE": "不支持的图片格式（仅 PNG / JPG / WebP / GIF）",
+        "TOO_LARGE": "图片太大了，换一张小一点的",
+        "PROCESS_FAILED": "图片处理失败，换一张试试",
+        "UPLOAD_FAILED": "上传失败，请重试"
+      }
+    }
   },
   "header": {
     "version": "版本管理",

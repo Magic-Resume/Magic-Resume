@@ -59,6 +59,13 @@ const nextConfig: NextConfig = {
         hostname: 'img.clerk.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        // Cloudflare R2 头像:public dev URL(*.r2.dev)。绑自定义域名后再加一条。
+        protocol: 'https',
+        hostname: 'pub-ca5e6f293e274c1b9298cf78d112e0be.r2.dev',
+        port: '',
+        pathname: '/**',
       }
     ],
     // 优化图片格式

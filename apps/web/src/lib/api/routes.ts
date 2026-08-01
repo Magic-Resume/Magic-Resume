@@ -84,4 +84,5 @@ export const WEB_AGENT_ROUTES = {
   chatSession:      '/api/chat-agent/session',
   chatEdit:         '/api/chat-agent/edit',
   pdfParse:         '/api/pdf/parse',
+  avatarUpload:     '/api/uploads/avatar',
 } as const;

@@ -1,7 +1,6 @@
 import React from 'react';
 import { InfoType } from '../types/resume';
 import { MapPin, Phone, Mail, Globe } from 'lucide-react';
-import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 import { Editable } from '../renderer/EditableCanvas';
 import { safeHref } from './utils';
@@ -44,7 +43,10 @@ export const Header = React.memo(function Header({
   const isRightAvatarLayout = avatarPosition === 'right';
 
   const avatarNode = info.avatar ? (
-    <Image
+    // 原生 img:头像可能是 R2 URL / 自定义域名 / data:URL,不走 next/image
+    // 的域名白名单,任意来源都能渲染(与 PDF/表单预览一致)。
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={info.avatar}
       alt={t('basicForm.avatarAlt')}
       width={avatarWidth}
@@ -57,7 +59,6 @@ export const Header = React.memo(function Header({
         borderColor: 'var(--color-border)',
         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.06)',
       }}
-      unoptimized
     />
   ) : null;
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 import type { InfoType } from '../types/resume';
 import { Editable } from '../renderer/EditableCanvas';
@@ -64,7 +63,9 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
   }
 
   const avatar = info.avatar ? (
-    <Image
+    // 原生 img:任意来源头像(R2/自定义域名/data:URL)都能渲染,不受 next/image 白名单限制。
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={info.avatar}
       alt={t('basicForm.avatarAlt')}
       width={avatarWidth}
@@ -75,7 +76,6 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
         height: `${avatarHeight}px`,
         background: 'var(--color-background)',
       }}
-      unoptimized
     />
   ) : null;
 
