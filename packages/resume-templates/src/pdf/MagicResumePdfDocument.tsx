@@ -1,3 +1,27 @@
+/**
+ * The exported PDF is ONE free-form page, not a paginated A4 document.
+ *
+ * `pageSize` below gives react-pdf a width and deliberately no height, so the
+ * single `<Page>` grows to whatever the content needs — in practice 1.95–3.05
+ * A4 heights. This is a choice, and `scripts/render-pdf-smoke.mjs` holds it in
+ * place: it asserts `/Count 1` and that the MediaBox grew past A4's height for
+ * every template. It is stated here because the choice was made once and then
+ * read as a bug by everyone who met it afterwards.
+ *
+ * Why: the product is aimed at online submission and share links, where
+ * continuous reading beats pagination — no experience gets split mid-entry, no
+ * orphan two lines stranded on a page of their own. The cost is printing: a
+ * long page sent to a printer is scaled to fit one sheet (small type when the
+ * resume runs long) or cropped. `apps/docs/content/zh/guide/export.mdx` tells
+ * users exactly that rather than implying page breaks exist.
+ *
+ * Consequence to know before editing: the `wrap={false}` and `minPresenceAhead`
+ * props further down are INERT. They control widow/orphan behaviour across page
+ * breaks, and there are no page breaks here. They are kept rather than stripped
+ * because they are the correct markup the day this becomes paginated again —
+ * but do not add more of them expecting an effect, and do not read them as
+ * evidence that pagination is in play.
+ */
 import React from 'react';
 import {
   Document,
