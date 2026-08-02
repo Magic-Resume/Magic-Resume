@@ -66,6 +66,13 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
     const onClick = (e: MouseEvent) => {
       const node = e.target as Node;
       if (triggerRef.current?.contains(node) || panelRef.current?.contains(node)) return;
+      // The help fly-out is a child of this menu but lives in a portal on
+      // <body>, so `panelRef.contains` cannot see it. Without this, mousedown
+      // on one of its links counted as "outside": the menu closed, the fly-out
+      // unmounted with it, and the click never reached the link — the item
+      // simply did nothing.
+      const element = node instanceof Element ? node : node.parentElement;
+      if (element?.closest("[data-account-menu-flyout]")) return;
       setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
