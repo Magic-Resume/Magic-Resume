@@ -12,6 +12,7 @@ import { SocialButtons, type OAuthProvider } from "./SocialButtons";
 import { getClerkErrorMessage } from "./authErrors";
 import { readLastMethod, writeLastMethod, type AuthMethod } from "./lastMethod";
 import { afterAuthUrl } from "./afterAuthUrl";
+import { LegalConsent } from "./LegalConsent";
 
 const SSO_CALLBACK_URL = "/sso-callback";
 
@@ -139,6 +140,7 @@ export default function SignUpCard() {
                 {t("auth.continueWith.email")}
               </AuthButton>
               {error && <FieldError>{error}</FieldError>}
+              <LegalConsent />
             </div>
           )}
 
@@ -175,6 +177,7 @@ export default function SignUpCard() {
               >
                 {t("auth.signUp.submit")}
               </AuthButton>
+              <LegalConsent />
             </form>
           )}
 
