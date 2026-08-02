@@ -159,6 +159,10 @@ export function HelpSubmenu({
           <div
             ref={panelRef}
             role="menu"
+            // Marks this portaled node as part of the account menu, so the
+            // menu's own outside-click handler does not treat a click in here
+            // as a click elsewhere on the page.
+            data-account-menu-flyout=""
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
             style={{
