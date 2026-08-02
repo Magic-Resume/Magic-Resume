@@ -7,7 +7,7 @@ description: 云端模式如何把 Clerk、Core API、Agent 后端串到 Magic R
 
 1. **Clerk 鉴权** —— 必须登录，每个 API 请求都带上 JWT。
 2. **云端同步** —— 简历经过一套 NestJS 写的 **Core API** 往返，附带版本历史和简历分享。
-3. **agent-service**（TypeScript，在 Magic-Resume-Core 里）—— 对话、面试、翻译、JD 优化、PDF 解析。
+3. **agent-service**（TypeScript，后端侧）—— 对话、面试、翻译、JD 优化、PDF 解析。
 
 ## 模式判定逻辑
 
@@ -39,7 +39,7 @@ export const APP_MODE =
 
 ## 后端服务
 
-后端（Core API + agent）在**单独的仓库**里，不在本 monorepo 内，前面统一挡着一个**网关**。本地开发云端模式时，把后端跑起来，然后用 `NEXT_PUBLIC_API_URL` 指向它的网关（dev 默认 `http://localhost:3110`）——前端永远只需要这一个 URL。如果你只想改前端，自托管模式更快。
+后端（Core API + agent）**独立部署**，不在本 monorepo 内，前面统一挡着一个**网关**。本地开发云端模式时，把后端跑起来，然后用 `NEXT_PUBLIC_API_URL` 指向它的网关（dev 默认 `http://localhost:3110`）——前端永远只需要这一个 URL。如果你只想改前端，自托管模式更快。
 
 ## 鉴权流程
 

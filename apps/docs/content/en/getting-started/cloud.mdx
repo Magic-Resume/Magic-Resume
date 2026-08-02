@@ -7,7 +7,7 @@ Cloud mode turns on three things that are off in self-hosted:
 
 1. **Clerk authentication** — login required, JWTs attached to every API request.
 2. **Cloud sync** — resumes round-trip through a NestJS **Core API**, with version history and resume sharing.
-3. **agent-service** (TypeScript, in Magic-Resume-Core) — chat, interview, translation, JD-optimize, PDF parse.
+3. **agent-service** (TypeScript, backend-side) — chat, interview, translation, JD-optimize, PDF parse.
 
 ## How mode detection works
 
@@ -39,7 +39,7 @@ If you set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` but forget `NEXT_PUBLIC_API_URL`,
 
 ## Backend services
 
-The backend (Core API + agent) lives in **separate repositories** outside this monorepo, fronted by a single **gateway**. For local cloud-mode development, run the backend and point `NEXT_PUBLIC_API_URL` at its gateway (dev default `http://localhost:3110`) — the frontend only ever needs that one URL. If you only want to develop the frontend, self-hosted mode is faster.
+The backend (Core API + agent) is deployed **separately** from this monorepo, fronted by a single **gateway**. For local cloud-mode development, run the backend and point `NEXT_PUBLIC_API_URL` at its gateway (dev default `http://localhost:3110`) — the frontend only ever needs that one URL. If you only want to develop the frontend, self-hosted mode is faster.
 
 ## Auth flow
 

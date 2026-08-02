@@ -13,7 +13,7 @@ description: Magic Resume 是开源、AI 原生的简历平台——Turborepo �
 
 ## 系统架构
 
-产品横跨**两个仓库**：本仓（前端、MCP、共享 schema）和 **Magic-Resume-Core**（后端）。前端只跟**一个网关源**通信，网关按路径前缀把 `/api/*` 转发到后端各服务。
+本仓包含前端、MCP 与共享 schema，后端是**独立部署**的一套服务。前端只跟**一个网关源**通信，网关按路径前缀把 `/api/*` 转发到后端各服务。
 
 ![Magic Resume 系统拓扑](/images/topology.png)
 
@@ -26,13 +26,13 @@ description: Magic Resume 是开源、AI 原生的简历平台——Turborepo �
 | `apps/web` | Next.js 15 前端 —— 编辑器、模板预览、AI Lab UI、导出 PDF |
 | `apps/docs/content` | 你正在看的文档（Mintlify） |
 | `packages/mcp` | 发到 npm 的 `@magic-resume/mcp` —— stdio MCP 服务器 + CLI |
-| `packages/resume-schema` | Zod schema、类型、样例数据 —— 跨仓共享的简历真源 |
+| `packages/resume-schema` | Zod schema、类型、样例数据 —— 前后端共享的简历真源 |
 | `packages/resume-templates` | 模板 DSL、渲染器、注册表 |
 | `packages/env` / `packages/utils` / `packages/tsconfig` | 共享工具与配置 |
 
 **职责：** 所有面向用户的 UI、本地编辑、IndexedDB 持久化、MCP 工具。前端自己也带一批 `app/api/*` 的 Next.js 路由处理器（如 `chat-agent`、`pdf/parse`），它们校验用户身份、把 AI 请求代理到后端。
 
-### 2. `Magic-Resume-Core`（后端，独立仓库）
+### 2. 后端（独立部署）
 
 一个 NestJS pnpm 工作区单仓，按运行画像拆分，前面挡着一个网关：
 
@@ -56,7 +56,7 @@ Schema 一致性靠 `@magic-resume/resume-schema` —— 发到 npm、被后端�
 ## 部署模式
 
 - **自托管：** 只需跑 `apps/web`。数据留在 IndexedDB —— 只能编辑和导出简历。**没有账户、没有后端、没有 AI**（AI 需要后端 / 云端模式）。见 [自托管](/zh/getting-started/self-hosted)。
-- **云端（magic-resume.cn）：** 两个仓库分开部署 —— Web 在 Vercel，Core 后端在容器平台。前端把 `NEXT_PUBLIC_API_URL` 指向网关。见 [云端模式](/zh/getting-started/cloud)。
+- **云端（magic-resume.cn）：** 前端与后端分开部署 —— Web 在 Vercel，后端在容器平台。前端把 `NEXT_PUBLIC_API_URL` 指向网关。见 [云端模式](/zh/getting-started/cloud)。
 
 ## 技术栈
 
@@ -69,8 +69,8 @@ Schema 一致性靠 `@magic-resume/resume-schema` —— 发到 npm、被后端�
 | Schema | **Zod 4** | 真源在 `@magic-resume/resume-schema` |
 | 编辑器 | **Tiptap** | 简历字段的富文本 |
 | 模板 | 自定义 DSL → React 渲染器 | `@magic-resume/resume-templates` |
-| 后端 | **NestJS** + **PostgreSQL** | gateway / platform-api / agent-service（Magic-Resume-Core） |
-| Agent | **DeepAgents** + **LangGraph** | `agent-service`（在 Core 里），SSE 流式 |
+| 后端 | **NestJS** + **PostgreSQL** | gateway / platform-api / agent-service |
+| Agent | **DeepAgents** + **LangGraph** | `agent-service`，SSE 流式 |
 | MCP 服务器 | **`@modelcontextprotocol/sdk`** + `fast-json-patch` | `@magic-resume/mcp`（stdio，Node ESM） |
 | 文档 | **Mintlify** | `apps/docs/content`（即本站） |
 
