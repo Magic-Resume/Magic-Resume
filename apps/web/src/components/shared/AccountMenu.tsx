@@ -192,7 +192,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
 
       {isCloudMode && <MenuRow icon={<UserIcon size={16} />} label={t("account.menu.profile")} onClick={() => run(openAccount)} />}
       <MenuRow icon={<Settings size={16} />} label={t("account.menu.settings")} onClick={() => run(() => openSettings())} />
-      <HelpSubmenu onNavigate={() => setOpen(false)} />
+      <HelpSubmenu menuOpen={open} onNavigate={() => setOpen(false)} />
 
       {/* in-place language switch */}
       <div className="flex items-center justify-between gap-2 px-2.5 py-2">

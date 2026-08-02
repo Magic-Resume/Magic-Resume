@@ -214,7 +214,7 @@ function CloudAccountModal() {
               // Full width, no side rail: a payments table squeezed beside the
               // 240px id/date column wraps into something nobody can read.
               <div className="mt-5 space-y-4">
-                <BillingTab />
+                <BillingTab entitlement={entitlement ?? null} />
               </div>
             ) : (
             <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
