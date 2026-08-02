@@ -1,32 +1,20 @@
-/** Frontend mirror of the platform-api billing shapes (JSON-serialized). */
+/**
+ * Frontend mirror of the backend billing shapes (JSON-serialized).
+ *
+ * 积分是内部计费单位，任何字段都不对客户端暴露：这里只有计划类型、能不能用、
+ * 剩余百分比。下面所有 credits/includedCredits 的缺席都是这条规则的结果。
+ */
 
 export type PlanKind = 'credit_pack' | 'subscription';
 
-/**
- * What one channel charges for a plan.
- *
- * This — not `PlanSummary.priceCents` — is the number to show once a channel is
- * picked. The plan-level price is a base list price and may be denominated in a
- * currency this buyer will never be charged in (¥19 domestically vs $2.90
- * overseas are two offers on one plan, not two plans).
- *
- * `channel` stays an unconstrained string here, as it is elsewhere in this file:
- * a self-hosted build has no business knowing which payment providers exist.
- * The commercial overlay narrows it.
- */
+/** 选定渠道后要显示的价格——`PlanSummary.priceCents` 只是基准列表价，币种可能对不上买家。 */
 export interface PlanOffer {
   channel: string;
   priceCents: number;
   currency: string;
 }
 
-/**
- * Icons a feature row may use, mapped to components by whoever renders the card.
- *
- * A closed set rather than a free Lucide name: `optimizePackageImports` rewrites
- * barrel imports to deep paths at build time, so a name chosen at runtime either
- * drags every icon into the bundle or renders nothing at all.
- */
+/** 闭集而非自由 Lucide 名：`optimizePackageImports` 在构建期改写 barrel 导入，运行时选名会整包拖入或渲染不出。 */
 export type PlanFeatureIcon =
   | 'sparkles'
   | 'zap'
@@ -38,20 +26,14 @@ export type PlanFeatureIcon =
 
 export interface PlanFeatureRow {
   icon: PlanFeatureIcon;
-  /**
-   * May contain `{{dailyLimit}}`, `{{weeklyLimit}}` or `{{modelCount}}`, which
-   * the renderer fills from the plan itself. Operators write the wording; the
-   * numbers stay authoritative, so a bullet cannot claim a limit the runtime
-   * will contradict.
-   */
+  /** 可含 `{{dailyLimit}}` / `{{weeklyLimit}}` / `{{modelCount}}`，渲染时由计划本身填入。 */
   text: string;
 }
 
 export interface PlanCardCopy {
-  /** Shown instead of `name` on the pricing card only — `name` has no language. */
+  /** 仅定价卡片上替代 `name`——`name` 不分语言。 */
   displayName?: string;
   tagline?: string;
-  /** Replaces the default badge wording on whichever card is `highlighted`. */
   badge?: string;
   features?: PlanFeatureRow[];
 }
@@ -67,45 +49,15 @@ export interface PlanSummary {
   weeklyLimit: number;
   interval?: string | null;
   isDefault: boolean;
-  /**
-   * Requests per minute this plan allows.
-   *
-   * The one field that genuinely separates the tiers. Without it the card had
-   * nothing to show for the price: allowances never leave the server, and the
-   * day/week caps are zero on every plan, so a paid tier and the free one
-   * rendered word-for-word identically.
-   */
+  /** 每分钟请求数——各档之间唯一真正拉开差距的字段。 */
   rateLimitRpm: number;
-  /** Whether this card wears the "popular" badge. */
   highlighted?: boolean;
-  /**
-   * Operator-written card copy, keyed by locale (`zh` / `en`).
-   *
-   * Every locale arrives at once rather than being negotiated: language here is
-   * a client-side runtime switch, and a server-negotiated payload would go stale
-   * the moment somebody changes language with the modal open.
-   *
-   * Absent means nothing is configured and the renderer falls back to its
-   * built-in block — never an empty object standing for "configured but blank".
-   */
+  /** 运营配置的卡片文案，按 locale (`zh` / `en`) 全量下发；缺席=未配置，回落到内置文案。 */
   copy?: Record<string, PlanCardCopy>;
-  /**
-   * Present on the plan list; absent where the API returns "which plan am I on"
-   * (entitlement, subscription.plan) rather than a catalogue. Absent means "not
-   * loaded" — it is never an empty array standing for "sold nowhere".
-   */
+  /** 只出现在计划列表里；缺席=未加载，不代表"哪儿都不卖"。 */
   offers?: PlanOffer[];
-  // `includedCredits` intentionally omitted: credits are the internal billing
-  // unit and are never sent to the client — the API exposes only a percentage.
 }
 
-/**
- * An order, as its buyer may see it.
- *
- * No `credits`: that is the internal billing unit, withheld here for the same
- * reason `PlanSummary` omits `includedCredits`. The server stopped sending it
- * at all, so the field cannot be rendered by accident.
- */
 export interface OrderSummary {
   id: string;
   status: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -116,13 +68,7 @@ export interface OrderSummary {
   createdAt?: string;
 }
 
-/**
- * A row in the buyer's own order history.
- *
- * The plan NAME, not the plan: a receipt has to say what was bought, and the
- * full plan shape carries limits and card copy nobody reads here. Credits stay
- * out on the server side — the balance is an internal billing unit.
- */
+/** 买家自己的订单历史行：带计划名而非整个计划——收据只需要说明买了什么。 */
 export interface OrderHistoryRow extends OrderSummary {
   planName: string | null;
   planKind: PlanKind | null;
@@ -135,10 +81,9 @@ export interface OrderHistoryPage {
   size: number;
 }
 
-/** What the server hands back when an order is created and needs paying. */
 export interface OrderCheckout {
   orderId: string;
-  /** `redirect` → send the browser to payUrl; `qrcode` → render payUrl as a QR. */
+  /** `redirect` → 跳转到 payUrl；`qrcode` → 把 payUrl 渲染成二维码。 */
   kind: 'redirect' | 'qrcode';
   payUrl: string;
 }
@@ -161,32 +106,17 @@ export interface UsageSummary {
   weeklyResetAt: string;
 }
 
-/**
- * Response of GET /api/billing/ai-entitlement. Credit-free by design: the client
- * only learns the plan type, whether internal AI is usable right now
- * (`canUseInternal` + `reason`), and how much of the monthly allowance is left
- * (`remainingPercent`). Raw credit balances/caps and day/week counts never leave
- * the server (credits are our internal billing unit).
- */
+/** GET /api/billing/ai-entitlement 的响应。 */
 export interface Entitlement {
   mode: 'internal' | 'byok_required';
-  /** Whether internal AI can be used right now (credits + day/week caps). */
+  /** 此刻能不能用内置 AI（已综合额度与日/周上限）。 */
   canUseInternal: boolean;
   reason?: string | null;
-  /** 计划类型 — no credit fields. */
   currentPlan: PlanSummary | null;
-  /** 还剩百分之多少 (0-100) of the monthly allowance; null = unlimited. */
+  /** 月度额度还剩百分之多少 (0-100)；null = 无限。 */
   remainingPercent: number | null;
-  /** When the monthly allowance refreshes (ISO). */
   resetAt?: string | null;
-  /** Supported models the composer can offer for internal runs (allowlist-filtered). */
   availableModels?: string[];
-  /**
-   * The channel of this user's last successful payment, or null.
-   *
-   * A UX default for the channel selector and nothing else — the server prices
-   * an order from `(planId, channel)` and has no notion of regions. `manual`
-   * (off-platform bookkeeping) is never reported: there is no cashier behind it.
-   */
+  /** 上次成功支付的渠道，仅用作渠道选择器的默认值；`manual`（线下记账）不会出现。 */
   lastPaidChannel?: string | null;
 }

@@ -29,17 +29,12 @@ import type { CloudResumeResponse } from '@/types/backend/resume';
 
 const MAX_RESUME_VERSION_HISTORY = 10;
 
-// 云同步失败提示的节流:离线编辑时防抖每 10~45s 到点一次、次次失败,不能每次都弹 toast
-// 轰炸(HeaderTab 的 syncStatus pill 已持续传达 error 态)。60s 内只提醒一次。
+// 离线编辑时同步每 10~45s 失败一次,不能次次弹 toast(状态 pill 已持续传达 error)。
 const SYNC_ERROR_TOAST_COOLDOWN_MS = 60_000;
 let lastSyncErrorToastAt = 0;
 
-// ---------------------------------------------------------------------------
-// Cloud Sync v2 客户端基线(docs/specs/cloud-sync-v2/design.md)
-// ---------------------------------------------------------------------------
-// 每份简历一条:最后已知的云端 revision(乐观锁基线)与"已知和云端一致"的推送文档
-// (增量 diff 的基与脏检查的参照)。内存态即可 —— 跨会话由 loadResumes 重新播种,
-// 未播种时同步退化为旧行为(无条件全量推)。
+// 每份简历的同步基线:最后已知的云端 revision(乐观锁)与推送文档(增量 diff 与脏检查的参照)。
+// 只存内存,跨会话由 loadResumes 重新播种;未播种时退化为无条件全量推。
 type SyncBaseline = {
   revision?: number;
   doc?: Record<string, unknown>;
@@ -50,15 +45,12 @@ const setSyncBaseline = (id: string, patch: SyncBaseline) => {
   syncBaselines.set(id, { ...syncBaselines.get(id), ...patch });
 };
 
-// 脏检查比较键:白名单字段、构造顺序稳定、不含 updatedAt(手动保存会 bump updatedAt,
-// 含入的话重复 Ctrl+S 永远"脏"、永远堆冗余版本)。方向安全:构造差异只会"假脏"(多同步
-// 一次),不可能"假净"。
+// 脏检查比较键。不含 updatedAt:手动保存会 bump 它,含入则重复 Ctrl+S 永远"脏"。
+// 方向安全:构造差异只会假脏(多同步一次),不会假净。
 const syncCompareKey = (doc: Record<string, unknown> | Resume): string =>
   JSON.stringify(getSanitizedResume(doc as Resume));
 
-// 自动建版本冷却的会话内记录:本地 versions 未从云端加载时(每个会话开头),仅靠
-// versions 列表判定冷却必然失效(lastVersionTime=0 → 首次同步必建版本)。任何一次
-// 成功建版本(手动/自动/冲突备份)都刷新这里。
+// 建版本冷却的会话内记录:会话开头 versions 还没从云端加载,只看它会判成 0 → 首次同步必建版本。
 const lastVersionSnapshotAt = new Map<string, number>();
 
 /** 同步结果:调用方(手动保存)据此区分"真同步了"与"本就没得同步"。 */
@@ -111,7 +103,6 @@ type ResumeState = {
   setActiveSection: (section: string) => void;
   updateSharing: (isPublic: boolean, shareRole: 'VIEWER' | 'COMMENTER' | 'EDITOR' | undefined) => Promise<void>;
   
-  // AI State
   isAiGenerating: boolean;
   setIsAiGenerating: (isGenerating: boolean) => void;
   applyFullResume: (resume: Resume) => void;
@@ -153,7 +144,6 @@ export const getSanitizedResume = (resume: Resume): Omit<Resume, 'id' | 'updated
     name: (r.name as string) || '',
   };
 
-  // Only include sharing fields if they are explicitly present (usually from cloud sync)
   if (r.isPublic !== undefined) sanitized.isPublic = r.isPublic;
   if (r.shareId !== undefined) sanitized.shareId = r.shareId;
   if (r.shareRole !== undefined) sanitized.shareRole = r.shareRole;
@@ -161,7 +151,6 @@ export const getSanitizedResume = (resume: Resume): Omit<Resume, 'id' | 'updated
   return sanitized;
 };
 
-// Helper for local persistence: include identity but strip version history and snapshots
 export const getSanitizedResumeForLocal = (resume: Resume) => {
   if (!resume) return null;
   return {
@@ -229,12 +218,8 @@ const isHttpStatus = (error: unknown, status: number): boolean =>
   isAxiosError(error) && error.response?.status === status;
 
 /**
- * 执行一次云端推送,内建两级降级(docs/specs/cloud-sync-v2/design.md §4/§5):
- *   1. 有基线 → 增量(patch + baseRevision);服务端 400(补丁不可应用)→ 条件全量重试;
- *   2. 条件推送 409(其它端已写入)→ 恢复:备份远端为历史版本 → 以最新本地内容无条件
- *      强推(远端已备份,眼前的编辑器是用户认知里的事实)→ toast 告知;
- *   3. 无基线 → 无条件全量(旧行为)。
- * 返回实际生效的响应与"实际推送的文档"(强推时可能比入参更新,基线播种要用它)。
+ * 一次云端推送,两级降级:有基线走增量,400 退条件全量;409(其它端已写入)则备份远端
+ * 为历史版本后无条件强推。返回实际推送的文档——强推时它比入参更新,基线播种要用它。
  */
 const syncWithConflictRecovery = async (
   resume: Resume,
@@ -251,7 +236,7 @@ const syncWithConflictRecovery = async (
       try {
         return await resumeApi.syncResume(resume, { baseRevision, patchOps });
       } catch (error) {
-        // 400 = 补丁在服务端不可应用(基线内容意外分叉/存量非 JSON 等) → 条件全量兜底。
+        // 400 = 补丁在服务端不可应用(基线分叉/存量非 JSON) → 条件全量兜底。
         if (!isHttpStatus(error, 400)) throw error;
         console.warn('[Sync] contentPatch rejected (400), falling back to conditional full push.');
         return await resumeApi.syncResume(resume, { baseRevision });
@@ -328,7 +313,6 @@ const useResumeStore = create<ResumeState>()(
     try {
       let localResumes = await dbClient.getItem<Resume[]>(RESUMES_KEY) || [];
       
-      // Cleanup: Remove legacy redundant 'content' field from local storage if present
       localResumes = localResumes.map(r => {
         if ('content' in (r as object)) {
             const rest = { ...r };
@@ -338,7 +322,6 @@ const useResumeStore = create<ResumeState>()(
         return r;
       });
 
-      // Early deduplication for local resumes to fix potential dirty data
       const mergedMap = new Map<string, Resume>();
       localResumes.forEach(r => mergedMap.set(r.id, r));
 
@@ -347,11 +330,9 @@ const useResumeStore = create<ResumeState>()(
         try {
           const cloudResult = await resumeApi.fetchCloudResumes();
           if (cloudResult && cloudResult.data) {
-            // fetchCloudResumes 返回分页信封 { data, total, page, limit },data 即列表。
             const cloudResumes = cloudResult.data as CloudResume[];
 
             if (Array.isArray(cloudResumes)) {
-                // Set of valid Cloud IDs
                 const cloudIds = new Set(cloudResumes.map(cr => cr.id));
 
                 cloudResumes.forEach(cr => {
@@ -369,12 +350,8 @@ const useResumeStore = create<ResumeState>()(
                   }
                 });
 
-                // Prune resumes that live in the cloud (cloud-style id) but are no
-                // longer in the cloud list — i.e. deleted on another device. Guard
-                // against data loss: only treat the cloud list as authoritative when it
-                // is non-empty (an empty/partial 200 response must not wipe everything),
-                // and NEVER delete local-only resumes (numeric id) created offline or
-                // not yet synced.
+                // 清掉在别的设备上已删除的云端简历。防数据丢失:云端列表为空时不当权威
+                // (残缺的 200 不能清空一切),且绝不删本地 id 的离线简历。
                 if (cloudResumes.length > 0) {
                     for (const id of mergedMap.keys()) {
                         if (!cloudIds.has(id) && !isLocalResumeId(id)) {
@@ -384,13 +361,11 @@ const useResumeStore = create<ResumeState>()(
                 }
             }
             
-            // Update local DB with merged data immediately after sync
             const uniqueResumes = Array.from(mergedMap.values());
             await dbClient.setItem(RESUMES_KEY, uniqueResumes.map(r => getSanitizedResumeForLocal(r))); // Persist cleaned data
           }
         } catch (cloudError) {
           console.error('Failed to fetch cloud resumes during load:', cloudError);
-          // Continue with local resumes (already deduplicated in map)
         }
       }
       
@@ -492,7 +467,6 @@ const useResumeStore = create<ResumeState>()(
       };
     });
     
-    // We can't easily wait for DB here in a sync function, but subscribe handles it now
   },
 
   duplicateResume: async (id) => {
@@ -503,7 +477,6 @@ const useResumeStore = create<ResumeState>()(
       return;
     }
 
-    // Cloud Duplicate
     const isLocalId = !isNaN(Number(id)) && id.length > 10;
     if (isCloudSyncOn && !isLocalId) {
       try {
@@ -511,9 +484,6 @@ const useResumeStore = create<ResumeState>()(
           async () => {
              const newResume = await resumeApi.duplicateResume(id);
              if (newResume) {
-               // Add directly to store
-               // Backend returns decrypted object similar to fetchOne
-               // We must parse the content string to get the resume data (info, sections, etc)
                const parsedContent = typeof newResume.content === 'string' 
                   ? JSON.parse(newResume.content) 
                   : newResume.content;
@@ -527,7 +497,6 @@ const useResumeStore = create<ResumeState>()(
                  shareId: undefined,
                  shareRole: undefined,
                  versions: undefined,
-                 // Ensure customTemplate is handled if backend returns string
                  customTemplate: typeof newResume.customTemplate === 'string' 
                    ? JSON.parse(newResume.customTemplate) 
                    : newResume.customTemplate
@@ -543,23 +512,19 @@ const useResumeStore = create<ResumeState>()(
         );
         return;
       } catch (error) {
-        // Fallback or just error
         console.error("Cloud duplication failed", error);
         return;
       }
     }
 
-    // Local Duplicate
     const newResume: Resume = {
       ...resumeToDuplicate,
       id: Date.now().toString(),
       name: `${resumeToDuplicate.name} (Copy)`,
       updatedAt: Date.now(),
-      // Reset share fields
       isPublic: false,
       shareId: undefined,
       shareRole: undefined,
-      // Strip history/versions/comments
       versions: undefined,
     };
     get().addResume(newResume);
@@ -574,7 +539,6 @@ const useResumeStore = create<ResumeState>()(
 
     if (!targetResume) return;
 
-    // 1. Update local state immediately
     const updatedResume = { ...targetResume, name: newName, updatedAt: now };
     
     set(state => {
@@ -591,11 +555,9 @@ const useResumeStore = create<ResumeState>()(
       };
     });
 
-    // 2. Persist local
     const currentResumes = get().resumes; // Retrieve updated list
     dbClient.setItem(RESUMES_KEY, currentResumes.map(r => getSanitizedResumeForLocal(r)));
 
-    // 3. Sync to Cloud
     const isLocalId = !isNaN(Number(id)) && id.length > 10;
     if (isCloudSyncOn && !isLocalId) {
         try {
@@ -612,7 +574,6 @@ const useResumeStore = create<ResumeState>()(
     const isCloudSyncOn = useSettingStore.getState().cloudSync;
     const resumeToDelete = get().resumes.find(r => r.id === id);
 
-    // If cloud sync is on and it's not a local ID, delete from cloud
     const isLocalId = !isNaN(Number(id)) && id.length > 10;
     if (isCloudSyncOn && !isLocalId) {
       try {
@@ -632,7 +593,6 @@ const useResumeStore = create<ResumeState>()(
   },
 
   deleteVersion: async (resumeId, versionId) => {
-    // 1. If cloud sync enabled, try cloud delete first
     const isCloudSyncOn = useSettingStore.getState().cloudSync;
     const isLocalId = !isNaN(Number(resumeId)) && resumeId.length > 10;
     
@@ -658,7 +618,6 @@ const useResumeStore = create<ResumeState>()(
       console.log('[deleteVersion] Skipping API call, proceeding with local deletion only');
     }
 
-    // 2. Update local state (for both local and cloud resumes)
     const { resumes, activeResume } = get();
     const updatedResumes = resumes.map(r => {
       if (r.id === resumeId && r.versions) {
@@ -690,8 +649,6 @@ const useResumeStore = create<ResumeState>()(
     const { resumes, isStoreLoading, loadResumes, fetchCloudResume } = get();
     const isCloudSyncOn = useSettingStore.getState().cloudSync;
     
-    // 如果开启了云端同步且有 Token，主动拉取一次云端数据以保证最新
-    // 增加：如果当前 activeResume 已经是这个 id 且刚刚同步过，或者正在通过 fetchCloudResume 同步，则跳过
     const { isSyncing, activeResume: currentActive } = get();
     if (isCloudSyncOn && !isSyncing) {
         if (!currentActive || currentActive.id !== id) {
@@ -717,12 +674,10 @@ const useResumeStore = create<ResumeState>()(
       return;
     }
 
-    // 如果数据已经加载完成，从当前列表查找
     const resume = resumes.find(r => r.id === id);
     if (resume) {
       const migrated = migrateResume(resume);
       set(state => {
-        // Only set if not already matched to avoid unnecessary re-renders
         if (state.activeResume?.id !== id) {
           state.activeResume = { ...migrated };
         }
@@ -736,17 +691,14 @@ const useResumeStore = create<ResumeState>()(
     const isCloudSyncOn = useSettingStore.getState().cloudSync;
     const now = Date.now();
 
-    // Use provided resumeData or fallback to current state
     const targetResume = resumeData || get().activeResume;
     if (!targetResume) return;
 
-    // 1. Update the resumes list (with snapshot and updatedAt)
     set(state => {
       const newResumes = state.resumes.map(r =>
         r.id === targetResume.id ? { ...r, updatedAt: now } : r
       );
       
-      // Atomic comparison to avoid unnecessary reference changes if nothing changed
       const isUpdatingActive = state.activeResume && state.activeResume.id === targetResume.id;
       
       return {
@@ -758,13 +710,10 @@ const useResumeStore = create<ResumeState>()(
       };
     });
 
-    // 2. If manual, trigger cloud sync and versioning immediately
     if (isCloudSyncOn) {
       if (type === 'manual') {
-        // Sync the main record FIRST so the freshest activeResume is persisted to the
-        // cloud, THEN snapshot a version. createVersion refreshes state from the cloud
-        // and grabs the isSyncing lock; running it before the sync makes syncToCloud
-        // silently skip the main-record PATCH and reverts activeResume to stale content.
+        // 必须先同步主记录再建版本:createVersion 会拉云端状态并占住 isSyncing 锁,
+        // 顺序反了会让 syncToCloud 静默跳过 PATCH,并把 activeResume 退回旧内容。
         const outcome = await get().syncToCloud({ skipVersioning: true });
         if (outcome === 'noop') {
           // 内容自上次同步没变:不建冗余版本快照,也不假装"保存"了什么。
@@ -796,7 +745,6 @@ const useResumeStore = create<ResumeState>()(
     if (isCloudSyncOn && !isLocalId) {
       try {
         const changelog = name || (type === 'manual' ? 'Manual Save' : 'Auto Save');
-        // Push the version to cloud using the targetResume (latest data)
         const created = await resumeApi.createCloudVersion(targetResume.id, targetResume, changelog);
         lastVersionSnapshotAt.set(targetResume.id, Date.now());
         // 建版本服务端会 bump revision 并把 content 置为本版本内容;回写基线,
@@ -824,10 +772,8 @@ const useResumeStore = create<ResumeState>()(
       return;
     }
 
-    // Restore the data from the version
     const restoredData = JSON.parse(JSON.stringify(version.data));
     
-    // updateResume will handle the IndexedDB persistence and updating activeResume
     updateResume(activeResume.id, {
       ...restoredData,
       updatedAt: Date.now()
@@ -913,12 +859,8 @@ const useResumeStore = create<ResumeState>()(
   },
 
   /**
-   * Sections the app does not define are the user's to create, rename and
-   * delete; the built-in six are not. A built-in's label is an i18n key
-   * (`sections.skills`), so renaming one would swap a translated string for a
-   * literal and break every other language, and deleting one would remove a
-   * form the editor expects to exist. The guards below are that rule, not a
-   * defensive flourish.
+   * 自定义 section 归用户增删改,内置六个不行:内置的 label 是 i18n key,改名会把翻译
+   * 换成字面量、废掉其它语言;删掉则会拿走编辑器预期存在的表单。下面的守卫就是这条规则。
    */
   addCustomSection: (title, icon) => {
     const { activeResume } = get();
