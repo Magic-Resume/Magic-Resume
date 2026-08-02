@@ -1,0 +1,106 @@
+/* Typography for the three policy documents.
+ *
+ * Their own stylesheet rather than the app's prose utilities: these pages are
+ * read start-to-finish by someone deciding whether to trust us (or reviewing us
+ * for a payment channel or a filing), so they get generous measure and leading,
+ * and headings that survive being skimmed. Nothing here is shared with the
+ * editor, so it cannot drift the product's own type scale. */
+
+.legal-prose {
+  font-size: 15px;
+  line-height: 1.85;
+  color: rgb(212 212 212);
+}
+
+.legal-prose h1 {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgb(250 250 250);
+  margin-bottom: 12px;
+}
+
+.legal-prose > p:first-of-type {
+  color: rgb(163 163 163);
+}
+
+.legal-prose h2 {
+  font-size: 19px;
+  font-weight: 600;
+  color: rgb(250 250 250);
+  margin-top: 44px;
+  margin-bottom: 14px;
+}
+
+.legal-prose h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgb(229 229 229);
+  margin-top: 28px;
+  margin-bottom: 10px;
+}
+
+.legal-prose p {
+  margin-bottom: 14px;
+}
+
+.legal-prose ul {
+  list-style: disc;
+  padding-left: 22px;
+  margin-bottom: 14px;
+}
+
+.legal-prose ol {
+  list-style: decimal;
+  padding-left: 22px;
+  margin-bottom: 14px;
+}
+
+.legal-prose li {
+  margin-bottom: 7px;
+}
+
+.legal-prose strong {
+  color: rgb(250 250 250);
+  font-weight: 600;
+}
+
+.legal-prose a {
+  color: rgb(56 189 248);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.legal-prose th,
+.legal-prose td {
+  border: 1px solid rgb(38 38 38);
+  padding: 9px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal-prose th {
+  background: rgb(23 23 23);
+  color: rgb(229 229 229);
+  font-weight: 600;
+}
+
+/* The "this needs a lawyer / this needs a filing number" banner. Loud on
+ * purpose: an unreviewed policy that looks finished is the failure mode. */
+.legal-draft-notice {
+  border: 1px solid rgb(133 77 14);
+  background: rgba(133, 77, 14, 0.14);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgb(253 224 71);
+}
