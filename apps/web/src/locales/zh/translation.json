@@ -47,7 +47,11 @@
       "emailInvalid": "邮箱格式不对",
       "rateLimited": "尝试太频繁,稍后再试",
       "generic": "出了点问题,稍后再试"
-    }
+    },
+    "legalConsent": "注册即表示你已阅读并同意",
+    "legalTerms": "《用户协议》",
+    "legalAnd": "与",
+    "legalPrivacy": "《隐私政策》"
   },
   "comingSoon": {
     "title": "好东西,马上就来",
@@ -73,7 +77,12 @@
       "profile": "个人资料",
       "settings": "设置",
       "language": "语言",
-      "signOut": "退出登录"
+      "signOut": "退出登录",
+      "help": "帮助",
+      "helpCenter": "帮助中心",
+      "terms": "服务条款",
+      "privacy": "隐私政策",
+      "reportBug": "报告错误"
     },
     "modal": {
       "title": "账户"
@@ -94,7 +103,8 @@
         "profile": "资料",
         "security": "安全",
         "activity": "活动",
-        "subscription": "订阅"
+        "subscription": "订阅",
+        "billing": "账单"
       },
       "personalInfo": "个人信息",
       "firstName": "名字",
@@ -160,6 +170,40 @@
         "comingSoon": "即将推出",
         "language": "语言",
         "languageDescription": "切换界面语言，不影响简历内容本身。"
+      }
+    },
+    "billing": {
+      "planTitle": "订阅",
+      "freePlan": "免费版",
+      "renewsOn": "{{date}} 续期",
+      "endsOn": "已取消，{{date}} 到期",
+      "paymentFailed": "扣款失败——请更新支付方式，宽限期结束后订阅会终止。",
+      "manageCta": "管理套餐",
+      "upgradeCta": "升级",
+      "ordersTitle": "付款记录",
+      "noOrders": "还没有付款记录。",
+      "unknownItem": "—",
+      "colDate": "时间",
+      "colItem": "项目",
+      "colAmount": "金额",
+      "colChannel": "支付方式",
+      "colStatus": "状态",
+      "loadFailed": "账单信息加载失败。",
+      "retry": "重试",
+      "refundHint": "需要退款？先看看",
+      "refundPolicy": "退款政策",
+      "status": {
+        "paid": "已支付",
+        "pending": "待支付",
+        "failed": "失败",
+        "refunded": "已退款"
+      },
+      "channel": {
+        "alipay": "支付宝",
+        "paypal": "PayPal",
+        "wechat": "微信支付",
+        "stripe": "Stripe",
+        "manual": "人工"
       }
     }
   },

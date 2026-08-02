@@ -47,7 +47,11 @@
       "emailInvalid": "That email doesn't look right.",
       "rateLimited": "Too many attempts. Try again shortly.",
       "generic": "Something went wrong. Try again."
-    }
+    },
+    "legalConsent": "By signing up you agree to our",
+    "legalTerms": "Terms of Service",
+    "legalAnd": "and",
+    "legalPrivacy": "Privacy Policy"
   },
   "comingSoon": {
     "title": "Something great is on the way",
@@ -73,7 +77,12 @@
       "profile": "Profile",
       "settings": "Settings",
       "language": "Language",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "help": "Help",
+      "helpCenter": "Help center",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "reportBug": "Report a bug"
     },
     "modal": {
       "title": "Account"
@@ -94,7 +103,8 @@
         "profile": "Profile",
         "security": "Security",
         "activity": "Activity",
-        "subscription": "Subscription"
+        "subscription": "Subscription",
+        "billing": "Billing"
       },
       "personalInfo": "Personal information",
       "firstName": "First name",
@@ -160,6 +170,40 @@
         "comingSoon": "Coming soon",
         "language": "Language",
         "languageDescription": "Change the interface language without changing resume content."
+      }
+    },
+    "billing": {
+      "planTitle": "Subscription",
+      "freePlan": "Free",
+      "renewsOn": "Renews on {{date}}",
+      "endsOn": "Cancelled — ends {{date}}",
+      "paymentFailed": "A charge failed. Update your payment method before the grace period ends.",
+      "manageCta": "Manage plan",
+      "upgradeCta": "Upgrade",
+      "ordersTitle": "Payments",
+      "noOrders": "No payments yet.",
+      "unknownItem": "—",
+      "colDate": "Date",
+      "colItem": "Item",
+      "colAmount": "Amount",
+      "colChannel": "Method",
+      "colStatus": "Status",
+      "loadFailed": "Could not load your billing information.",
+      "retry": "Retry",
+      "refundHint": "Need a refund? See the",
+      "refundPolicy": "refund policy",
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "failed": "Failed",
+        "refunded": "Refunded"
+      },
+      "channel": {
+        "alipay": "Alipay",
+        "paypal": "PayPal",
+        "wechat": "WeChat Pay",
+        "stripe": "Stripe",
+        "manual": "Manual"
       }
     }
   },

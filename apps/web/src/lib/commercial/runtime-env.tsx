@@ -15,8 +15,8 @@ import { headers } from 'next/headers';
  * fetched on the client instead.)
  *
  * WHY THIS LIVES IN ITS OWN MODULE (not in ./runtime): the commercial build
- * overlays `@/lib/commercial/runtime` with an analytics-only provider
- * (Magic-Resume-Commercial `next-config-overlay.mjs` webpack alias). If the
+ * replaces `@/lib/commercial/runtime` with an analytics-only provider
+ * (Magic-Resume-Commercial `scripts/apply-overlay.mjs`). If the
  * `window.__ENV` injection lived there, the overlay would strip it and the
  * commercial image would fall back to the localhost default. This module is NOT
  * in the overlay's alias list, so the injection survives in both builds. Keep it
