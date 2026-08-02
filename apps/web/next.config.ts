@@ -139,7 +139,8 @@ const nextConfig: NextConfig = {
   webpack: (config, { webpack }) => {
     const runtimeRoot = process.env.MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT;
     const billingRoot = process.env.MAGIC_RESUME_COMMERCIAL_BILLING_ROOT;
-    if (!runtimeRoot && !billingRoot) return config;
+    const legalRoot = process.env.MAGIC_RESUME_COMMERCIAL_LEGAL_ROOT;
+    if (!runtimeRoot && !billingRoot && !legalRoot) return config;
 
     const slots: Record<string, string> = {};
     if (runtimeRoot) {
@@ -151,10 +152,17 @@ const nextConfig: NextConfig = {
       slots['@/lib/extensions/billing-ui'] = path.join(billingRoot, 'src/billing-ui.tsx');
       slots['@/lib/extensions/billing-proxy'] = path.join(billingRoot, 'src/billing-proxy.ts');
     }
+    if (legalRoot) {
+      // The policy documents. The route shells under `app/legal/` stay in this
+      // repo — the overlay has no way to add a route — but everything they
+      // render, including the operating entity and its filing numbers, comes
+      // from the commercial package.
+      slots['@/lib/extensions/legal'] = path.join(legalRoot, 'src/legal.tsx');
+    }
 
     // Must run whenever a slot is swapped in: overlay code entering this bundle
     // is what creates the duplicate-instance problem in the first place.
-    shareRuntimeSingletons(config, [runtimeRoot, billingRoot].filter(
+    shareRuntimeSingletons(config, [runtimeRoot, billingRoot, legalRoot].filter(
       (root): root is string => Boolean(root),
     ));
 
@@ -166,7 +174,7 @@ const nextConfig: NextConfig = {
     // open-source stub.
     config.plugins.push(
       new webpack.NormalModuleReplacementPlugin(
-        /^@\/lib\/(commercial\/runtime|extensions\/(app-lifecycle|billing-client|billing-ui|billing-proxy))$/,
+        /^@\/lib\/(commercial\/runtime|extensions\/(app-lifecycle|billing-client|billing-ui|billing-proxy|legal))$/,
         (resource: { request: string }) => {
           const target = slots[resource.request];
           if (target) resource.request = target;
