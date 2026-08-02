@@ -62,7 +62,10 @@
     "days": "天",
     "hours": "时",
     "minutes": "分",
-    "seconds": "秒"
+    "seconds": "秒",
+    "terms": "用户协议",
+    "privacy": "隐私政策",
+    "refund": "退款政策"
   },
   "account": {
     "menu": {

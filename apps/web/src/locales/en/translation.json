@@ -62,7 +62,10 @@
     "days": "Days",
     "hours": "Hours",
     "minutes": "Minutes",
-    "seconds": "Seconds"
+    "seconds": "Seconds",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "refund": "Refunds"
   },
   "account": {
     "menu": {

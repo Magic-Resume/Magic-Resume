@@ -275,6 +275,26 @@ export default function ComingSoon({
             </>
           ) : null}
         </motion.div>
+
+        {/* The gate is shut for everyone who is not whitelisted, so this is the
+            only page most visitors ever see. Payment-channel reviewers and
+            filing checks look for these three, and they must be reachable
+            without an account — which they are: /legal/* is outside
+            `isProtectedRoute`. */}
+        <motion.nav
+          variants={item}
+          className="mt-14 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/35"
+        >
+          <Link href="/legal/terms" className="transition-colors hover:text-sky-400">
+            {t('comingSoon.terms')}
+          </Link>
+          <Link href="/legal/privacy" className="transition-colors hover:text-sky-400">
+            {t('comingSoon.privacy')}
+          </Link>
+          <Link href="/legal/refund" className="transition-colors hover:text-sky-400">
+            {t('comingSoon.refund')}
+          </Link>
+        </motion.nav>
       </motion.div>
     </main>
   );
