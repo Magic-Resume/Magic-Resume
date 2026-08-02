@@ -47,7 +47,11 @@
       "emailInvalid": "That email doesn't look right.",
       "rateLimited": "Too many attempts. Try again shortly.",
       "generic": "Something went wrong. Try again."
-    }
+    },
+    "legalConsent": "By signing up you agree to our",
+    "legalTerms": "Terms of Service",
+    "legalAnd": "and",
+    "legalPrivacy": "Privacy Policy"
   },
   "comingSoon": {
     "title": "Something great is on the way",
@@ -62,10 +66,7 @@
     "days": "Days",
     "hours": "Hours",
     "minutes": "Minutes",
-    "seconds": "Seconds",
-    "terms": "Terms",
-    "privacy": "Privacy",
-    "refund": "Refunds"
+    "seconds": "Seconds"
   },
   "account": {
     "menu": {

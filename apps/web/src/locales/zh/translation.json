@@ -47,7 +47,11 @@
       "emailInvalid": "邮箱格式不对",
       "rateLimited": "尝试太频繁,稍后再试",
       "generic": "出了点问题,稍后再试"
-    }
+    },
+    "legalConsent": "注册即表示你已阅读并同意",
+    "legalTerms": "《用户协议》",
+    "legalAnd": "与",
+    "legalPrivacy": "《隐私政策》"
   },
   "comingSoon": {
     "title": "好东西,马上就来",
@@ -62,10 +66,7 @@
     "days": "天",
     "hours": "时",
     "minutes": "分",
-    "seconds": "秒",
-    "terms": "用户协议",
-    "privacy": "隐私政策",
-    "refund": "退款政策"
+    "seconds": "秒"
   },
   "account": {
     "menu": {
