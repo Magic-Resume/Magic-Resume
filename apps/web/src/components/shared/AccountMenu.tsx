@@ -2,10 +2,12 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ChevronRight,
   LogOut,
+  Receipt,
   Settings,
   Sparkles,
   User as UserIcon,
@@ -39,6 +41,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
   const { t, i18n } = useTranslation();
   const { user } = useAppUser();
   const { signOut } = useAppAuth();
+  const router = useRouter();
   const { openSettings, openAccount, openPricing } = useAccountUiStore();
   const reduce = useReducedMotion();
 
@@ -190,6 +193,16 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
       )}
 
       {isCloudMode && <MenuRow icon={<UserIcon size={16} />} label={t("account.menu.profile")} onClick={() => run(openAccount)} />}
+      {/* The emails send people to /dashboard/billing; the menu should be able
+          to get them there too, or the page only exists at the end of a link
+          in an inbox. */}
+      {isCloudMode && (
+        <MenuRow
+          icon={<Receipt size={16} />}
+          label={t("account.menu.billing")}
+          onClick={() => run(() => router.push("/dashboard/billing"))}
+        />
+      )}
       <MenuRow icon={<Settings size={16} />} label={t("account.menu.settings")} onClick={() => run(() => openSettings())} />
 
       {/* in-place language switch */}
