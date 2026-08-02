@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 /**
  * Billing passthrough slot — the open-source build has no billing backend.
  *
- * `next-config-overlay.mjs` aliases this module to the commercial billing
+ * The commercial build replaces this module with the commercial billing
  * package, which forwards the caller's token to the platform API. The routes
  * under `app/api/billing/` stay in the open-source tree and call this, so a
  * self-hosted deployment answers them with a plain 404 instead of the route

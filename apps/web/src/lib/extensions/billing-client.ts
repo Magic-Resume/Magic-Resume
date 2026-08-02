@@ -12,7 +12,7 @@ import type {
 /**
  * Billing slot — the open-source build has none.
  *
- * `next-config-overlay.mjs` aliases this module to the commercial billing
+ * The commercial build replaces this module with the commercial billing
  * package, which talks to the platform API. Here it answers as a build with no
  * paywall: no plans to sell, no subscription to manage, and AI that runs on the
  * user's own API key.
