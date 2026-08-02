@@ -11,36 +11,13 @@ import {
 } from '@/lib/extensions/billing-client';
 import type { OrderSummary } from '@/lib/billing/types';
 
-/** How often to ask our own API whether the order has landed. */
 const POLL_MS = 2_000;
-/** Give up after this long and tell the user to check back, rather than spinning forever. */
 const TIMEOUT_MS = 60_000;
-/**
- * Poll counts at which to also ask the channel directly.
- *
- * The async notification is the normal path and usually beats the browser back
- * here. These are the fallback for when it does not arrive at all — spaced out
- * because each one costs an upstream call, and bunched early because a
- * notification that has not landed in ~40s probably is not coming.
- */
+/** 第几次轮询时顺带直接问渠道——异步通知才是常态，这只是它没来时的兜底，每次都要一次上游调用。 */
 const SYNC_AT_ATTEMPTS = new Set([4, 10, 20]);
-/**
- * Consecutive failed polls before admitting something is wrong.
- *
- * One failure is noise. Failing every time is not "still waiting" — it is a
- * broken session or a down API, and saying "no notification yet" would blame
- * the payment channel for our own problem.
- */
+/** 连续失败几次才认定出错：单次失败是噪声，次次失败就不是"还在等"而是我们自己坏了。 */
 const FAILURES_BEFORE_ERROR = 3;
-/**
- * How far before this page opened a payment can have settled and still count as
- * "this checkout".
- *
- * Alipay's `notify_url` is server-to-server and routinely lands while the buyer
- * is still on the channel's page, so `paidAt` is often a little *older* than
- * this page. That window is a checkout's worth of time; a genuinely revisited
- * link is hours or days old, not minutes.
- */
+/** 早于本页多久的支付仍算"这一单"：支付宝 notify 是服务端直连，paidAt 常比本页还早。 */
 const RECENT_PAYMENT_MS = 15 * 60_000;
 
 type Phase = 'waiting' | 'paid' | 'already_paid' | 'timeout' | 'error';
@@ -53,13 +30,10 @@ function ReturnState() {
 
   const [phase, setPhase] = useState<Phase>('waiting');
   const [error, setError] = useState<string | null>(null);
-  // Kept in a ref, not state: the polling effect must not restart (and reset the
-  // clock) every time the attempt count changes.
+  // 用 ref 不用 state：次数一变就重启轮询 effect 会把计时也重置掉。
   const attempts = useRef(0);
   const failures = useRef(0);
   const openedAt = useRef(Date.now());
-  // The effect must not list `t` as a dependency — see the poll below — but it
-  // still needs the current translations.
   const tRef = useRef(t);
   tRef.current = t;
 
@@ -67,22 +41,14 @@ function ReturnState() {
     (next: OrderSummary | null) => {
       if (!next || next.status !== 'paid') return false;
 
-      // Judged on when the payment settled, not on how many times we have
-      // asked. "Paid on the first poll" was read as "this is a revisit", but it
-      // is also the most common *successful* path: Alipay's notify is
-      // server-to-server and usually beats the browser back here. Real buyers
-      // were told "此前已完成付款并到账，本次没有重复扣款" about a purchase
-      // they had just made.
+      // 按支付落账时间判定，不按轮询次数：首次轮询就已支付恰恰是最常见的**成功**路径，
+      // 当成"重复访问"会对刚付完钱的买家说"此前已完成付款"。
       const paidAt = next.paidAt ? Date.parse(next.paidAt) : NaN;
       const arrivedNow =
         Number.isNaN(paidAt) || paidAt >= openedAt.current - RECENT_PAYMENT_MS;
       setPhase(arrivedNow ? 'paid' : 'already_paid');
 
-      // Unconditional. This used to sit inside the `arrivedNow` branch, so the
-      // misjudgement above also left the cached entitlement stale: the buyer
-      // pressed "back to workspace" and saw their pre-purchase balance and
-      // plan. Dropping a cache is idempotent — there is nothing to save by
-      // skipping it.
+      // 无条件失效：放进 arrivedNow 分支里会让买家返回工作台时看到买之前的余额和计划。
       invalidateEntitlementCache();
       return true;
     },
@@ -105,12 +71,8 @@ function ReturnState() {
 
       try {
         const order = await fetchOrder(orderId);
-        // The main poll answered, so the failure streak is broken. This used to
-        // sit after the sync below and inside the same `try`, which meant a
-        // throwing sync both incremented the counter and skipped the reset —
-        // three optional calls failing turned a perfectly healthy poll into
-        // `error`, showing the buyer a raw upstream string at ~40s when the
-        // honest ending was the 60s timeout copy.
+        // 主轮询答复了就清失败计数。这行必须在下面 sync 之前、且不能同处一个 try：
+        // 否则可选调用抛错会既加计数又跳过清零，把健康的轮询判成 error。
         failures.current = 0;
         if (!alive) return;
         if (settle(order)) return;
@@ -130,9 +92,8 @@ function ReturnState() {
           if (!alive) return;
           if (settle(synced)) return;
         } catch {
-          // A best-effort fallback for a notification that never arrived. Its
-          // failure says nothing about whether we are still waiting, so it gets
-          // no say in the phase and no share of the poll's failure budget.
+          // 通知没来时的尽力兜底。它失败说明不了"是否还在等"，因此不参与 phase 判定、
+          // 也不占轮询的失败额度。
         }
       }
 
@@ -149,12 +110,8 @@ function ReturnState() {
       alive = false;
       clearTimeout(timer);
     };
-    // `t` is deliberately absent. react-i18next hands back a new `t` when its
-    // resources finish loading, which in practice happens at least once after
-    // mount — and that restarted this effect, resetting `startedAt` and firing
-    // an extra immediate poll, quietly extending the 60s ceiling the timeout
-    // copy promises. It is read through `tRef` instead, for the same reason
-    // `attempts` is a ref.
+    // 故意不依赖 `t`：react-i18next 资源加载完会换一个新的 `t`，会重启本 effect、
+    // 重置计时并多打一次轮询，悄悄突破文案承诺的 60s 上限。改从 tRef 读。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, settle]);
 
@@ -165,8 +122,7 @@ function ReturnState() {
       <Panel
         icon={<CheckCircle2 className="h-10 w-10 text-emerald-500" />}
         title={t('billing.return.paidTitle')}
-        // Unconditional now, and it names no quantity: the buyer's own number of
-        // credits is not something they can price, and it is not sent here.
+        // 不提数量：积分数不下发到客户端。
         detail={t('billing.return.paidDetail')}
         action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
       />
@@ -189,9 +145,7 @@ function ReturnState() {
       <Panel
         icon={<Clock className="h-10 w-10 text-amber-500" />}
         title={t('billing.return.timeoutTitle')}
-        // Deliberately not "payment failed": the money may well have been
-        // taken. Alipay retries its notification for hours, so the order can
-        // still settle on its own.
+        // 故意不说"支付失败"：钱很可能已经扣了，支付宝的通知会重试数小时，订单还能自己落账。
         detail={t('billing.return.timeoutDetail')}
         action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
       />
@@ -250,16 +204,13 @@ function Panel({
 }
 
 /**
- * Landing page for the payment channel's `return_url`.
+ * 支付渠道 `return_url` 的落地页。
  *
- * The redirect only means the buyer finished at the cashier — it is not proof
- * of payment, and it carries no signature. The order is treated as paid solely
- * on what our own API says, which in turn only trusts the verified async
- * notification.
+ * 这个跳转只说明买家在收银台走完了流程——它不带签名，不是付款凭证。是否已付款只认
+ * 我们自己的 API，而后者只信经过验签的异步通知。
  */
 export default function BillingReturnPage() {
-  // useSearchParams needs a Suspense boundary, or `next build` fails trying to
-  // prerender this route.
+  // useSearchParams 必须包 Suspense，否则 next build 预渲染这条路由会失败。
   return (
     <Suspense
       fallback={

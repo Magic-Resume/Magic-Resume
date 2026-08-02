@@ -2,12 +2,8 @@ import { WEB_AGENT_ROUTES } from '@/lib/api/routes';
 import type { AgentLlmConfig, AgentSseEvent } from './types';
 
 /**
- * The AI Lab's single service client. Calls go through Next.js route handlers, so
- * this speaks relative `/api/...` paths and inherits server-side auth handling.
- *
- * P0 wires `analyze` (JSON). The streaming helper below is the foundation the later
- * phases (optimize / translate / create) build on; it parses the normalized
- * `AgentSseEvent` schema.
+ * AI Lab 唯一的服务客户端。调用都经 Next.js route handler，所以这里用相对 `/api/...`
+ * 路径，鉴权由服务端处理。
  */
 
 async function readError(res: Response): Promise<string> {
@@ -20,10 +16,8 @@ async function readError(res: Response): Promise<string> {
 }
 
 /**
- * Parse an SSE response body into typed {@link AgentSseEvent}s. Shared by every
- * streaming caller (JSON-bodied chat and FormData-bodied PDF parse), so the frame
- * handling lives in one place. Throws (via {@link readError}) on a non-stream error
- * response — e.g. a pre-stream 401/422/429 the backend emits before it starts SSE.
+ * 把 SSE 响应体解析成 {@link AgentSseEvent}。所有流式调用共用它，帧处理只此一处。
+ * 遇到非流式错误响应（后端开流前发的 401/422/429）会抛错。
  */
 export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseEvent> {
   if (!res.ok || !res.body) throw new Error(await readError(res));
@@ -32,9 +26,7 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
 
-  // Line-based: each AgentSseEvent is a single `data: {json}` line. This tolerates
-  // both real `\n\n`-framed SSE (graph/translate — blank lines just skip) and the
-  // route-handler proxy that collapses `\n\n` → `\n`.
+  // 按行解析：既容忍标准 `\n\n` 分帧的 SSE，也容忍把 `\n\n` 压成 `\n` 的代理层。
   const parse = (raw: string): AgentSseEvent | null => {
     const line = raw.trim();
     if (!line.startsWith('data:')) return null;
@@ -62,10 +54,7 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
   if (tail) yield tail;
 }
 
-/**
- * Stream a normalized agent run. Yields typed {@link AgentSseEvent}s parsed from the
- * `data: {json}\n\n` frames. Foundation for the streaming skills (not used by P0).
- */
+/** 流式跑一次 agent，产出解析好的 {@link AgentSseEvent}。 */
 export async function* streamAgent(
   url: string,
   body: unknown,
@@ -80,11 +69,7 @@ export async function* streamAgent(
   yield* consumeSseFrames(res);
 }
 
-/**
- * Stream the PDF-import parse. FormData body (file + `config`), so we deliberately
- * omit `Content-Type` — the browser sets the multipart boundary itself. The route
- * handler streams `pdf_progress` (`tool_result`) ticks and a final `resume_update`.
- */
+/** 流式跑 PDF 导入解析。FormData 体，故意不设 `Content-Type`——multipart 边界由浏览器写。 */
 export async function* streamPdfParse(
   formData: FormData,
   signal?: AbortSignal
@@ -100,10 +85,7 @@ export async function* streamPdfParse(
 export interface ChatStreamParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
   mode?: 'create' | 'optimize' | 'analyze' | 'translate' | 'interview' | 'general';
-  /**
-   * Conversation/session id. One conversation = one sessionId; "new chat" mints
-   * a new one. The server can use it to resume context across turns.
-   */
+  /** 一次对话 = 一个 sessionId，"新对话"才换新的。服务端据此跨轮次续上下文。 */
   sessionId?: string;
   /**
    * id of the resume this session is scoped to. The client sends an id instead of

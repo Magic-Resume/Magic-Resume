@@ -39,11 +39,8 @@ import { useRouter } from 'next/navigation';
 import HeaderTab from './layout/HeaderTab';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
-// 预览面板静态引入:它本体很轻(重件 pdf.js / @react-pdf 都在更下层按需懒加载,见
-// PdfCanvasPreview 的 dynamic 与 pdf-export 的内部 import())。之前整个面板 dynamic 化,
-// 造成"转圈 spinner → dock 独自弹在黑画布上 → 纸才出现"的三段跳;静态引入后舞台、占位纸、
-// dock 同帧入场,加载故事从头到尾只有一张持续呼吸的纸。SSR 无虞:父组件在 store 加载完成前
-// 渲染的是 ResumeEditSkeleton,服务端不会走到本面板。
+// 预览面板静态引入:它本体很轻(pdf.js / @react-pdf 在更下层各自懒加载)。整个面板 dynamic
+// 会造成"spinner → dock 单独弹出 → 纸才出现"的三段跳,静态引入让它们同帧入场。
 
 type ResumeEditProps = {
   id: string;
@@ -86,7 +83,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
-  // Create and rename share one dialog: they differ only in starting values.
   const [creatingSection, setCreatingSection] = useState(false);
   const [editingSection, setEditingSection] = useState<{ key: string; label: string; icon?: string } | null>(null);
   const [deletingSection, setDeletingSection] = useState<{ key: string; label: string } | null>(null);
@@ -97,12 +93,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const openJsonModal = () => router.push(`/dashboard/edit/${id}/json`);
 
   const openAIModal = async () => {
-    // The AI agent reads the resume from the cloud DB (read_resume tool), so push
-    // the latest editor state first (best-effort; no-ops if cloud sync is off).
+    // agent 是从云端库读简历的，先尽力把编辑器最新状态推上去（关了云同步则无操作）。
     try {
       await syncToCloud();
     } catch {
-      // Open the lab regardless — read_resume degrades gracefully if unsynced.
     }
     router.push(`/dashboard/edit/${id}/ai-lab`);
   };
@@ -173,12 +167,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const sectionItems = activeResume?.sections;
   const sectionOrder = activeResume?.sectionOrder;
 
-  // 简历模块的 refs(供大纲轨跳转 / 滚动高亮)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const leftScrollRef = useRef<HTMLDivElement | null>(null);
   const suppressNextScroll = useRef(false);
 
-  // 拖拽排序的传感器
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -193,17 +185,14 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [activeSection]);
 
-  // 监听store loading状态和resumes变化，确保数据加载完成后能正确加载简历
   useEffect(() => {
     const setupEditor = async () => {
-      // 1. 检查是否存在 (UI 逻辑)
       if (!isStoreLoading) {
         const resume = resumes.find(r => r.id === id);
         if (!resume && resumes.length > 0) {
           setResumeNotFound(true);
         } else if (resume) {
           setResumeNotFound(false);
-          // 预加载
           router.prefetch(`/dashboard/edit/${id}/ai-lab`);
           router.prefetch(`/dashboard/edit/${id}/history`);
           router.prefetch(`/dashboard/edit/${id}/json`);
@@ -212,7 +201,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         }
       }
 
-      // 2. 触发加载 (数据逻辑)
       const { activeResume, isSyncing } = useResumeStore.getState();
       if (activeResume?.id === id && !isStoreLoading && !isSyncing) {
           return;
@@ -224,8 +212,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     setupEditor();
   }, [id, loadResumeForEdit, isStoreLoading, resumes, router]); // resumes 依然保留，但靠内部 activeResume?.id === id 熔断
 
-  // 编辑器查看生命周期
-  // 同步activeResume的template到currentTemplateId
   useEffect(() => {
     if (activeResume?.template && activeResume.template !== currentTemplateId) {
       setCurrentTemplateId(activeResume.template);
@@ -238,7 +224,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     }
   }, [leftCollapsed, narrowWorkspace, rightCollapsed, setLeftCollapsed]);
 
-  // 保存简历
   const handleSave = async () => {
     if (isSaving) return;
     
@@ -255,7 +240,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       await saveActiveResumeToResumes('manual', activeResume || undefined);
       console.log('[Save] Store saveResume completed.');
       
-      // Update ref to prevent the auto-sync useEffect from thinking this is a fresh unsynced change
       const freshResume = useResumeStore.getState().activeResume;
       if (freshResume) {
           lastUpdatedAtRef.current = freshResume.updatedAt;
@@ -268,9 +252,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     }
   };
 
-  // 自动同步:10s 防抖 + 45s maxWait。纯 trailing 防抖会被持续输入无限重置 —— 用户连续
-  // 写作几分钟,云端(分享链接 / AI read_resume / 其它设备)就几分钟拿不到新内容;maxWait
-  // 保证再怎么连续编辑,至多 45s 也会落一次云。
+  // 自动同步:10s 防抖 + 45s maxWait。纯 trailing 防抖会被持续输入无限重置,
+  // maxWait 保证再怎么连续编辑至多 45s 也会落一次云。
   const debouncedSync = useMemo(
     () => debounce(async () => {
       await syncToCloud();
@@ -278,10 +261,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     [syncToCloud]
   );
 
-  // Ref to track the last synced/loaded update time
   const lastUpdatedAtRef = React.useRef<number | null>(null);
   
-  // Reset lastUpdatedAt when ID changes
   useEffect(() => {
     lastUpdatedAtRef.current = null;
   }, [id]);
@@ -289,13 +270,11 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   useEffect(() => {
     const triggerSync = async () => {
       if (cloudSync && activeResume && !isStoreLoading) {
-        // Initial load: capture current timestamp and skip sync
         if (lastUpdatedAtRef.current === null) {
           lastUpdatedAtRef.current = activeResume.updatedAt;
           return;
         }
 
-        // If timestamp hasn't changed, it's just a re-render or initial load double-invoke
         if (activeResume.updatedAt === lastUpdatedAtRef.current) {
           return;
         }
@@ -307,26 +286,20 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     
     triggerSync();
 
-    // 注意:cleanup 里不要 cancel。此 effect 每次编辑都重跑,cancel 会 ①卸载时把待同步
-    // 修改静默丢弃 ②每次击键清零 maxWait 的计时,让"最迟 45s 必落云"彻底失效(trailing
-    // 计时器 debounce 自己每次调用就会重置,无需 cancel 帮忙)。"待同步不再成立"的场景
-    // (关同步 / 无 activeResume)由 syncToCloud 入口的前置检查兜住。
+    // cleanup 里不要 cancel:此 effect 每次编辑都重跑,cancel 会静默丢弃待同步修改,
+    // 并把 maxWait 计时每次击键清零,让"最迟 45s 必落云"彻底失效。
   }, [activeResume, cloudSync, isStoreLoading, debouncedSync]);
 
-  // 离开编辑器(卸载)或切换简历时,把仍在防抖窗口里的待同步立即刷出去,而不是丢弃。
-  // flush 对无挂起调用是 no-op;syncToCloud 在 flush 触发时同步地快照 store 里的
-  // activeResume(此刻仍是旧简历),同步对象不会串。
+  // 卸载或切换简历时把防抖窗口里的待同步刷出去而不是丢弃。flush 时 syncToCloud 同步
+  // 快照 store 里的 activeResume(此刻仍是旧简历),对象不会串。
   useEffect(() => {
     return () => {
       debouncedSync.flush();
     };
   }, [id, debouncedSync]);
 
-  // 标签页隐藏 / 关闭时尽力刷出 —— 与 store 层 debouncedLocalPersist 的 flush-on-hide
-  // 同款模式(useResumeStore.ts 末尾)。分两档:
-  //   visibilitychange:hidden(切标签/切应用,页面还活着)→ axios flush,走完整同步算法;
-  //   pagehide(关标签/跳走,axios 不保送达)→ keepalive fetch(flushSyncOnExit),浏览器
-  //   托管送完;同时 cancel 防抖,避免 bfcache 恢复后重复推送。
+  // 隐藏/关闭时尽力刷出,分两档:visibilitychange 页面还活着 → axios flush 走完整算法;
+  // pagehide 时 axios 不保送达 → keepalive fetch,并 cancel 防抖避免 bfcache 恢复后重推。
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') void debouncedSync.flush();
@@ -343,8 +316,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     };
   }, [debouncedSync]);
 
-  // 网络恢复时,若仍有未落云的修改(modified)或上次同步失败(error),立即补一次,
-  // 不必干等下一次编辑才触发。
+  // 网络恢复时若仍有未落云的修改或上次同步失败,立即补一次,不必等下次编辑。
   useEffect(() => {
     const onOnline = () => {
       const { syncStatus: status } = useResumeStore.getState();
@@ -356,7 +328,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     return () => window.removeEventListener('online', onOnline);
   }, [cloudSync, syncToCloud]);
 
-  // 折叠分区 / 大纲轨跳转 / 滚动高亮
   const toggleSection = useCallback((key: string) => {
     setOpenSections(prev => ({ ...prev, [key]: !(prev[key] ?? true) }));
   }, []);
@@ -387,7 +358,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     }
   }, [sectionOrder, activeSection, setActiveSection]);
 
-  // 选择模板
   const handleSelectTemplate = useCallback((templateId: string) => {
     if (activeResume) {
       appLifecycle.resumeTemplateSelected({
@@ -399,7 +369,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     updateTemplate(templateId);
   }, [activeResume, currentTemplateId, updateTemplate]);
 
-  // 拖拽排序
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (over && active.id !== over.id && sectionOrder) {
@@ -408,14 +377,12 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(sectionOrder, oldIndex, newIndex);
         updateSectionOrder(newOrder);
-        // The sections themselves were reordered. Reordering entries inside one
-        // section is a different, much more frequent action and is not this.
+        // 这里是模块之间的排序；模块内条目排序是另一个高频动作，不走这里。
         appLifecycle.editorSectionReordered();
       }
     }
   }
 
-  // 如果简历未找到，显示错误信息
   if (resumeNotFound) {
     return (
       <div className="flex h-screen bg-desk text-white items-center justify-center">
@@ -435,12 +402,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     );
   }
 
-  // 显示loading状态或当简历数据不存在时
   if (isStoreLoading || !activeResume || !info || !sectionItems || !sectionOrder) {
     return <ResumeEditSkeleton />;
   }
 
-  // 简历模块
   function renderSections() {
     return (
       <DndContext
@@ -453,10 +418,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
           {(sectionOrder || []).map(({ key, label, icon: iconName }) => {
             const meta = sectionMeta(key, iconName);
             const Icon = meta.icon;
-            // Fall back to the stored label, not the raw key: a custom section
-            // has no i18n key, and `OutlineRail` next to this already reads it
-            // that way — the two disagreeing is what showed `personalStrengths`
-            // as a heading here and 「个人优势」 two panels over.
+            // 兜底用存下来的 label 而非裸 key：自定义 section 没有 i18n key，
+            // 旁边的 OutlineRail 就是这么读的，两边不一致会一处显 key 一处显中文。
             const title = meta.labelKey ? t(meta.labelKey) : label || key;
             const custom = isCustomSection(key);
             return (
@@ -500,8 +463,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                   />
                 ) : (
                   <SectionListWithModal
-                    // Stable kind (`experience`, `education`…) for analytics —
-                    // `label` is an i18n key and shifts with copy changes.
+                    // 埋点用稳定的 kind，`label` 是 i18n key，会随文案变。
                     sectionKey={key}
                     label={meta.labelKey || key}
                     fields={formFieldsFor(key).map(f => ({ name: f.key, label: t(f.labelKey), placeholder: f.placeholderKey ? t(f.placeholderKey) : '', required: f.required }))}
@@ -542,8 +504,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
               updateCustomSection(editingSection.key, { label, icon });
             } else {
               const key = addCustomSection(label, icon);
-              // Open it straight away — a new section with no visible form
-              // reads as though nothing happened.
+              // 立刻展开：新建的 section 不显示表单会让人以为什么都没发生。
               if (key) setOpenSections(prev => ({ ...prev, [key]: true }));
             }
           }}
@@ -567,7 +528,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     );
   }
 
-  // 移动端适配
   if (isMobile) {
     return (
       <MobileResumEdit
@@ -595,9 +555,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     <>
       <main
         data-magic-editor-canvas
-        // Which resume is being edited. Everything reported from inside the
-        // editor — including the AI panel and the share dialog — picks this up
-        // without each control carrying it. Ids only; other keys are dropped.
+        // 编辑器内的所有上报（含 AI 面板、分享弹窗）都自动带上这份简历 id，控件不必各自传。
         data-magic-context={JSON.stringify({
           resumeId: activeResume.id,
           templateId: currentTemplateId,
