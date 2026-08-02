@@ -13,19 +13,11 @@ import {
 } from '@/types/backend/resume';
 import { API_ROUTES, API_ORIGIN } from './routes';
 
-/**
- * A resume that only exists locally (never synced) has a numeric timestamp id
- * (Date.now().toString()); cloud resumes use CUIDs. Centralised so every call site
- * classifies ids the same way instead of re-deriving the rule inline.
- */
+/** 纯本地简历的 id 是数字时间戳，云端简历是 CUID。集中判定，避免各调用点各写一遍。 */
 export const isLocalResumeId = (id: string): boolean =>
   !isNaN(Number(id)) && id.length > 10;
 
-/**
- * 推送文档 = 前端 Resume 去掉 versions(体积大且服务端另有版本表)。
- * 同步(全量/增量 diff 基线/keepalive)统一用这一个构造,保证"客户端认为推了什么"
- * 与"服务端存了什么"永远一致。
- */
+/** 推送文档 = 前端 Resume 去掉 versions。所有同步路径共用它，保证推了什么与存了什么一致。 */
 export const buildSyncDoc = (resume: Resume): Record<string, unknown> => {
   const doc = { ...resume } as Record<string, unknown>;
   delete doc.versions;
@@ -40,11 +32,7 @@ export type SyncResumeOptions = {
 };
 
 export const resumeApi = {
-  /**
-   * 将简历同步到云端。
-   * 本地临时 ID（纯数字且长度 > 10）→ POST 创建（恒全量）；云端 ID → PATCH 更新。
-   * PATCH 依选项走三种形态:增量(patchOps+baseRevision) / 条件全量(baseRevision) / 无条件全量。
-   */
+  /** 同步到云端：本地临时 ID → POST 创建（恒全量）；云端 ID → PATCH（增量/条件全量/无条件全量）。 */
   syncResume: async (resume: Resume, options?: SyncResumeOptions): Promise<CloudResumeResponse> => {
     const isLocalId = isLocalResumeId(resume.id);
 
@@ -73,9 +61,8 @@ export const resumeApi = {
   },
 
   /**
-   * 退出送达(pagehide):keepalive fetch 绕过 axios,页面卸载后浏览器仍会送出请求。
-   * 无条件全量(退出后无人处理 409,LWW 语义与旧版一致;下次会话冲突由 409 恢复流程收敛)。
-   * 尽力而为:body >64KB 或 token 过期即失败,静默退化为"下次会话再同步"。
+   * 退出送达：keepalive fetch 绕过 axios，页面卸载后浏览器仍会发出请求。
+   * 无条件全量——退出后没人处理 409。尽力而为：body >64KB 或 token 过期即失败。
    */
   syncResumeKeepalive: (resume: Resume, token: string): void => {
     if (isLocalResumeId(resume.id)) return; // 本地未建行,退出场景没有可 PATCH 的目标

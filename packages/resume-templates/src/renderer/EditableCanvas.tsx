@@ -3,32 +3,21 @@ import { Check, X, RotateCcw, Sparkles, Plus, AlertCircle, ChevronDown } from 'l
 import { WysiwygContent } from '../templateLayout/WysiwygContent';
 
 /**
- * The "living canvas" editable layer.
- *
- * This module turns the otherwise read-only resume render into a locatable,
- * operable surface WITHOUT changing the default (production) render. The layout
- * components wrap their editable fields in <Editable />, which:
- *
- *   - in the default case (no provider / `enabled` false) renders the field
- *     exactly as before — plain WysiwygContent or text;
- *   - when an {@link EditableCanvasProvider} is mounted, it stamps a
- *     `data-resume-path` anchor on the node, reveals a hover handle, and renders
- *     any pending AI change in place (red-delete / green-add + accept/discard).
- *
- * The provider is supplied by the AI Lab's interactive canvas in `apps/web`.
- * Keeping the contract here (path scheme + render) lets later layers — the
- * JD-match map, the proactive coach — reuse the same "locate + propose" surface.
+ * living canvas 的可编辑层：在**不改变默认渲染**的前提下，把只读的简历变成可定位、
+ * 可操作的表面。没有 provider 时 <Editable /> 与从前完全一致；挂上
+ * {@link EditableCanvasProvider} 后它才打 `data-resume-path` 锚点、露出悬停手柄、
+ * 并就地渲染待定改动（红删绿增 + 接受/丢弃）。
  */
 
 /** A precise, resolvable handle to one editable field on one item. */
 export interface EditableTarget {
-  /** resume section key, e.g. `experience` (or the sentinel `info` for header fields) */
+  /** section key，如 `experience`；表头字段用哨兵值 `info`。 */
   sectionKey: string;
-  /** stable item id (we anchor by id, not array index, since the render filters hidden items) */
+  /** 条目 id。按 id 锚定而非数组下标——渲染会过滤掉隐藏条目。 */
   itemId: string;
-  /** the actual field key that holds the value, e.g. `summary` */
+  /** 承载值的字段名，如 `summary`。 */
   fieldKey: string;
-  /** `html` fields go through WysiwygContent; `text` fields render inline */
+  /** `html` 走 WysiwygContent，`text` 内联渲染。 */
   kind: 'html' | 'text';
   /** human label for logs / the review bar, e.g. `工作经历 · 第 2 条` */
   label: string;

@@ -16,24 +16,15 @@ import { SUPPORT_EMAIL } from "@/lib/extensions/legal";
 import { cn } from "@/lib/utils";
 
 /**
- * The help fly-out on the account menu.
+ * 账户菜单里的帮助浮层——法务文档归在这里，和「帮助中心」「报告问题」同一个抽屉。
+ * （注册时的同意链接是另一回事，必须留在当场，不能收进帮助里。）
  *
- * This is where the policy documents belong in the product. They are not a
- * feature anyone goes looking for in settings; they are reference material you
- * reach for when something is wrong or you want to check what you agreed to —
- * the same drawer as "help centre" and "report a bug".
- *
- * (The consent links at sign-up are a separate thing and stay there: those have
- * to be in front of someone at the moment they agree, not filed under help.)
- *
- * The help centre entry is hidden unless `NEXT_PUBLIC_DOCS_URL` is set. The docs
- * site has no committed domain yet, and a menu item that 404s is worse than one
- * that is not there — same rule as the unfilled facts in `legal/operator.ts`.
+ * 帮助中心入口在 `NEXT_PUBLIC_DOCS_URL` 未设置时隐藏：会 404 的菜单项比没有更糟。
  */
 const DOCS_URL = process.env.NEXT_PUBLIC_DOCS_URL;
 
 const PANEL_WIDTH = 184;
-/** Roughly the tallest the panel gets (4 items + a divider + padding). */
+/** 面板大致的最大高度（4 项 + 分隔线 + 内边距）。 */
 const PANEL_HEIGHT = 190;
 const GAP = 6;
 
@@ -43,7 +34,7 @@ export function HelpSubmenu({
   menuOpen,
   onNavigate,
 }: {
-  /** Whether the account menu that owns this row is itself open. */
+  /** 拥有这一行的账户菜单自身是否展开。 */
   menuOpen: boolean;
   onNavigate: () => void;
 }) {
