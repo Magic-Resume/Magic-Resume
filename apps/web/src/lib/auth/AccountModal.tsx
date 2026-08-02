@@ -20,13 +20,12 @@ import {
 } from 'lucide-react';
 import { isCloudMode } from '@/lib/config/app';
 import { ModalShell } from '@/components/ui/ModalShell';
-import { useAccountUiStore } from '@/store/useAccountUiStore';
+import { useAccountUiStore, type AccountTab } from '@/store/useAccountUiStore';
 import { useResumeStore } from '@/store/useResumeStore';
 import { useEntitlement } from '@/lib/extensions/billing-client';
+import { BillingTab } from '@/components/account/billing/BillingTab';
 import type { Entitlement } from '@/lib/billing/types';
 import { cn } from '@/lib/utils';
-
-type Tab = 'profile' | 'security' | 'activity';
 
 const PROVIDERS: Record<string, { name: string; color: string }> = {
   google: { name: 'Google', color: '#ea4335' },
@@ -53,11 +52,11 @@ export function AccountModal() {
 
 function CloudAccountModal() {
   const { t, i18n } = useTranslation();
-  const { accountOpen, closeAccount, openPricing } = useAccountUiStore();
+  const { accountOpen, accountTab, setAccountTab, closeAccount, openPricing } =
+    useAccountUiStore();
   const { isLoaded, user } = useUser();
   const resumes = useResumeStore((s) => s.resumes);
   const { data: entitlement } = useEntitlement(accountOpen);
-  const [tab, setTab] = useState<Tab>('profile');
   const [copied, setCopied] = useState<string | null>(null);
 
   const goUpgrade = () => {
@@ -142,10 +141,11 @@ function CloudAccountModal() {
 
   const initial = (view?.displayName?.[0] || 'U').toUpperCase();
 
-  const tabs: { key: Tab; label: string }[] = [
+  const tabs: { key: AccountTab; label: string }[] = [
     { key: 'profile', label: t('account.profile.tabs.profile') },
     { key: 'security', label: t('account.profile.tabs.security') },
     { key: 'activity', label: t('account.profile.tabs.activity') },
+    { key: 'billing', label: t('account.profile.tabs.billing') },
   ];
 
   return (
@@ -198,22 +198,29 @@ function CloudAccountModal() {
                 <button
                   key={tb.key}
                   type="button"
-                  onClick={() => setTab(tb.key)}
+                  onClick={() => setAccountTab(tb.key)}
                   className={cn(
                     'relative pb-3 text-[13px] transition-colors',
-                    tab === tb.key ? 'text-neutral-100' : 'text-neutral-500 hover:text-neutral-200',
+                    accountTab === tb.key ? 'text-neutral-100' : 'text-neutral-500 hover:text-neutral-200',
                   )}
                 >
                   {tb.label}
-                  {tab === tb.key && <span className="absolute -bottom-px left-0 right-0 h-px bg-sky-400" />}
+                  {accountTab === tb.key && <span className="absolute -bottom-px left-0 right-0 h-px bg-sky-400" />}
                 </button>
               ))}
             </div>
 
+            {accountTab === 'billing' ? (
+              // Full width, no side rail: a payments table squeezed beside the
+              // 240px id/date column wraps into something nobody can read.
+              <div className="mt-5 space-y-4">
+                <BillingTab entitlement={entitlement ?? null} />
+              </div>
+            ) : (
             <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
               {/* main column */}
               <div className="min-w-0 space-y-4">
-                {tab === 'profile' && (
+                {accountTab === 'profile' && (
                   <>
                     <Section title={t('account.profile.personalInfo')}>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -269,7 +276,7 @@ function CloudAccountModal() {
                   </>
                 )}
 
-                {tab === 'security' && (
+                {accountTab === 'security' && (
                   <Section title={t('account.profile.security')}>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <SecurityItem icon={<KeyRound size={16} />} label={t('account.profile.password')} on={!!user.passwordEnabled} t={t} />
@@ -280,7 +287,7 @@ function CloudAccountModal() {
                   </Section>
                 )}
 
-                {tab === 'activity' && (
+                {accountTab === 'activity' && (
                   <>
                     <ActivityHeatmap data={heatmap} />
                     <div className="grid grid-cols-3 gap-3">
@@ -317,6 +324,7 @@ function CloudAccountModal() {
                 <SideInfo label={t('account.profile.side.lastSignIn')} value={fmtDateTime(user.lastSignInAt)} />
               </aside>
             </div>
+            )}
           </>
         )}
       </div>

@@ -3,6 +3,7 @@
 import type {
   Entitlement,
   OrderCheckout,
+  OrderHistoryPage,
   OrderSummary,
   PlanSummary,
   SubscriptionSummary,
@@ -11,7 +12,7 @@ import type {
 /**
  * Billing slot — the open-source build has none.
  *
- * `next-config-overlay.mjs` aliases this module to the commercial billing
+ * The commercial build replaces this module with the commercial billing
  * package, which talks to the platform API. Here it answers as a build with no
  * paywall: no plans to sell, no subscription to manage, and AI that runs on the
  * user's own API key.
@@ -86,6 +87,14 @@ export async function fetchOrder(orderId: string): Promise<OrderSummary | null> 
 export async function syncOrder(orderId: string): Promise<OrderSummary | null> {
   ignore(orderId);
   return null;
+}
+
+/** No channel, no orders — an empty page rather than a thrown "not available". */
+export async function fetchOrders(
+  current = 1,
+  size = 20,
+): Promise<OrderHistoryPage> {
+  return { records: [], total: 0, current, size };
 }
 
 export function peekEntitlement(): Entitlement | null {

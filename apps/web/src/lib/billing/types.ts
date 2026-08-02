@@ -116,6 +116,25 @@ export interface OrderSummary {
   createdAt?: string;
 }
 
+/**
+ * A row in the buyer's own order history.
+ *
+ * The plan NAME, not the plan: a receipt has to say what was bought, and the
+ * full plan shape carries limits and card copy nobody reads here. Credits stay
+ * out on the server side — the balance is an internal billing unit.
+ */
+export interface OrderHistoryRow extends OrderSummary {
+  planName: string | null;
+  planKind: PlanKind | null;
+}
+
+export interface OrderHistoryPage {
+  records: OrderHistoryRow[];
+  total: number;
+  current: number;
+  size: number;
+}
+
 /** What the server hands back when an order is created and needs paying. */
 export interface OrderCheckout {
   orderId: string;
