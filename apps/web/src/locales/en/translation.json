@@ -77,7 +77,8 @@
       "profile": "Profile",
       "settings": "Settings",
       "language": "Language",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "billing": "Billing"
     },
     "modal": {
       "title": "Account"
@@ -1731,5 +1732,41 @@
     "iconLabel": "Icon (optional)",
     "deleteTitle": "Delete section",
     "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone."
+  },
+  "billingPage": {
+    "title": "Billing",
+    "subtitle": "Your current plan, and every payment you have made.",
+    "currentPlan": "Current plan",
+    "freePlan": "Free",
+    "renewsOn": "Renews on {{date}}",
+    "endsOn": "Cancelled — ends {{date}}",
+    "paymentFailed": "A charge failed. Update your payment method before the grace period ends.",
+    "manageCta": "Manage plan",
+    "upgradeCta": "Upgrade",
+    "ordersTitle": "Payments",
+    "noOrders": "No payments yet.",
+    "unknownItem": "—",
+    "colDate": "Date",
+    "colItem": "Item",
+    "colAmount": "Amount",
+    "colChannel": "Method",
+    "colStatus": "Status",
+    "loadFailed": "Could not load your billing information.",
+    "retry": "Retry",
+    "refundHint": "Need a refund? See the",
+    "refundPolicy": "refund policy",
+    "status": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "channel": {
+      "alipay": "Alipay",
+      "paypal": "PayPal",
+      "wechat": "WeChat Pay",
+      "stripe": "Stripe",
+      "manual": "Manual"
+    }
   }
 }

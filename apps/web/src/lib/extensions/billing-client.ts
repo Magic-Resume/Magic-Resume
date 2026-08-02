@@ -3,6 +3,7 @@
 import type {
   Entitlement,
   OrderCheckout,
+  OrderHistoryPage,
   OrderSummary,
   PlanSummary,
   SubscriptionSummary,
@@ -86,6 +87,14 @@ export async function fetchOrder(orderId: string): Promise<OrderSummary | null> 
 export async function syncOrder(orderId: string): Promise<OrderSummary | null> {
   ignore(orderId);
   return null;
+}
+
+/** No channel, no orders — an empty page rather than a thrown "not available". */
+export async function fetchOrders(
+  current = 1,
+  size = 20,
+): Promise<OrderHistoryPage> {
+  return { records: [], total: 0, current, size };
 }
 
 export function peekEntitlement(): Entitlement | null {
