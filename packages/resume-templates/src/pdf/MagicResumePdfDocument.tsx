@@ -1,26 +1,12 @@
 /**
- * The exported PDF is ONE free-form page, not a paginated A4 document.
+ * 导出的 PDF 是**一整页长页**，不是分页 A4——这是刻意选择，不是 bug。
  *
- * `pageSize` below gives react-pdf a width and deliberately no height, so the
- * single `<Page>` grows to whatever the content needs — in practice 1.95–3.05
- * A4 heights. This is a choice, and `scripts/render-pdf-smoke.mjs` holds it in
- * place: it asserts `/Count 1` and that the MediaBox grew past A4's height for
- * every template. It is stated here because the choice was made once and then
- * read as a bug by everyone who met it afterwards.
+ * `pageSize` 只给宽不给高，单个 `<Page>` 随内容长高；`scripts/render-pdf-smoke.mjs`
+ * 断言 `/Count 1` 把这个选择钉住。理由是产品面向线上投递与分享链接，连续阅读优于分页，
+ * 不会有经历被拦腰截断。代价是打印会被缩放或裁切。
  *
- * Why: the product is aimed at online submission and share links, where
- * continuous reading beats pagination — no experience gets split mid-entry, no
- * orphan two lines stranded on a page of their own. The cost is printing: a
- * long page sent to a printer is scaled to fit one sheet (small type when the
- * resume runs long) or cropped. `apps/docs/content/zh/guide/export.mdx` tells
- * users exactly that rather than implying page breaks exist.
- *
- * Consequence to know before editing: the `wrap={false}` and `minPresenceAhead`
- * props further down are INERT. They control widow/orphan behaviour across page
- * breaks, and there are no page breaks here. They are kept rather than stripped
- * because they are the correct markup the day this becomes paginated again —
- * but do not add more of them expecting an effect, and do not read them as
- * evidence that pagination is in play.
+ * 改之前要知道：下面的 `wrap={false}` 与 `minPresenceAhead` 是**失效的**——它们管的是
+ * 跨页孤行，而这里没有分页。保留是因为哪天恢复分页它们就是对的写法，别照着再加。
  */
 import React from 'react';
 import {
@@ -65,11 +51,7 @@ export interface MagicResumePdfDocumentProps {
   data: Resume;
   template: MagicTemplateDSL;
   locale?: string;
-  /**
-   * When the resume contains CJK ideographs outside the subset fonts, the caller
-   * registers the full fonts and sets this so the document references the full
-   * font families (see pdf/browser.tsx). Defaults to the subset families.
-   */
+  /** 简历含子集字体之外的 CJK 字时，调用方注册全量字体并置位此项；默认用子集字族。 */
   cjkFallback?: boolean;
 }
 
@@ -194,11 +176,7 @@ const resolveTitle = (component: ComponentDefinition, locale?: string): string =
   return ZH_TITLE_BY_SECTION_KEY[sectionKey] ?? ZH_TITLE_BY_ENGLISH[title.trim().toLowerCase()] ?? title;
 };
 
-/**
- * Field aliases for a section no template described. Kept identical to the HTML
- * renderer's — the two disagreeing would mean a resume that reads one way on
- * screen and another in the export.
- */
+/** 模板未描述的 section 的字段别名。必须与 HTML 渲染器保持一致，否则屏幕与导出会长得不一样。 */
 const CUSTOM_SECTION_FIELD_MAP = {
   itemName: ['name', 'title', 'skill', 'role', 'company', 'school'],
   itemDetail: ['level', 'position', 'degree', 'issuer'],
