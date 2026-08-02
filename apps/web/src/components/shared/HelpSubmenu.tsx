@@ -12,7 +12,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { OPERATOR } from "@/app/legal/operator";
+import { SUPPORT_EMAIL } from "@/lib/extensions/legal";
 import { cn } from "@/lib/utils";
 
 /**
@@ -193,12 +193,14 @@ export function HelpSubmenu({
               onNavigate={onNavigate}
             />
             <div className="mx-1 my-1 h-px bg-white/[0.06]" />
-            <HelpLink
-              href={`mailto:${OPERATOR.supportEmail}`}
-              icon={<Bug size={15} />}
-              label={t("account.menu.reportBug")}
-              onNavigate={onNavigate}
-            />
+            {SUPPORT_EMAIL && (
+              <HelpLink
+                href={`mailto:${SUPPORT_EMAIL}`}
+                icon={<Bug size={15} />}
+                label={t("account.menu.reportBug")}
+                onNavigate={onNavigate}
+              />
+            )}
           </div>,
           document.body,
         )}
