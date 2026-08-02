@@ -58,7 +58,7 @@ export function OrderHistoryTable({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-12 animate-pulse rounded-lg bg-neutral-900/70"
+            className="h-11 animate-pulse rounded-lg bg-white/[0.04]"
           />
         ))}
       </div>
@@ -67,27 +67,27 @@ export function OrderHistoryTable({
 
   if (orders.length === 0) {
     return (
-      <p className="rounded-lg border border-neutral-800 px-4 py-6 text-center text-sm text-neutral-500">
-        {t('billingPage.noOrders')}
+      <p className="rounded-lg border border-white/[0.06] px-4 py-6 text-center text-[13px] text-neutral-500">
+        {t('account.billing.noOrders')}
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-neutral-800">
-      <table className="w-full min-w-[560px] text-sm">
+    <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
+      <table className="w-full min-w-[520px] text-[13px]">
         <thead>
-          <tr className="border-b border-neutral-800 text-left text-xs text-neutral-500">
-            <th className="px-4 py-3 font-medium">{t('billingPage.colDate')}</th>
-            <th className="px-4 py-3 font-medium">{t('billingPage.colItem')}</th>
-            <th className="px-4 py-3 font-medium">
-              {t('billingPage.colAmount')}
+          <tr className="border-b border-white/[0.06] text-left text-[11.5px] uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-2.5 font-medium">{t('account.billing.colDate')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('account.billing.colItem')}</th>
+            <th className="px-4 py-2.5 font-medium">
+              {t('account.billing.colAmount')}
             </th>
-            <th className="px-4 py-3 font-medium">
-              {t('billingPage.colChannel')}
+            <th className="px-4 py-2.5 font-medium">
+              {t('account.billing.colChannel')}
             </th>
-            <th className="px-4 py-3 font-medium">
-              {t('billingPage.colStatus')}
+            <th className="px-4 py-2.5 font-medium">
+              {t('account.billing.colStatus')}
             </th>
           </tr>
         </thead>
@@ -95,28 +95,28 @@ export function OrderHistoryTable({
           {orders.map((order) => (
             <tr
               key={order.id}
-              className="border-b border-neutral-900 last:border-0"
+              className="border-b border-white/[0.04] last:border-0"
             >
-              <td className="whitespace-nowrap px-4 py-3 text-neutral-400">
+              <td className="whitespace-nowrap px-4 py-2.5 text-neutral-400">
                 {/* paidAt when it went through, createdAt when it did not —
                     an abandoned checkout still has a date worth showing. */}
                 {formatDate(order.paidAt ?? order.createdAt, locale)}
               </td>
-              <td className="px-4 py-3 text-neutral-200">
-                {order.planName ?? t('billingPage.unknownItem')}
+              <td className="px-4 py-2.5 text-neutral-200">
+                {order.planName ?? t('account.billing.unknownItem')}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-neutral-200">
+              <td className="whitespace-nowrap px-4 py-2.5 text-neutral-200">
                 {formatAmount(order.amountCents, order.currency, locale)}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-neutral-400">
-                {t(`billingPage.channel.${order.channel}`, {
+              <td className="whitespace-nowrap px-4 py-2.5 text-neutral-400">
+                {t(`account.billing.channel.${order.channel}`, {
                   defaultValue: order.channel,
                 })}
               </td>
               <td
-                className={`whitespace-nowrap px-4 py-3 ${STATUS_STYLES[order.status] ?? 'text-neutral-400'}`}
+                className={`whitespace-nowrap px-4 py-2.5 ${STATUS_STYLES[order.status] ?? 'text-neutral-400'}`}
               >
-                {t(`billingPage.status.${order.status}`, {
+                {t(`account.billing.status.${order.status}`, {
                   defaultValue: order.status,
                 })}
               </td>
