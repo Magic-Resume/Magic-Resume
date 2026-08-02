@@ -17,9 +17,19 @@ import type { SubscriptionSummary } from "@/lib/billing/types";
  * customer to go and do about it.
  */
 export function SubscriptionCard({
+  planName,
   subscription,
   loading,
 }: {
+  /**
+   * From the entitlement, which is what the modal header shows too. The
+   * subscription row is NOT the answer to "what plan am I on": a free-tier user
+   * has no row at all, and the row's own plan was absent from this endpoint for
+   * as long as it existed. Reading two sources put "Max" and "免费版" on screen
+   * at once.
+   */
+  planName: string | null;
+  /** Only for what the row alone knows: period end, cancellation, dunning. */
   subscription: SubscriptionSummary | null;
   loading: boolean;
 }) {
@@ -48,7 +58,7 @@ export function SubscriptionCard({
     <div className="flex items-start justify-between gap-6">
       <div className="min-w-0">
         <p className="text-[15px] font-medium text-neutral-100">
-          {subscription?.plan?.name ?? t("account.billing.freePlan")}
+          {planName ?? t("account.billing.freePlan")}
         </p>
 
         {dunning ? (

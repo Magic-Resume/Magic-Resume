@@ -4,7 +4,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { fetchOrders, fetchSubscription } from '@/lib/extensions/billing-client';
-import type { OrderHistoryRow, SubscriptionSummary } from '@/lib/billing/types';
+import type {
+  Entitlement,
+  OrderHistoryRow,
+  SubscriptionSummary,
+} from '@/lib/billing/types';
 import { OrderHistoryTable } from './OrderHistoryTable';
 import { SubscriptionCard } from './SubscriptionCard';
 
@@ -20,8 +24,15 @@ import { SubscriptionCard } from './SubscriptionCard';
  *
  * Mounted only while the tab is active, so the fetch below is the tab being
  * opened rather than the modal being opened.
+ *
+ * The plan name arrives as a prop from the modal's own entitlement rather than
+ * being re-derived here. It was derived here first, from the subscription row,
+ * and the two promptly disagreed: the header read `entitlement.currentPlan`
+ * (which resolves subscription → plan and falls back to the free tier) and said
+ * Max, while this tab read the raw row and said 免费版, in the same viewport.
+ * One question, one answer.
  */
-export function BillingTab() {
+export function BillingTab({ entitlement }: { entitlement: Entitlement | null }) {
   const { t } = useTranslation();
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [orders, setOrders] = useState<OrderHistoryRow[]>([]);
@@ -67,7 +78,11 @@ export function BillingTab() {
         <h3 className="mb-4 text-[14px] font-medium text-neutral-100">
           {t('account.billing.planTitle')}
         </h3>
-        <SubscriptionCard subscription={subscription} loading={loading} />
+        <SubscriptionCard
+          planName={entitlement?.currentPlan?.name ?? null}
+          subscription={subscription}
+          loading={loading}
+        />
       </section>
 
       <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
