@@ -20,7 +20,14 @@ const FAILURES_BEFORE_ERROR = 3;
 /** 早于本页多久的支付仍算"这一单"：支付宝 notify 是服务端直连，paidAt 常比本页还早。 */
 const RECENT_PAYMENT_MS = 15 * 60_000;
 
-type Phase = 'waiting' | 'paid' | 'already_paid' | 'timeout' | 'error';
+type Phase =
+  | 'waiting'
+  | 'paid'
+  | 'already_paid'
+  | 'failed'
+  | 'refunded'
+  | 'timeout'
+  | 'error';
 
 function ReturnState() {
   const { t } = useTranslation();
@@ -39,7 +46,15 @@ function ReturnState() {
 
   const settle = useCallback(
     (next: OrderSummary | null) => {
-      if (!next || next.status !== 'paid') return false;
+      if (!next) return false;
+
+      // 终态也要停：只认 'paid' 会让已失败/已退款的订单一路走到超时面板，
+      // 对一笔明确失败的支付说"款项不会丢失，渠道会重试"。
+      if (next.status === 'failed' || next.status === 'refunded') {
+        setPhase(next.status);
+        return true;
+      }
+      if (next.status !== 'paid') return false;
 
       // 按支付落账时间判定，不按轮询次数：首次轮询就已支付恰恰是最常见的**成功**路径，
       // 当成"重复访问"会对刚付完钱的买家说"此前已完成付款"。
@@ -112,7 +127,6 @@ function ReturnState() {
     };
     // 故意不依赖 `t`：react-i18next 资源加载完会换一个新的 `t`，会重启本 effect、
     // 重置计时并多打一次轮询，悄悄突破文案承诺的 60s 上限。改从 tRef 读。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, settle]);
 
   const backToDashboard = () => router.push('/dashboard');
@@ -135,6 +149,17 @@ function ReturnState() {
         icon={<CheckCircle2 className="h-10 w-10 text-emerald-500" />}
         title={t('billing.return.alreadyPaidTitle')}
         detail={t('billing.return.alreadyPaidDetail')}
+        action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
+      />
+    );
+  }
+
+  if (phase === 'failed' || phase === 'refunded') {
+    return (
+      <Panel
+        icon={<XCircle className="h-10 w-10 text-red-500" />}
+        title={t(`billing.return.${phase}Title`)}
+        detail={t(`billing.return.${phase}Detail`)}
         action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
       />
     );

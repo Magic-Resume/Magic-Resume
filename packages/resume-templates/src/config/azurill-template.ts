@@ -153,23 +153,8 @@ export const azurillTemplate: MagicTemplateDSL = {
         description: ["summary"]
       }
     },
-    {
-      id: "languages-timeline",
-      type: "Timeline",
-      dataBinding: "sections.languages",
-      position: {
-        area: "main"
-      },
-      props: {
-        title: "Languages"
-      },
-      fieldMap: {
-        title: ["language", "name"],
-        subtitle: ["level"],
-        date: ["date"],
-        description: ["summary"]
-      }
-    },
+    // `languages` is already rendered by `languages-compact` in the sidebar; a
+    // second Timeline here printed the whole section twice.
     {
       id: "certificates-timeline",
       type: "Timeline",

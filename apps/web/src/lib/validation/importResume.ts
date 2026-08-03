@@ -40,6 +40,9 @@ const importedResumeSectionItemSchema = z
 const importedResumeSectionOrderItemSchema = z.object({
   key: z.string(),
   label: z.string(),
+  // Zod strips what it does not declare, so omitting this silently discarded a
+  // chosen icon on every import before normalization ever saw it.
+  icon: z.string().optional(),
 });
 
 const importedResumeSectionsSchema = z

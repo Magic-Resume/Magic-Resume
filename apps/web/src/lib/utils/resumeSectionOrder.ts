@@ -12,6 +12,18 @@ const DEFAULT_SECTION_ORDER: SectionOrder[] = [
 
 const DEFAULT_LABELS = new Map(DEFAULT_SECTION_ORDER.map((item) => [item.key, item.label]));
 
+/**
+ * Keys the app owns — a superset of `DEFAULT_SECTION_ORDER`, which is only the
+ * order to restore. They differ by `profiles`: it ships in `defaultResume` and
+ * templates render it, but its editor form is disabled, so it must stay
+ * undeletable without being re-added to every resume.
+ */
+const BUILT_IN_SECTION_KEYS = new Set<string>([
+  'basics',
+  ...DEFAULT_SECTION_ORDER.map((item) => item.key),
+  'profiles',
+]);
+
 const fallbackLabel = (key: string) =>
   DEFAULT_LABELS.get(key) ?? (key ? key.charAt(0).toUpperCase() + key.slice(1) : key);
 
@@ -32,12 +44,16 @@ export function normalizeResumeSectionOrder(
     if (!key || seen.has(key) || key === 'basics') return;
 
     seen.add(key);
-    normalized.push({
+    const entry: SectionOrder = {
       key,
       label: typeof item.label === 'string' && item.label.trim()
         ? item.label
         : fallbackLabel(key),
-    });
+    };
+    // Rebuilding as a bare {key,label} dropped this, and every drag / write /
+    // dirty check runs through here — so a chosen icon never survived.
+    if (typeof item.icon === 'string' && item.icon.trim()) entry.icon = item.icon;
+    normalized.push(entry);
   };
 
   for (const item of sectionOrder ?? []) add(item);
@@ -57,7 +73,7 @@ export function normalizeResumeSectionOrder(
  * language; and deleting one would take away a form the editor expects.
  */
 export function isCustomSection(key: string): boolean {
-  return key !== 'basics' && !DEFAULT_LABELS.has(key);
+  return !BUILT_IN_SECTION_KEYS.has(key);
 }
 
 /**
@@ -71,7 +87,9 @@ export function customSectionKey(
   title: string,
   existingKeys: Iterable<string>,
 ): string {
-  const taken = new Set(existingKeys);
+  // Seeded with the built-ins: callers pass `Object.keys(sections)`, which never
+  // holds `basics`, so a section titled "Basics" used to mint that reserved key.
+  const taken = new Set([...BUILT_IN_SECTION_KEYS, ...existingKeys]);
   const slug = title
     .trim()
     .toLowerCase()

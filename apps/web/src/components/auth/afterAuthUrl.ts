@@ -10,18 +10,30 @@ export const DEFAULT_AFTER_AUTH_URL = '/dashboard';
  * the only handle the page has: no id, no polling, and no sync — which is the
  * only thing that captures a PayPal payment from the browser.
  *
- * Same-origin paths only. Anything else — an absolute URL, a protocol-relative
- * `//evil.example`, a backslash a browser may normalise into one — falls back
- * to the default, so this cannot be used to bounce a freshly signed-in session
- * off the site.
+ * Same-origin paths only, decided by resolving the value the way a browser
+ * will rather than by matching prefixes. Prefix checks are not enough: the URL
+ * parser strips ASCII tab/LF/CR before resolving, so `/<TAB>//evil.example`
+ * passes a `startsWith('//')` test and still lands off-origin.
  */
+const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g;
+const SAME_ORIGIN_BASE = 'https://magic-resume.invalid';
+
 export function afterAuthUrl(search: string | null | undefined): string {
   if (!search) return DEFAULT_AFTER_AUTH_URL;
-  const target = new URLSearchParams(search).get('redirect_url');
-  if (!target) return DEFAULT_AFTER_AUTH_URL;
+  const raw = new URLSearchParams(search).get('redirect_url');
+  if (!raw) return DEFAULT_AFTER_AUTH_URL;
+
+  // Strip what the parser would strip anyway, so what we test is what resolves.
+  const target = raw.replace(CONTROL_CHARS, '');
   if (!target.startsWith('/')) return DEFAULT_AFTER_AUTH_URL;
-  if (target.startsWith('//') || target.startsWith('/\\')) {
+
+  let resolved: URL;
+  try {
+    resolved = new URL(target, SAME_ORIGIN_BASE);
+  } catch {
     return DEFAULT_AFTER_AUTH_URL;
   }
-  return target;
+  if (resolved.origin !== SAME_ORIGIN_BASE) return DEFAULT_AFTER_AUTH_URL;
+
+  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
 }

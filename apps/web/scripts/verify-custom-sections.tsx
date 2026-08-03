@@ -23,6 +23,8 @@ const CUSTOM_HEADING = '个人优势';
 const ITEM_NAME = '综合能力';
 const CUSTOM_FIELD_NAME = '获奖等级';
 const CUSTOM_FIELD_VALUE = '国赛三等奖';
+const SKILL_NAME = 'TypeScript';
+const LANGUAGE_NAME = '英语';
 
 /** A resume shaped like the one that exposed all of this. */
 const resume = {
@@ -42,6 +44,10 @@ const resume = {
     experience: [
       { id: 'e1', visible: true, company: '某公司', position: '前端', date: '2021 - 2024', summary: '<p>正文</p>' },
     ],
+    // Built-ins many templates render in their SIDEBAR — the case that made
+    // every one of them look undeclared and get duplicated into the main column.
+    skills: [{ id: 's1', visible: true, name: SKILL_NAME, level: '熟练' }],
+    languages: [{ id: 'l1', visible: true, name: LANGUAGE_NAME, level: 'CET-6' }],
     // The section the app never defined.
     personalStrengths: [
       {
@@ -58,6 +64,9 @@ const resume = {
   sectionOrder: [
     { key: 'basics', label: 'Basics' },
     { key: 'experience', label: '工作经历' },
+    // Built-in labels are i18n keys, which is what got printed as a heading.
+    { key: 'skills', label: 'sections.skills' },
+    { key: 'languages', label: 'sections.languages' },
     { key: 'personalStrengths', label: CUSTOM_HEADING, icon: 'trophy' },
   ],
   template: 'classic',
@@ -96,6 +105,12 @@ async function main() {
     if (!text.includes(CUSTOM_FIELD_VALUE)) problems.push('缺自定义字段值');
     // The section it always had must not have been disturbed.
     if (!text.includes('某公司')) problems.push('内置段落丢失');
+    // A sidebar-rendered built-in used to be synthesised a second time into the
+    // main column, headed with its raw i18n key.
+    const occurrences = (needle: string) => text.split(needle).length - 1;
+    if (occurrences(SKILL_NAME) > 1) problems.push('技能重复渲染');
+    if (occurrences(LANGUAGE_NAME) > 1) problems.push('语言重复渲染');
+    if (text.includes('sections.')) problems.push('标题打印了 i18n key');
     // Rich text (`summary`) is deliberately not asserted here: WysiwygContent
     // returns an empty div when there is no DOM, because DOMPurify needs one.
     // That is true of every section, built-in or custom, so it says nothing

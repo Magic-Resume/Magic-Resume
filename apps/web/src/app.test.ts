@@ -629,6 +629,35 @@ function testAfterAuthUrl() {
   assert.equal(afterAuthUrl('redirect_url=%2F%2Fevil.example'), '/dashboard');
   assert.equal(afterAuthUrl('redirect_url=%2F%5Cevil.example'), '/dashboard');
   assert.equal(afterAuthUrl('redirect_url=javascript%3Aalert(1)'), '/dashboard');
+
+  // The URL parser strips tab/LF/CR before resolving, so a prefix check on
+  // '//' is not enough — these resolved to https://evil.example.
+  assert.equal(afterAuthUrl('redirect_url=%2F%09%2F%2Fevil.example'), '/dashboard');
+  assert.equal(afterAuthUrl('redirect_url=%2F%0A%2F%2Fevil.example'), '/dashboard');
+  assert.equal(afterAuthUrl('redirect_url=%2F%0D%2F%2Fevil.example'), '/dashboard');
+}
+
+function testSectionOwnership() {
+  // `profiles` ships in defaultResume and templates render it, so offering
+  // delete on it destroyed data that normalize cannot bring back.
+  for (const builtin of [
+    'basics', 'experience', 'education', 'projects',
+    'skills', 'languages', 'certificates', 'profiles',
+  ]) {
+    assert.equal(isCustomSection(builtin), false, `${builtin} must not be deletable`);
+  }
+  assert.equal(isCustomSection('personalStrengths'), true);
+
+  // A custom title must never mint a reserved key.
+  assert.notEqual(customSectionKey('Basics', ['skills']), 'basics');
+  assert.notEqual(customSectionKey('Profiles', ['skills']), 'profiles');
+
+  // The icon has to survive normalize — it runs on every drag and every write.
+  const withIcon = normalizeResumeSectionOrder(
+    [{ key: 'personalStrengths', label: '个人优势', icon: 'trophy' }],
+    { personalStrengths: [] },
+  );
+  assert.equal(withIcon.find((s) => s.key === 'personalStrengths')?.icon, 'trophy');
 }
 
 async function main() {
@@ -641,6 +670,7 @@ async function main() {
   testImportedItemIds();
   testResumeMigrations();
   testCustomSections();
+  testSectionOwnership();
 }
 
 main().catch((error) => {

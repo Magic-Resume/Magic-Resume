@@ -189,6 +189,9 @@ const synthesiseCustomSection = (
   data: Resume,
   entry: { key: string; label?: string },
 ): ComponentDefinition | null => {
+  // Built-ins are never synthesised — see the HTML renderer's twin.
+  if (ZH_TITLE_BY_SECTION_KEY[entry.key]) return null;
+
   const items = (data.sections as Record<string, unknown> | undefined)?.[entry.key];
   if (!Array.isArray(items) || items.length === 0) return null;
 
@@ -212,6 +215,12 @@ const sortComponents = (template: MagicTemplateDSL, data: Resume): ComponentDefi
   const main = template.components.filter((component) => component.position?.area !== 'sidebar');
   const headers = main.filter((component) => component.dataBinding === 'info');
   const sections = main.filter((component) => component.dataBinding.startsWith('sections.'));
+  // Sidebar-rendered sections count as declared — see the HTML renderer's twin.
+  const declaredBindings = new Set(
+    template.components
+      .filter((component) => component.dataBinding?.startsWith('sections.'))
+      .map((component) => component.dataBinding),
+  );
   const ordered: ComponentDefinition[] = [];
 
   for (const entry of data.sectionOrder ?? []) {
@@ -220,11 +229,8 @@ const sortComponents = (template: MagicTemplateDSL, data: Resume): ComponentDefi
       ordered.push(component);
       continue;
     }
-    // Custom sections are synthesised here for the same reason the HTML
-    // renderer does it: a template lists its components by hand, so a key it
-    // never named renders nowhere. Skipping it here would be the worse half of
-    // that bug — the section would show on screen and be missing from the file
-    // the candidate actually sends out.
+    if (declaredBindings.has(`sections.${entry.key}`)) continue;
+    // Undeclared key — synthesised so it does not vanish from the exported file.
     const synthesised = synthesiseCustomSection(data, entry);
     if (synthesised) ordered.push(synthesised);
   }
