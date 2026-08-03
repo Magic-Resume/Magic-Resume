@@ -7,7 +7,15 @@ import { glob } from 'glob';
 const LOCALES_DIR = path.join(process.cwd(), 'src/locales');
 const SCAN_DIR = path.join(process.cwd(), 'src');
 const LANGUAGES = ['en', 'zh'];
-const IGNORE_PATTERNS = ['**/*.test.tsx', '**/*.spec.tsx', '**/node_modules/**'];
+const IGNORE_PATTERNS = [
+  '**/*.test.tsx',
+  '**/*.spec.tsx',
+  '**/node_modules/**',
+  // 法务文档不走 i18n 键。一份隐私政策 / 用户协议 / 退款政策是一个整体的、
+  // 需要逐句复核的法律文本,不是一袋可替换的字符串——把它拆成 key 再由另一份
+  // 翻译拼回来,等于让机器改写法律承诺。要做多语言就整份另写并各自送审。
+  'src/app/legal/**',
+];
 const ATTRIBUTES_TO_CHECK = ['placeholder', 'title', 'alt', 'label'];
 
 // --- 类型 ---

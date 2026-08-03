@@ -1,6 +1,5 @@
 // Resume × JD fit report — frontend mirror of the agent-service `evaluate_fit`
-// tool artifact (Magic-Core spec: agent-jd-review-loop / D1). Surfaced to the
-// MatchView via the `fit_report` streaming event.
+// tool artifact. Surfaced to the MatchView via the `fit_report` streaming event.
 
 export type FitBand = 'strong' | 'good' | 'moderate' | 'weak' | 'poor';
 

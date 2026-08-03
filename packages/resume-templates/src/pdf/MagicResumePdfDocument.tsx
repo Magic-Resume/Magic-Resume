@@ -1,3 +1,13 @@
+/**
+ * 导出的 PDF 是**一整页长页**，不是分页 A4——这是刻意选择，不是 bug。
+ *
+ * `pageSize` 只给宽不给高，单个 `<Page>` 随内容长高；`scripts/render-pdf-smoke.mjs`
+ * 断言 `/Count 1` 把这个选择钉住。理由是产品面向线上投递与分享链接，连续阅读优于分页，
+ * 不会有经历被拦腰截断。代价是打印会被缩放或裁切。
+ *
+ * 改之前要知道：下面的 `wrap={false}` 与 `minPresenceAhead` 是**失效的**——它们管的是
+ * 跨页孤行，而这里没有分页。保留是因为哪天恢复分页它们就是对的写法，别照着再加。
+ */
 import React from 'react';
 import {
   Document,
@@ -33,6 +43,7 @@ import { getPdfFontStack, getPdfRichTextFontFamily } from '../font-family';
 import { PdfLucideIcon } from './PdfLucideIcon';
 import { PdfRichText } from './PdfRichText';
 import { FREE_FORM_PAGE_SIZE, getFreeFormPageMinHeight } from './page-size';
+import { skillLevelToFraction } from '../templateLayout/skill-level';
 
 type PdfStyle = Style | Style[];
 
@@ -40,11 +51,7 @@ export interface MagicResumePdfDocumentProps {
   data: Resume;
   template: MagicTemplateDSL;
   locale?: string;
-  /**
-   * When the resume contains CJK ideographs outside the subset fonts, the caller
-   * registers the full fonts and sets this so the document references the full
-   * font families (see pdf/browser.tsx). Defaults to the subset families.
-   */
+  /** 简历含子集字体之外的 CJK 字时，调用方注册全量字体并置位此项；默认用子集字族。 */
   cjkFallback?: boolean;
 }
 
@@ -169,6 +176,38 @@ const resolveTitle = (component: ComponentDefinition, locale?: string): string =
   return ZH_TITLE_BY_SECTION_KEY[sectionKey] ?? ZH_TITLE_BY_ENGLISH[title.trim().toLowerCase()] ?? title;
 };
 
+/** 模板未描述的 section 的字段别名。必须与 HTML 渲染器保持一致，否则屏幕与导出会长得不一样。 */
+const CUSTOM_SECTION_FIELD_MAP = {
+  itemName: ['name', 'title', 'skill', 'role', 'company', 'school'],
+  itemDetail: ['level', 'position', 'degree', 'issuer'],
+  date: ['date'],
+  summary: ['summary', 'description'],
+};
+
+/** A `ListSection` definition for an ordered key the template does not declare. */
+const synthesiseCustomSection = (
+  data: Resume,
+  entry: { key: string; label?: string },
+): ComponentDefinition | null => {
+  // Built-ins are never synthesised — see the HTML renderer's twin.
+  if (ZH_TITLE_BY_SECTION_KEY[entry.key]) return null;
+
+  const items = (data.sections as Record<string, unknown> | undefined)?.[entry.key];
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  const title = entry.label || entry.key;
+  return {
+    id: `custom-section-${entry.key}`,
+    type: 'ListSection',
+    dataBinding: `sections.${entry.key}`,
+    position: { area: 'main' },
+    // Both titles carry the heading as the candidate wrote it, so `resolveTitle`
+    // cannot swap in a translation for a section only they have named.
+    props: { title, titleZh: title },
+    fieldMap: CUSTOM_SECTION_FIELD_MAP,
+  } as ComponentDefinition;
+};
+
 const sortComponents = (template: MagicTemplateDSL, data: Resume): ComponentDefinition[] => {
   const sidebar = template.components
     .filter((component) => component.position?.area === 'sidebar')
@@ -176,11 +215,24 @@ const sortComponents = (template: MagicTemplateDSL, data: Resume): ComponentDefi
   const main = template.components.filter((component) => component.position?.area !== 'sidebar');
   const headers = main.filter((component) => component.dataBinding === 'info');
   const sections = main.filter((component) => component.dataBinding.startsWith('sections.'));
+  // Sidebar-rendered sections count as declared — see the HTML renderer's twin.
+  const declaredBindings = new Set(
+    template.components
+      .filter((component) => component.dataBinding?.startsWith('sections.'))
+      .map((component) => component.dataBinding),
+  );
   const ordered: ComponentDefinition[] = [];
 
   for (const entry of data.sectionOrder ?? []) {
     const component = sections.find((candidate) => candidate.dataBinding === `sections.${entry.key}`);
-    if (component) ordered.push(component);
+    if (component) {
+      ordered.push(component);
+      continue;
+    }
+    if (declaredBindings.has(`sections.${entry.key}`)) continue;
+    // Undeclared key — synthesised so it does not vanish from the exported file.
+    const synthesised = synthesiseCustomSection(data, entry);
+    if (synthesised) ordered.push(synthesised);
   }
 
   for (const component of sections) {
@@ -628,6 +680,38 @@ const Description = ({
   ) : null;
 };
 
+/**
+ * Name/value pairs the user added to an item.
+ *
+ * Rendered from the item directly rather than through the fieldMap, exactly as
+ * the HTML renderer does: a key no fieldMap declares is dropped silently, so a
+ * field somebody typed would be stored, visible on screen, and missing from the
+ * export — the worst place for it to go quiet.
+ */
+const ItemCustomFields = ({ item, context, fontSize }: {
+  item: SectionItem;
+  context: RenderContext;
+  fontSize: number;
+}) => {
+  // Guarded like the HTML twins: `customFields` is hand-editable JSON, and an
+  // object there made the preview skip the block while export threw.
+  const fields = (Array.isArray(item.customFields) ? item.customFields : []).filter(
+    (field) => field?.name || field?.value,
+  );
+  if (fields.length === 0) return null;
+
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      {fields.map((field) => (
+        <Text key={field.id} style={{ color: context.colors.text, fontSize }}>
+          {field.name ? `${field.name}${field.value ? '：' : ''}` : ''}
+          {field.value}
+        </Text>
+      ))}
+    </View>
+  );
+};
+
 const DefaultSectionBlock = ({ component, items, context }: {
   component: ComponentDefinition;
   items: SectionItem[];
@@ -664,6 +748,7 @@ const DefaultSectionBlock = ({ component, items, context }: {
                   <Text style={{ color: context.colors.textSecondary, fontSize: bodyFontSize }}>{getFieldValue(record, fields.secondarySideSubtitle)}</Text>
                 </View>
               </View>
+              <ItemCustomFields item={item} context={context} fontSize={bodyFontSize} />
               <Description
                 value={getFieldValue(record, fields.description)}
                 color={context.colors.text}
@@ -703,6 +788,7 @@ const ListSectionBlock = ({ component, items, context }: {
                 fontFamily={dateFontFamily}
                 fontSize={bodyFontSize}
               />
+              <ItemCustomFields item={item} context={context} fontSize={bodyFontSize} />
               <Description
                 value={getFieldValue(record, fields.summary)}
                 color={context.colors.text}
@@ -843,6 +929,9 @@ const CompactListBlock = ({ component, items, sidebar, context }: {
 }) => {
   const fields: FieldMapping = component.fieldMap ?? {};
   const color = component.style?.color ?? (sidebar ? context.colors.background : context.colors.text);
+  const levelBar = Boolean(component.props?.levelBar);
+  const trackColor = sidebar ? 'rgba(255,255,255,0.22)' : context.colors.border;
+  const fillColor = sidebar ? context.colors.background : context.colors.primary;
   return (
     <View style={toPdfComponentStyle(component.style)}>
       <SectionTitle
@@ -858,10 +947,17 @@ const CompactListBlock = ({ component, items, sidebar, context }: {
           const record = item as Record<string, unknown>;
           const name = getFieldValue(record, fields.title ?? ['name', 'skill', 'language', 'certificate']);
           const level = getFieldValue(record, fields.level ?? 'level');
+          const frac = levelBar ? skillLevelToFraction(level) : null;
           return (
             <View key={item.id || index} wrap={false} style={{ gap: 2 }}>
               <Text style={{ color, fontSize: 8.5, fontWeight: 700 }}>{name}</Text>
-              {level ? <Text style={{ color, fontSize: 7.5, opacity: 0.8 }}>{level}</Text> : null}
+              {frac !== null ? (
+                <View style={{ height: 3.5, borderRadius: 2, backgroundColor: trackColor, marginTop: 1 }}>
+                  <View style={{ width: `${Math.round(frac * 100)}%`, height: '100%', borderRadius: 2, backgroundColor: fillColor }} />
+                </View>
+              ) : level ? (
+                <Text style={{ color, fontSize: 7.5, opacity: 0.8 }}>{level}</Text>
+              ) : null}
             </View>
           );
         })}
@@ -989,6 +1085,18 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
   };
   const padding = cssSizeToPoints(template.layout.padding, 24);
   const columnGap = cssSizeToPoints(template.layout.twoColumn?.gap, 0);
+  // 两栏主列用显式宽度(页宽 − 侧栏 − 列间距),不靠 flexGrow ——
+  // react-pdf 4.5.1 的 flex 对 flexGrow+minWidth:0 收敛不稳,长文本会把主列撑出页面被裁。
+  const sidebarWidth = cssSizeToPoints(template.layout.twoColumn?.leftWidth);
+  const mainColumnWidth = Math.max(0, pageWidth - sidebarWidth - columnGap);
+  // 两栏列的 padding 下限:azurill/orange/… 把 layout.padding 设成 "0",导致内容(含顶部、
+  // 侧栏)直接贴页边、没边距。给个 24pt 下限保证四周都有内边距;侧栏底色在 View 上、padding
+  // 在其内,所以底色照样铺满到页边。已有 ≥24 的模板(chikorita/gengar)不受影响。
+  const columnPadding = Math.max(padding, 24);
+  // 同理 azurill/orange/golden/teal 的 layout.gap:"0" → 分区零间距、挤成一团(尤其侧栏紧凑分区)。
+  // 给两栏列的分区间距设 12pt 下限(gap:24px 的 chikorita/gengar=18pt 不受影响;单栏不动,
+  // 保留 compact-cn-photo 故意的 0 间距)。
+  const columnSectionGap = Math.max(sectionGap, 12);
   const pageSize = { width: pageWidth };
   const pageMinHeightStyle: Style = {
     minHeight: getFreeFormPageMinHeight(pageWidth, template.layout.pageSize),
@@ -1010,20 +1118,22 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
         >
           <View
             style={{
-              width: cssSizeToPoints(template.layout.twoColumn.leftWidth),
+              width: sidebarWidth,
+              flexShrink: 0,
               backgroundColor: colors.sidebar ?? colors.primary,
-              padding,
-              gap: sectionGap,
+              padding: columnPadding,
+              gap: columnSectionGap,
             }}
           >
             {sidebar.map((component) => <ComponentBlock key={component.id} component={component} data={data} sidebar context={context} />)}
           </View>
           <View
             style={{
-              flexGrow: 1,
+              width: mainColumnWidth,
               flexShrink: 1,
-              padding,
-              gap: sectionGap,
+              minWidth: 0,
+              padding: columnPadding,
+              gap: columnSectionGap,
             }}
           >
             {main.map((component) => <ComponentBlock key={component.id} component={component} data={data} sidebar={false} context={context} />)}

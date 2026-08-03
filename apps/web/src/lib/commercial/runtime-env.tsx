@@ -14,14 +14,13 @@ import { headers } from 'next/headers';
  * already dynamic; if a page needs static generation, inject via a route handler
  * fetched on the client instead.)
  *
- * WHY THIS LIVES IN ITS OWN MODULE (not in ./runtime): the commercial build
- * overlays `@/lib/commercial/runtime` with an analytics-only provider
- * (Magic-Resume-Commercial `next-config-overlay.mjs` webpack alias). If the
- * `window.__ENV` injection lived there, the overlay would strip it and the
- * commercial image would fall back to the localhost default. This module is NOT
- * in the overlay's alias list, so the injection survives in both builds. Keep it
- * that way — do not fold it back into ./runtime, and do not add it to the
- * overlay alias.
+ * WHY THIS LIVES IN ITS OWN MODULE (not in ./runtime): the commercial build's
+ * overlay step replaces `@/lib/commercial/runtime` with an analytics-only
+ * provider. If the `window.__ENV` injection lived there, the overlay would
+ * strip it and the commercial image would fall back to the localhost default.
+ * This module is NOT in the overlay's alias list, so the injection survives in
+ * both builds. Keep it that way — do not fold it back into ./runtime, and do
+ * not add it to the overlay alias.
  */
 export async function RuntimeEnvScript() {
   await headers();

@@ -47,7 +47,11 @@
       "emailInvalid": "邮箱格式不对",
       "rateLimited": "尝试太频繁,稍后再试",
       "generic": "出了点问题,稍后再试"
-    }
+    },
+    "legalConsent": "注册即表示你已阅读并同意",
+    "legalTerms": "《用户协议》",
+    "legalAnd": "与",
+    "legalPrivacy": "《隐私政策》"
   },
   "comingSoon": {
     "title": "好东西,马上就来",
@@ -73,7 +77,12 @@
       "profile": "个人资料",
       "settings": "设置",
       "language": "语言",
-      "signOut": "退出登录"
+      "signOut": "退出登录",
+      "help": "帮助",
+      "helpCenter": "帮助中心",
+      "terms": "服务条款",
+      "privacy": "隐私政策",
+      "reportBug": "报告错误"
     },
     "modal": {
       "title": "账户"
@@ -94,7 +103,8 @@
         "profile": "资料",
         "security": "安全",
         "activity": "活动",
-        "subscription": "订阅"
+        "subscription": "订阅",
+        "billing": "账单"
       },
       "personalInfo": "个人信息",
       "firstName": "名字",
@@ -160,6 +170,40 @@
         "comingSoon": "即将推出",
         "language": "语言",
         "languageDescription": "切换界面语言，不影响简历内容本身。"
+      }
+    },
+    "billing": {
+      "planTitle": "订阅",
+      "freePlan": "免费版",
+      "renewsOn": "{{date}} 续期",
+      "endsOn": "已取消，{{date}} 到期",
+      "paymentFailed": "扣款失败——请更新支付方式，宽限期结束后订阅会终止。",
+      "manageCta": "管理套餐",
+      "upgradeCta": "升级",
+      "ordersTitle": "付款记录",
+      "noOrders": "还没有付款记录。",
+      "unknownItem": "—",
+      "colDate": "时间",
+      "colItem": "项目",
+      "colAmount": "金额",
+      "colChannel": "支付方式",
+      "colStatus": "状态",
+      "loadFailed": "账单信息加载失败。",
+      "retry": "重试",
+      "refundHint": "需要退款？先看看",
+      "refundPolicy": "退款政策",
+      "status": {
+        "paid": "已支付",
+        "pending": "待支付",
+        "failed": "失败",
+        "refunded": "已退款"
+      },
+      "channel": {
+        "alipay": "支付宝",
+        "paypal": "PayPal",
+        "wechat": "微信支付",
+        "stripe": "Stripe",
+        "manual": "人工"
       }
     }
   },
@@ -851,7 +895,18 @@
       "valuePlaceholder": "值（例如，your-linkedin-url）",
       "addButton": "添加自定义字段"
     },
-    "avatarAlt": "头像"
+    "avatarAlt": "头像",
+    "avatarUpload": {
+      "button": "上传头像",
+      "clear": "移除头像",
+      "success": "头像已更新",
+      "errors": {
+        "UNSUPPORTED_TYPE": "不支持的图片格式（仅 PNG / JPG / WebP / GIF）",
+        "TOO_LARGE": "图片太大了，换一张小一点的",
+        "PROCESS_FAILED": "图片处理失败，换一张试试",
+        "UPLOAD_FAILED": "上传失败，请重试"
+      }
+    }
   },
   "header": {
     "version": "版本管理",
@@ -1135,8 +1190,15 @@
         "skills": "技能",
         "languages": "语言能力",
         "certificates": "证书"
-      }
+      },
+      "analyzingScan": "这份 PDF 没有可复制的文字，正在逐页识别",
+      "pageUnit": "{{count}} 页"
     }
+  },
+  "agentErrors": {
+    "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置。",
+    "insufficient_quota": "账户额度不足，请先充值或完善自定义大模型配置后再试。",
+    "model_unavailable": "当前配置的模型不可用，请到设置里检查模型名称与 Base URL。"
   },
   "dynamicForm": {
     "fields": {
@@ -1244,6 +1306,16 @@
         "date": {
           "label": "获得时间",
           "placeholder": "获得时间"
+        }
+      },
+      "custom": {
+        "name": {
+          "label": "标题",
+          "placeholder": "条目标题"
+        },
+        "date": {
+          "label": "时间",
+          "placeholder": "例如：2023.06"
         }
       }
     }
@@ -1380,27 +1452,43 @@
     "confirm": "确定"
   },
   "pricing": {
+    "buyPack": "购买令牌包",
     "title": "升级套餐",
     "popular": "热门",
+    "qrcodeUnsupported": "当前版本暂不支持扫码支付，请改用其他支付方式",
     "current": "你当前的套餐",
     "upgradeTo": "升级至 {{name}}",
     "included": "已包含",
     "free": "免费",
     "perMonth": "/月",
+    "perYear": "/年",
+    "regionMainland": "中国大陆",
+    "regionInternational": "其他地区",
+    "regionPrompt": "选择地区",
     "created": "订阅已创建",
     "error": "操作失败，请重试",
-    "footnote": "档位、价格与功能由后台配置，可随时调整。",
-    "tagline": {
-      "free": "体验核心能力",
-      "paid": "解锁全部能力"
-    },
-    "features": {
-      "models": "{{count}} 个可用模型",
-      "coreModel": "核心模型",
-      "daily": "每日 {{count}} 次生成",
-      "dailyUnlimited": "每日不限次数",
-      "weekly": "每周 {{count}} 次生成",
-      "weeklyUnlimited": "每周不限次数"
+    "loadFailed": "套餐加载失败",
+    "channelPrompt": "请先选择地区",
+    "channelUnavailable": "该地区暂不出售此套餐",
+    "manualRenewal": "按月购买，到期邮件提醒，不自动扣款"
+  },
+  "billing": {
+    "return": {
+      "waitingTitle": "正在确认支付结果",
+      "waitingDetail": "支付结果正在回传，通常几秒内完成，请不要关闭本页。",
+      "paidTitle": "支付成功",
+      "paidDetail": "权益已生效，回工作台即可继续使用。",
+      "alreadyPaidTitle": "这笔订单已支付",
+      "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额。",
+      "failedTitle": "支付未成功",
+      "failedDetail": "这笔订单已被支付渠道判为失败，款项未扣。你可以返回后重新下单。",
+      "refundedTitle": "订单已退款",
+      "refundedDetail": "这笔订单已完成退款，款项将按支付渠道的时效退回原路。",
+      "timeoutTitle": "暂未收到到账通知",
+      "timeoutDetail": "如果你已完成付款，款项不会丢失——支付渠道会在数小时内重试通知。稍后回到工作台查看余额即可。",
+      "errorTitle": "无法确认订单",
+      "missingOrder": "链接里没有订单号，无法查询支付结果。",
+      "backToDashboard": "返回工作台"
     }
   },
   "aiLab": {
@@ -1528,7 +1616,11 @@
       "addCustom": "在设置里添加自定义模型",
       "noModel": "请先在设置里配置模型",
       "strengthLabel": "推理强度",
-      "strength": { "low": "低", "medium": "中", "high": "高" }
+      "strength": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      }
     },
     "widgets": {
       "unsupported": "（无法渲染的卡片：{{kind}}）",
@@ -1672,5 +1764,16 @@
     "profile": "个人信息",
     "contact": "联系方式",
     "awards": "奖项"
+  },
+  "customSection": {
+    "add": "添加自定义模块",
+    "createTitle": "添加自定义模块",
+    "renameTitle": "重命名模块",
+    "rename": "重命名",
+    "hint": "模块标题会原样显示在简历上。",
+    "placeholder": "例如：个人优势、获奖经历",
+    "iconLabel": "图标（可选）",
+    "deleteTitle": "删除模块",
+    "deleteHint": "「{{name}}」及其中的条目会一并删除，此操作无法撤销。"
   }
 }

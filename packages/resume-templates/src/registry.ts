@@ -12,6 +12,12 @@ import { orangeModernTemplate } from './config/orange-modern-template';
 import { productOpsFocusTemplate } from './config/product-ops-focus-template';
 import { redAccentTemplate } from './config/red-accent-template';
 import { tealProfessionalTemplate } from './config/teal-professional-template';
+import { executiveBandTemplate } from './config/executive-band-template';
+import { timelineProTemplate } from './config/timeline-pro-template';
+import { skillsFirstTemplate } from './config/skills-first-template';
+import { serifMinimalTemplate } from './config/serif-minimal-template';
+import { slateSidebarTemplate } from './config/slate-sidebar-template';
+import { cnFormalPhotoTemplate } from './config/cn-formal-photo-template';
 import type { MagicTemplateDSL } from './types/magic-dsl';
 
 export type TemplateManifest = {
@@ -57,6 +63,12 @@ export const templateRegistry: Record<TemplateId, TemplateManifest> = {
   'golden-elegant': createManifest(goldenElegantTemplate),
   'product-ops-focus': createManifest(productOpsFocusTemplate),
   'compact-cn-photo': createManifest(compactCnPhotoTemplate),
+  'executive-band': createManifest(executiveBandTemplate),
+  'timeline-pro': createManifest(timelineProTemplate),
+  'skills-first': createManifest(skillsFirstTemplate),
+  'serif-minimal': createManifest(serifMinimalTemplate),
+  'slate-sidebar': createManifest(slateSidebarTemplate),
+  'cn-formal-photo': createManifest(cnFormalPhotoTemplate),
 };
 
 export const templateManifestList = Object.values(templateRegistry);

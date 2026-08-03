@@ -275,6 +275,7 @@ export default function ComingSoon({
             </>
           ) : null}
         </motion.div>
+
       </motion.div>
     </main>
   );

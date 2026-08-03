@@ -92,10 +92,23 @@ export type InfoType = {
   customFields?: CustomInfoField[];
 };
 
+/** Name/value pairs a user added to one item. */
+export type CustomItemField = {
+  id: string;
+  name: string;
+  value: string;
+};
+
 export type SectionItem = {
   id: string;
   visible: boolean;
-  [key: string]: string | boolean;
+  /**
+   * Rendered by an explicit block rather than through a template's fieldMap:
+   * `getFieldValue` silently drops any key a fieldMap does not declare, so a
+   * field the user typed has to be one the renderer knows to look for.
+   */
+  customFields?: CustomItemField[];
+  [key: string]: string | boolean | CustomItemField[] | undefined;
 };
 
 export type Section = {

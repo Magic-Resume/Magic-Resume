@@ -5,7 +5,7 @@ status: Living
 owner: kaihuang
 created: 2026-07-03
 updated: 2026-07-03
-summary: Index for Magic-Resume documentation, grouped by the same docs structure used by Magic-Resume-Core.
+summary: Index for Magic-Resume documentation, grouped by document type.
 scope: [docs]
 repos: [Magic-Resume]
 related: [CONVENTIONS.md]
@@ -13,7 +13,7 @@ related: [CONVENTIONS.md]
 
 # Magic-Resume Docs
 
-> 本目录沿用 `Magic-Resume-Core/docs` 的结构：类型分目录、每篇文档带 front-matter、跨仓只保留一个权威来源。
+> 本目录的组织方式：类型分目录、每篇文档带 front-matter、一个主题只保留一个权威来源。
 
 ## Architecture
 

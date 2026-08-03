@@ -2,8 +2,8 @@
 
 - **状态**: Accepted（P0 触发层修复已先行落地：maxWait、卸载 flush、续链、错误恢复）
 - **日期**: 2026-07-17
-- **范围**: `apps/web`（客户端同步算法）+ `Magic-Resume-Core/apps/platform-api`（resumes PATCH 协议扩展）
-- **兼容性红线**: 旧客户端（含 MCP 包、agent-service 的 resume client）继续全量 `content` PATCH 且不带 `baseRevision`，行为与现状完全一致（无条件写 + LWW）。所有新增字段均为可选。
+- **范围**: `apps/web`（客户端同步算法）+ 后端 resumes PATCH 协议扩展
+- **兼容性红线**: 旧客户端（含 MCP 包、后端侧的 resume client）继续全量 `content` PATCH 且不带 `baseRevision`，行为与现状完全一致（无条件写 + LWW）。所有新增字段均为可选。
 
 ## 1. 背景与现状
 

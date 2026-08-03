@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -11,15 +11,21 @@ import { AuthButton, AuthField, FieldError, OtpField } from "./AuthPrimitives";
 import { SocialButtons, type OAuthProvider } from "./SocialButtons";
 import { getClerkErrorMessage } from "./authErrors";
 import { readLastMethod, writeLastMethod, type AuthMethod } from "./lastMethod";
+import { afterAuthUrl } from "./afterAuthUrl";
+import { LegalConsent } from "./LegalConsent";
 
 const SSO_CALLBACK_URL = "/sso-callback";
-const AFTER_AUTH_URL = "/dashboard";
+
 
 type Step = "start" | "email" | "verify";
 
 export default function SignUpCard() {
   const { t } = useTranslation();
   const router = useRouter();
+  // Honour the middleware's `redirect_url`, so a lapsed session on
+  // /billing/return?orderId=… comes back to that order rather than the
+  // dashboard, which would strand the payment.
+  const afterAuth = afterAuthUrl(useSearchParams()?.toString());
   const { isLoaded, signUp, setActive } = useSignUp();
   const reduce = useReducedMotion();
 
@@ -48,7 +54,7 @@ export default function SignUpCard() {
       await signUp.authenticateWithRedirect({
         strategy: `oauth_${provider}`,
         redirectUrl: SSO_CALLBACK_URL,
-        redirectUrlComplete: AFTER_AUTH_URL,
+        redirectUrlComplete: afterAuth,
       });
     } catch (err) {
       setPendingOAuth(null);
@@ -83,7 +89,7 @@ export default function SignUpCard() {
       if (res.status === "complete") {
         writeLastMethod("email");
         await setActive?.({ session: res.createdSessionId });
-        router.push(AFTER_AUTH_URL);
+        router.push(afterAuth);
       } else {
         setError(t("auth.errors.generic"));
       }
@@ -134,6 +140,7 @@ export default function SignUpCard() {
                 {t("auth.continueWith.email")}
               </AuthButton>
               {error && <FieldError>{error}</FieldError>}
+              <LegalConsent />
             </div>
           )}
 
@@ -170,6 +177,7 @@ export default function SignUpCard() {
               >
                 {t("auth.signUp.submit")}
               </AuthButton>
+              <LegalConsent />
             </form>
           )}
 

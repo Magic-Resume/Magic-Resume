@@ -53,10 +53,7 @@ type AiChatShellProps = {
 
 const CLOSED_CANVAS: CanvasState = { open: false, skillId: null, view: 'preview', status: 'idle' };
 
-/**
- * Report that a skill run began. Every skill enters through one function, so
- * this is the only place a start is announced.
- */
+/** 上报技能开始。所有技能都从同一个函数进来，所以起始只在这一处宣告。 */
 function reportSkillStarted(id: SkillId) {
   if (id === 'optimize') appLifecycle.aiOptimizationStarted();
   else if (id === 'analyze') appLifecycle.aiAnalysisStarted();
@@ -64,11 +61,7 @@ function reportSkillStarted(id: SkillId) {
   else if (id === 'interview') appLifecycle.aiInterviewStarted();
 }
 
-/**
- * Report that a skill run failed, for the two skills whose failure rate is
- * worth watching. Only a coarse reason travels — never the upstream message,
- * which on this product can echo the user's own résumé back.
- */
+/** 上报技能失败。只带粗粒度原因，绝不带上游报错——它可能把用户简历原样回显出来。 */
 function reportSkillFailed(id: SkillId | null, reason: 'quota' | 'unknown') {
   if (id === 'optimize') appLifecycle.aiOptimizationFailed({ reason });
   else if (id === 'analyze') appLifecycle.aiAnalysisFailed({ reason });
@@ -76,16 +69,13 @@ function reportSkillFailed(id: SkillId | null, reason: 'quota' | 'unknown') {
 /** Localized at call time — module-level, so it reads the i18n instance directly. */
 const aiServiceErrorMessage = () => i18nInstance.t('aiLab.error.serviceUnavailable');
 
-/** Default conversational intent when a content skill is launched without typed text.
- *  The AI gathers specifics (JD / target language) in-conversation via a `request_form`
- *  card — the frontend no longer pre-collects them in a gated popup. These are VISIBLE
- *  user turns (and the backend mirrors their language), so they follow the UI locale. */
+/** 内容技能无文字启动时的默认意图。这是**可见**的用户轮次（后端会跟随其语言），所以随 UI 语言走。 */
 const SKILL_INTENT: Record<BatchKind, () => string> = {
   optimize: () => i18nInstance.t('aiLab.intent.optimize'),
   translate: () => i18nInstance.t('aiLab.intent.translate'),
 };
 
-/** A user action deferred until they supply an LLM key — replayed once the in-chat gate is satisfied. */
+/** 等用户补上 LLM key 才执行的动作，闸门满足后重放。 */
 type PendingRun =
   | { kind: 'analyze' }
   | { kind: 'content'; skill: BatchKind; message: string }
@@ -131,7 +121,7 @@ export default function AiChatShell({
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-  // A canvas snippet lifted into the composer via 「询问 Polaris」 (Track B bridge).
+  // 经「询问 Polaris」抬进输入框的画布片段。
   const [quoted, setQuoted] = useState<
     { path: string; label: string; text: string; selectionText?: string } | null
   >(null);
@@ -139,9 +129,8 @@ export default function AiChatShell({
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const batchNonce = useRef(0);
   const focusNonce = useRef(0);
-  // Set while a whole-resume skill (optimize/translate) run is in flight, so the
-  // `resume_update` it emits routes into the living-canvas diff (not the chat draft
-  // banner). Survives the read_resume approval pause; reset when a new run starts.
+  // 整篇技能运行期间置位，让它的 resume_update 走 living canvas 而不是聊天草稿条。
+  // 要挺过 read_resume 的审批暂停，新运行开始时重置。
   const skillBatchRunRef = useRef<
     { kind: BatchKind; lang?: string; targetedSelection?: TargetedSelectionDiff } | null
   >(null);
@@ -207,27 +196,16 @@ export default function AiChatShell({
     },
     [getCurrentAiSession, patchAiSession, resumeId]
   );
-  // One conversation = one sessionId. It is persisted with the visible transcript
-  // so closing the AI Lab means "put away", while "new chat" explicitly resets
-  // the previous session.
+  // 一次对话 = 一个 sessionId，随可见记录一起持久化：关闭只是收起，"新对话"才重置。
   const sessionIdRef = useRef('');
-  // Single source of truth for the in-flight run: the AbortController that stops it
-  // (so close / new-chat / unmount halts the in-flight request instead of leaving
-  // work running), plus a generation counter so a
-  // superseded run's lingering async callbacks early-return instead of writing into
-  // the new session (design P0 · CC4 / LC3).
+  // 在飞行的运行：controller 负责中止，generation 让被顶替的回调提前返回而非写进新会话。
   const controllerRef = useRef<AbortController | null>(null);
   const runGenRef = useRef(0);
-  // Which skill the in-flight run belongs to. The run functions are shared, so
-  // a failure surfacing in the stream has no other way to say what it was for.
+  // 运行函数是共用的，失败时流里没有别的办法说明是哪个技能在跑。
   const activeSkillRef = useRef<SkillId | null>(null);
   const interviewStartedAtRef = useRef<number | null>(null);
 
-  /**
-   * Close out an interview, carrying how long it ran. Guarded by the start
-   * timestamp so the many other paths that close the overlay — resetting the
-   * session, unmounting — don't each report an interview that never began.
-   */
+  /** 结束面试并上报时长。用开始时间戳把关，避免关闭/卸载等路径各报一次从未开始的面试。 */
   const reportInterviewEnded = useCallback(() => {
     const startedAt = interviewStartedAtRef.current;
     if (startedAt === null) return;
@@ -237,8 +215,7 @@ export default function AiChatShell({
     });
   }, []);
   if (aiSession?.sessionId) sessionIdRef.current = aiSession.sessionId;
-  // True once this session opened server-side state (create / general), so the
-  // "new chat" button can reclaim it. Modal close deliberately keeps the session.
+  // 本会话是否已在服务端开过状态，供"新对话"回收；关闭弹窗故意保留会话。
   const sessionUsedRef = useRef(false);
   if (aiSession) sessionUsedRef.current = aiSession.sessionUsed;
   const markSessionUsed = useCallback(() => {
@@ -257,9 +234,7 @@ export default function AiChatShell({
       void flushAiSession(resumeId);
     };
   }, [flushAiSession, loadAiSession, resumeId]);
-  // On unmount (modal close / route back): abort the in-flight run and invalidate
-  // callbacks. Do not delete the server-side session here; the visible conversation is
-  // now resumable, and "new chat" owns explicit cleanup.
+  // 卸载时中止在飞行的运行并失效回调；不删服务端会话——对话可恢复，"新对话"才显式清理。
   useEffect(
     () => () => {
       runGenRef.current += 1;
@@ -269,28 +244,18 @@ export default function AiChatShell({
     [setIsAiJobRunning]
   );
   const setResumeDraft = useResumeDraftStore((s) => s.setResumeDraft);
-  // Each AI session uses the user's configured model settings.
   const { saveSettings, hasLlmConfig } = useSettingStore();
   const [configGateOpen, setConfigGateOpen] = useState(false);
   const pendingRunRef = useRef<PendingRun | null>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
-  // The analyze skill renders a live review todolist (a `plan` card) instead of a
-  // single exec card. It's created on the first plan_update, so the card lands in
-  // the same order as the stream. The id is tracked here so later
-  // plan_updates update the same card and resume_analysis can finalize it.
+  // analyze 的实时清单卡：首个 plan_update 时创建，记住 id 让后续更新落到同一张卡。
   const planCardRef = useRef<string | null>(null);
-  // Name of the active subagent (set on subagent_started, cleared on completed).
-  // While set, plan_updates feed that subagent's own todolist card and its raw
-  // streamed tokens are kept out of the main bubble.
+  // 活跃子代理名。置位期间 plan_update 走它自己的清单卡，原始 token 不进主气泡。
   const activeSubagentRef = useRef<string | null>(null);
-  // The active subagent's OWN plan card — separate from planCardRef so starting a
-  // subagent mid-run doesn't orphan the main agent's plan card (which would then
-  // never finalize and hang on "工作中").
+  // 子代理自己的清单卡——与 planCardRef 分开，否则中途起子代理会让主卡永远停在"工作中"。
   const subagentPlanCardRef = useRef<string | null>(null);
-  // The read_resume approval card spans two streams (approve in one, the read in
-  // the next). Tracked here so the read's progress (reading → read) updates that
-  // same card's footer in place — 已允许读取 → 已读取简历 — instead of a separate line.
+  // read_resume 审批卡横跨两条流，记住 id 才能就地更新同一张卡的页脚而不是另起一行。
   const readApprovalRef = useRef<string | null>(null);
 
   const addMessage = useCallback((msg: ChatMessage) => {
@@ -308,8 +273,7 @@ export default function AiChatShell({
     [addMessage]
   );
 
-  // Flip the most recent in-progress tool activity to its done state with the
-  // given label, so an activity line resolves instead of spinning forever.
+  // 把最近一条进行中的工具活动置成完成态，免得它一直转圈。
   const markActivityDone = useCallback((doneText: string) => {
     setMessages((prev) => {
       for (let i = prev.length - 1; i >= 0; i--) {
@@ -328,8 +292,7 @@ export default function AiChatShell({
     [markActivityDone]
   );
 
-  // Advance a read_resume approval card's footer through its read lifecycle
-  // (reading → read), so 已允许读取 / 正在读取简历… / 已读取简历 all live in one place.
+  // 推进审批卡页脚的读取状态，让三段文案集中在一处。
   const setApprovalReadState = useCallback(
     (msgId: string, readState: 'reading' | 'read') => {
       setMessages((prev) =>
@@ -343,7 +306,7 @@ export default function AiChatShell({
     [setMessages]
   );
 
-  // Click a log entry → reopen the canvas and scroll to that spot (design §5 可点回溯).
+  // 点日志条目 → 重开画布并滚到对应位置。
   const focusOnCanvas = useCallback((resumePath: string) => {
     focusNonce.current += 1;
     setLivingOpen(true);
@@ -363,24 +326,18 @@ export default function AiChatShell({
     });
   }, [setCanvas, setLivingOpen, setLivingSkillId, setStarted]);
 
-  // P3 · a whole-resume content skill (optimize / translate) drops its result onto
-  // the living canvas as a batch of in-place pending changes instead of a Diff tab.
+  // 整篇简历类技能的结果落到 living canvas 上作为就地待定改动，而不是开 Diff 标签页。
   const isBatchSkill = (id: SkillId) => id === 'optimize' || id === 'translate';
 
-  // Consume an AI event stream into the thread — shared by the initial chat and
-  // the HITL resume (approve), since both speak the same normalized event schema.
-  // The initial stream ends at a `tool_approval_request`; approving opens a fresh
-  // continuation stream that this same consumer drains.
-  // Streams message_chunk into a live assistant bubble; a resume surfaces as a
-  // reviewable draft.
+  // 消费 AI 事件流。初始对话与审批后的续流共用它——两者事件 schema 相同，
+  // 初始流在 `tool_approval_request` 处结束，批准会另开一条续流由同一个消费者排干。
   const consumeStream = useCallback(
     async (
       makeGen: (signal: AbortSignal) => AsyncGenerator<AgentSseEvent>,
       pendingOnQuota?: PendingRun,
     ) => {
       const aiId = nanoid();
-      // The assistant bubble is created lazily on the first chunk so any
-      // `read_resume` activity line lands *above* the reply (design §8.5).
+      // 气泡延迟到首个 chunk 才创建，好让 read_resume 活动行落在回复上方。
       let bubbleCreated = false;
       const ensureBubble = () => {
         if (bubbleCreated) return;
@@ -389,8 +346,7 @@ export default function AiChatShell({
         setAwaitingReply(false);
       };
 
-      // Supersede any prior in-flight run: abort it and bump the generation so its
-      // lingering callbacks early-return instead of writing into this run's session.
+      // 顶替上一次运行：中止它并递增 generation，让它残留的回调提前返回。
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
@@ -402,28 +358,23 @@ export default function AiChatShell({
       setAwaitingReply(true);
 
       let acc = '';
-      // The initial stream ends when the agent pauses for approval; track it so the
-      // finalizer doesn't drop an empty assistant bubble after the approval card.
+      // 记住"因审批暂停"，否则收尾时会在审批卡后留下一个空气泡。
       let pausedForApproval = false;
       const patchHandledRunIds = new Set<string>();
       let patchHandledWithoutRunId = false;
       try {
         for await (const ev of makeGen(controller.signal)) {
-          // A newer run (or unmount) superseded this one — stop touching state.
+          // 已被更新的运行（或卸载）顶替，不要再碰状态。
           if (!isCurrent()) return;
           if (ev.type === 'message_chunk' && ev.content) {
-            // A subagent's raw tokens (e.g. translation JSON / its reasoning) stay out
-            // of the chat — its progress shows on its own todolist card and its result
-            // lands via resume_update. Only the main agent's narration hits the bubble.
+            // 子代理的原始 token 不进聊天：它的进度在自己的清单卡上，结果走 resume_update。
             if (!activeSubagentRef.current) {
               ensureBubble();
               acc += ev.content;
               setMessages((prev) => prev.map((m) => (m.id === aiId ? { ...m, content: acc } : m)));
             }
           } else if (ev.type === 'tool_approval_request') {
-            // Agent paused before a sensitive tool (read_resume) OR to collect input
-            // via a GenUI widget (request_form). The initial stream ends here; the
-            // card drives the resume (§6 · genui-systematization §4).
+            // 敏感工具（read_resume）前暂停，或用 GenUI 组件收集输入。流到此结束，由卡片驱动续流。
             const p = ev.payload as {
               requestId?: string;
               toolName?: string;
@@ -434,8 +385,6 @@ export default function AiChatShell({
               pausedForApproval = true;
               setAwaitingReply(false); // the card replaces the thinking dots
               if (p.toolName && WIDGETS[p.toolName]) {
-                // GenUI widget: render the registered card; submit/cancel resumes the
-                // run via handleWidgetAction (respond / reject).
                 addMessage({
                   id: nanoid(),
                   role: 'widget',
@@ -448,8 +397,6 @@ export default function AiChatShell({
                 });
               } else {
                 const approvalId = nanoid();
-                // The read result resolves on this same card; the direct read_resume
-                // approval owns it; analyze reads via its todolist.
                 if (p.toolName === 'read_resume') readApprovalRef.current = approvalId;
                 addMessage({
                   id: approvalId,
@@ -460,9 +407,7 @@ export default function AiChatShell({
               }
             }
           } else if (ev.type === 'tool_started' && (ev.payload as { toolName?: string } | undefined)?.toolName === 'read_resume') {
-            // The read runs after approval. Show progress on the approval card
-            // itself (已允许读取 → 正在读取简历…) instead of a separate activity line;
-            // fall back to a line only if there's no card to update.
+            // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
             if (readApprovalRef.current) {
               setApprovalReadState(readApprovalRef.current, 'reading');
             } else {
@@ -476,10 +421,7 @@ export default function AiChatShell({
               markReadActivityDone();
             }
           } else if (ev.type === 'plan_update') {
-            // A live todolist (the analyze checklist, or a write_todos plan from the
-            // main agent or a subagent). Route to the active subagent's card while one
-            // is running, else the main card — so the two never collide. The label
-            // comes from the backend (analyze → "简历多角色评审"); plain plans default.
+            // 有子代理在跑就路由到它的卡，否则走主卡——两者不能撞在一起。
             const payload = ev.payload as { todos?: PlanTodo[]; label?: string } | undefined;
             const todos = payload?.todos;
             if (Array.isArray(todos)) {
@@ -497,11 +439,7 @@ export default function AiChatShell({
                 const planId = nanoid();
                 ref.current = planId;
                 setAwaitingReply(false); // the todolist replaces the thinking dots
-                // Route the card's canvas toggle to the right surface: a batch run
-                // (translate / optimize) lives on the living canvas; analyze on the
-                // score canvas. Without this the toggle was hardcoded to 'analyze',
-                // so a translate plan opened the empty score canvas (and mislabelled
-                // 查看/收起 since the living canvas was already open).
+                // 卡片上的画布开关要指向正确的画面：批量技能→living canvas，analyze→score canvas。
                 const canvasSkill: SkillId = skillBatchRunRef.current
                   ? skillBatchRunRef.current.kind
                   : 'analyze';
@@ -516,17 +454,13 @@ export default function AiChatShell({
               }
             }
           } else if (ev.type === 'subagent_started') {
-            // A subagent started. Everything until subagent_completed is its work:
-            // give it its OWN todolist card (separate ref, so the main plan card isn't
-            // orphaned), and keep its raw streamed tokens out of the main bubble.
+            // 到 subagent_completed 为止都算它的工作：给它独立的清单卡，原始 token 不进主气泡。
             const payload = ev.payload as
               | { name?: string; args?: { description?: string } }
               | undefined;
             const rawName = payload?.name;
             const task = payload?.args?.description?.trim();
-            // Prefer the subagent's type/skill name (e.g. resume-translation); for a
-            // generic worker (general-purpose), fall back to the task it was given so
-            // the card says what it's doing instead of an empty "子代理".
+            // 优先用子代理的类型名；通用 worker 退回它领到的任务，免得卡片只写"子代理"。
             const name =
               rawName && rawName !== '子代理' && rawName !== 'general-purpose'
                 ? rawName
@@ -587,17 +521,13 @@ export default function AiChatShell({
             const draft = (ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume) as
               | Resume
               | undefined;
-            // A resume_update must carry a keyed `sections` object. A malformed
-            // payload (e.g. a backend that forgot to unwrap the stored `content`
-            // blob) would otherwise reach MagicResumeRenderer and crash it on
-            // `data.sections.<key>`. Ignore + warn instead of rendering garbage.
+            // resume_update 必须带 keyed `sections`；畸形负载会让渲染器在 sections.<key> 上崩，宁可忽略并告警。
             const sections =
               draft && typeof draft === 'object' ? draft.sections : undefined;
             if (draft && sections && typeof sections === 'object' && !Array.isArray(sections)) {
               const batch = skillBatchRunRef.current;
               if (batch) {
-                // optimize/translate skill run → stage real per-field diffs on the
-                // living canvas (the agent's full resume vs the current one).
+                // optimize/translate → 在 living canvas 上按字段铺开真实 diff。
                 batchNonce.current += 1;
                 setCanvas(CLOSED_CANVAS);
                 setLivingOpen(true);
@@ -612,9 +542,7 @@ export default function AiChatShell({
               } else {
                 setResumeDraft(draft);
                 setDraftReady(draft);
-                // A create run produced a usable draft. Reported here rather
-                // than when the stream ends, because a run can finish without
-                // ever yielding one.
+                // 在这里上报而不是流结束时：一次运行可能跑完却从没产出草稿。
                 if (activeSkillRef.current === 'create') appLifecycle.aiCreateCompleted();
               }
             } else {
@@ -624,9 +552,7 @@ export default function AiChatShell({
               );
             }
           } else if (ev.type === 'resume_analysis') {
-            // The analyze_resume tool finished — surface the structured
-            // multi-persona result on the ScoreView canvas (analyze runs entirely
-            // through /api/chat; there's no separate analyze endpoint).
+            // analyze_resume 跑完，把多角色结果呈到 ScoreView 画布。
             const result = (ev.data ?? (ev.payload as { data?: unknown } | undefined)?.data) as
               | MultiPersonaResumeAnalysis
               | undefined;
@@ -634,11 +560,9 @@ export default function AiChatShell({
               setAnalysis(result);
               setLivingOpen(false);
               setCanvas({ open: true, skillId: 'analyze', view: 'score', status: 'ready' });
-              // The analysis actually produced a result — a run that streams and
-              // then yields nothing is not a success.
+              // 真出了结果才算成功：只流不产出不是成功。
               appLifecycle.aiAnalysisSucceeded();
-              // The analysis landed → mark every checklist step done (defensive: the
-              // assemble step's plan_update may race the artifact event).
+              // 收尾时把清单全置完成（防御：汇总步骤的 plan_update 可能晚于本事件）。
               if (planCardRef.current) {
                 const planId = planCardRef.current;
                 planCardRef.current = null;
@@ -656,8 +580,7 @@ export default function AiChatShell({
               }
             }
           } else if (ev.type === 'fit_report') {
-            // The evaluate_fit tool finished — surface the resume × JD FitReport on
-            // the MatchView canvas (runs entirely through /api/chat, like analyze).
+            // evaluate_fit 跑完，把简历 × JD 的匹配报告呈到 MatchView 画布。
             const report = (ev.data ?? (ev.payload as { data?: unknown } | undefined)?.data) as
               | FitReport
               | undefined;
@@ -665,8 +588,7 @@ export default function AiChatShell({
               setFitReport(report);
               setLivingOpen(false);
               setCanvas({ open: true, skillId: 'analyze', view: 'match', status: 'ready' });
-              // The report landed → mark every checklist step done (defensive: the
-              // assemble step's plan_update may race the artifact event).
+              // 收尾时把清单全置完成（防御：汇总步骤的 plan_update 可能晚于本事件）。
               if (planCardRef.current) {
                 const planId = planCardRef.current;
                 planCardRef.current = null;
@@ -684,29 +606,23 @@ export default function AiChatShell({
               }
             }
           } else if (ev.type === 'error') {
-            // The backend sends a stable machine code only. Older deployments may
-            // still send a raw provider/LangChain message, but it must never reach
-            // the visible thread or toast.
+            // 后端只发稳定机器码；老部署可能仍发原始上游报错，绝不能让它进对话或 toast。
             const code = typeof ev.payload?.code === 'string' ? ev.payload.code : ev.error;
             throw new Error(code || 'agent_run_failed');
           }
         }
         if (pausedForApproval && !bubbleCreated) {
-          // Paused for approval before any text — the card is the terminal UI for
-          // this segment; the resume stream picks up after the user decides.
+          // 一个字都没出就停在审批：卡片就是这一段的终点，续流等用户决定。
         } else {
           ensureBubble();
           setMessages((prev) => prev.map((m) => (m.id === aiId ? { ...m, status: 'done' } : m)));
         }
       } catch (err) {
-        // Aborted (user stopped / closed / reset / unmounted) or superseded by a
-        // newer run — not a failure, so no error bubble or toast.
+        // 被用户中止或被新运行顶替，不算失败。
         if (controller.signal.aborted || !isCurrent()) {
           return;
         }
-        // Past the abort guard this is a genuine failure. Reporting it above
-        // would have counted every cancelled run as one, which is the number
-        // most likely to be mistaken for a broken model.
+        // 过了中止判断才是真失败——放在上面会把每次取消都算成失败。
         reportSkillFailed(
           activeSkillRef.current,
           isQuotaOrCustomConfigError(err) ? 'quota' : 'unknown',
@@ -744,12 +660,10 @@ export default function AiChatShell({
         );
         toast.error(aiServiceErrorMessage());
       } finally {
-        // Only the current run cleans up shared UI state — a superseded/unmounted run
-        // must not flip the new run's spinners off or write into its thread.
+        // 只有当前运行能清理共享 UI 状态，被顶替的运行不许关掉新运行的转圈。
         if (isCurrent()) {
           markReadActivityDone(); // resolve any read line still spinning
-          // Finalize any still-live plan card — the main one AND an active subagent's —
-          // so neither hangs on a spinner if the stream ends/errors mid-step.
+          // 主卡和子代理卡都要收尾，否则流中途结束/出错时它们会一直转圈。
           activeSubagentRef.current = null;
           for (const ref of [planCardRef, subagentPlanCardRef]) {
             if (!ref.current) continue;
@@ -793,12 +707,10 @@ export default function AiChatShell({
     ]
   );
 
-  // ── AI access gate: account credits first, BYOK fallback ──────────────────
+  // AI 访问闸门：先走账户额度，退回 BYOK。
   const resolveRunConfig = useCallback(
     async (pending: PendingRun): Promise<AgentLlmConfig | null> => {
-      // Show loading from the moment the run starts — the internal-credit path does
-      // an /ai-entitlement round-trip first, and the user should see feedback on tap
-      // rather than after that request lands.
+      // 一点就给反馈：内置额度路径要先往返一次 /ai-entitlement，不能等它回来才转圈。
       setRunning(true);
       setIsAiJobRunning(true);
       setAwaitingReply(true);
@@ -810,7 +722,7 @@ export default function AiChatShell({
         setConfigGateOpen(false);
         return access.config;
       }
-      // Not proceeding to a stream — clear the loading state we optimistically set.
+      // 不会进入流了，把乐观设上的 loading 清掉。
       setRunning(false);
       setIsAiJobRunning(false);
       setAwaitingReply(false);
@@ -826,8 +738,7 @@ export default function AiChatShell({
     [configGateOpen, setStarted, setIsAiJobRunning],
   );
 
-  // analyze · runs in-conversation and streams a checklist plus final analysis
-  // result. The live todolist card is owned by consumeStream via planCardRef.
+  // analyze：会话内运行，流出清单 + 最终分析结果；清单卡由 consumeStream 经 planCardRef 拥有。
   const runAnalyze = useCallback(
     async () => {
       const pending: PendingRun = { kind: 'analyze' };
@@ -840,8 +751,7 @@ export default function AiChatShell({
           streamChat({
             messages: [{ role: 'user', content: SKILLS.analyze.buildIntent({}) }],
             mode: 'analyze',
-            // No sessionId: analyze is a one-shot transform. sessionId is reserved
-            // for create/general chat.
+            // 不带 sessionId：analyze 是一次性变换，sessionId 留给 create/general 对话。
             resumeId: resumeData.id,
             config,
             signal,
@@ -852,11 +762,8 @@ export default function AiChatShell({
     [consumeStream, resumeData.id, resolveRunConfig]
   );
 
-  // Whole-resume content skill (optimize / translate) → CONVERSATIONAL run via
-  // Whole-resume content skill (optimize / translate) → conversational run. No
-  // upfront param popup: when specifics are needed, a FormCard collects them in the
-  // thread. The final full-resume update diffs onto the living canvas
-  // (skillBatchRunRef survives the form interrupt).
+  // 整篇内容技能（optimize / translate）走会话式运行：不弹参数框，需要细节时在对话里用
+  // FormCard 收集；最终整篇更新 diff 到 living canvas（skillBatchRunRef 要挺过表单中断）。
   const runContentSkill = useCallback(
     async (kind: BatchKind, message: string) => {
       const pending: PendingRun = { kind: 'content', skill: kind, message };
@@ -889,14 +796,10 @@ export default function AiChatShell({
     ]
   );
 
-  // The user acted on a GenUI widget card (submit / cancel). Mark it resolved and
-  // resume the paused run via the HITL channel: submit → `respond` with the values;
-  // cancel → `reject` (docs/specs/genui-systematization/design.md §5).
+  // 用户操作了 GenUI 卡片：标记已处理，并经 HITL 通道恢复暂停的运行。
   const handleWidgetAction = useCallback(
     (widgetId: string, result: WidgetActionResult) => {
-      // A submitted form carrying a `jd` field is how a target job description
-      // reaches the model — there is no file upload. Only its size bucket is
-      // reported; the description itself is the user's material.
+      // JD 只经表单进入模型（没有文件上传）。只上报长度分桶，正文是用户的材料。
       if (result.type === 'submit') {
         const jd = (result.values as Record<string, unknown> | undefined)?.jd;
         if (typeof jd === 'string' && jd.trim()) {
@@ -918,9 +821,8 @@ export default function AiChatShell({
             : m
         )
       );
-      // Resume the paused `request_form` tool. Submit → `edit` injects the user's
-      // values into the tool args (the tool echoes them back to the model); cancel
-      // → `reject`. (langchain HITL has no `respond`, so submit rides on `edit`.)
+      // 恢复暂停的 request_form：提交走 `edit` 把值注入工具参数，取消走 `reject`。
+      // （langchain HITL 没有 `respond`，所以提交只能搭 `edit`。）
       const w = messagesRef.current.find((m) => m.widget?.widgetId === widgetId)?.widget;
       const decision =
         result.type === 'submit'
@@ -956,8 +858,7 @@ export default function AiChatShell({
     [consumeStream, resumeData.id, resolveRunConfig, setMessages]
   );
 
-  // create / general · streaming chat. Sends the visible turn history scoped by
-  // sessionId.
+  // create / general：流式对话，发送按 sessionId 划定的可见轮次历史。
   const runChat = useCallback(
     async (history: { role: 'user' | 'assistant'; content: string }[], mode: 'create' | 'general') => {
       const pending: PendingRun = { kind: 'chat', history, mode };
@@ -971,7 +872,7 @@ export default function AiChatShell({
             messages: history,
             mode,
             sessionId: sessionIdRef.current,
-            // Scope the chat to this resume without pushing a full snapshot each turn.
+            // 把对话限定到这份简历，又不必每轮推送整份快照。
             resumeId: resumeData.id,
             config,
             signal,
@@ -982,8 +883,7 @@ export default function AiChatShell({
     [consumeStream, resumeData.id, resolveRunConfig, markSessionUsed]
   );
 
-  // Human-in-the-loop: the user answered an approval card. Continue the session
-  // with the decision; the route streams the continuation for the shared consumer.
+  // 用户回答了审批卡：带着决定继续会话，续流交给同一个消费者。
   const handleApproval = useCallback(
     (msgId: string, approved: boolean) => {
       setMessages((prev) =>
@@ -1020,7 +920,7 @@ export default function AiChatShell({
   const handleSend = useCallback(
     (text: string) => {
       setStarted(true);
-      // Build the backend history (prior turns + this one) before the optimistic add.
+      // 在乐观插入之前先构造发给后端的历史。
       const history = toBackendHistory(messagesRef.current).concat([{ role: 'user', content: text }]);
       addMessage({ id: nanoid(), role: 'user', content: text });
       if (chatMode === 'create') {
@@ -1043,18 +943,15 @@ export default function AiChatShell({
     [chatMode, addMessage, runContentSkill, runAnalyze, runChat, setChatMode, setStarted]
   );
 
-  // A skill picked from the `/` menu rides as a chip + freeform text in the Composer:
-  // selecting it no longer launches immediately; the user types context, then Enter
-  // runs it here. The text maps to the skill's primary param (translate → target
-  // language, optimize → JD); empty text falls back to the skill's own defaults.
+  // `/` 菜单选中的技能只是个 chip，不立即执行：用户补充文字后回车才到这里。
+  // 文字映射到该技能的主参数（translate→目标语言，optimize→JD），留空则用技能自己的默认值。
   const runSkillWithText = useCallback(
     (id: SkillId, text: string) => {
       const skill = SKILLS[id];
       setStarted(true);
       const t = text.trim();
 
-      // One place to report every skill start, since this is the single entry
-      // point. Which run failed later is resolved through `activeSkillRef`.
+      // 所有技能都从这一个入口进，起始上报集中在此；后续哪次失败靠 activeSkillRef 认领。
       activeSkillRef.current = id;
       reportSkillStarted(id);
 
@@ -1064,9 +961,7 @@ export default function AiChatShell({
         return;
       }
 
-      // Content skills (optimize / translate) run conversationally: typed text is the
-      // turn; with no text we send a natural intent and the AI gathers specifics via a
-      // FormCard. No upfront param popup.
+      // 内容技能走会话式：有文字就作为本轮，没文字就发一句自然意图让 AI 用 FormCard 追问。
       if (id === 'translate' || id === 'optimize') {
         const msg = t || SKILL_INTENT[id]();
         addMessage({ id: nanoid(), role: 'user', content: msg, skillId: id });
@@ -1087,14 +982,13 @@ export default function AiChatShell({
         return;
       }
 
-      // analyze (no params): the multi-persona tool takes no freeform input — the
-      // typed text just shows as the turn while the standard analysis runs.
+      // analyze 不吃自由输入：文字只作为本轮显示，跑的仍是标准分析。
       void runAnalyze();
     },
     [addMessage, runChat, runContentSkill, runAnalyze, setChatMode, setStarted],
   );
 
-  // Track B · a canvas snippet (「询问 Polaris」) is lifted into the composer as a quote.
+  // 画布片段经「询问 Polaris」以引用形式抬进输入框。
   const onAskWithTarget = useCallback(
     (ctx: { path: string; label: string; text: string; selectionText?: string }) => {
       setStarted(true);
@@ -1109,10 +1003,9 @@ export default function AiChatShell({
     [setLivingOpen, setStarted]
   );
 
-  // A conversational, snippet-scoped turn: streams through the main chat (multi-turn,
-  // the model may ask back) but marks the run as a batch so any `resume_update` lands
-  // as an in-place canvas proposal. `mode: 'general'` deliberately — NOT the optimize
-  // skill (which reads the whole resume / gathers a JD); Polaris just edits this片段.
+  // 限定在片段上的会话式一轮：走主对话（模型可以反问），但标记为 batch，
+  // 让 resume_update 变成画布上的就地提案。故意用 `mode: 'general'` 而非 optimize
+  // 技能——后者会读整篇简历并索要 JD，而 Polaris 只改这个片段。
   const runTargetedEdit = useCallback(
     async (message: string, targetedSelection?: TargetedSelectionDiff) => {
       const pending: PendingRun = {
@@ -1140,8 +1033,7 @@ export default function AiChatShell({
     [consumeStream, resumeData.id, resolveRunConfig, markSessionUsed],
   );
 
-  // 「询问 Polaris」send: keep a旁白 user message (with quote, no skill chip), then run the
-  // scoped instruction as a conversational turn. The change comes back on the canvas.
+  // 「询问 Polaris」发送：留一条带引用的旁白用户消息，再把指令作为会话轮次跑，改动回到画布上。
   const sendTargetedEdit = useCallback(
     (instruction: string) => {
       if (!quoted) return;
@@ -1187,9 +1079,7 @@ export default function AiChatShell({
 
   const toggleCanvas = useCallback(
     (id: SkillId) => {
-      // Content skills live on the living canvas. Re-running optimize/translate needs
-      // its params (JD / language), so the rail toggle just shows/hides the canvas with
-      // the last result — re-run the skill itself to regenerate.
+      // 重跑 optimize/translate 需要参数（JD / 语言），所以这个开关只显示/隐藏上次结果的画布。
       if (isBatchSkill(id)) {
         setLivingOpen((open) => !open);
         return;
@@ -1235,16 +1125,13 @@ export default function AiChatShell({
     setResetConfirmOpen(true);
   }, []);
 
-  // (param-form popup removed — optimize/translate now gather inputs in-conversation
-  //  via a FormCard widget; see runContentSkill + handleWidgetAction.)
 
   const stopRun = useCallback(() => {
     controllerRef.current?.abort();
   }, []);
 
   const handleClose = useCallback(() => {
-    // Closing mid-run aborts the in-flight stream; the
-    // confirm just guards against losing an in-flight job to a stray click.
+    // 运行中关闭会中止流，二次确认只是防手滑。
     if (
       running &&
       typeof window !== 'undefined' &&
@@ -1549,13 +1436,11 @@ export default function AiChatShell({
   );
 }
 
-/** Header pill that pops a small panel with the remaining internal quota
- *  (today / this week + reset times). Cloud-only — BYOK runs on the user's own
- *  key and has no internal quota to show. */
+/** 顶部胶囊：点开显示内置额度余量。仅云端——BYOK 用的是用户自己的 key，没有内置额度可显示。 */
 function HeaderQuota() {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
-  // Lazy: only hits /ai-entitlement once the panel is opened (cached client-side).
+  // 懒加载：面板打开才请求 /ai-entitlement（客户端有缓存）。
   const { data, loading, error } = useEntitlement(open);
   if (!isCloudMode) return null;
 
@@ -1564,9 +1449,7 @@ function HeaderQuota() {
     d
       ? new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))
       : '';
-  // Monthly allowance remaining as a single percentage from the API. Credits are
-  // our internal billing unit, so the client never receives raw balances — only
-  // this percentage. null = unlimited (no credit cap).
+  // 月度余量只以百分比下发（积分是内部计费单位，客户端拿不到原始余额）。null = 无限。
   const credit = data
     ? { percent: data.remainingPercent, resetAt: data.resetAt ?? null }
     : null;

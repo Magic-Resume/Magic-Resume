@@ -65,7 +65,7 @@ type LivingCanvasProps = {
   onApplySections: (sections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
   onLog: (text: string, resumePath?: string) => void;
-  /** Track B bridge: lift a snippet into the chat composer for a freeform instruction. */
+  /** lift a snippet into the chat composer for a freeform instruction. */
   onAskWithTarget?: (ctx: { path: string; label: string; text: string; selectionText?: string }) => void;
   batchRequest?: BatchRequest | null;
   focusRequest?: FocusRequest | null;
@@ -75,11 +75,8 @@ type HighlightRect = { top: number; left: number; width: number; height: number 
 type SelectionState = { target: EditableTarget; rect: DOMRect; rects: HighlightRect[]; text: string };
 type SectionPopoverState = { sectionKey: string; title: string; rect: DOMRect };
 
-// Collapse the raw client rects into one union rect per visual line. Ranges over
-// text with inline elements (code/links) return extra rects that OVERLAP the line
-// rects; stacking two translucent highlights there compounds the alpha into darker
-// patches. Merging every vertically-overlapping rect into a single line rect keeps
-// the highlight one flat, uniform color.
+// 把原始 client rects 按视觉行合并成一个。含行内元素的选区会多返回重叠的 rect，
+// 两层半透明高亮叠上去会出现更深的斑块；合并后高亮才是一片均匀的颜色。
 function mergeSelectionRects(raw: DOMRect[]): HighlightRect[] {
   const boxes = raw
     .filter((r) => r.width > 0 && r.height > 0)
@@ -118,13 +115,11 @@ export default function LivingCanvas({
   const [selection, setSelection] = useState<SelectionState | null>(null);
   const [sectionPopover, setSectionPopover] = useState<SectionPopoverState | null>(null);
   const [cursor, setCursor] = useState(0);
-  // `interacted` tracked first user action to gate the (now-removed) hover hint;
-  // the value is no longer read, but the setter is kept harmless at call sites.
   const [, setInteracted] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Refs keep async callbacks (timeouts) reading the latest values, not stale closures.
+  // 用 ref 让异步回调读到最新值而不是过期闭包。
   const pendingRef = useRef(pending);
   pendingRef.current = pending;
   const sectionsRef = useRef(resumeData.sections);
@@ -133,12 +128,11 @@ export default function LivingCanvas({
   infoRef.current = resumeData.info;
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
-  // Retry re-runs the exact same edit — stash its params + assembler by path.
+  // 重试要跑一模一样的编辑，按 path 存下参数与组装函数。
   const errorAttemptsRef = useRef<
     Record<string, { params: Omit<EditParams, 'config' | 'signal'>; build: (r: EditResultLike) => PendingChange }>
   >({});
-  // In-flight requests, keyed by path — a new action on a path aborts the prior;
-  // unmount / canvas close aborts them all.
+  // 按 path 记在飞行的请求：同一 path 上的新动作中止旧的，卸载/关画布则全部中止。
   const abortRef = useRef<Record<string, AbortController>>({});
 
   useEffect(
@@ -164,7 +158,7 @@ export default function LivingCanvas({
     setOrder((prev) => prev.filter((p) => p !== path));
   }, []);
 
-  // The popover / bars are fixed-positioned; drop them when the canvas scrolls.
+  // popover/工具条是 fixed 定位的，画布一滚就得撤掉。
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -177,7 +171,7 @@ export default function LivingCanvas({
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Dismiss a pending selection when clicking outside the resume / the selection bar.
+  // 点到简历和选区工具条之外就取消待处理的选区。
   useEffect(() => {
     if (!selection) return;
     const onDown = (e: MouseEvent) => {
@@ -194,13 +188,11 @@ export default function LivingCanvas({
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.remove('lc-highlight');
-    // restart the animation
     void (el as HTMLElement).offsetWidth;
     el.classList.add('lc-highlight');
     window.setTimeout(() => el.classList.remove('lc-highlight'), 1200);
   }, []);
 
-  // Commit a freshly generated change onto the canvas as a reviewable proposal.
   const commit = useCallback((change: PendingChange) => {
     const path = pathOf(change.target);
     delete errorAttemptsRef.current[path];
@@ -214,9 +206,8 @@ export default function LivingCanvas({
     setOrder((prev) => (prev.includes(path) ? prev : [...prev, path]));
   }, []);
 
-  // The edit round-trip: shimmer the target, call the service with model config,
-  // commit the proposal on success, or surface a retryable error. Shared by element /
-  // selection / insert actions so loading + error + abort behave identically.
+  // 编辑往返：目标闪烁 → 调服务 → 成功提交提案，失败给可重试的错误。
+  // 元素/选区/插入三种动作共用，保证 loading、错误、中止行为一致。
   const runEdit = useCallback(
     async (
       path: string,
@@ -273,7 +264,7 @@ export default function LivingCanvas({
       const { target } = popover;
       setPopover(null);
       setInteracted(true);
-      // 询问 Polaris → lift this element into the chat composer (Track B).
+      // 询问 Polaris → lift this element into the chat composer.
       if (action === 'free' && onAskWithTarget) {
         onAskWithTarget({ path: pathOf(target), label: target.label, text: stripHtml(fieldHtml(target)) });
         return;
@@ -289,7 +280,7 @@ export default function LivingCanvas({
     [popover, fieldHtml, runEdit, onAskWithTarget]
   );
 
-  // P2 · selection-driven. Detect a text selection inside an editable field.
+  // 检测可编辑字段内的文本选区。
   const onResumeMouseUp = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
@@ -315,8 +306,7 @@ export default function LivingCanvas({
       kind: parsed.sectionKey === 'info' ? 'text' : 'html',
       label: `选中片段 · ${sectionTitle(parsed.sectionKey)}`,
     };
-    // Snapshot the geometry (one rect per visual line) + text before we drop the
-    // native selection below.
+    // 在下面清掉原生选区之前，先快照几何（每视觉行一个 rect）与文本。
     const rects = mergeSelectionRects(Array.from(range.getClientRects()));
     const boundingRect = range.getBoundingClientRect();
     const text = sel.toString();
@@ -324,10 +314,8 @@ export default function LivingCanvas({
     setSectionPopover(null);
     setInteracted(true);
     setSelection({ target, rect: boundingRect, rects, text });
-    // The browser clears its own selection the moment the cursor moves onto the
-    // floating toolbar, so we don't rely on it: drop it now and paint our own
-    // persistent highlight (SelectionHighlight) from the snapshot instead. The
-    // action still runs off the stored `text`, not the live selection.
+    // 鼠标一挪到浮动工具条浏览器就会清掉原生选区，所以不依赖它：现在就清掉，
+    // 改用快照自绘持久高亮；动作也走存下来的 text 而非实时选区。
     sel.removeAllRanges();
   }, []);
 
@@ -337,9 +325,7 @@ export default function LivingCanvas({
       if (!sel) return;
       const { target, text } = sel;
       setSelection(null);
-      // 询问 Polaris → lift the selected snippet into the chat composer, keeping the
-      // selected text as chat context. The chat result is later diffed back onto this
-      // same path as a local preview.
+      // 询问 Polaris → 把选中片段抬进输入框作为上下文；对话结果稍后 diff 回同一 path。
       if (action === 'free' && onAskWithTarget) {
         onAskWithTarget({ path: pathOf(target), label: target.label, text, selectionText: text });
         return;
@@ -355,7 +341,7 @@ export default function LivingCanvas({
     [fieldHtml, runEdit, onAskWithTarget]
   );
 
-  // §5B · section-title handle → add an item / reorder.
+  // 模块标题上的手柄 → 新增条目 / 重排。
   const onSectionHandleClick = useCallback((sectionKey: string, title: string, anchor: HTMLElement) => {
     setInteracted(true);
     setPopover(null);
@@ -374,8 +360,7 @@ export default function LivingCanvas({
           action: 'insert',
           resumePath: `sections.${sectionKey}`,
           before: '',
-          // Model-facing (hidden) instruction — English per the prompt convention;
-          // the generated bullet follows the section's own language.
+          // 给模型看的隐藏指令按约定用英文；生成的内容跟随该模块自身语言。
           instruction: `Add one new bullet under "${title}" matching the section's existing style and language, quantifiable where honest.`,
         },
         (r) => buildInsertChange(target, r)
@@ -399,10 +384,8 @@ export default function LivingCanvas({
     (path: string) => {
       const change = pendingRef.current[path];
       if (!change) return;
-      // Update the ref synchronously as well as calling the store setter: two accepts
-      // in the same tick (e.g. Enter pressed twice fast) would otherwise both read the
-      // pre-accept snapshot and the second would drop the first. The ref is re-synced
-      // from props on the next render.
+      // 同步更新 ref 而不只调 setter：同一 tick 内连按两次接受，否则两次都读到接受前的
+      // 快照，第二次会把第一次的结果吃掉。
       if (change.target.sectionKey === 'info') {
         const nextInfo = applyInfoChange(infoRef.current, change);
         infoRef.current = nextInfo;
@@ -443,8 +426,7 @@ export default function LivingCanvas({
     [dropFromOrder]
   );
 
-  // "再来一版" — re-run the same intent with a "换一种写法" nudge, swapping only the
-  // generated text on the existing proposal (keeps its id / target / path).
+  // 「再来一版」：同一意图加一句换写法的提示重跑，只替换现有提案的文本，保留 id/target/path。
   const regenerate = useCallback((path: string) => {
     const change = pendingRef.current[path];
     if (!change) return;
@@ -466,7 +448,7 @@ export default function LivingCanvas({
           resumePath: pathOf(change.target),
           before: change.before,
           selectionText: change.selectionText,
-          // Hidden nudge is English (prompt convention); user freeText may be any language.
+          // 隐藏提示用英文；用户自由输入可以是任何语言。
           instruction: [change.freeText, 'try a different phrasing'].filter(Boolean).join('; '),
           lang: change.lang,
           config: access.config,

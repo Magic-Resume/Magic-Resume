@@ -216,7 +216,7 @@ pnpm --filter @magic-resume/mcp build
 
 ## MCP and Core API Boundary
 
-The MCP package calls `Magic-Resume-Core/api` over HTTP. It does not directly read or write browser IndexedDB and does not depend on Next.js runtime behavior.
+The MCP package calls the Core API over HTTP. It does not directly read or write browser IndexedDB and does not depend on Next.js runtime behavior.
 
 The Core API remains the source of truth for cloud resumes, authentication, authorization, encrypted persistence, cache invalidation, sharing state, and version history.
 

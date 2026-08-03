@@ -7,6 +7,7 @@ export {
   magicTemplates,
 } from './config/magic-templates';
 export * from './registry';
+export * from './sectionIcons';
 export * from './renderer/MagicResumeRenderer';
 export * from './types/magic-dsl';
 export * from './types/resume';

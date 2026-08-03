@@ -26,8 +26,8 @@ const sidebarMenu: SidebarMenuItem[] = [
     label: 'sections.projects',
     itemRender: (item) => (
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="truncate font-bold text-sm">{item.name}</div>
-        <div className="truncate text-xs text-neutral-400">{item.role}</div>
+        <div className="truncate font-bold text-sm">{String(item.name ?? '')}</div>
+        <div className="truncate text-xs text-neutral-400">{String(item.role ?? '')}</div>
       </div>
     )
   },
@@ -38,8 +38,8 @@ const sidebarMenu: SidebarMenuItem[] = [
     formFields: dynamicFormFields.education,
     itemRender: (item) => (
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="truncate font-bold text-sm">{item.school}</div>
-        <div className="truncate text-xs text-neutral-400">{item.major}</div>
+        <div className="truncate font-bold text-sm">{String(item.school ?? '')}</div>
+        <div className="truncate text-xs text-neutral-400">{String(item.major ?? '')}</div>
       </div>
     )
   },
@@ -48,13 +48,13 @@ const sidebarMenu: SidebarMenuItem[] = [
     icon: Zap,
     label: 'sections.skills',
     // 技能条目的 name 往往是整句描述,限制两行防止卡片被撑高
-    itemRender: (item) => <div className="line-clamp-2 font-bold text-sm">{item.name}</div>
+    itemRender: (item) => <div className="line-clamp-2 font-bold text-sm">{String(item.name ?? '')}</div>
   },
   {
     key: 'languages',
     icon: Globe,
     label: 'sections.languages',
-    itemRender: (item) => <div className="truncate font-bold text-sm">{item.language}</div>
+    itemRender: (item) => <div className="truncate font-bold text-sm">{String(item.language ?? '')}</div>
   },
   {
     key: 'certificates',
@@ -64,8 +64,8 @@ const sidebarMenu: SidebarMenuItem[] = [
     // 不是 certificate——旧写法取不到值,列表行会整行空白。
     itemRender: (item) => (
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="truncate font-bold text-sm">{item.name}</div>
-        <div className="truncate text-xs text-neutral-400">{item.issuer}</div>
+        <div className="truncate font-bold text-sm">{String(item.name ?? '')}</div>
+        <div className="truncate text-xs text-neutral-400">{String(item.issuer ?? '')}</div>
       </div>
     )
   },
@@ -76,8 +76,8 @@ const sidebarMenu: SidebarMenuItem[] = [
     formFields: dynamicFormFields.experience,
     itemRender: (item) => (
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="truncate font-bold text-sm">{item.company}</div>
-        <div className="truncate text-xs text-neutral-400">{item.location}</div>
+        <div className="truncate font-bold text-sm">{String(item.company ?? '')}</div>
+        <div className="truncate text-xs text-neutral-400">{String(item.location ?? '')}</div>
       </div>
     )
   },
@@ -88,8 +88,8 @@ const sidebarMenu: SidebarMenuItem[] = [
   //   formFields: dynamicFormFields.profiles,
   //   itemRender: (item) => (
   //     <div className="flex flex-col gap-2 max-w-[155px] ">
-  //       <div className="font-bold text-sm">{item.platform}</div>
-  //       <div className="text-xs text-neutral-400">{item.url}</div>
+  //       <div className="font-bold text-sm">{String(item.platform ?? '')}</div>
+  //       <div className="text-xs text-neutral-400">{String(item.url ?? '')}</div>
   //     </div>
   //   )
   // }

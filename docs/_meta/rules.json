@@ -1,5 +1,5 @@
 {
-  "$comment": "Machine-readable docs rules mirrored from Magic-Resume-Core and adjusted for Magic-Resume.",
+  "$comment": "Machine-readable docs rules for the Magic-Resume repository.",
   "types": ["adr", "spec", "architecture", "reference", "review"],
   "dir": {
     "adr": "adr",

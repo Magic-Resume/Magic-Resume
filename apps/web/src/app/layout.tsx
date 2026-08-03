@@ -37,6 +37,12 @@ export const metadata: Metadata = {
 // Provider tree (self-hosted): Fragment → HttpClientProvider → ... (default context)
 // CloudAuthBridge MUST wrap HttpClientProvider so getToken is available from context.
 const AuthWrapper = isCloudMode ? ClerkProvider : Fragment;
+// Global backstop for every sign-out path: whatever calls Clerk's signOut (the
+// account menu goes through CloudAuthBridge, but a bare signOut() would fall
+// back to Clerk's default of '/'), it lands on /sign-in rather than '/', whose
+// server component can bounce a just-signed-out user back into the app. Spread
+// conditionally so the self-hosted Fragment receives no stray prop.
+const authWrapperProps = isCloudMode ? { afterSignOutUrl: '/sign-in' } : {};
 const AuthBridge = isCloudMode ? CloudAuthBridge : Fragment;
 
 export default function RootLayout({
@@ -45,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthWrapper>
+    <AuthWrapper {...authWrapperProps}>
       <AuthBridge>
         <HttpClientProvider>
           <html lang="zh-CN" className="hide-scrollbar dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>

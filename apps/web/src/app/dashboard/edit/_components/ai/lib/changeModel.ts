@@ -3,17 +3,11 @@ import type { EditableTarget } from './editableCanvas';
 import type { Section } from '@/types/frontend/resume';
 
 /**
- * The living canvas's change model: the reviewable in-place revision shape, the
- * action vocabulary, target locating, and the functions that apply an accepted
- * change onto the resume.
- *
- * This half is backend-agnostic: edit providers can change while the review/apply
- * path here keeps the same shape.
+ * living canvas 的改动模型：可评审的就地修订形状、动作词汇、目标定位，以及接受后的写入。
+ * 这一半与后端无关——换 edit provider 不影响评审/应用路径的形状。
  */
 
-// ----------------------------------------------------------------------------
-// Quick actions (element-scoped) — design §B
-// ----------------------------------------------------------------------------
+// Quick actions (element-scoped)
 
 export type QuickActionId =
   | 'quantify'
@@ -29,7 +23,7 @@ export interface QuickAction {
   label: string;
 }
 
-/** Quick actions for an experience / project bullet (design §B). */
+/** Quick actions for an experience / project bullet. */
 export const BULLET_ACTIONS: QuickAction[] = [
   { id: 'quantify', label: '量化' },
   { id: 'concise', label: '精简' },
@@ -37,7 +31,7 @@ export const BULLET_ACTIONS: QuickAction[] = [
   { id: 'evidence', label: '补证据' },
 ];
 
-/** Quick actions for a summary-style block (design §B). */
+/** Quick actions for a summary-style block. */
 export const SUMMARY_ACTIONS: QuickAction[] = [
   { id: 'rewrite', label: '重写' },
   { id: 'tone', label: '调整语气' },
@@ -53,7 +47,7 @@ export function actionsForTarget(target: EditableTarget): QuickAction[] {
   return [...BULLET_ACTIONS, ...SUMMARY_ACTIONS];
 }
 
-/** Keyword routing for free-text instructions → a concrete action (design §10). */
+/** Keyword routing for free-text instructions → a concrete action. */
 const FREE_ROUTES: { test: RegExp; action: QuickActionId }[] = [
   { test: /量化|数字|数据|指标|百分|%/, action: 'quantify' },
   { test: /精简|简洁|压缩|删减|啰嗦|冗余/, action: 'concise' },
@@ -69,9 +63,7 @@ export function routeFreeText(text: string): QuickActionId | null {
   return null;
 }
 
-// ----------------------------------------------------------------------------
-// Selection-driven actions — design §A/§B
-// ----------------------------------------------------------------------------
+// Selection-driven actions
 
 export type SelectionActionId = 'polish' | 'shorten' | 'translate';
 
@@ -88,17 +80,12 @@ export const SELECTION_ACTIONS: SelectionAction[] = [
 
 export type ActionKind = QuickActionId | SelectionActionId | 'free';
 
-// ----------------------------------------------------------------------------
-// The reviewable change unit — design §8.3
-// ----------------------------------------------------------------------------
+// The reviewable change unit
 
 export interface PendingChange {
   id: string;
   target: EditableTarget;
-  /**
-   * Full field values used when accepting the change. For rich text fields this can
-   * be an entire experience summary containing several bullets.
-   */
+  /** 接受改动时写入的完整字段值；富文本字段可能是含多条 bullet 的整段经历描述。 */
   before: string;
   after: string;
   /** Optional review-only values for selection edits, so the diff card can stay scoped. */
@@ -106,7 +93,7 @@ export interface PendingChange {
   previewAfter?: string;
   previewKind?: EditableTarget['kind'];
   rationale: string;
-  /** longer "why", revealed on demand (design §D) */
+  /** longer "why", revealed on demand */
   rationaleDetail?: string;
   /** what produced this change — kept so "再来一版" can regenerate the same intent */
   action: ActionKind;
@@ -122,9 +109,7 @@ export interface PendingChange {
   status: 'pending' | 'accepted';
 }
 
-// ----------------------------------------------------------------------------
 // Target locating
-// ----------------------------------------------------------------------------
 
 /** Resume section key → display title, for change labels. */
 const SECTION_TITLES: Record<string, string> = {
@@ -153,9 +138,7 @@ export function parsePath(
   return { sectionKey: m[1], itemId: m[2], fieldKey: m[3] };
 }
 
-// ----------------------------------------------------------------------------
 // Shared text helpers (used by apply here + the mock/service generators)
-// ----------------------------------------------------------------------------
 
 export function stripHtml(html: string): string {
   return html
@@ -234,11 +217,7 @@ export function finalizeAfter(kind: EditableTarget['kind'], after: string): stri
   return kind === 'text' ? stripHtml(after) : after;
 }
 
-// ----------------------------------------------------------------------------
-// Build a reviewable change from an edit provider result. The provider returns
-// `{ after, rationale }`, and these helpers assemble the `PendingChange` shape
-// the review/apply path expects.
-// ----------------------------------------------------------------------------
+// provider 只回 `{ after, rationale }`，下面几个 helper 把它组装成 PendingChange。
 
 /** What the edit service hands back (kept local so this module needs no backend import). */
 export interface EditResultLike {
@@ -298,10 +277,8 @@ export function buildSelectionChange(
 }
 
 /**
- * Sections rendered by the item *name* (fieldMap.itemName) rather than a summary
- * bullet. 'name' is a common fallback in every template's itemName candidate list,
- * so inserting into 'name' is picked up across templates — whereas writing 'summary'
- * here makes the inserted content invisible.
+ * 这些 section 靠 itemName 渲染而非 summary。'name' 在所有模板的 itemName 候选里都是
+ * 兜底项，写它跨模板都能显示；写 'summary' 则插入的内容根本看不见。
  */
 const NAME_FIELD_SECTIONS = new Set(['skills', 'languages', 'certificates', 'awards', 'profiles']);
 
@@ -333,9 +310,7 @@ export function buildInsertChange(target: EditableTarget, result: EditResultLike
   };
 }
 
-// ----------------------------------------------------------------------------
 // Apply an accepted change onto the resume (patch-style, by item id)
-// ----------------------------------------------------------------------------
 
 /** Apply an accepted change onto the resume sections (clone + write by item id). */
 export function applyChangeToSections(sections: Section, change: PendingChange): Section {

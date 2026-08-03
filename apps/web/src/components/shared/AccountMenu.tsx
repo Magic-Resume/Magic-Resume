@@ -16,6 +16,7 @@ import { isCloudMode } from "@/lib/config/app";
 import { useAccountUiStore } from "@/store/useAccountUiStore";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/userDisplay";
+import { HelpSubmenu } from "./HelpSubmenu";
 
 interface AccountMenuProps {
   /** `up` → opens above (sidebar footer); `right` → opens to the right (editor rail). */
@@ -65,6 +66,13 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
     const onClick = (e: MouseEvent) => {
       const node = e.target as Node;
       if (triggerRef.current?.contains(node) || panelRef.current?.contains(node)) return;
+      // The help fly-out is a child of this menu but lives in a portal on
+      // <body>, so `panelRef.contains` cannot see it. Without this, mousedown
+      // on one of its links counted as "outside": the menu closed, the fly-out
+      // unmounted with it, and the click never reached the link — the item
+      // simply did nothing.
+      const element = node instanceof Element ? node : node.parentElement;
+      if (element?.closest("[data-account-menu-flyout]")) return;
       setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -191,6 +199,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
 
       {isCloudMode && <MenuRow icon={<UserIcon size={16} />} label={t("account.menu.profile")} onClick={() => run(openAccount)} />}
       <MenuRow icon={<Settings size={16} />} label={t("account.menu.settings")} onClick={() => run(() => openSettings())} />
+      <HelpSubmenu menuOpen={open} onNavigate={() => setOpen(false)} />
 
       {/* in-place language switch */}
       <div className="flex items-center justify-between gap-2 px-2.5 py-2">

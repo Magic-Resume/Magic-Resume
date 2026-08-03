@@ -14,6 +14,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { sectionIconByName } from "@magic-resume/resume-templates";
 import { cn } from "@/lib/utils";
 import AccountMenu from "@/components/shared/AccountMenu";
 
@@ -38,8 +39,20 @@ const SECTION_META: Record<string, Meta> = {
   profiles: { icon: Contact, labelKey: "sections.profiles" },
 };
 
-export function sectionMeta(key: string): Meta {
-  return SECTION_META[key] ?? { icon: FileText };
+/**
+ * Icon and label for a section in the editor.
+ *
+ * `iconName` is the user's explicit choice from `sectionOrder.icon`; it
+ * outranks the built-in map so a section wears the same icon in the form as it
+ * does on the rendered page — both resolve through `sectionIconByName`.
+ * `FileText` remains the last resort for a custom section nobody has styled.
+ */
+export function sectionMeta(key: string, iconName?: string): Meta {
+  // `hasOwn`, not `??`: `key` is resume data, and inherited members are truthy.
+  const known = Object.hasOwn(SECTION_META, key) ? SECTION_META[key] : undefined;
+  const chosen = sectionIconByName(iconName);
+  if (chosen) return { ...(known ?? {}), icon: chosen };
+  return known ?? { icon: FileText };
 }
 
 type OutlineRailProps = {

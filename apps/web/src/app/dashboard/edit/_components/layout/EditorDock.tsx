@@ -43,7 +43,9 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
   };
 
   const handleExportPdf = async () => {
-    // 客户端用 @react-pdf/renderer 生成矢量、文字可选中(ATS 友好)的多页 A4 PDF。
+    // 客户端用 @react-pdf/renderer 生成矢量、文字可选中(ATS 友好)的 PDF。
+    // 产出是「一整页连续长页」而非分页 A4——见 resume-templates 的
+    // MagicResumePdfDocument 顶部说明。
     if (isExporting) return;
     setIsExporting(true);
     const toastId = toast.loading(t("tools.exportingPDF"));

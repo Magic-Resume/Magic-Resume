@@ -5,11 +5,7 @@ export type SkillId = 'create' | 'optimize' | 'analyze' | 'translate' | 'intervi
 
 export type CanvasView = 'preview' | 'diff' | 'json' | 'score' | 'match';
 
-/**
- * Where a skill can act (design §8.1). `whole-resume` is the classic "optimize
- * the whole thing" mode; `element` / `selection` are the directed, in-place
- * calls the living canvas drives. A skill can support more than one.
- */
+/** 技能的作用范围。`whole-resume` 是整篇模式，`element`/`selection` 是 living canvas 驱动的就地调用。 */
 export type SkillScope = 'whole-resume' | 'element' | 'selection';
 
 export type ParamField =
@@ -28,11 +24,7 @@ export type ParamField =
       defaultValue?: string;
     };
 
-/**
- * A single source of truth per AI capability. The chat shell, the skill chips,
- * the slash menu and (later) the agent tool definitions all read from this.
- * Adding a capability == adding one entry to the registry.
- */
+/** 每项 AI 能力的唯一真源：对话外壳、技能 chip、斜杠菜单都读它。加能力 = 加一条。 */
 export interface AiSkill {
   id: SkillId;
   name: string;

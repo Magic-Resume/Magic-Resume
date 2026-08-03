@@ -13,7 +13,7 @@ related: [README.md]
 
 # Magic-Resume docs conventions
 
-> 本规范对齐 `Magic-Resume-Core/docs/CONVENTIONS.md`，但权威归属改为前端仓：UX、交互、文案、apps/web 与 packages/* 的前端实现说明放在这里；后端契约、Agent runtime、平台 API 仍以 Magic-Core 为准。
+> 本仓文档的范围：UX、交互、文案、`apps/web` 与 `packages/*` 的前端实现说明。后端契约、Agent runtime、平台 API 的语义由后端自行维护，这里只写前端如何消费。
 
 ## 目录结构
 
@@ -71,13 +71,12 @@ related: []
 - 其它：英文 kebab，如 `reference/tracking-plan.md`。
 - 不在文件名里写版本、状态或中文。
 
-## 跨仓权威
+## 权威归属
 
 一个跨切面主题只保留一个权威文档：
 
-- 前端 UX、交互、文案、apps/web 适配方案：`Magic-Resume/docs`。
-- 后端契约、Agent 运行时、Graph/API 语义：`Magic-Resume-Core/docs`。
-- 另一侧只写速览或 `related:` 链接，不复制一份可漂移的正文。
+- 前端 UX、交互、文案、`apps/web` 适配方案：本仓 `docs/`，正文写在这里。
+- 后端契约、Agent 运行时、API 语义：以后端服务的实际接口为准，本仓只写前端怎么消费它，不复制一份会漂移的正文。
 
 ## 完成检查
 

@@ -98,7 +98,13 @@ export type CustomInfoField = {
 export type SectionItem = {
   id: string;
   visible: boolean;
-  [key: string]: string | boolean;
+  /**
+   * Name/value pairs the user added to this item. Explicitly typed rather than
+   * folded into the index signature below, because they render through their
+   * own block — a key no template's fieldMap declares is dropped silently.
+   */
+  customFields?: CustomInfoField[];
+  [key: string]: string | boolean | CustomInfoField[] | undefined;
 };
 
 export type Section = {
@@ -108,6 +114,12 @@ export type Section = {
 export type SectionOrder = {
   key: string;
   label: string;
+  /**
+   * Name from `SECTION_ICONS` in @magic-resume/resume-templates. A name and not
+   * a component because a resume is persisted, synced and exported as JSON.
+   * Unset means "guess" — the renderer still matches on key and title keywords.
+   */
+  icon?: string;
 };
 
 export type ResumeVersion = {
