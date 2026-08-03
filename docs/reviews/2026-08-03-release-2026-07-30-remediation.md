@@ -128,7 +128,20 @@ sections 那边也已不存在），随后同步到云端。**永久数据丢失
 | P1-2 | `apps/web/src/store/useResumeStore.ts:872` | `customSectionKey` 只对 `sections` 去重，而 `basics` 从不在 `sections` 里 → 标题填「Basics」会铸造出保留 key，`sectionOrder` 出现两个 `basics`，dnd-kit 拖错行、BasicForm 渲染两次，且两条都删不掉 |
 | P1-3 | `apps/web/src/store/useResumeStore.ts:901` | `updateCustomSection` 的 no-op 守卫用 `(patch.icon ?? current.icon) === current.icon`，导致「清除图标」永远无效，并连带吞掉同时进行的重命名 |
 | P1-4 | `apps/web/src/middleware.ts:4` | 直接读 `process.env.NEXT_PUBLIC_APP_MODE` 并默认 `self-hosted`，而全站其余部分按 Clerk key 自动探测 → 在文档推荐的部署方式下 `/billing(.*)` 保护完全失效 |
-| P1-5 | `apps/web/src/app/api/uploads/avatar/route.ts:102` | R2 object key 是 `avatars/${userId}.jpg`（按用户），而 `info.avatar` 是按简历的字段 → 一份简历换照片会覆盖账号下所有简历的照片；本期新增两个证件照模板让这个场景变成常态 |
+| P1-5 | `apps/web/src/app/api/uploads/avatar/route.ts:102` | R2 object key 是 `avatars/${userId}.jpg`（按用户），而 `info.avatar` 是按简历的字段 → 一份简历换照片会覆盖账号下所有简历的照片；本期新增两个证件照模板让这个场景变成常态。**暂不修，见下** |
+
+### 关于 P1-5：这是取舍，不是缺陷
+
+固定的 per-user key 是**刻意的成本设计**——它把 R2 存储硬封在「每人恒 1 个对象」，
+即便有人绕过前端狂刷也堆不出量（R2 无硬性花超上限，免费额度靠这个焊死）。改成按简历
+分键会让对象数随简历数线性增长，前提就没了。
+
+可选方向（都需要先定成本口径，故不在本批）：
+
+1. 按简历分键 + 给每用户对象数设上限，超限时拒绝或淘汰最旧；
+2. 维持单对象，但在 UI 上讲清楚「头像是账号级的，所有简历共用」——最省事，且与
+   现状一致，只是需要一句文案；
+3. 按内容哈希分键 + 引用计数，无引用时删除——最省存储但最复杂。
 
 ## P2（边界崩溃 / 双端不一致）
 
@@ -166,7 +179,19 @@ sections 那边也已不存在），随后同步到云端。**永久数据丢失
 | P1-1 支付失败显示为等待 | 已修 + 中英文案 |
 | P1-2 `basics` 保留 key 可被铸造 | 已修（`taken` 以内置集为种子）+ 单测 |
 
+**第二批已完成**：
+
+| 条目 | 状态 |
+|---|---|
+| P1-3 图标清不掉、并吞掉重命名 | 已修（意图改读 `'icon' in patch`） |
+| P1-4 `/billing` 保护失效 | 已修（改用 `@magic-resume/env` 的 `isCloudMode`） |
+| P2-1 原型链索引 ×3 处 | 已修（`Object.hasOwn`） |
+| P2-2 PDF 缺 `Array.isArray` 守卫 | 已修（与 HTML 孪生对齐） |
+| P2-4 Invalid Date 打掉账单页 | 已修（抽 `formatPeriodEnd`，照 `OrderHistoryTable` 的守法） |
+
 `lint` 零 warning（顺带清掉两处失效的 `eslint-disable`）、`tsc --noEmit` 通过、
 `i18n:check` 通过、19 个模板渲染断言全过。
 
-**待办**：P1-3 / P1-4 / P1-5 与 P2 全部条目。
+**待办**：P1-5（见上，需先定成本口径）、P2-3 已随 P0-1 一并修、P2-5（技能量表猜测）、
+P2-6（四种布局不渲染 `customFields`）。后两条都需要先定产品口径：量表要不要显式声明
+满分、以及 `customFields` 是否应对所有布局生效。

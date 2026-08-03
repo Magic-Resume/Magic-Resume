@@ -48,9 +48,11 @@ const SECTION_META: Record<string, Meta> = {
  * `FileText` remains the last resort for a custom section nobody has styled.
  */
 export function sectionMeta(key: string, iconName?: string): Meta {
+  // `hasOwn`, not `??`: `key` is resume data, and inherited members are truthy.
+  const known = Object.hasOwn(SECTION_META, key) ? SECTION_META[key] : undefined;
   const chosen = sectionIconByName(iconName);
-  if (chosen) return { ...(SECTION_META[key] ?? {}), icon: chosen };
-  return SECTION_META[key] ?? { icon: FileText };
+  if (chosen) return { ...(known ?? {}), icon: chosen };
+  return known ?? { icon: FileText };
 }
 
 type OutlineRailProps = {

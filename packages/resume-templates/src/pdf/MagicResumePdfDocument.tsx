@@ -693,7 +693,11 @@ const ItemCustomFields = ({ item, context, fontSize }: {
   context: RenderContext;
   fontSize: number;
 }) => {
-  const fields = (item.customFields ?? []).filter((field) => field?.name || field?.value);
+  // Guarded like the HTML twins: `customFields` is hand-editable JSON, and an
+  // object there made the preview skip the block while export threw.
+  const fields = (Array.isArray(item.customFields) ? item.customFields : []).filter(
+    (field) => field?.name || field?.value,
+  );
   if (fields.length === 0) return null;
 
   return (

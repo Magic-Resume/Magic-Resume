@@ -898,16 +898,25 @@ const useResumeStore = create<ResumeState>()(
     const label = patch.label?.trim();
     const current = activeResume.sectionOrder.find(s => s.key === key);
     if (!current) return;
-    if ((label ?? current.label) === current.label && (patch.icon ?? current.icon) === current.icon) {
-      return;
-    }
+
+    // `icon: undefined` is how the dialog says "clear it", so the intent lives in
+    // the key's presence. `??` read that as "unchanged", which made clearing a
+    // no-op and swallowed any rename submitted alongside it.
+    const iconGiven = 'icon' in patch;
+    const nextIcon = patch.icon?.trim() || undefined;
+    const labelUnchanged = (label ?? current.label) === current.label;
+    const iconUnchanged = !iconGiven || nextIcon === current.icon;
+    if (labelUnchanged && iconUnchanged) return;
 
     set(state => {
       if (!state.activeResume) return;
       const target = state.activeResume.sectionOrder.find(s => s.key === key);
       if (!target) return;
       if (label) target.label = label;
-      if (patch.icon !== undefined) target.icon = patch.icon;
+      if (iconGiven) {
+        if (nextIcon) target.icon = nextIcon;
+        else delete target.icon;
+      }
       state.activeResume.updatedAt = Date.now();
 
       const resumeIndex = state.resumes.findIndex(r => r.id === state.activeResume?.id);

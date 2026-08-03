@@ -16,6 +16,13 @@ import type { SubscriptionSummary } from "@/lib/billing/types";
  * had simply "ended" would be both wrong and the opposite of what we want the
  * customer to go and do about it.
  */
+function formatPeriodEnd(value: string | null | undefined, locale: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale || 'zh-CN', { dateStyle: 'long' }).format(date);
+}
+
 export function SubscriptionCard({
   planName,
   subscription,
@@ -45,11 +52,10 @@ export function SubscriptionCard({
     );
   }
 
-  const periodEnd = subscription?.currentPeriodEnd
-    ? new Intl.DateTimeFormat(i18n.language || "zh-CN", {
-        dateStyle: "long",
-      }).format(new Date(subscription.currentPeriodEnd))
-    : null;
+  // `format` throws RangeError on an Invalid Date, and this sits on the render
+  // path with no error boundary — an unparseable date took down the whole tab.
+  // The sibling `OrderHistoryTable.formatDate` already guards this way.
+  const periodEnd = formatPeriodEnd(subscription?.currentPeriodEnd, i18n.language);
 
   const dunning =
     subscription?.status === "past_due" || subscription?.status === "suspended";
