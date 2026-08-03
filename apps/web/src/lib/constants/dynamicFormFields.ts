@@ -74,8 +74,16 @@ export const dynamicFormFields: Record<string, FieldConfig[]> = {
     certificates: certificatesFields,
 };
 
-/** Fields for `key`, falling back to the generic set for a custom section. */
+/**
+ * Fields for `key`, falling back to the generic set for a custom section.
+ *
+ * `hasOwn`, not `??`: the key comes from resume data, so a section titled
+ * "Constructor" reached `Object.prototype.constructor` — a truthy value `??`
+ * happily returned, and the caller's `.map` then blanked the editor.
+ */
 export function formFieldsFor(key: string): FieldConfig[] {
-    return dynamicFormFields[key] ?? customSectionFields;
+    return Object.hasOwn(dynamicFormFields, key)
+        ? dynamicFormFields[key]
+        : customSectionFields;
 }
   

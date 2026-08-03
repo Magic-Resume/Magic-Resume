@@ -62,6 +62,11 @@ function synthesiseCustomSection(
   data: Resume,
   sectionOrderItem: { key: string; label?: string },
 ) {
+  // Only for keys the app never defined. A built-in that a template leaves out
+  // was left out on purpose, and its label is an i18n key — synthesising it
+  // printed `sections.skills` as a heading.
+  if (ZH_TITLE_BY_SECTION_KEY[sectionOrderItem.key]) return null;
+
   const items = (data.sections as Record<string, unknown> | undefined)?.[
     sectionOrderItem.key
   ];
@@ -244,7 +249,14 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
     
     const headerComponents = mainComponents.filter(comp => comp.dataBinding === 'info');
     const sectionComponents = mainComponents.filter(comp => comp.dataBinding.startsWith('sections.'));
-    
+    // Sidebar-rendered sections count as declared; matching against main-column
+    // components alone made each of them look missing and synthesised a duplicate.
+    const declaredBindings = new Set(
+      components
+        .filter(comp => comp.dataBinding?.startsWith('sections.'))
+        .map(comp => comp.dataBinding)
+    );
+
     const sortedMainSections = [] as typeof components;
 
     if (data.sectionOrder && Array.isArray(data.sectionOrder)) {
@@ -256,12 +268,9 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
           sortedMainSections.push(matchingComponent);
           return;
         }
-        // A section this template never declared — a custom one the resume
-        // brought with it. Templates list their components by hand, so an
-        // unknown key used to render nowhere at all: the data survived every
-        // layer above this and then silently vanished at the last one.
-        // Synthesised here rather than added to thirteen template configs, so
-        // templates written later inherit the behaviour for free.
+        if (declaredBindings.has(`sections.${sectionOrderItem.key}`)) return;
+        // Undeclared key — synthesised here rather than added to every template
+        // config, so templates written later inherit the behaviour.
         const synthesised = synthesiseCustomSection(data, sectionOrderItem);
         if (synthesised) sortedMainSections.push(synthesised);
       });
@@ -276,7 +285,9 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
     );
     
     return [...sortedSidebarComponents, ...headerComponents, ...sortedMainSections, ...remainingMainSections];
-  }, [components, data.sectionOrder]);
+    // `data.sections` belongs here: synthesiseCustomSection reads it, so without
+    // it "this section is empty" stayed cached after the user filled it in.
+  }, [components, data.sectionOrder, data.sections]);
 
   return (
     <div style={cssVariables}>

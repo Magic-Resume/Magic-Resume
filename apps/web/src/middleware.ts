@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-
-const APP_MODE = process.env.NEXT_PUBLIC_APP_MODE || 'self-hosted';
+// The app-wide source of truth, which falls back to the Clerk key. Re-deriving
+// the mode here with a plain `|| 'self-hosted'` meant the documented auto-detect
+// deployment (Clerk key set, NEXT_PUBLIC_APP_MODE unset) ran the self-hosted
+// handler: clerkMiddleware was never installed, so the protection below guarded
+// nothing and `auth()` threw in the server components that expect it.
+import { isCloudMode } from '@magic-resume/env';
 // Both the app and the coming-soon/reservation page require a signed-in user.
 // The whitelist gate (whitelisted → app, else → /coming-soon) runs in the
 // server components; middleware only enforces "must be logged in".
@@ -52,7 +56,7 @@ function selfHostedHandler(_req: NextRequest) { // eslint-disable-line @typescri
   return NextResponse.next();
 }
 
-export default APP_MODE === 'cloud' ? cloudHandler : selfHostedHandler;
+export default isCloudMode ? cloudHandler : selfHostedHandler;
 
 export const config = {
   matcher: [

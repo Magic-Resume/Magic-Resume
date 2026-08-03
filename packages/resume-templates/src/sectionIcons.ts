@@ -68,5 +68,7 @@ export function sectionIconByName(
   name: string | undefined | null,
 ): SectionIconComponent | null {
   if (!name) return null;
-  return SECTION_ICONS[name] ?? null;
+  // `hasOwn`, not `??`: the name is persisted resume data, so `icon: 'constructor'`
+  // returned `Object` and React threw on rendering it as a component.
+  return Object.hasOwn(SECTION_ICONS, name) ? SECTION_ICONS[name] : null;
 }
