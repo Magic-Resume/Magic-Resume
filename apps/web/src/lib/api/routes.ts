@@ -61,6 +61,12 @@ export const API_ROUTES = {
   knowledge: {
     timelines: '/api/knowledge/timelines',
   },
+  // 头像上传由 Core 承担：存储凭证、大小 / 魔数校验、限流、旧对象清理都在后端。
+  // 曾经登记在下面的 WEB_AGENT_ROUTES 里，意味着 web 容器得自己持有一份 R2 密钥
+  // 并维护第二套实现 —— 那是漂移，不是设计。
+  uploads: {
+    avatar: '/api/uploads/avatar',
+  },
 } as const;
 
 /**
@@ -84,5 +90,4 @@ export const WEB_AGENT_ROUTES = {
   chatSession:      '/api/chat-agent/session',
   chatEdit:         '/api/chat-agent/edit',
   pdfParse:         '/api/pdf/parse',
-  avatarUpload:     '/api/uploads/avatar',
 } as const;

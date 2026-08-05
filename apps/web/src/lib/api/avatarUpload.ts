@@ -1,6 +1,7 @@
 import { isCloudMode } from '@/lib/config/app';
 import { compressAvatarImage, ACCEPTED_IMAGE_TYPES } from '@/lib/utils/image';
-import { WEB_AGENT_ROUTES } from '@/lib/api/routes';
+import { API_ORIGIN, API_ROUTES } from '@/lib/api/routes';
+import { getAuthToken } from '@/lib/api/httpClient';
 
 /** 用户选图后的最大原始大小(压缩前)。太离谱的直接拒,连解码都省了。 */
 const MAX_INPUT_BYTES = 15 * 1024 * 1024;
@@ -46,21 +47,35 @@ export async function processAndStoreAvatar(file: File, prevUrl?: string): Promi
     return compressed.dataUrl;
   }
 
-  // cloud:传 R2。
+  // cloud:交给 Core。存储凭证与校验只存在于后端,这里只负责发请求。
   const form = new FormData();
   form.append('file', compressed.blob, 'avatar.jpg');
   if (prevUrl) form.append('prevUrl', prevUrl);
 
+  // 跨域调用 Core,Clerk 的 cookie 不会自动带上,必须显式附 token。
+  // 拿不到就直接判失败——没有凭据发过去必然 401,不如少一次往返。
+  const token = await getAuthToken();
+  if (!token) throw new AvatarError('UPLOAD_FAILED');
+
   let res: Response;
   try {
-    res = await fetch(WEB_AGENT_ROUTES.avatarUpload, { method: 'POST', body: form });
+    res = await fetch(`${API_ORIGIN}${API_ROUTES.uploads.avatar}`, {
+      method: 'POST',
+      // Content-Type 交给浏览器:它要补 multipart 的 boundary,手写会传丢。
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
   } catch {
     throw new AvatarError('UPLOAD_FAILED');
   }
   if (!res.ok) {
     throw new AvatarError(res.status === 413 ? 'TOO_LARGE' : 'UPLOAD_FAILED');
   }
-  const data = (await res.json()) as { url?: string };
-  if (!data.url) throw new AvatarError('UPLOAD_FAILED');
-  return data.url;
+  // Core 的响应统一被 TransformInterceptor 包一层信封:
+  // { code, data: { url }, message, timestamp }。此前打的是本地 Next 路由,
+  // 返回的是裸 { url } —— 换成 Core 后这里不跟着改,拿到的是 undefined。
+  const body = (await res.json()) as { data?: { url?: string } };
+  const url = body.data?.url;
+  if (!url) throw new AvatarError('UPLOAD_FAILED');
+  return url;
 }
