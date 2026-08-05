@@ -37,6 +37,7 @@ export function TwoColumnLayout({ children, layout }: Props) {
   const pageMinHeight = Math.round(parseInt(layout.containerWidth) * pageAspect);
 
   const containerStyle: React.CSSProperties = {
+    boxSizing: 'border-box',
     width: 'var(--container-width)',
     maxWidth: 'var(--container-width)',
     minHeight: `${pageMinHeight}px`,
@@ -48,7 +49,10 @@ export function TwoColumnLayout({ children, layout }: Props) {
   };
 
   const sidebarStyle: React.CSSProperties = {
+    boxSizing: 'border-box',
     width: twoColumn.leftWidth,
+    maxWidth: '100%',
+    minWidth: 0,
     minHeight: `${pageMinHeight}px`,
     backgroundColor: 'var(--color-sidebar, var(--color-primary))',
     padding: 'var(--container-padding)',
@@ -60,7 +64,10 @@ export function TwoColumnLayout({ children, layout }: Props) {
   };
 
   const mainStyle: React.CSSProperties = {
+    boxSizing: 'border-box',
     width: twoColumn.rightWidth,
+    maxWidth: '100%',
+    minWidth: 0,
     color: 'var(--color-text)',
     padding: 'var(--container-padding)',
     gap: 'var(--container-gap)',
@@ -68,6 +75,8 @@ export function TwoColumnLayout({ children, layout }: Props) {
     letterSpacing: 'inherit',
     borderTopRightRadius: '0.375rem',
     borderBottomRightRadius: '0.375rem',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
   };
 
   return (
@@ -98,4 +107,4 @@ export function TwoColumnLayout({ children, layout }: Props) {
       </div>
     </div>
   );
-} 
+}
