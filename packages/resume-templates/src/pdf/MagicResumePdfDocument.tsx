@@ -820,6 +820,12 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
   const fields = component.fieldMap ?? {};
   const bodyFontSize = cssSizeToPoints(context.typography.fontSize.sm, 9);
   const ratios = getThreeColumnRatio(component);
+  const shiftCenterToRightWhenRightEmpty = component.props?.shiftCenterToRightWhenRightEmpty === true;
+  const shiftCenterToEmptyRight = (values: [string, string, string], enabled: boolean): [string, string, string] => (
+    enabled && values[1] && !values[2]
+      ? [values[0], '', values[1]]
+      : values
+  );
   const columnStyle = (index: number, textAlign: 'left' | 'center' | 'right'): Style => ({
     flexBasis: 0,
     flexGrow: ratios[index],
@@ -834,24 +840,32 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
       <View style={{ gap: cssSizeToPoints(context.spacing.sm, 4) }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
-          const subtitles = [
+          const rawTitles: [string, string, string] = [
+            getFieldValue(record, fields.leftTitle),
+            getFieldValue(record, fields.centerTitle),
+            getFieldValue(record, fields.rightTitle),
+          ];
+          const shouldShiftCenter = shiftCenterToRightWhenRightEmpty && Boolean(rawTitles[1]) && !rawTitles[2];
+          const titles = shiftCenterToEmptyRight(rawTitles, shouldShiftCenter);
+          const rawSubtitles: [string, string, string] = [
             getFieldValue(record, fields.leftSubtitle),
             getFieldValue(record, fields.centerSubtitle),
             getFieldValue(record, fields.rightSubtitle),
           ];
+          const subtitles = shiftCenterToEmptyRight(rawSubtitles, shouldShiftCenter);
           const description = getFieldValue(record, fields.description);
 
           return (
             <View key={item.id || index}>
               <View wrap={false} minPresenceAhead={bodyFontSize * 2.5} style={{ flexDirection: 'row', gap: 8 }}>
                 <Text style={[columnStyle(0, 'left'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
-                  {getFieldValue(record, fields.leftTitle)}
+                  {titles[0]}
                 </Text>
                 <Text style={[columnStyle(1, 'center'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
-                  {getFieldValue(record, fields.centerTitle)}
+                  {titles[1]}
                 </Text>
                 <Text style={[columnStyle(2, 'right'), { color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700 }]}>
-                  {getFieldValue(record, fields.rightTitle)}
+                  {titles[2]}
                 </Text>
               </View>
               {subtitles.some(Boolean) ? (
@@ -896,14 +910,19 @@ const InlineKeyValueSectionBlock = ({ component, items, context }: {
           const renderedLabel = /[:：]$/.test(label) ? label : `${label}${suffix}`;
 
           return (
-            <View key={item.id || index} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 3 }}>
+            <View
+              key={item.id || index}
+              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 3, maxWidth: '100%', minWidth: 0 }}
+            >
               {label ? (
-                <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700, flexShrink: 0 }}>
+                <Text
+                  style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: 700, flexShrink: 0, maxWidth: '40%' }}
+                >
                   {renderedLabel}
                 </Text>
               ) : null}
               {detail ? (
-                <View style={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
+                <View style={{ flexBasis: 0, flexGrow: 1, flexShrink: 1, maxWidth: '100%', minWidth: 0 }}>
                   <PdfRichText
                     html={detail}
                     color={context.colors.text}
@@ -975,7 +994,7 @@ const TimelineBlock = ({ component, items, context }: {
   const color = component.style?.color ?? context.colors.text;
   const dateFontFamily = getPdfFontStack(context.typography.fontFamily.primary, context.cjkFallback);
   return (
-    <View style={toPdfComponentStyle(component.style)}>
+    <View style={[toPdfComponentStyle(component.style), { flexShrink: 1, maxWidth: '100%', minWidth: 0 }]}>
       <SectionTitle
         title={resolveTitle(component, context.locale)}
         icon={getSectionIcon(component)}
@@ -983,7 +1002,7 @@ const TimelineBlock = ({ component, items, context }: {
         dividerColor={context.colors.primary}
         context={context}
       />
-      <View style={{ gap: cssSizeToPoints(context.spacing.md, 8) }}>
+      <View style={{ flexShrink: 1, gap: cssSizeToPoints(context.spacing.md, 8), maxWidth: '100%', minWidth: 0 }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
           const title = getFieldValue(record, fields.title ?? ['company', 'school', 'name']);
@@ -992,14 +1011,14 @@ const TimelineBlock = ({ component, items, context }: {
           const location = getFieldValue(record, ['location']);
           const description = getFieldValue(record, fields.description ?? ['summary', 'description']);
           return (
-            <View key={item.id || index} wrap={false} style={{ flexDirection: 'row', gap: 7 }}>
+            <View key={item.id || index} wrap={false} style={{ flexDirection: 'row', flexShrink: 1, gap: 7, maxWidth: '100%', minWidth: 0 }}>
               <View style={{ alignItems: 'center', width: 7 }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: context.colors.primary, marginTop: 2 }} />
                 {index < items.length - 1 ? <View style={{ width: 0.75, flexGrow: 1, minHeight: 18, backgroundColor: context.colors.border }} /> : null}
               </View>
-              <View style={{ flexGrow: 1, flexShrink: 1, gap: 2 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                  <View style={{ flexGrow: 1, flexShrink: 1, gap: 1 }}>
+              <View style={{ flexBasis: 0, flexGrow: 1, flexShrink: 1, gap: 2, maxWidth: '100%', minWidth: 0 }}>
+                <View style={{ flexDirection: 'row', flexShrink: 1, justifyContent: 'space-between', gap: 8, maxWidth: '100%', minWidth: 0 }}>
+                  <View style={{ flexBasis: 0, flexGrow: 1, flexShrink: 1, gap: 1, minWidth: 0 }}>
                     <Text style={{ color, fontSize: 9, fontWeight: 700 }}>{title}</Text>
                     {subtitle ? <Text style={{ color: context.colors.primary, fontSize: 8, fontWeight: 700 }}>{subtitle}</Text> : null}
                     {location ? <Text style={{ color, fontSize: 7.5, opacity: 0.75 }}>{location}</Text> : null}
@@ -1120,6 +1139,8 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
             style={{
               width: sidebarWidth,
               flexShrink: 0,
+              maxWidth: sidebarWidth,
+              minWidth: 0,
               backgroundColor: colors.sidebar ?? colors.primary,
               padding: columnPadding,
               gap: columnSectionGap,
@@ -1131,6 +1152,7 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
             style={{
               width: mainColumnWidth,
               flexShrink: 1,
+              maxWidth: mainColumnWidth,
               minWidth: 0,
               padding: columnPadding,
               gap: columnSectionGap,

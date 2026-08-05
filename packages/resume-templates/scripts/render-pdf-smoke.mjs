@@ -17,19 +17,19 @@ const webFontsDir = resolve(packageDir, '../../apps/web/public/fonts');
 Font.register({
   family: 'Source Han Sans SC',
   fonts: [
-    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff'), fontWeight: 400 },
-    { src: join(webFontsDir, 'SourceHanSansSC-RegularOblique.woff'), fontWeight: 400, fontStyle: 'italic' },
-    { src: join(webFontsDir, 'SourceHanSansSC-Bold.woff'), fontWeight: 700 },
-    { src: join(webFontsDir, 'SourceHanSansSC-BoldOblique.woff'), fontWeight: 700, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff2'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSansSC-RegularOblique.woff2'), fontWeight: 400, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSansSC-Bold.woff2'), fontWeight: 700 },
+    { src: join(webFontsDir, 'SourceHanSansSC-BoldOblique.woff2'), fontWeight: 700, fontStyle: 'italic' },
   ],
 });
 Font.register({
   family: 'Source Han Serif SC',
   fonts: [
-    { src: join(webFontsDir, 'SourceHanSerifSC-Regular.woff'), fontWeight: 400 },
-    { src: join(webFontsDir, 'SourceHanSerifSC-RegularOblique.woff'), fontWeight: 400, fontStyle: 'italic' },
-    { src: join(webFontsDir, 'SourceHanSerifSC-Bold.woff'), fontWeight: 700 },
-    { src: join(webFontsDir, 'SourceHanSerifSC-BoldOblique.woff'), fontWeight: 700, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSerifSC-Regular.woff2'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSerifSC-RegularOblique.woff2'), fontWeight: 400, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSerifSC-Bold.woff2'), fontWeight: 700 },
+    { src: join(webFontsDir, 'SourceHanSerifSC-BoldOblique.woff2'), fontWeight: 700, fontStyle: 'italic' },
   ],
 });
 Font.registerHyphenationCallback(magicPdfHyphenationCallback);
@@ -135,7 +135,11 @@ try {
 
     const mediaBox = pdfSource.match(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/);
     assert.ok(mediaBox, `${template.id} PDF did not contain a page MediaBox`);
-    assert.ok(Math.abs(Number(mediaBox[1]) - 595.28) < 0.1, `${template.id} did not keep the A4 page width`);
+    const expectedPageWidth = Number.parseFloat(template.layout.containerWidth) * 72 / 96;
+    assert.ok(
+      Math.abs(Number(mediaBox[1]) - expectedPageWidth) < 0.1,
+      `${template.id} did not keep its configured page width`,
+    );
     assert.ok(Number(mediaBox[2]) > 841.89, `${template.id} did not grow beyond the A4 minimum height`);
   }
 
