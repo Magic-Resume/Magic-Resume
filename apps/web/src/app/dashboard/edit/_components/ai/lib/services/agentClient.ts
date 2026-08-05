@@ -6,10 +6,39 @@ import type { AgentLlmConfig, AgentSseEvent } from './types';
  * 路径，鉴权由服务端处理。
  */
 
+/**
+ * 把上游错误消息映射成用户能行动的友好文案。后端透传的原始字符串
+ * （如 `Upstream 'agent' unavailable`、`invalid_api_key`）对用户没有意义，
+ * 按状态码 + 关键词归类后再展示；无法归类时回退原始信息。
+ */
+function friendlyAgentError(status: number, raw: string): string {
+  const haystack = `${status} ${raw}`;
+  let friendly = '';
+  if (/timeout|timed out|ETIMEDOUT|abort/i.test(haystack)) {
+    friendly = '请求超时，请检查网络后重试';
+  } else if (/unauthori[sz]ed|forbidden|invalid.*(api.?key|key|token|credential)|authentication|401|403/.test(haystack)) {
+    friendly = 'API Key 无效或没有权限，请检查密钥';
+  } else if (/quota|insufficient.*(balance|credit|quota)|balance|billing|402/.test(haystack)) {
+    friendly = '账户额度不足，请检查余额或配额';
+  } else if (/rate.?limit|too many requests|429/.test(haystack)) {
+    friendly = '请求过于频繁，请稍后重试';
+  } else if (/upstream|origin|gateway|backend.*(unavail|down|error)|502|503/.test(haystack)) {
+    friendly = '服务商上游暂不可用，请稍后重试或检查服务状态';
+  } else if (/not found|no such model|404/.test(haystack)) {
+    friendly = '接口或模型不存在，请检查配置';
+  } else if (status >= 500) {
+    friendly = '服务商返回服务器错误，请稍后重试';
+  }
+  if (!friendly) return raw;
+  return raw && raw !== friendly ? `${friendly}（${raw}）` : friendly;
+}
+
 async function readError(res: Response): Promise<string> {
   try {
     const data = await res.json();
-    return (data?.error || data?.message || data?.detail || `请求失败（${res.status}）`) as string;
+    const raw =
+      (data?.error || data?.message || data?.detail || `请求失败（${res.status}）`) as string;
+    return friendlyAgentError(res.status, raw);
   } catch {
     return `请求失败（${res.status}）`;
   }

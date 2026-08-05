@@ -16,6 +16,8 @@ interface ProbeResult {
   ok: boolean;
   status?: number;
   message?: string;
+  /** true = accepts image input, false = rejected, undefined = couldn't tell */
+  supportsImage?: boolean;
 }
 
 const TIMEOUT_MS = 12_000;
@@ -134,6 +136,86 @@ async function probe(
   return toResult(chat);
 }
 
+// 1x1 transparent PNG — tiny enough to probe image support for ~free.
+const TINY_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+// Error bodies from providers that reject image input mention the offending part
+// ("image", "vision", "multimodal", …). Anything else is inconclusive.
+const IMAGE_REJECT_PATTERN = /image|vision|multimodal|visual|图片|图像|附件|attachment/i;
+
+/**
+ * Provider-aware image-support probe. Sends the model a message containing a
+ * 1x1 PNG and checks whether the endpoint accepts it:
+ *  - 2xx            → supportsImage: true
+ *  - 4xx + reject-ish message → supportsImage: false
+ *  - anything else  → supportsImage: undefined (unknown, don't guess)
+ */
+async function probeImageSupport(
+  provider: string,
+  baseUrl: string,
+  apiKey: string,
+  model: string
+): Promise<ProbeResult> {
+  const auth = { Authorization: `Bearer ${apiKey}` };
+  let url = `${baseUrl}/chat/completions`;
+  let headers: Record<string, string> = { ...auth, 'Content-Type': 'application/json' };
+  let body: unknown;
+
+  if (provider === 'anthropic') {
+    headers = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' };
+    body = {
+      model,
+      max_tokens: 1,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'ping' },
+            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: TINY_PNG_BASE64 } },
+          ],
+        },
+      ],
+    };
+  } else if (provider === 'google') {
+    url = `${baseUrl}/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    body = {
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: 'ping' },
+            { inline_data: { mime_type: 'image/png', data: TINY_PNG_BASE64 } },
+          ],
+        },
+      ],
+      generationConfig: { maxOutputTokens: 1 },
+    };
+  } else {
+    // openai / deepseek / custom — OpenAI-compatible format.
+    body = {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'ping' },
+            { type: 'image_url', image_url: { url: `data:image/png;base64,${TINY_PNG_BASE64}` } },
+          ],
+        },
+      ],
+      max_tokens: 1,
+    };
+  }
+
+  const res = await timedFetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  if (res.ok) return { ok: true, status: res.status, supportsImage: true };
+
+  const failed = await toResult(res);
+  const rejected = !failed.ok && !!failed.status && failed.status < 500 && IMAGE_REJECT_PATTERN.test(failed.message || '');
+  return { ok: true, supportsImage: rejected ? false : undefined };
+}
+
 export async function POST(request: Request) {
   const userId = await getServerUserId();
   if (!userId) return json({ ok: false, message: 'Unauthorized' }, 401);
@@ -161,7 +243,14 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   try {
     const result = await probe(provider, baseUrl, apiKey, model);
-    return json({ ...result, latencyMs: Date.now() - startedAt }, 200);
+    if (!result.ok) {
+      return json({ ...result, latencyMs: Date.now() - startedAt }, 200);
+    }
+    const image = await probeImageSupport(provider, baseUrl, apiKey, model);
+    return json(
+      { ...result, latencyMs: Date.now() - startedAt, supportsImage: image.supportsImage },
+      200,
+    );
   } catch (err) {
     const message =
       err instanceof Error

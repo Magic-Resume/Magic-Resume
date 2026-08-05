@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { useAppAuth, useAppUser } from "@/lib/auth";
 import { isCloudMode } from "@/lib/config/app";
 import { useAccountUiStore } from "@/store/useAccountUiStore";
+import { setPreferredLanguage } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/userDisplay";
 import { HelpSubmenu } from "./HelpSubmenu";
@@ -209,7 +210,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
             <button
               key={code}
               type="button"
-              onClick={() => i18n.changeLanguage(code)}
+              onClick={() => setPreferredLanguage(code)}
               className={cn(
                 "rounded-md px-2 py-0.5 text-[12px] transition-colors",
                 currentLang === code ? "bg-sky-400/15 text-sky-200" : "text-neutral-500 hover:text-neutral-300",
