@@ -15,10 +15,35 @@ interface StructuredDataProps {
   data?: ArticleData
 }
 
+/*
+ * Rules for everything in this file — see docs/specs/geo/spec.md.
+ *
+ * 1. Every claim here must be verifiable from the repo or the product. Answer
+ *    engines cross-check structured data against the rest of the web; a claim
+ *    that fails that check doesn't just get ignored, it lowers the trust weight
+ *    of the whole source. For an MIT-licensed project anyone can open the repo
+ *    and count, so the cost of being caught is effectively zero.
+ * 2. No aggregateRating until a real review corpus exists — inventing one
+ *    violates Google's structured data policy.
+ * 3. No prices. Plan pricing lives in the database under admin control, so any
+ *    number here would drift; and there is a paid Pro tier, so "0" is false.
+ * 4. Only reference URLs and assets that actually exist.
+ *
+ * The product description is the canonical one-liner shared with the landing
+ * i18n, metaConfig and the READMEs. Change it in all of them or none.
+ */
+const DESCRIPTION =
+  'Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，19 套模板，六种工作模式，多设备云同步。'
+
+/** The one verified public presence. Do not add unconfirmed handles. */
+const GITHUB_REPO = 'https://github.com/Magic-Resume/Magic-Resume'
+
 export default function StructuredData({ type, data = {} }: StructuredDataProps) {
   const getSchemaData = () => {
+    // The brand's home is the landing site at the apex; this app lives on the
+    // app subdomain. Assets referenced below must exist in apps/landing/public.
     const baseUrl = 'https://magic-resume.cn'
-    
+
     switch (type) {
       case 'website':
         return {
@@ -27,20 +52,9 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
           "name": "Magic Resume",
           "alternateName": "魔法简历",
           "url": baseUrl,
-          "description": "AI驱动的智能简历制作器，提供免费专业简历模板和AI优化服务",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": `${baseUrl}/search?q={search_term_string}`
-            },
-            "query-input": "required name=search_term_string"
-          },
-          "sameAs": [
-            "https://github.com/magic-resume",
-            "https://twitter.com/MagicResume",
-            "https://linkedin.com/company/magic-resume"
-          ]
+          "description": DESCRIPTION,
+          // No SearchAction: there is no /search route to point it at.
+          "sameAs": [GITHUB_REPO]
         }
 
       case 'organization':
@@ -51,18 +65,11 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
           "alternateName": "魔法简历",
           "url": baseUrl,
           "logo": `${baseUrl}/magic-resume-mark.png`,
-          "description": "专业的AI简历制作平台，帮助求职者制作完美简历",
-          "foundingDate": "2024",
-          "contactPoint": {
-            "@type": "ContactPoint",
-            "contactType": "customer service",
-            "email": "support@magic-resume.cn",
-            "availableLanguage": ["Chinese", "English"]
-          },
-          "sameAs": [
-            "https://github.com/magic-resume",
-            "https://twitter.com/MagicResume"
-          ],
+          "description": DESCRIPTION,
+          "foundingDate": "2025", // first commit 2025-06-05
+          // No contactPoint: the previous support@magic-resume.cn address has no
+          // corroboration anywhere in the repo. Add it back once confirmed.
+          "sameAs": [GITHUB_REPO],
           "knowsAbout": [
             "简历制作", "AI简历优化", "求职指导", "职业规划",
             "简历模板", "Resume Writing", "Career Coaching"
@@ -75,39 +82,28 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
           "@type": "SoftwareApplication",
           "name": "Magic Resume",
           "applicationCategory": "BusinessApplication",
-          "operatingSystem": "Web Browser",
-          "description": "免费的AI驱动智能简历制作器，帮助用户快速制作专业简历",
+          "operatingSystem": "Web",
+          "description": DESCRIPTION,
           "url": baseUrl,
-          "screenshot": `${baseUrl}/magic-resume-preview.png`,
-          "softwareVersion": "2.0",
-          "datePublished": "2024-01-01",
+          "screenshot": `${baseUrl}/magic-resume-og.jpg`,
+          "datePublished": "2025-06-05",
+          "license": "https://opensource.org/licenses/MIT",
           "author": {
-            "@type": "Organization", 
-            "name": "Magic Resume Team"
+            "@type": "Organization",
+            "name": "Magic Resume"
           },
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "CNY",
-            "availability": "https://schema.org/InStock",
-            "priceValidUntil": "2025-12-31"
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "reviewCount": "500",
-            "bestRating": "5",
-            "worstRating": "1"
-          },
+          "sameAs": [GITHUB_REPO],
+          // Every entry below is checkable: 19 template ids in
+          // packages/resume-schema, six modes in the landing copy, MIT LICENSE.
           "featureList": [
-            "AI智能简历分析和优化",
-            "多种专业简历模板", 
-            "实时预览编辑功能",
-            "PDF等多格式导出",
-            "完全免费使用",
-            "数据本地存储保护隐私"
+            "AI 就地提出修改建议，逐条采纳或跳过",
+            "19 套简历模板",
+            "六种工作模式：创建、优化、分析、翻译、面试、导出",
+            "ATS 友好的 PDF 导出与 JSON 备份",
+            "多设备云同步与版本历史",
+            "MIT 协议开源内核，支持自部署"
           ],
-          "keywords": "AI简历制作,免费简历制作器,智能简历生成器,在线简历编辑,简历优化工具"
+          "keywords": "AI简历制作,开源简历工具,智能简历生成器,在线简历编辑,简历优化工具"
         }
 
       case 'faq':
@@ -117,18 +113,18 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
           "mainEntity": [
             {
               "@type": "Question",
-              "name": "Magic Resume是免费的吗？",
+              "name": "Magic Resume 是免费的吗？",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "是的，Magic Resume完全免费使用。我们提供所有核心功能，包括AI分析、模板使用和PDF导出，无需付费。"
+                "text": "开源版永久免费，可自部署；云端版内置同步与 AI 能力，提供免费额度，重度使用可升级付费计划。"
               }
             },
             {
-              "@type": "Question", 
-              "name": "AI简历分析准确吗？",
+              "@type": "Question",
+              "name": "AI 会不经允许修改我的简历吗？",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "我们的AI基于大量优秀简历数据训练，能够准确分析简历的关键词匹配度、格式规范性和内容完整性，准确率达到90%以上。"
+                "text": "不会。所有修改都以提案形式出现——红色删除、绿色新增、附带理由——你点下采纳才会生效。"
               }
             },
             {
@@ -136,7 +132,7 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
               "name": "简历数据是否安全？",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "绝对安全。所有简历数据采用本地存储，我们不会收集或存储您的个人信息。您的隐私是我们的首要关注。"
+                "text": "云端同步全程加密传输与存储，数据只属于你，随时可以完整导出。需要完全离线时，可自部署开源版。"
               }
             },
             {
@@ -144,7 +140,7 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
               "name": "支持哪些导出格式？",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "支持PDF、Word、PNG等多种格式导出，确保在不同场景下都能完美展示您的简历。"
+                "text": "一键导出 ATS 友好的 PDF；JSON 自由进出，便于备份与迁移。"
               }
             }
           ]
@@ -154,39 +150,30 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
         return {
           "@context": "https://schema.org",
           "@type": "HowTo",
-          "name": "如何使用Magic Resume制作专业简历",
-          "description": "完整指南：使用AI技术制作专业简历的详细步骤",
-          "image": `${baseUrl}/howto-guide.png`,
-          "totalTime": "PT10M",
-          "estimatedCost": {
-            "@type": "MonetaryAmount",
-            "currency": "CNY",
-            "value": "0"
-          },
+          "name": "如何使用 Magic Resume 制作简历",
+          "description": "从空白页到可投递的 PDF，四个步骤。",
+          // No step images: the previous /step*.png and /howto-guide.png were
+          // referenced but never existed in any public directory.
           "step": [
             {
               "@type": "HowToStep",
               "name": "选择模板",
-              "text": "从50+精美模板中选择最适合您行业的简历模板",
-              "image": `${baseUrl}/step1-template.png`
-            },
-            {
-              "@type": "HowToStep", 
-              "name": "填写信息",
-              "text": "填写个人信息、工作经验、教育背景等基本内容",
-              "image": `${baseUrl}/step2-info.png`
+              "text": "从 19 套模板中选择适合目标岗位的版式。"
             },
             {
               "@type": "HowToStep",
-              "name": "AI优化",
-              "text": "使用AI分析功能获得专业优化建议，提升简历质量",
-              "image": `${baseUrl}/step3-ai.png`
+              "name": "填写信息",
+              "text": "填写个人信息、工作经验、教育背景等基本内容。"
+            },
+            {
+              "@type": "HowToStep",
+              "name": "AI 优化",
+              "text": "AI 就地提出修改建议并附上理由，你逐条决定采纳或跳过。"
             },
             {
               "@type": "HowToStep",
               "name": "导出简历",
-              "text": "选择合适的格式导出您的专业简历",
-              "image": `${baseUrl}/step4-export.png`
+              "text": "导出 ATS 友好的 PDF，或用 JSON 备份与迁移。"
             }
           ]
         }
@@ -195,9 +182,11 @@ export default function StructuredData({ type, data = {} }: StructuredDataProps)
         return {
           "@context": "https://schema.org",
           "@type": "Article",
-          "headline": data.title || "Magic Resume使用指南",
-          "description": data.description || "详细的简历制作指南和技巧分享",
-          "image": data.image || `${baseUrl}/article-default.png`,
+          "headline": data.title || "Magic Resume 使用指南",
+          "description": data.description || "简历制作指南与技巧分享。",
+          // Falls back to the share card rather than /article-default.png, which
+          // does not exist.
+          "image": data.image || `${baseUrl}/magic-resume-og.jpg`,
           "author": {
             "@type": "Organization",
             "name": "Magic Resume"

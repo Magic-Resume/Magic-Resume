@@ -1,9 +1,8 @@
 {
   "meta": {
     "title": "Magic Resume — AI 简历工作台",
-    "description": "AI 在简历上就地提议修改,由你决定采纳与否。引导创建、岗位匹配分析、模拟面试——开源内核,云端同步。"
+    "description": "Magic Resume 是开源的 AI 简历工作台:AI 就地提出修改建议,你逐条决定采纳或跳过。MIT 协议内核,19 套模板,六种工作模式,多设备云同步。"
   },
-  "logoAlt": "Magic Resume",
   "nav": {
     "features": "功能",
     "workflow": "工作方式",
@@ -20,7 +19,6 @@
     "subtitle": "AI 在页面上就地提议修改,合适的采纳、其余的跳过。每一处改动,实时同步到你的每一台设备。",
     "ctaPrimary": "开始使用",
     "ctaSecondary": "在 GitHub 点赞",
-    "previewAlt": "Magic Resume 编辑器",
     "trust": ["开源 MIT 内核", "云端实时同步", "AI 原生工作台"],
     "mockup": {
       "doc": "Kairo Chen's Resume",

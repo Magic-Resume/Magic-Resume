@@ -155,7 +155,7 @@ export default function ProposalStream({ labels }: { labels: Labels }) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, transition: { duration: 0.12 } }}
                   transition={SPRING}
-                  className="linear-card flex items-center gap-2.5 rounded-lg px-3 py-2"
+                  className="linear-card flex items-center gap-2.5 rounded-[8px] px-3 py-2"
                 >
                   <span className={`text-[11px] ${skipped ? 'text-faint' : 'text-[color:var(--color-add)]'}`}>
                     {skipped ? '⊘' : '✓'}
@@ -222,7 +222,7 @@ export default function ProposalStream({ labels }: { labels: Labels }) {
               </div>
             )}
           </div>
-          <div className="linear-card mt-3 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[10px] text-sky-300">
+          <div className="linear-card mt-3 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 font-mono text-[10px] text-sky-300">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>
             {labels.zeroLine}
           </div>

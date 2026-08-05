@@ -309,7 +309,7 @@ export default function EditorMockup({ labels, lang }: { labels: Labels; lang: '
           <Field label={labels.phone} value="+1 (617) 000-0000" />
 
           <PanelHead icon="briefcase" label={labels.experience} />
-          <div className="linear-card flex items-center gap-2 rounded-lg p-2.5">
+          <div className="linear-card flex items-center gap-2 rounded-[8px] p-2.5">
             <span className="text-faint tracking-tighter">⋮⋮</span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[10px] font-semibold text-ink/90">Google</div>
@@ -450,7 +450,7 @@ export default function EditorMockup({ labels, lang }: { labels: Labels; lang: '
 
           {/* AI proposal chip */}
           {proposal === 'open' && (
-            <div className="absolute bottom-13 right-2.5 flex max-w-[86%] items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5 shadow-xl shadow-black/60 ring-1 ring-hair">
+            <div className="absolute bottom-13 right-2.5 flex max-w-[86%] items-center gap-2 rounded-[8px] bg-surface px-2.5 py-1.5 shadow-xl shadow-black/60 ring-1 ring-hair">
               <span className="truncate text-[10px] text-muted">
                 <span className="text-sky-400">✦ {labels.proposal}:</span> {labels.proposalHint}
               </span>
@@ -477,13 +477,13 @@ export default function EditorMockup({ labels, lang }: { labels: Labels; lang: '
           <div className="text-[11.5px] font-semibold text-ink">{labels.customize}</div>
 
           <PanelHead icon="grid" label={labels.template} />
-          <div className="linear-card rounded-lg p-3">
+          <div className="linear-card rounded-[8px] p-3">
             <div className="flex gap-3">
               <div className="h-[76px] w-[58px] shrink-0 overflow-hidden rounded-[4px] bg-white p-[5px] shadow">
-                <div className={`h-[5px] rounded-sm ${tpl.id === 'classic' ? 'mx-auto w-2/3' : 'w-1/2'}`} style={{ background: accent }} />
-                <div className={`mt-[3px] h-[2.5px] w-5/6 rounded-sm bg-black/15 ${tpl.id === 'classic' ? 'mx-auto' : ''}`} />
+                <div className={`h-[5px] rounded-[4px] ${tpl.id === 'classic' ? 'mx-auto w-2/3' : 'w-1/2'}`} style={{ background: accent }} />
+                <div className={`mt-[3px] h-[2.5px] w-5/6 rounded-[4px] bg-black/15 ${tpl.id === 'classic' ? 'mx-auto' : ''}`} />
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="mt-[3px] h-[2.5px] w-full rounded-sm bg-black/10" />
+                  <div key={i} className="mt-[3px] h-[2.5px] w-full rounded-[4px] bg-black/10" />
                 ))}
               </div>
               <div className="min-w-0">

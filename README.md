@@ -5,7 +5,7 @@
 
   <h1>Magic Resume</h1>
 
-  <p><strong>The AI-native resume platform.</strong><br/>Build, analyze, and optimize your resume — and let AI coding tools edit it for you.</p>
+  <p><strong>The open-source AI resume workbench.</strong><br/>The AI proposes edits in place; you accept or skip each one.</p>
 
   <p>
     <a href="https://magic-resume.cn"><strong>Get Started »</strong></a>
@@ -14,7 +14,7 @@
     &nbsp;·&nbsp;
     <a href="https://magic-resume.cn">Official Site</a>
     &nbsp;·&nbsp;
-    <a href="https://github.com/LinMoQC/Magic-Resume/issues">Feedback</a>
+    <a href="https://github.com/Magic-Resume/Magic-Resume/issues">Feedback</a>
   </p>
 
   <!-- SHIELD GROUP -->
@@ -34,12 +34,27 @@
 
 <br/>
 
-**Magic Resume** is a modern, AI-native resume platform. It pairs a real-time visual editor with multi-model AI — and goes one step further with a native **MCP server** that lets AI coding tools (Claude Code, Cursor, Windsurf) read and safely patch your resumes without ever guessing the data shape.
+**Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 19 templates, six modes (create, optimize, analyze, translate, interview, export), and multi-device cloud sync.
 
-It's free, open source, and works fully in your browser — no account, no backend, no database required.
+It pairs a real-time visual editor with multi-model AI — and goes one step further with a native **MCP server** that lets AI coding tools (Claude Code, Cursor, Windsurf) read and safely patch your resumes without ever guessing the data shape.
+
+## Self-hosted vs Cloud
+
+Same features either way. The difference is where your data lives and who supplies the AI.
+
+| | Self-hosted (this repo) | Cloud (magic-resume.cn) |
+|---|---|---|
+| License | MIT, free forever | Free tier + paid plans |
+| Account | Not required | Required |
+| Data storage | Your browser's IndexedDB only | Encrypted cloud storage, exportable anytime |
+| Multi-device sync | Not available | On by default |
+| Version history | Local snapshots | Kept in the cloud, restorable |
+| AI | Bring your own API key | Built in, works out of the box |
+| Backend | No backend or database needed | Hosted for you |
+| Templates | 19, identical | 19, identical |
 
 > [!NOTE]
-> Everything runs locally by default. Your resume data lives in your browser (IndexedDB) unless you explicitly opt into cloud sync.
+> The self-hosted build runs entirely in your browser; resume data never leaves your machine. The cloud build syncs across devices by default, with encrypted transport and storage, and a full export available at any time.
 
 ---
 
@@ -48,7 +63,7 @@ It's free, open source, and works fully in your browser — no account, no backe
 **Build — visual editing that just works**
 
 - **Real-time preview** — see every change the instant you type.
-- **12 professional templates** — ATS-friendly, with full color, font, and layout control.
+- **19 professional templates** — ATS-friendly, with full color, font, and layout control.
 - **Deep customization** — 22+ font styles, spacing, and layout controls.
 - **Version history** — snapshot and restore any previous version.
 - **Sharing** — share via a unique link with Viewer / Commenter / Editor permissions.
@@ -79,9 +94,9 @@ It's free, open source, and works fully in your browser — no account, no backe
 
 ## Templates
 
-Twelve hand-crafted, ATS-friendly templates, each fully customizable (color, font, spacing, layout):
+Nineteen hand-crafted, ATS-friendly templates, each fully customizable (color, font, spacing, layout):
 
-`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus`
+`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo`
 
 ---
 
@@ -136,7 +151,7 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
 Magic Resume runs fully in the browser — no backend, no database, no account.
 
 ```bash
-git clone https://github.com/LinMoQC/Magic-Resume.git
+git clone https://github.com/Magic-Resume/Magic-Resume.git
 cd Magic-Resume
 cp apps/web/.env.example apps/web/.env.local   # set NEXT_PUBLIC_APP_MODE=self-hosted
 pnpm install
@@ -153,7 +168,7 @@ Open [http://localhost:3000](http://localhost:3000) and start building.
 
 **Cloud mode** (auth, cloud sync, sharing) deploys in one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLinMoQC%2FMagic-Resume)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
 
 > [!TIP]
 > For cloud mode, set `NEXT_PUBLIC_APP_MODE=cloud`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `CLERK_SECRET_KEY` in your Vercel dashboard.
@@ -209,25 +224,25 @@ pnpm --filter @magic-resume/mcp build
 
 Contributions of every size are welcome — bug fixes, new templates, docs, translations, or features.
 
-Please read the **[Contributing Guide](./CONTRIBUTING.md)** for local setup, the branch workflow, and the enforced **gitmoji + Conventional Commits** convention. For bugs or ideas, feel free to file an [issue](https://github.com/LinMoQC/Magic-Resume/issues) first.
+Please read the **[Contributing Guide](./CONTRIBUTING.md)** for local setup, the branch workflow, and the enforced **gitmoji + Conventional Commits** convention. For bugs or ideas, feel free to file an [issue](https://github.com/Magic-Resume/Magic-Resume/issues) first.
 
-<a href="https://github.com/LinMoQC/Magic-Resume/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=LinMoQC/Magic-Resume" alt="contributors" />
+<a href="https://github.com/Magic-Resume/Magic-Resume/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Magic-Resume/Magic-Resume" alt="contributors" />
 </a>
 
 ---
 
 ## Star History
 
-<a href="https://star-history.com/#LinMoQC/Magic-Resume&Date">
-  <img src="https://api.star-history.com/svg?repos=LinMoQC/Magic-Resume&type=Date" alt="Star History Chart" width="600" />
+<a href="https://star-history.com/#Magic-Resume/Magic-Resume&Date">
+  <img src="https://api.star-history.com/svg?repos=Magic-Resume/Magic-Resume&type=Date" alt="Star History Chart" width="600" />
 </a>
 
 ---
 
 <div align="center">
 
-Copyright © 2026 [Magic Resume Team](https://github.com/LinMoQC) · [MIT](./LICENSE) licensed.
+Copyright © 2026 [Magic Resume Team](https://github.com/Magic-Resume) · [MIT](./LICENSE) licensed.
 
 </div>
 
@@ -236,13 +251,13 @@ Copyright © 2026 [Magic Resume Team](https://github.com/LinMoQC) · [MIT](./LIC
 [official-site]: https://magic-resume.cn
 [vercel-shield]: https://img.shields.io/badge/vercel-online-55b467?labelColor=black&logo=vercel&style=flat-square
 [vercel-link]: https://magic-resume.cn
-[github-contributors-shield]: https://img.shields.io/github/contributors/LinMoQC/Magic-Resume?color=c4f042&labelColor=black&style=flat-square
-[github-contributors-link]: https://github.com/LinMoQC/Magic-Resume/graphs/contributors
-[github-forks-shield]: https://img.shields.io/github/forks/LinMoQC/Magic-Resume?color=8ae8ff&labelColor=black&style=flat-square
-[github-forks-link]: https://github.com/LinMoQC/Magic-Resume/network/members
-[github-stars-shield]: https://img.shields.io/github/stars/LinMoQC/Magic-Resume?color=ffcb47&labelColor=black&style=flat-square
-[github-stars-link]: https://github.com/LinMoQC/Magic-Resume/stargazers
-[github-issues-shield]: https://img.shields.io/github/issues/LinMoQC/Magic-Resume?color=ff80eb&labelColor=black&style=flat-square
-[github-issues-link]: https://github.com/LinMoQC/Magic-Resume/issues
+[github-contributors-shield]: https://img.shields.io/github/contributors/Magic-Resume/Magic-Resume?color=c4f042&labelColor=black&style=flat-square
+[github-contributors-link]: https://github.com/Magic-Resume/Magic-Resume/graphs/contributors
+[github-forks-shield]: https://img.shields.io/github/forks/Magic-Resume/Magic-Resume?color=8ae8ff&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/Magic-Resume/Magic-Resume/network/members
+[github-stars-shield]: https://img.shields.io/github/stars/Magic-Resume/Magic-Resume?color=ffcb47&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/Magic-Resume/Magic-Resume/stargazers
+[github-issues-shield]: https://img.shields.io/github/issues/Magic-Resume/Magic-Resume?color=ff80eb&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/Magic-Resume/Magic-Resume/issues
 [github-license-shield]: https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square
-[github-license-link]: https://github.com/LinMoQC/Magic-Resume/blob/master/LICENSE
+[github-license-link]: https://github.com/Magic-Resume/Magic-Resume/blob/master/LICENSE

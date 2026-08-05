@@ -1,0 +1,80 @@
+---
+/**
+ * JSON-LD for the landing page.
+ *
+ * Two graphs, both built from copy that already exists on the page:
+ *
+ *   FAQPage           — mirrors the visible FAQ accordion verbatim. Google
+ *                       requires the marked-up answer to be the one the user
+ *                       actually sees, so this reads from the same `copy.faq`
+ *                       the component renders. Never hand-write a second copy.
+ *   SoftwareApplication — what the product is, in the page's own language.
+ *
+ * Deliberately absent:
+ *
+ *   aggregateRating — we have no review corpus. Inventing ratings is a Google
+ *                     spam-policy violation and is dishonest besides.
+ *   offers/price    — there is a real free tier and a paid Pro plan, and plan
+ *                     pricing lives in the database under admin control. Any
+ *                     number hard-coded here would drift. Until the landing
+ *                     price decision (spec D2) lands, saying nothing is the
+ *                     only accurate option — `price: "0"` would be a claim we
+ *                     cannot stand behind.
+ *   sameAs          — only verified, real URLs belong here; the GitHub repo
+ *                     comes from `consts.ts` rather than being retyped.
+ */
+import type { Copy, Locale } from '@/i18n/ui';
+import { GITHUB } from '@/consts';
+
+interface Props {
+  copy: Copy;
+  locale: Locale;
+  canonical: string;
+  siteUrl: string;
+  ogImage: string;
+}
+const { copy, locale, canonical, siteUrl, ogImage } = Astro.props;
+
+const inLanguage = locale === 'zh' ? 'zh-CN' : 'en';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  inLanguage,
+  mainEntity: copy.faq.items.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
+const appSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Magic Resume',
+  url: canonical,
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description: copy.meta.description,
+  inLanguage,
+  image: ogImage,
+  author: { '@type': 'Organization', name: 'Magic Resume', url: siteUrl },
+  license: 'https://opensource.org/licenses/MIT',
+  // First commit. No `dateModified`: it would have to be the build timestamp,
+  // which claims the content changed every time we redeploy — a freshness
+  // signal we would be manufacturing rather than reporting.
+  datePublished: '2025-06-05',
+  sameAs: [GITHUB.repo],
+};
+
+/**
+ * `</script>` inside a JSON string would terminate the script element early.
+ * Our copy contains no markup today, but escaping `<` costs nothing and means
+ * a future FAQ answer mentioning an HTML tag cannot break the page.
+ */
+const serialize = (data: unknown) =>
+  JSON.stringify(data).replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" is:inline set:html={serialize(faqSchema)} />
+<script type="application/ld+json" is:inline set:html={serialize(appSchema)} />

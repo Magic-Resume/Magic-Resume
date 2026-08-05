@@ -1,36 +1,68 @@
 @import "tailwindcss";
 
-/* Self-hosted brand display face (Latin). CJK falls back to system faces. */
-@import "@fontsource-variable/sora";
+/* Self-hosted brand face. Latin only — CJK falls back to the system stack. */
+@import "@fontsource-variable/inter";
 
 /*
-  Design tokens — Linear-grade restraint on the Magic Resume brand.
-  Near-black neutral base (barely tinted toward the sky hue), hairline borders,
-  near-white ink, one accent: sky-400 (#38bdf8). Everything else earns its
-  contrast through typography and spacing, not color.
+  Design tokens — see design.md for the full spec.
+
+  Two colour systems live in this file, and the boundary between them is
+  `.linear-frame`:
+
+    Chrome layer (outside the frame)  — near-black neutrals, one accent:
+                                        acid lime #e4f222, used twice per page.
+    Product-Sim layer (inside)        — the product's own palette (sky-400,
+                                        paper white, red/green revision marks).
+                                        It is a screenshot; recolouring it would
+                                        make it an illustration instead.
+
+  Chrome must never use sky. Product-Sim must never use accent.
 */
 @theme {
-  --font-display: "Sora Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "PingFang SC",
+  /* ── Type ──────────────────────────────────────────────────────────── */
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "PingFang SC",
     "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Surfaces: #0a0b0c-ish, one step apart, all tinted 0.004 toward sky. */
-  --color-workbench: oklch(0.138 0.004 240);
-  --color-surface: oklch(0.168 0.005 240);
-  --color-surface-2: oklch(0.205 0.006 240);
-  --color-hairline: oklch(0.28 0.006 240);
-  /* Ink ramp: #f7f8f8 → #8a8f98 → #5e646d */
-  --color-ink: oklch(0.975 0.002 240);
-  --color-muted: oklch(0.68 0.008 245);
-  --color-faint: oklch(0.53 0.009 245);
+  /* The ladder is 300 / 400 / 510 / 590 — nothing heavier in the chrome layer.
+     `font-bold` (700) still resolves for the product mockups, which simulate a
+     real UI and must stay faithful to it. */
+  --font-weight-w510: 510;
+  --font-weight-w590: 590;
 
-  /* The resume document is light "paper" floating on the dark workbench. */
+  /* ── Chrome: surfaces ──────────────────────────────────────────────── */
+  --color-workbench: #08090a; /* Void     — page canvas */
+  --color-surface: #0f1011; /* Carbon   — cards, frames, nav */
+  --color-surface-2: #161718; /* Obsidian — nested panels */
+  --color-hairline: #23252a; /* Graphite — hairline borders */
+  --color-hairline-strong: #383b3f; /* Smoke    — emphatic dividers */
+
+  /* ── Chrome: ink (contrast against #08090a, measured) ──────────────── */
+  --color-ink: #ffffff; /* 19.9:1 — headings */
+  --color-ink-soft: #d0d6e0; /* 13.7:1 — body */
+  --color-muted: #8a8f98; /*  6.1:1 — secondary */
+  --color-faint: #62666d; /*  3.5:1 — ≥24px or non-text ONLY */
+
+  /* ── The one accent. Budget: 2 filled elements per page, ≤1 per view ── */
+  --color-accent: #e4f222;
+
+  /* ── Product-Sim: the resume document (do not rename — `paper` here is
+        the sheet the résumé is printed on, not white text) ───────────── */
   --color-paper: oklch(0.975 0.003 95);
   --color-paper-ink: oklch(0.28 0.01 260);
   --color-paper-muted: oklch(0.62 0.01 260);
-  /* Revision diff marks — brand red delete / green add. */
   --color-del: #dc2626;
   --color-add: #15803d;
+
+  /* ── Radius: four values, whole vocabulary. Clearing the namespace makes
+        `rounded-lg`/`-sm`/`-2xl` stop generating, so a stray one shows up as
+        a square corner instead of passing review. ────────────────────── */
+  --radius-*: initial;
+  --radius-xs: 2px;
+  --radius-md: 6px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
 }
 
 :root {
@@ -43,15 +75,21 @@ html {
 
 body {
   background-color: var(--color-workbench);
-  color: var(--color-ink);
+  color: var(--color-ink-soft);
   font-family: var(--font-sans);
+  /* These three alternates are the typographic identity — slashed zero,
+     single-storey glyph variants. Dropping them makes Inter generic. */
+  font-feature-settings:
+    "cv01" on,
+    "ss03" on,
+    "zero" on;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
 ::selection {
-  background: color-mix(in oklch, var(--color-sky-400) 30%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
   color: #fff;
 }
 
@@ -63,8 +101,10 @@ body {
 /* In @layer base so Tailwind utilities (a later layer) can always override —
    unlayered rules would beat every utility regardless of specificity. */
 @layer base {
+  /* Accent earns its place here: 16.2:1 against the canvas makes it the most
+     legible focus indicator available in the palette. */
   :where(:focus-visible) {
-    outline: 2px solid var(--color-sky-400);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
     border-radius: 2px;
   }
@@ -78,24 +118,37 @@ body {
   p {
     text-wrap: pretty;
   }
+
+  /* Chinese body copy runs looser than Latin — CJK has none of the whitespace
+     that lowercase ascenders and descenders create. Headings get the same
+     treatment through the type scale below, not here: a `leading-*` utility
+     would out-rank an @layer base rule and silently undo it. */
+  :lang(zh) p,
+  :lang(zh) li {
+    line-height: 1.75;
+  }
 }
 
 /* ---------------------------------------------------------------------------
    Utilities
 --------------------------------------------------------------------------- */
 
-/* Hairline border color used everywhere — 1px, white at 8%. */
+/* Hairline border color used everywhere — 1px, white at 7%.
+   1px rather than 0.5px on purpose: a half pixel rounds to 0 or 1 on 1× screens
+   and antialiases unpredictably on 2×, while 1px at 7% alpha reads as a hairline
+   at any DPR. */
 @utility ring-hair {
-  --tw-ring-color: color-mix(in srgb, #fff 8%, transparent);
+  --tw-ring-color: color-mix(in srgb, #fff 7%, transparent);
 }
 @utility border-hair {
-  border-color: color-mix(in srgb, #fff 8%, transparent);
+  border-color: color-mix(in srgb, #fff 7%, transparent);
 }
 
-/* Eyebrow label: small caps, wide tracking, faint. */
+/* Eyebrow label: small, wide tracking, muted. The dot is a full stop, not a
+   light source — no glow. */
 .eyebrow {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: var(--color-muted);
   display: inline-flex;
@@ -107,40 +160,112 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: var(--color-sky-400);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--color-sky-400) 80%, transparent);
+  background: var(--color-muted);
 }
 
-/* Product frame: hairline ring + inner top light, like a screenshot on glass. */
-/* Linear-style gloss, carried entirely by the panel's own border: a crisp
-   lit top edge + hairline ring + layered depth. No backing plate, no padding —
-   inset shadows paint over the panel background but under its content. */
-.linear-frame {
-  position: relative;
-  border-radius: 14px;
+/* ---------------------------------------------------------------------------
+   Type scale — design.md §3.2 / §3.3
+
+   These live as classes rather than utility clusters for one reason: the CJK
+   overrides have to beat the Latin values, and anything written in @layer base
+   loses to a `tracking-[…]` utility on the element. Keeping both halves of each
+   rule in the same unlayered block means the Chinese page cannot drift.
+
+   Latin display tracking (-0.022em) applied to Chinese collides strokes at
+   64px, lh 1.0 makes adjacent lines touch, and weight 510 has no master in any
+   system CJK face — the browser synthesises it into mud. Hence the overrides.
+--------------------------------------------------------------------------- */
+.type-display {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-weight: 510;
+  line-height: 1;
+  letter-spacing: -0.022em;
 }
-.linear-frame > :first-child {
-  border-radius: 14px;
-  overflow: hidden;
+:lang(zh) .type-display {
+  font-weight: 400;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+}
+
+/* Closing CTA — one step under the hero. */
+.type-heading-lg {
+  font-size: clamp(1.9rem, 4.6vw, 3rem);
+  font-weight: 510;
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+}
+:lang(zh) .type-heading-lg {
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+/* Section headings. */
+.type-heading {
+  font-size: clamp(1.625rem, 3.6vw, 2.5rem);
+  font-weight: 510;
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+}
+:lang(zh) .type-heading {
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.type-body-lg {
+  font-size: 17px;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+:lang(zh) .type-body-lg {
+  line-height: 1.75;
+  letter-spacing: 0;
+}
+
+.type-body {
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+:lang(zh) .type-body {
+  line-height: 1.75;
+  letter-spacing: 0;
+}
+@media (min-width: 768px) {
+  .type-body {
+    font-size: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+--------------------------------------------------------------------------- */
+
+/* The accent button. Two per page, never two in one viewport — the whole point
+   of a flashlight is that it is the only thing lit. The inset stack is the only
+   real shadow on a chrome element anywhere in the system. */
+.btn-accent {
+  background: var(--color-accent);
+  color: var(--color-workbench);
   box-shadow:
-    /* top gloss line — light catching the upper edge */
-    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent),
-    /* faint bottom lip */
-    inset 0 -1px 0 color-mix(in srgb, #fff 3%, transparent),
-    /* hairline ring */
-    inset 0 0 0 1px color-mix(in srgb, #fff 7%, transparent),
-    /* dark rim separating panel from page */
-    0 0 0 1px rgb(0 0 0 / 0.5),
-    /* layered depth: ambient + contact */
-    0 32px 80px -24px rgb(0 0 0 / 0.7),
-    0 6px 20px -8px rgb(0 0 0 / 0.55);
+    inset 0 5px 2px rgb(0 0 0 / 0.01),
+    inset 0 3px 2px rgb(0 0 0 / 0.04),
+    inset 0 1px 1px rgb(0 0 0 / 0.07);
+  transition: filter 0.2s ease;
+}
+.btn-accent:hover {
+  filter: brightness(1.06);
 }
 
-/* Linear-like product frame: layered material, gradient hairlines, no hard plate. */
+/* Product frame — the boundary between the chrome layer and the product
+   simulation inside it, and the visual centre of gravity of the whole page.
+   Layered material with gradient hairlines: a lit top edge, a hairline ring,
+   and ambient depth. No backing plate, no padding. */
 .linear-frame {
   position: relative;
   isolation: isolate;
-  border-radius: 14px;
+  border-radius: 12px;
   background:
     radial-gradient(
       130% 120% at 50% 0%,
@@ -157,6 +282,19 @@ body {
     inset 0 -1px 0 color-mix(in srgb, #fff 2%, transparent),
     0 0 0 1px color-mix(in srgb, #fff 7%, transparent),
     0 28px 90px -42px rgb(0 0 0 / 0.95);
+}
+/* Clips the simulated UI to the frame and paints the inner lit edge over it. */
+.linear-frame > :first-child {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    /* top gloss line — light catching the upper edge */
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent),
+    /* faint bottom lip */ inset 0 -1px 0 color-mix(in srgb, #fff 3%, transparent),
+    /* hairline ring */ inset 0 0 0 1px color-mix(in srgb, #fff 7%, transparent),
+    /* dark rim separating panel from page */ 0 0 0 1px rgb(0 0 0 / 0.5),
+    /* layered depth: ambient + contact */ 0 32px 80px -24px rgb(0 0 0 / 0.7),
+    0 6px 20px -8px rgb(0 0 0 / 0.55);
 }
 .linear-frame::before {
   content: "";
@@ -180,13 +318,15 @@ body {
     );
   opacity: 0.46;
 }
+/* Ambient bloom around the frame — cold white only. A tinted bloom would leak
+   the product's accent into the chrome layer. */
 .linear-frame::after {
   content: "";
   position: absolute;
   inset: -36px -44px;
   z-index: 0;
   pointer-events: none;
-  border-radius: 32px;
+  border-radius: 24px;
   background:
     radial-gradient(
       55% 42% at 50% 0%,
@@ -195,7 +335,7 @@ body {
     ),
     radial-gradient(
       60% 50% at 50% 100%,
-      color-mix(in srgb, var(--color-sky-400) 5%, transparent),
+      color-mix(in srgb, #fff 3%, transparent),
       transparent 72%
     );
   filter: blur(28px);
@@ -206,25 +346,25 @@ body {
   z-index: 1;
 }
 
+/* Surfaces used by the simulated product UI inside the frame. Neutral
+   white-alpha material — safe on both sides of the boundary. */
 .linear-window {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, #fff 1.1%, transparent),
-      color-mix(in srgb, #fff 0.35%, transparent) 14%,
-      color-mix(in srgb, #000 6%, transparent)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 1.1%, transparent),
+    color-mix(in srgb, #fff 0.35%, transparent) 14%,
+    color-mix(in srgb, #000 6%, transparent)
+  );
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 5.5%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #fff 2%, transparent);
 }
 .linear-chrome {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, #fff 1.5%, transparent),
-      color-mix(in srgb, #fff 0.35%, transparent)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 1.5%, transparent),
+    color-mix(in srgb, #fff 0.35%, transparent)
+  );
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #fff 5.5%, transparent);
@@ -245,12 +385,11 @@ body {
 .linear-panel,
 .linear-card,
 .linear-field {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, #fff 2.4%, transparent),
-      color-mix(in srgb, #fff 0.9%, transparent)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 2.4%, transparent),
+    color-mix(in srgb, #fff 0.9%, transparent)
+  );
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 4.5%, transparent),
     0 0 0 1px color-mix(in srgb, #fff 4.8%, transparent);
@@ -267,10 +406,10 @@ body {
     0 0 0 1px color-mix(in srgb, #fff 4.2%, transparent);
 }
 
-/* Bento card. Hover: hairline brightens, faint sky wash rises from the top. */
+/* Bento card. Hover brightens the hairline — that is the entire interaction. */
 .bento {
   position: relative;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--color-surface);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 5%, transparent),
@@ -278,33 +417,26 @@ body {
   overflow: hidden;
   transition: box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.bento::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    120% 60% at 50% 0%,
-    color-mix(in srgb, var(--color-sky-400) 7%, transparent),
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
 .bento:hover {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
     0 0 0 1px color-mix(in srgb, #fff 12%, transparent);
 }
-.bento:hover::after {
-  opacity: 1;
-}
 
-/* Hero backdrop: one restrained sky bloom + hairline horizon. */
+/* The only gradients in the chrome layer: atmospheric bloom behind the hero and
+   above the closing CTA. Colourless — a tinted wash would spend accent budget
+   on decoration. */
 .hero-bloom {
   background: radial-gradient(
     50% 42% at 50% 0%,
-    color-mix(in srgb, var(--color-sky-500) 13%, transparent),
+    color-mix(in srgb, #fff 6%, transparent),
+    transparent 72%
+  );
+}
+.cta-bloom {
+  background: radial-gradient(
+    55% 70% at 50% 100%,
+    color-mix(in srgb, #fff 5%, transparent),
     transparent 72%
   );
 }

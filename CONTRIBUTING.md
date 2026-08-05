@@ -8,7 +8,7 @@ Thanks for your interest in contributing! Contributions of every size are welcom
 
 ## Ways to contribute
 
-- **Report a bug** or request a feature — open an [issue](https://github.com/LinMoQC/Magic-Resume/issues).
+- **Report a bug** or request a feature — open an [issue](https://github.com/Magic-Resume/Magic-Resume/issues).
 - **Fix a bug** or **build a feature** — open a Pull Request.
 - **Add a template** — see [`packages/resume-templates`](./packages/resume-templates).
 - **Improve translations** — see [Translations](#translations).
@@ -137,7 +137,7 @@ pnpm --filter @magic-resume/web i18n:check
 
 ## Pull request process
 
-1. Push your branch and open a [Pull Request](https://github.com/LinMoQC/Magic-Resume/pulls) against `master`.
+1. Push your branch and open a [Pull Request](https://github.com/Magic-Resume/Magic-Resume/pulls) against `master`.
 2. Write a clear title (the commit convention is a good guide) and describe **what** changed and **why**.
 3. Link any related issue (e.g. `Closes #123`).
 4. Make sure CI, lint, and tests are green.

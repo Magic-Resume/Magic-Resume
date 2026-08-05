@@ -1,5 +1,5 @@
 ---
-import type { Copy } from '@/i18n/ui';
+import type { Copy, Locale } from '@/i18n/ui';
 import { dashboardLink, GITHUB } from '@/consts';
 import { formatStars } from '@/lib/github';
 import Icon from '@/components/Icon.astro';
@@ -8,8 +8,9 @@ import LangSwitcher from '@/components/LangSwitcher.astro';
 interface Props {
   copy: Copy;
   stars: number | null;
+  locale: Locale;
 }
-const { copy, stars } = Astro.props;
+const { copy, stars, locale } = Astro.props;
 const nav = copy.nav;
 ---
 
@@ -25,15 +26,17 @@ const nav = copy.nav;
           src="/magic-resume-mark.png"
           alt=""
           aria-hidden="true"
+          width="28"
+          height="28"
           class="h-7 w-7 object-contain"
         />
       </span>
-      <span class="font-display text-[14px] font-semibold tracking-tight text-ink">
+      <span class="text-[14px] font-w510 tracking-tight text-ink">
         Magic Resume
       </span>
     </a>
 
-    <nav class="hidden items-center gap-6 text-[13px] font-medium text-muted md:flex">
+    <nav class="hidden items-center gap-6 text-[13px] text-ink-soft md:flex">
       <a class="transition-colors hover:text-ink" href="#features">{nav.features}</a>
       <a class="transition-colors hover:text-ink" href="#workflow">{nav.workflow}</a>
       <a class="transition-colors hover:text-ink" href="#sync">{nav.sync}</a>
@@ -54,8 +57,8 @@ const nav = copy.nav;
       </a>
       <LangSwitcher />
       <a
-        href={dashboardLink('header')}
-        class="flex items-center gap-1 rounded-md bg-ink px-3 py-1.5 text-[13px] font-semibold text-workbench transition-opacity hover:opacity-85"
+        href={dashboardLink('header', locale)}
+        class="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-[13px] font-w510 text-workbench transition-opacity hover:opacity-85"
       >
         {nav.goToApp}
       </a>

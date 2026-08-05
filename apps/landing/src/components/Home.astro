@@ -21,16 +21,21 @@ const copy = getCopy(locale);
 const stars = await getStarCount();
 ---
 
-<Landing locale={locale} title={copy.meta.title} description={copy.meta.description}>
-  <Header copy={copy} stars={stars} />
-  <main>
+<Landing
+  locale={locale}
+  title={copy.meta.title}
+  description={copy.meta.description}
+  copy={copy}
+>
+  <Header copy={copy} stars={stars} locale={locale} />
+  <main id="main">
     <Hero copy={copy} locale={locale} />
     <LabScene copy={copy} locale={locale} />
     <Workflow copy={copy} />
     <Sync copy={copy} />
     <OpenSource copy={copy} stars={stars} />
     <FaqSection copy={copy} />
-    <CallToAction copy={copy} />
+    <CallToAction copy={copy} locale={locale} />
   </main>
-  <Footer copy={copy} />
+  <Footer copy={copy} locale={locale} />
 </Landing>
