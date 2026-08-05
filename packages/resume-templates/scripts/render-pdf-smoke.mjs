@@ -20,19 +20,19 @@ const webFontsDir = resolve(packageDir, '../../apps/web/public/fonts/full');
 Font.register({
   family: 'Source Han Sans SC',
   fonts: [
-    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff'), fontWeight: 400 },
-    { src: join(webFontsDir, 'SourceHanSansSC-RegularOblique.woff'), fontWeight: 400, fontStyle: 'italic' },
-    { src: join(webFontsDir, 'SourceHanSansSC-Bold.woff'), fontWeight: 700 },
-    { src: join(webFontsDir, 'SourceHanSansSC-BoldOblique.woff'), fontWeight: 700, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff2'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSansSC-RegularOblique.woff2'), fontWeight: 400, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSansSC-Bold.woff2'), fontWeight: 700 },
+    { src: join(webFontsDir, 'SourceHanSansSC-BoldOblique.woff2'), fontWeight: 700, fontStyle: 'italic' },
   ],
 });
 Font.register({
   family: 'Source Han Serif SC',
   fonts: [
-    { src: join(webFontsDir, 'SourceHanSerifSC-Regular.woff'), fontWeight: 400 },
-    { src: join(webFontsDir, 'SourceHanSerifSC-RegularOblique.woff'), fontWeight: 400, fontStyle: 'italic' },
-    { src: join(webFontsDir, 'SourceHanSerifSC-Bold.woff'), fontWeight: 700 },
-    { src: join(webFontsDir, 'SourceHanSerifSC-BoldOblique.woff'), fontWeight: 700, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSerifSC-Regular.woff2'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSerifSC-RegularOblique.woff2'), fontWeight: 400, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSerifSC-Bold.woff2'), fontWeight: 700 },
+    { src: join(webFontsDir, 'SourceHanSerifSC-BoldOblique.woff2'), fontWeight: 700, fontStyle: 'italic' },
   ],
 });
 Font.registerHyphenationCallback(magicPdfHyphenationCallback);
@@ -200,11 +200,15 @@ try {
 
     const mediaBox = pdfSource.match(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/);
     assert.ok(mediaBox, `${template.id} PDF did not contain a page MediaBox`);
-    // 595.5 而不是 A4 真值 595.2756：页宽来自模板的 containerWidth（794 CSS px），
-    // 794 × 0.75 = 595.5。794 本身是 793.7 取整来的（PAGE_WIDTH_PX 供面板用）。
-    // 差 0.22pt ≈ 0.078mm，实际无意义——但这条断言原本卡在 ±0.1，**从未通过过**，
-    // 于是整个冒烟脚本长期是红的、没人跑。放宽到 ±1 让它能真正当守卫用。
-    assert.ok(Math.abs(Number(mediaBox[1]) - 595.28) < 1, `${template.id} did not keep the A4 page width`);
+    // 期望页宽按模板自己的 containerWidth 算,不跟 A4 真值比。
+    // 这条断言原本硬比 595.28(A4)且卡在 ±0.1,**从未通过过**——页宽实际来自模板的
+    // containerWidth(794 CSS px),794 × 0.75 = 595.5,和 A4 的 595.2756 差 0.22pt。
+    // 于是整个冒烟脚本长期是红的、没人跑。按 containerWidth 推导之后 ±0.1 才是对的。
+    const expectedPageWidth = (Number.parseFloat(template.layout.containerWidth) * 72) / 96;
+    assert.ok(
+      Math.abs(Number(mediaBox[1]) - expectedPageWidth) < 0.1,
+      `${template.id} did not keep its configured page width`,
+    );
     assert.ok(Number(mediaBox[2]) > 841.89, `${template.id} did not grow beyond the A4 minimum height`);
   }
 

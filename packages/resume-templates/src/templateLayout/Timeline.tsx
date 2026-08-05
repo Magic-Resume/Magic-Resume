@@ -30,6 +30,8 @@ export const Timeline = React.memo(function Timeline({ title, items, fieldMap = 
       className="space-y-6"
       style={{
         ...style,
+        maxWidth: '100%',
+        minWidth: 0,
         lineHeight: 'var(--line-height)',
         letterSpacing: 'var(--letter-spacing)',
         marginBottom: 'var(--section-spacing)',
@@ -65,7 +67,7 @@ export const Timeline = React.memo(function Timeline({ title, items, fieldMap = 
           const itemId = item.id != null ? String(item.id) : null;
 
           return (
-            <div key={itemId || idx} className="relative pl-6">
+            <div key={itemId || idx} className="relative min-w-0 max-w-full pl-6">
               <div 
                 style={{
                   position: 'absolute',
@@ -93,9 +95,9 @@ export const Timeline = React.memo(function Timeline({ title, items, fieldMap = 
                 />
               )}
               
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                  <div>
+              <div className="min-w-0 max-w-full space-y-2">
+                <div className="flex min-w-0 max-w-full flex-col sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
                     <h3 className="font-bold" style={{ color: textColor, fontSize: 'var(--font-size-body)' }}>
                       {company}
                     </h3>
@@ -112,14 +114,14 @@ export const Timeline = React.memo(function Timeline({ title, items, fieldMap = 
                   </div>
                   
                   {date && (
-                    <div className="font-medium mt-1 sm:mt-0" style={{ color: secondaryColor, fontSize: 'var(--font-size-body)' }}>
+                    <div className="mt-1 shrink-0 font-medium sm:mt-0" style={{ color: secondaryColor, fontSize: 'var(--font-size-body)' }}>
                       {date}
                     </div>
                   )}
                 </div>
                 
                 {description && (
-                  <div style={{ color: textColor, fontSize: 'var(--font-size-body)' }}>
+                  <div className="min-w-0 max-w-full" style={{ color: textColor, fontSize: 'var(--font-size-body)' }}>
                     {sectionKey && itemId ? (
                       <Editable
                         target={{
