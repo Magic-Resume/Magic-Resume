@@ -8,7 +8,7 @@
 
 ## 贡献方式
 
-- **反馈 Bug 或提功能建议** —— 开一个 [Issue](https://github.com/LinMoQC/Magic-Resume/issues)。
+- **反馈 Bug 或提功能建议** —— 开一个 [Issue](https://github.com/Magic-Resume/Magic-Resume/issues)。
 - **修复 Bug** 或 **开发功能** —— 提交 Pull Request。
 - **新增模板** —— 参见 [`packages/resume-templates`](./packages/resume-templates)。
 - **完善翻译** —— 参见 [翻译](#翻译)。
@@ -137,7 +137,7 @@ pnpm --filter @magic-resume/web i18n:check
 
 ## PR 流程
 
-1. 推送分支，向 `master` 发起 [Pull Request](https://github.com/LinMoQC/Magic-Resume/pulls)。
+1. 推送分支，向 `master` 发起 [Pull Request](https://github.com/Magic-Resume/Magic-Resume/pulls)。
 2. 写清标题（可参照提交规范），说明**改了什么**、**为什么改**。
 3. 关联相关 Issue（如 `Closes #123`）。
 4. 确保 CI、lint 与测试全绿。
