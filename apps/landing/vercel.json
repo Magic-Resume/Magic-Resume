@@ -3,7 +3,6 @@
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm turbo build --filter=@magic-resume/landing",
   "outputDirectory": "dist",
-  "comment": "The root redirect is deliberately temporary (302). A 301 is cached by browsers indefinitely, so anyone who has already hit the apex would keep being sent to /en no matter what we change here — which would make the default-language decision (docs/specs/landing-optimization/spec.md, D1) unenforceable for existing visitors. Keep this at 302 until that decision ships and has settled.",
   "redirects": [
     {
       "source": "/",
