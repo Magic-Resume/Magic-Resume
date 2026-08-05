@@ -898,7 +898,7 @@ const TimelineBlock = ({ component, items, context }: {
   const color = component.style?.color ?? context.colors.text;
   const dateFontFamily = getPdfFontStack(context.typography.fontFamily.primary, context.cjkFallback);
   return (
-    <View style={toPdfComponentStyle(component.style)}>
+    <View style={[toPdfComponentStyle(component.style), { flexShrink: 1, maxWidth: '100%', minWidth: 0 }]}>
       <SectionTitle
         title={resolveTitle(component, context.locale)}
         icon={getSectionIcon(component)}
@@ -906,7 +906,7 @@ const TimelineBlock = ({ component, items, context }: {
         dividerColor={context.colors.primary}
         context={context}
       />
-      <View style={{ gap: cssSizeToPoints(context.spacing.md, 8) }}>
+      <View style={{ flexShrink: 1, gap: cssSizeToPoints(context.spacing.md, 8), maxWidth: '100%', minWidth: 0 }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
           const title = getFieldValue(record, fields.title ?? ['company', 'school', 'name']);
@@ -915,14 +915,14 @@ const TimelineBlock = ({ component, items, context }: {
           const location = getFieldValue(record, ['location']);
           const description = getFieldValue(record, fields.description ?? ['summary', 'description']);
           return (
-            <View key={item.id || index} wrap={false} style={{ flexDirection: 'row', gap: 7 }}>
+            <View key={item.id || index} wrap={false} style={{ flexDirection: 'row', flexShrink: 1, gap: 7, maxWidth: '100%', minWidth: 0 }}>
               <View style={{ alignItems: 'center', width: 7 }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: context.colors.primary, marginTop: 2 }} />
                 {index < items.length - 1 ? <View style={{ width: 0.75, flexGrow: 1, minHeight: 18, backgroundColor: context.colors.border }} /> : null}
               </View>
-              <View style={{ flexGrow: 1, flexShrink: 1, gap: 2 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                  <View style={{ flexGrow: 1, flexShrink: 1, gap: 1 }}>
+              <View style={{ flexBasis: 0, flexGrow: 1, flexShrink: 1, gap: 2, maxWidth: '100%', minWidth: 0 }}>
+                <View style={{ flexDirection: 'row', flexShrink: 1, justifyContent: 'space-between', gap: 8, maxWidth: '100%', minWidth: 0 }}>
+                  <View style={{ flexBasis: 0, flexGrow: 1, flexShrink: 1, gap: 1, minWidth: 0 }}>
                     <Text style={{ color, fontSize: 9, fontWeight: 700 }}>{title}</Text>
                     {subtitle ? <Text style={{ color: context.colors.primary, fontSize: 8, fontWeight: 700 }}>{subtitle}</Text> : null}
                     {location ? <Text style={{ color, fontSize: 7.5, opacity: 0.75 }}>{location}</Text> : null}
@@ -1030,6 +1030,8 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
           <View
             style={{
               width: cssSizeToPoints(template.layout.twoColumn.leftWidth),
+              flexShrink: 0,
+              minWidth: 0,
               backgroundColor: colors.sidebar ?? colors.primary,
               padding,
               gap: sectionGap,
@@ -1039,8 +1041,10 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
           </View>
           <View
             style={{
+              flexBasis: 0,
               flexGrow: 1,
               flexShrink: 1,
+              minWidth: 0,
               padding,
               gap: sectionGap,
             }}
