@@ -31,6 +31,51 @@ jobs:
           fetch-depth: 0 # semantic-release needs full history + tags
           persist-credentials: true
 
+      # Guard against a silent version regression.
+      #
+      # semantic-release only considers tags reachable from the current branch. If
+      # the branch history is rewritten, older tags keep pointing at commits that
+      # are no longer ancestors of HEAD — semantic-release then reports "no previous
+      # release" and cuts an initial 1.0.0, regardless of commit types. That is what
+      # happened in August 2026: every v2.x tag was orphaned by a history rewrite and
+      # the next push produced v1.0.0 on a `:memo: docs` commit, below the v2.5.0
+      # that already existed.
+      #
+      # Failing here is the point. A red workflow is trivially recoverable; a
+      # published version that goes backwards is not.
+      - name: Verify the highest release tag is still reachable
+        run: |
+          set -euo pipefail
+          latest="$(git tag --list 'v*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1 || true)"
+
+          if [ -z "$latest" ]; then
+            echo "No release tags exist yet — treating this as a genuine first release."
+            exit 0
+          fi
+
+          if git merge-base --is-ancestor "$latest" HEAD; then
+            echo "OK — $latest is an ancestor of HEAD; semantic-release will build on it."
+            exit 0
+          fi
+
+          # No leading whitespace: ::error:: is only parsed as a workflow command
+          # when it starts the line.
+          echo "::error::Highest release tag $latest ($(git rev-parse --short "$latest")) is not reachable from HEAD — refusing to release."
+          echo
+          echo "semantic-release would ignore it, report 'no previous release', and cut a"
+          echo "fresh 1.0.0 — a version regression. Stopping instead."
+          echo
+          echo "This usually means the branch history was rewritten and the old tags now"
+          echo "point at orphaned commits. To fix, re-point each affected tag at its"
+          echo "equivalent commit in the current history, e.g.:"
+          echo
+          echo "    git push origin --force <new-sha>:refs/tags/$latest"
+          echo
+          echo "See docs/reference/release-automation.md for the full procedure."
+          exit 1
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
