@@ -1,6 +1,7 @@
 ---
 import type { Copy } from '@/i18n/ui';
 import Icon from '@/components/Icon.astro';
+import ResumeCard from '@/components/product-sim/ResumeCard.astro';
 
 interface Props {
   copy: Copy;
@@ -20,16 +21,16 @@ const devices = [
   <div class="mx-auto grid max-w-[1120px] items-center gap-14 px-5 md:px-6 lg:grid-cols-2 lg:gap-20">
     <div class="reveal">
       <p class="eyebrow">{s.eyebrow}</p>
-      <h2 class="mt-4 max-w-lg font-display text-[clamp(1.7rem,3.6vw,2.4rem)] font-semibold leading-tight tracking-[-0.02em] text-ink">
+      <h2 class="type-heading mt-4 max-w-lg text-ink">
         {s.title}
       </h2>
-      <p class="mt-4 max-w-lg text-[15px] leading-relaxed text-muted md:text-base">{s.subtitle}</p>
+      <p class="type-body mt-4 max-w-lg text-muted">{s.subtitle}</p>
 
       <ul class="mt-8 space-y-3.5">
         {
           s.points.map((point) => (
-            <li class="flex items-start gap-3 text-[14.5px] text-ink">
-              <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-400/10 text-sky-400">
+            <li class="flex items-start gap-3 text-[15px] text-ink-soft">
+              <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-muted">
                 <Icon name="check" size={12} />
               </span>
               {point}
@@ -42,7 +43,7 @@ const devices = [
     <!-- sync constellation: resume card → flowing lines → devices come alive -->
     <div class="reveal flex justify-center lg:justify-end" style="--reveal-delay:1">
       <div class="sync-scene relative h-[320px] w-full max-w-[460px]">
-        <div aria-hidden="true" class="absolute -inset-10 -z-10 rounded-[3rem] bg-sky-500/[0.06] blur-3xl"></div>
+        <div aria-hidden="true" class="absolute -inset-10 -z-10 rounded-xl bg-white/[0.04] blur-3xl"></div>
 
         <!-- flowing connection lines -->
         <svg
@@ -57,23 +58,10 @@ const devices = [
           <path class="sync-line" style="animation-delay:2.2s" d="M170 160 C 250 160, 260 258, 330 258" />
         </svg>
 
-        <!-- resume card (source of truth) -->
+        <!-- Source of truth. Product-Sim layer — see product-sim/ResumeCard. -->
         <div class="absolute left-0 top-1/2 w-[180px] -translate-y-1/2">
-          <div aria-hidden="true" class="sync-halo absolute -inset-3 rounded-2xl bg-sky-400/10"></div>
-          <div class="relative rounded-xl bg-paper p-3.5 text-paper-ink shadow-[0_18px_50px_-16px_rgb(0_0_0/0.8)]">
-            <div class="text-[12px] font-semibold">李 明</div>
-            <div class="text-[9px] text-paper-muted">Frontend Engineer</div>
-            <div class="mt-2.5 space-y-1.5">
-              <div class="h-1.5 w-full rounded-full bg-paper-ink/10"></div>
-              <div class="h-1.5 w-5/6 rounded-full bg-paper-ink/10"></div>
-              <div class="h-1.5 w-11/12 rounded-full bg-paper-ink/10"></div>
-              <div class="h-1.5 w-2/3 rounded-full bg-paper-ink/10"></div>
-            </div>
-            <div class="mt-3 flex items-center gap-1.5 text-[9px] text-sky-700">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 17.9H7z"/></svg>
-              {s.doc}
-            </div>
-          </div>
+          <div aria-hidden="true" class="sync-halo absolute -inset-3 rounded-xl bg-white/[0.07]"></div>
+          <ResumeCard docLabel={s.doc} />
         </div>
 
         <!-- devices -->
@@ -87,9 +75,9 @@ const devices = [
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d={d.icon} /></svg>
               </span>
               <span class="min-w-0">
-                <span class="block truncate text-[11px] font-medium text-ink/90">{d.name}</span>
-                <span class="sync-status flex items-center gap-1 text-[9.5px] text-faint">
-                  <span class="sync-dot h-1 w-1 rounded-full bg-faint" />
+                <span class="block truncate text-[11px] font-w510 text-ink-soft">{d.name}</span>
+                <span class="sync-status flex items-center gap-1 text-[9.5px] text-muted">
+                  <span class="sync-dot h-1 w-1 rounded-full bg-muted" />
                   {s.synced} · {s.justNow}
                 </span>
               </span>
@@ -102,9 +90,12 @@ const devices = [
 </section>
 
 <style>
-  /* dashes flow from the card toward each device, staggered */
+  /* dashes flow from the card toward each device, staggered.
+     Chrome layer — the diagram is ours, not the product's, so it stays
+     colourless. The paper card it flows from is Product-Sim and keeps its own
+     palette. */
   .sync-line {
-    stroke: color-mix(in srgb, var(--color-sky-400) 45%, transparent);
+    stroke: color-mix(in srgb, #fff 18%, transparent);
     stroke-width: 1.2;
     stroke-dasharray: 3 7;
     animation: sync-flow 3.3s linear infinite;
@@ -124,7 +115,7 @@ const devices = [
     50% { opacity: 1; transform: scale(1.015); }
   }
 
-  /* each device "receives" on its own beat: dot + text flash sky */
+  /* each device "receives" on its own beat: dot + text flash white */
   .sync-device .sync-dot {
     animation: sync-dot 3.3s ease-in-out infinite;
     animation-delay: var(--sync-delay);
@@ -134,12 +125,12 @@ const devices = [
     animation-delay: var(--sync-delay);
   }
   @keyframes sync-dot {
-    0%, 55%, 100% { background: var(--color-faint); box-shadow: none; }
-    12%, 40% { background: var(--color-sky-400); box-shadow: 0 0 8px color-mix(in srgb, var(--color-sky-400) 80%, transparent); }
+    0%, 55%, 100% { background: var(--color-muted); box-shadow: none; }
+    12%, 40% { background: var(--color-ink); box-shadow: 0 0 8px color-mix(in srgb, #fff 70%, transparent); }
   }
   @keyframes sync-text {
-    0%, 55%, 100% { color: var(--color-faint); }
-    12%, 40% { color: var(--color-sky-300, #7dd3fc); }
+    0%, 55%, 100% { color: var(--color-muted); }
+    12%, 40% { color: var(--color-ink); }
   }
 
   @media (prefers-reduced-motion: reduce) {

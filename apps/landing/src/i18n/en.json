@@ -1,9 +1,8 @@
 {
   "meta": {
     "title": "Magic Resume — the AI resume workbench",
-    "description": "A resume workbench where AI proposes edits in place and you decide. Guided drafting, role-match analysis, mock interviews — open-source core, cloud sync."
+    "description": "Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one. MIT-licensed core, 19 templates, six modes, cloud sync."
   },
-  "logoAlt": "Magic Resume",
   "nav": {
     "features": "Features",
     "workflow": "How it works",
@@ -20,7 +19,6 @@
     "subtitle": "AI proposes edits right on the page — accept what fits, skip the rest. Every change syncs to all your devices, instantly.",
     "ctaPrimary": "Start building",
     "ctaSecondary": "Star on GitHub",
-    "previewAlt": "The Magic Resume editor",
     "trust": ["Open-source MIT core", "Real-time cloud sync", "AI-native workbench"],
     "mockup": {
       "doc": "Kairo Chen's Resume",

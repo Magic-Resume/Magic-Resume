@@ -122,7 +122,7 @@ function Paper({
       <ul className="mt-[2px] space-y-[2px]">
         <li
           className={`text-[6.6px] leading-[1.5] text-paper-ink/85 transition-all duration-500 ${
-            probe ? 'rounded-sm bg-amber-200/70 px-1 ring-1 ring-amber-400/70' : ''
+            probe ? 'rounded-[4px] bg-amber-200/70 px-1 ring-1 ring-amber-400/70' : ''
           }`}
         >
           · Refactored critical resource-monitoring dashboards using Angular and RxJS, reducing memory leaks by 25%.
@@ -138,7 +138,7 @@ function Paper({
             flash
               ? 'font-semibold text-add'
               : gaps
-                ? 'rounded-sm bg-amber-200/60 px-1 text-paper-ink/85 ring-1 ring-amber-400/60'
+                ? 'rounded-[4px] bg-amber-200/60 px-1 text-paper-ink/85 ring-1 ring-amber-400/60'
                 : 'text-paper-ink/85'
           }`}
         >
@@ -176,7 +176,7 @@ function Paper({
           <div
             key={k}
             className={`flex items-baseline justify-between text-[6.6px] transition-all duration-500 ${
-              gaps && k === 'LLM orchestration' ? 'rounded-sm bg-amber-200/60 px-1 ring-1 ring-amber-400/60' : ''
+              gaps && k === 'LLM orchestration' ? 'rounded-[4px] bg-amber-200/60 px-1 ring-1 ring-amber-400/60' : ''
             }`}
           >
             <span className="font-semibold text-paper-ink/90">{k}</span>
@@ -317,7 +317,7 @@ export default function AiLabScene({ labels, lang }: { labels: Labels; lang: 'en
     if (m.kind === 'user') {
       return (
         <div className="flex justify-end">
-          <div className="linear-card flex max-w-[92%] items-center gap-1.5 rounded-lg px-2.5 py-1.5">
+          <div className="linear-card flex max-w-[92%] items-center gap-1.5 rounded-[8px] px-2.5 py-1.5">
             {m.tag && (
               <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium ${TAG_STYLE[flow] ?? 'bg-sky-400/15 text-sky-300'}`}>
                 {m.tag}
@@ -345,7 +345,7 @@ export default function AiLabScene({ labels, lang }: { labels: Labels; lang: 'en
         case 'question':
           return (
             <div className="space-y-1.5">
-              <div className="rounded-lg bg-amber-400/8 p-2.5 text-[10.5px] leading-relaxed text-amber-200/90 ring-1 ring-amber-400/20">
+              <div className="rounded-[8px] bg-amber-400/8 p-2.5 text-[10.5px] leading-relaxed text-amber-200/90 ring-1 ring-amber-400/20">
                 {F.interview.question}
               </div>
               <p className="text-[9.5px] text-faint">{F.interview.hint}</p>
@@ -353,9 +353,9 @@ export default function AiLabScene({ labels, lang }: { labels: Labels; lang: 'en
           );
         case 'form':
           return (
-            <div className="linear-card rounded-lg p-3">
+            <div className="linear-card rounded-[8px] p-3">
               <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-ink">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded bg-sky-400/10 text-[8px] text-sky-400">▤</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-[4px] bg-sky-400/10 text-[8px] text-sky-400">▤</span>
                 {F.optimize.formTitle}
               </div>
               <div className="mt-2 text-[8.5px] text-faint">{F.optimize.jd}</div>
@@ -385,7 +385,7 @@ export default function AiLabScene({ labels, lang }: { labels: Labels; lang: 'en
         case 'analyze':
           return (
             <div className="space-y-2">
-              <div className="linear-card rounded-lg p-3">
+              <div className="linear-card rounded-[8px] p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[10.5px] font-semibold text-ink">{F.analyze.cardTitle}</span>
                   <span className="font-mono text-[9px] text-faint">
@@ -495,7 +495,7 @@ export default function AiLabScene({ labels, lang }: { labels: Labels; lang: 'en
                   <div className="mt-4 text-[15px] font-semibold text-ink">{labels.welcome.title}</div>
                   <div className="mt-1.5 text-[11px] text-muted">{labels.welcome.sub}</div>
                   <div className="mt-5 flex items-center gap-1.5 text-[10px] text-faint">
-                    <kbd className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-muted">/</kbd>
+                    <kbd className="rounded-[4px] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-muted">/</kbd>
                     {labels.welcome.hint}
                   </div>
                 </motion.div>

@@ -19,7 +19,7 @@ export default function Faq({ items }: { items: { q: string; a: string }[] }) {
               onClick={() => setOpen(isOpen ? -1 : i)}
               className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-4 text-left transition-colors hover:bg-white/[0.03]"
             >
-              <span className={`text-[15px] font-medium transition-colors ${isOpen ? 'text-ink' : 'text-ink/80'}`}>
+              <span className={`text-[15px] font-w510 transition-colors ${isOpen ? 'text-ink' : 'text-ink-soft'}`}>
                 {item.q}
               </span>
               <svg
@@ -31,7 +31,7 @@ export default function Faq({ items }: { items: { q: string; a: string }[] }) {
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`shrink-0 text-faint transition-transform duration-300 ${isOpen ? 'rotate-45 text-sky-400' : ''}`}
+                className={`shrink-0 text-muted transition-transform duration-300 ${isOpen ? 'rotate-45 text-ink' : ''}`}
                 style={{ transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
                 aria-hidden
               >

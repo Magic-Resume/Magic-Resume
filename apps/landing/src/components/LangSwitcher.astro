@@ -5,7 +5,7 @@ const current = getLocaleFromUrl(Astro.url);
 ---
 
 <div
-  class="flex items-center rounded-full border border-hairline bg-surface/60 p-0.5 text-[12px]"
+  class="flex items-center rounded-full border border-hair bg-surface/60 p-0.5 text-[12px]"
 >
   {
     LOCALES.map((loc) => (
@@ -13,10 +13,10 @@ const current = getLocaleFromUrl(Astro.url);
         href={`/${loc}`}
         aria-current={loc === current ? 'true' : undefined}
         class:list={[
-          'rounded-full px-2.5 py-1 font-medium transition-colors',
+          'rounded-full px-2.5 py-1 font-w510 transition-colors',
           loc === current
             ? 'bg-ink/10 text-ink'
-            : 'text-faint hover:text-muted',
+            : 'text-muted hover:text-ink',
         ]}
       >
         {localeLabels[loc]}

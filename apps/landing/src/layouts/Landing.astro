@@ -1,20 +1,38 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import '@/styles/global.css';
-import type { Locale } from '@/i18n/ui';
+import { DEFAULT_LOCALE, LOCALES, type Copy, type Locale } from '@/i18n/ui';
+import Seo from '@/components/Seo.astro';
 
 interface Props {
   locale: Locale;
   title: string;
   description: string;
+  copy: Copy;
 }
-const { locale, title, description } = Astro.props;
+const { locale, title, description, copy } = Astro.props;
 
-const canonical = new URL(Astro.url.pathname, Astro.site).href;
-const altEn = new URL('/en', Astro.site).href;
-const altZh = new URL('/zh', Astro.site).href;
+// Astro's directory build format makes `Astro.url.pathname` "/zh/", while the
+// hreflang alternates and the sitemap both address "/zh". To a search engine
+// those are two URLs, and a canonical that disagrees with its own hreflang set
+// is a configuration error — so normalise to the slash-less form everywhere.
+const canonicalPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const canonical = new URL(canonicalPath, Astro.site).href;
 const htmlLang = locale === 'zh' ? 'zh-CN' : 'en';
-const ogImage = new URL('/magic-resume-preview.png', Astro.site).href;
+
+// hreflang is derived from LOCALES / DEFAULT_LOCALE rather than written out, so
+// changing the default language (spec D1) is one constant instead of a hunt
+// through layout, sitemap and vercel.json. A canonical that disagrees with
+// x-default is read as a configuration error, and it fails silently.
+const alternates = LOCALES.map((loc) => ({
+  hreflang: loc === 'zh' ? 'zh-CN' : loc,
+  href: new URL(`/${loc}`, Astro.site).href,
+}));
+const xDefault = new URL(`/${DEFAULT_LOCALE}`, Astro.site).href;
+// Purpose-built share card: 1200×630 (the aspect every platform crops to) as
+// JPEG. The old source was a 2940×1592 PNG at 691 KB — large enough that
+// crawlers with a fetch budget would time out and render no card at all.
+const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
 ---
 
 <!doctype html>
@@ -26,19 +44,37 @@ const ogImage = new URL('/magic-resume-preview.png', Astro.site).href;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="en" href={altEn} />
-    <link rel="alternate" hreflang="zh-CN" href={altZh} />
-    <link rel="alternate" hreflang="x-default" href={altEn} />
+    {
+      alternates.map((alt) => (
+        <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={xDefault} />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={title} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={htmlLang === 'zh-CN' ? 'zh_CN' : 'en_US'} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
 
-    <meta name="theme-color" content="#0a0b0c" />
+    <meta name="theme-color" content="#08090a" />
     <meta name="generator" content={Astro.generator} />
+
+    <Seo
+      copy={copy}
+      locale={locale}
+      canonical={canonical}
+      siteUrl={new URL('/', Astro.site).href}
+      ogImage={ogImage}
+    />
+
     <ClientRouter />
 
     <script>
@@ -47,6 +83,12 @@ const ogImage = new URL('/magic-resume-preview.png', Astro.site).href;
     </script>
   </head>
   <body class="min-h-screen antialiased">
+    <a
+      href="#main"
+      class="sr-only rounded-md bg-ink px-4 py-2 text-[13px] font-w510 text-workbench focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
+    >
+      {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
+    </a>
     <slot />
 
     <script>

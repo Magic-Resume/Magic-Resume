@@ -11,7 +11,9 @@ interface Props {
 const { copy, locale } = Astro.props;
 const h = copy.hero;
 
-// Split the headline so the accent phrase can be tinted sky (solid, not gradient).
+// Split the headline so the accent phrase can be emphasised. The emphasis is
+// tonal, not chromatic — white against mist. Colour in the chrome layer is
+// reserved for the one accent button per view.
 const idx = h.titleAccent ? h.title.indexOf(h.titleAccent) : -1;
 const pre = idx >= 0 ? h.title.slice(0, idx) : h.title;
 const accent = idx >= 0 ? h.titleAccent : '';
@@ -23,15 +25,12 @@ const post = idx >= 0 ? h.title.slice(idx + h.titleAccent.length) : '';
 
   <div class="relative mx-auto max-w-[1400px] px-5 pt-40 md:px-6 md:pt-52 lg:pt-56">
     <div class="mx-auto flex max-w-3xl flex-col items-center text-center">
-      <h1
-        class="reveal font-display text-[clamp(2.35rem,6vw,3.9rem)] font-semibold leading-[1.06] tracking-[-0.025em] text-ink"
-        style="--reveal-delay:1"
-      >
-        {pre}<span class="text-sky-400">{accent}</span>{post}
+      <h1 class="reveal type-display text-ink-soft" style="--reveal-delay:1">
+        {pre}<span class="text-ink">{accent}</span>{post}
       </h1>
 
       <p
-        class="reveal mt-6 max-w-xl text-[16px] leading-relaxed text-muted md:text-[17px]"
+        class="reveal type-body-lg mt-6 max-w-xl text-muted"
         style="--reveal-delay:2"
       >
         {h.subtitle}
@@ -39,8 +38,8 @@ const post = idx >= 0 ? h.title.slice(idx + h.titleAccent.length) : '';
 
       <div class="reveal mt-8 flex flex-wrap items-center justify-center gap-3" style="--reveal-delay:3">
         <a
-          href={dashboardLink('hero')}
-          class="group flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-workbench transition-opacity hover:opacity-85"
+          href={dashboardLink('hero', locale)}
+          class="btn-accent group flex items-center gap-2 rounded-md px-6 py-3 text-[15px] font-w510"
         >
           {h.ctaPrimary}
           <Icon name="arrow-right" size={16} class="transition-transform group-hover:translate-x-0.5" />
@@ -49,20 +48,20 @@ const post = idx >= 0 ? h.title.slice(idx + h.titleAccent.length) : '';
           href={GITHUB.repo}
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center gap-2 rounded-lg border border-hair bg-surface/50 px-5 py-2.5 text-[14px] font-medium text-muted transition-colors hover:text-ink"
+          class="flex items-center gap-2 rounded-md border border-hair px-5 py-3 text-[14px] text-ink-soft transition-colors hover:border-hairline-strong hover:text-ink"
         >
           <Icon name="github" size={16} />
           {h.ctaSecondary}
         </a>
       </div>
 
-      <ul class="reveal mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-faint" style="--reveal-delay:4">
+      <ul class="reveal mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-muted" style="--reveal-delay:4">
         {
           h.trust.map((t, i) => (
             <>
               {i > 0 && <li aria-hidden="true" class="h-3 w-px bg-hairline" />}
               <li class="flex items-center gap-1.5">
-                <Icon name="check" size={13} class="text-sky-400" />
+                <Icon name="check" size={13} class="text-muted" />
                 {t}
               </li>
             </>
@@ -74,7 +73,14 @@ const post = idx >= 0 ? h.title.slice(idx + h.titleAccent.length) : '';
     <!-- Product frame: Linear-style hairlines without an extra backing plate. -->
     <div class="reveal relative mx-auto mt-16 max-w-[1280px] md:mt-20" style="--reveal-delay:3">
       <div class="linear-frame">
-        <EditorMockup client:load labels={h.mockup} lang={locale} />
+        {/*
+          `client:idle`, not `client:load`: Astro already server-renders this
+          mockup, so the frame and its contents paint with the rest of the page.
+          Hydration only turns on the template/colour controls and the ambient
+          animation — none of which is worth putting react-dom (72 KB gzip with
+          its dependencies) on the critical path for a marketing page.
+        */}
+        <EditorMockup client:idle labels={h.mockup} lang={locale} />
       </div>
     </div>
   </div>

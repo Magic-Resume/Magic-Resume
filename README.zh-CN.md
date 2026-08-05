@@ -5,7 +5,7 @@
 
   <h1>Magic Resume</h1>
 
-  <p><strong>AI 原生简历平台。</strong><br/>构建、分析、优化简历 —— 还能让 AI 编程工具直接帮你编辑。</p>
+  <p><strong>开源的 AI 简历工作台。</strong><br/>AI 就地提出修改建议，你逐条决定采纳或跳过。</p>
 
   <p>
     <a href="https://magic-resume.cn"><strong>立即开始 »</strong></a>
@@ -14,7 +14,7 @@
     &nbsp;·&nbsp;
     <a href="https://magic-resume.cn">官方网站</a>
     &nbsp;·&nbsp;
-    <a href="https://github.com/LinMoQC/Magic-Resume/issues">问题反馈</a>
+    <a href="https://github.com/Magic-Resume/Magic-Resume/issues">问题反馈</a>
   </p>
 
   <!-- SHIELD GROUP -->
@@ -34,12 +34,27 @@
 
 <br/>
 
-**Magic Resume** 是一个现代化的 AI 原生简历平台。它把实时可视化编辑器与多模型 AI 结合在一起，并更进一步 —— 内置原生 **MCP 服务**，让 AI 编程工具（Claude Code、Cursor、Windsurf）无需猜测数据结构即可安全读取与修改你的简历。
+**Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。** MIT 协议内核，19 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
 
-免费、开源，且完全在浏览器中运行 —— 无需账号、无需后端、无需数据库。
+它把实时可视化编辑器与多模型 AI 结合在一起，并更进一步 —— 内置原生 **MCP 服务**，让 AI 编程工具（Claude Code、Cursor、Windsurf）无需猜测数据结构即可安全读取与修改你的简历。
+
+## 自部署版 vs 云端版
+
+两种用法功能相同，差别只在数据存在哪里、AI 由谁供给。
+
+| | 自部署（本仓库） | 云端版（magic-resume.cn） |
+|---|---|---|
+| 授权 | MIT，永久免费 | 免费额度 + 付费计划 |
+| 账号 | 不需要 | 需要 |
+| 数据存储 | 仅本机浏览器 IndexedDB | 加密云端存储，随时完整导出 |
+| 多设备同步 | 不支持 | 默认开启 |
+| 版本历史 | 本地快照 | 云端保留，可回滚 |
+| AI 能力 | 自带 API Key | 内置，开箱即用 |
+| 后端依赖 | 无需后端与数据库 | 由官方托管 |
+| 模板 | 19 套，完全相同 | 19 套，完全相同 |
 
 > [!NOTE]
-> 默认全部本地运行。除非你主动开启云同步，简历数据都只保存在你自己的浏览器（IndexedDB）里。
+> 自部署版全部在浏览器内运行，简历数据只保存在你自己的机器上。云端版默认开启多设备同步，数据加密传输与存储，随时可完整导出。
 
 ---
 
@@ -48,7 +63,7 @@
 **制作 —— 顺手的可视化编辑**
 
 - **实时预览** —— 输入即所见，改动立刻呈现。
-- **12 套专业模板** —— ATS 友好，颜色、字体、排版全可控。
+- **19 套专业模板** —— ATS 友好，颜色、字体、排版全可控。
 - **深度自定义** —— 22+ 字体、间距与布局调节。
 - **版本历史** —— 随时快照与回滚到任意历史版本。
 - **简历分享** —— 通过唯一链接分享，支持 查看 / 评论 / 编辑 权限。
@@ -79,9 +94,9 @@
 
 ## 简历模板
 
-12 套精心打磨、ATS 友好的模板，每套均可完全自定义（颜色、字体、间距、排版）：
+19 套精心打磨、ATS 友好的模板，每套均可完全自定义（颜色、字体、间距、排版）：
 
-`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus`
+`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo`
 
 ---
 
@@ -136,7 +151,7 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
 Magic Resume 完全在浏览器中运行 —— 无需后端、无需数据库、无需账号。
 
 ```bash
-git clone https://github.com/LinMoQC/Magic-Resume.git
+git clone https://github.com/Magic-Resume/Magic-Resume.git
 cd Magic-Resume
 cp apps/web/.env.example apps/web/.env.local   # 设置 NEXT_PUBLIC_APP_MODE=self-hosted
 pnpm install
@@ -153,7 +168,7 @@ pnpm run dev
 
 **云模式**（鉴权、云同步、分享）可一键部署：
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLinMoQC%2FMagic-Resume)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
 
 > [!TIP]
 > 云模式需在 Vercel 面板配置 `NEXT_PUBLIC_APP_MODE=cloud`、`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` 与 `CLERK_SECRET_KEY`。
@@ -209,25 +224,25 @@ pnpm --filter @magic-resume/mcp build
 
 欢迎任何形式的贡献 —— 修复 Bug、新增模板、完善文档、补充翻译或开发新功能。
 
-请先阅读 **[贡献指南](./CONTRIBUTING.zh-CN.md)** —— 其中包含本地启动、分支流程，以及强制执行的 **gitmoji + Conventional Commits** 提交规范。若是 Bug 或新想法，也欢迎先开一个 [Issue](https://github.com/LinMoQC/Magic-Resume/issues) 讨论。
+请先阅读 **[贡献指南](./CONTRIBUTING.zh-CN.md)** —— 其中包含本地启动、分支流程，以及强制执行的 **gitmoji + Conventional Commits** 提交规范。若是 Bug 或新想法，也欢迎先开一个 [Issue](https://github.com/Magic-Resume/Magic-Resume/issues) 讨论。
 
-<a href="https://github.com/LinMoQC/Magic-Resume/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=LinMoQC/Magic-Resume" alt="contributors" />
+<a href="https://github.com/Magic-Resume/Magic-Resume/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Magic-Resume/Magic-Resume" alt="contributors" />
 </a>
 
 ---
 
 ## Star 趋势
 
-<a href="https://star-history.com/#LinMoQC/Magic-Resume&Date">
-  <img src="https://api.star-history.com/svg?repos=LinMoQC/Magic-Resume&type=Date" alt="Star History Chart" width="600" />
+<a href="https://star-history.com/#Magic-Resume/Magic-Resume&Date">
+  <img src="https://api.star-history.com/svg?repos=Magic-Resume/Magic-Resume&type=Date" alt="Star History Chart" width="600" />
 </a>
 
 ---
 
 <div align="center">
 
-版权所有 © 2026 [Magic Resume Team](https://github.com/LinMoQC) · 基于 [MIT](./LICENSE) 许可证开源。
+版权所有 © 2026 [Magic Resume Team](https://github.com/Magic-Resume) · 基于 [MIT](./LICENSE) 许可证开源。
 
 </div>
 
@@ -236,13 +251,13 @@ pnpm --filter @magic-resume/mcp build
 [official-site]: https://magic-resume.cn
 [vercel-shield]: https://img.shields.io/badge/vercel-online-55b467?labelColor=black&logo=vercel&style=flat-square
 [vercel-link]: https://magic-resume.cn
-[github-contributors-shield]: https://img.shields.io/github/contributors/LinMoQC/Magic-Resume?color=c4f042&labelColor=black&style=flat-square
-[github-contributors-link]: https://github.com/LinMoQC/Magic-Resume/graphs/contributors
-[github-forks-shield]: https://img.shields.io/github/forks/LinMoQC/Magic-Resume?color=8ae8ff&labelColor=black&style=flat-square
-[github-forks-link]: https://github.com/LinMoQC/Magic-Resume/network/members
-[github-stars-shield]: https://img.shields.io/github/stars/LinMoQC/Magic-Resume?color=ffcb47&labelColor=black&style=flat-square
-[github-stars-link]: https://github.com/LinMoQC/Magic-Resume/stargazers
-[github-issues-shield]: https://img.shields.io/github/issues/LinMoQC/Magic-Resume?color=ff80eb&labelColor=black&style=flat-square
-[github-issues-link]: https://github.com/LinMoQC/Magic-Resume/issues
+[github-contributors-shield]: https://img.shields.io/github/contributors/Magic-Resume/Magic-Resume?color=c4f042&labelColor=black&style=flat-square
+[github-contributors-link]: https://github.com/Magic-Resume/Magic-Resume/graphs/contributors
+[github-forks-shield]: https://img.shields.io/github/forks/Magic-Resume/Magic-Resume?color=8ae8ff&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/Magic-Resume/Magic-Resume/network/members
+[github-stars-shield]: https://img.shields.io/github/stars/Magic-Resume/Magic-Resume?color=ffcb47&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/Magic-Resume/Magic-Resume/stargazers
+[github-issues-shield]: https://img.shields.io/github/issues/Magic-Resume/Magic-Resume?color=ff80eb&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/Magic-Resume/Magic-Resume/issues
 [github-license-shield]: https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square
-[github-license-link]: https://github.com/LinMoQC/Magic-Resume/blob/master/LICENSE
+[github-license-link]: https://github.com/Magic-Resume/Magic-Resume/blob/master/LICENSE
