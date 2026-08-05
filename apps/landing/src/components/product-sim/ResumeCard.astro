@@ -1,0 +1,47 @@
+---
+/**
+ * The résumé document, drawn at card scale — the source of truth the sync
+ * diagram flows out of.
+ *
+ * PRODUCT-SIM LAYER (see design.md §1). Everything under `product-sim/` and
+ * `islands/` renders the product as it actually looks, so it keeps the
+ * product's palette: warm paper, sky ink, revision red/green. The chrome-layer
+ * rules — neutral greys, acid-lime accent, four radii, weight ≤590 — stop at
+ * this directory boundary, which is what makes the CI grep in design.md §4.1
+ * able to check the chrome layer without tripping over deliberate exceptions.
+ *
+ * Do not neutralise this card. A recoloured screenshot is an illustration.
+ */
+interface Props {
+  /** Localised label for the document-type row, e.g. "简历". */
+  docLabel: string;
+}
+const { docLabel } = Astro.props;
+---
+
+<div class="relative rounded-xl bg-paper p-3.5 text-paper-ink shadow-[0_18px_50px_-16px_rgb(0_0_0/0.8)]">
+  <div class="text-[12px] font-semibold">李 明</div>
+  <div class="text-[9px] text-paper-muted">Frontend Engineer</div>
+  <div class="mt-2.5 space-y-1.5">
+    <div class="h-1.5 w-full rounded-full bg-paper-ink/10"></div>
+    <div class="h-1.5 w-5/6 rounded-full bg-paper-ink/10"></div>
+    <div class="h-1.5 w-11/12 rounded-full bg-paper-ink/10"></div>
+    <div class="h-1.5 w-2/3 rounded-full bg-paper-ink/10"></div>
+  </div>
+  <div class="mt-3 flex items-center gap-1.5 text-[9px] text-sky-700">
+    <svg
+      width="9"
+      height="9"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 17.9H7z" />
+    </svg>
+    {docLabel}
+  </div>
+</div>

@@ -1,12 +1,13 @@
 ---
-import type { Copy } from '@/i18n/ui';
+import type { Copy, Locale } from '@/i18n/ui';
 import { dashboardLink, GITHUB } from '@/consts';
 import { interpolate } from '@/i18n/ui';
 
 interface Props {
   copy: Copy;
+  locale: Locale;
 }
-const { copy } = Astro.props;
+const { copy, locale } = Astro.props;
 const f = copy.footer;
 const year = new Date().getFullYear();
 ---
@@ -21,29 +22,31 @@ const year = new Date().getFullYear();
               src="/magic-resume-mark.png"
               alt=""
               aria-hidden="true"
+              width="28"
+              height="28"
               class="h-7 w-7 object-contain"
             />
           </span>
-          <span class="font-display text-[14px] font-semibold tracking-tight text-ink">
+          <span class="text-[14px] font-w510 tracking-tight text-ink">
             Magic Resume
           </span>
         </div>
-        <p class="mt-4 text-[13px] leading-relaxed text-faint">{f.brandSubtitle}</p>
+        <p class="mt-4 text-[13px] leading-relaxed text-muted">{f.brandSubtitle}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-12 sm:gap-16">
         <div class="flex flex-col gap-3">
-          <h3 class="text-[13px] font-semibold text-ink">{f.product}</h3>
-          <a class="text-[13px] text-faint transition-colors hover:text-ink" href={dashboardLink('footer')}>
+          <h3 class="text-[13px] font-w510 text-ink">{f.product}</h3>
+          <a class="text-[13px] text-muted transition-colors hover:text-ink" href={dashboardLink('footer', locale)}>
             {f.builder}
           </a>
         </div>
         <div class="flex flex-col gap-3">
-          <h3 class="text-[13px] font-semibold text-ink">{f.project}</h3>
-          <a class="text-[13px] text-faint transition-colors hover:text-ink" href={GITHUB.repo} target="_blank" rel="noopener noreferrer">
+          <h3 class="text-[13px] font-w510 text-ink">{f.project}</h3>
+          <a class="text-[13px] text-muted transition-colors hover:text-ink" href={GITHUB.repo} target="_blank" rel="noopener noreferrer">
             {f.github}
           </a>
-          <a class="text-[13px] text-faint transition-colors hover:text-ink" href={GITHUB.issues} target="_blank" rel="noopener noreferrer">
+          <a class="text-[13px] text-muted transition-colors hover:text-ink" href={GITHUB.issues} target="_blank" rel="noopener noreferrer">
             {f.issues}
           </a>
         </div>
@@ -51,7 +54,7 @@ const year = new Date().getFullYear();
     </div>
 
     <div class="mt-12 border-t border-hair pt-6">
-      <p class="text-[12px] text-faint">{interpolate(f.copyright, { year })}</p>
+      <p class="text-[12px] text-muted">{interpolate(f.copyright, { year })}</p>
     </div>
   </div>
 </footer>
