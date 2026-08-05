@@ -735,8 +735,8 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
   const bodyFontSize = cssSizeToPoints(context.typography.fontSize.sm, 9);
   const ratios = getThreeColumnRatio(component);
   const shiftCenterToRightWhenRightEmpty = component.props?.shiftCenterToRightWhenRightEmpty === true;
-  const shiftCenterToEmptyRight = (values: [string, string, string]): [string, string, string] => (
-    shiftCenterToRightWhenRightEmpty && values[1] && !values[2]
+  const shiftCenterToEmptyRight = (values: [string, string, string], enabled: boolean): [string, string, string] => (
+    enabled && values[1] && !values[2]
       ? [values[0], '', values[1]]
       : values
   );
@@ -754,16 +754,19 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
       <View style={{ gap: cssSizeToPoints(context.spacing.sm, 4) }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
-          const titles = shiftCenterToEmptyRight([
+          const rawTitles: [string, string, string] = [
             getFieldValue(record, fields.leftTitle),
             getFieldValue(record, fields.centerTitle),
             getFieldValue(record, fields.rightTitle),
-          ]);
-          const subtitles = shiftCenterToEmptyRight([
+          ];
+          const shouldShiftCenter = shiftCenterToRightWhenRightEmpty && Boolean(rawTitles[1]) && !rawTitles[2];
+          const titles = shiftCenterToEmptyRight(rawTitles, shouldShiftCenter);
+          const rawSubtitles: [string, string, string] = [
             getFieldValue(record, fields.leftSubtitle),
             getFieldValue(record, fields.centerSubtitle),
             getFieldValue(record, fields.rightSubtitle),
-          ]);
+          ];
+          const subtitles = shiftCenterToEmptyRight(rawSubtitles, shouldShiftCenter);
           const description = getFieldValue(record, fields.description);
 
           return (

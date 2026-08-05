@@ -16,11 +16,16 @@ export function WysiwygContent({ dirtyHtml, className }: Props) {
       className={`wysiwyg ${className || ''}`}
       dangerouslySetInnerHTML={{ __html: cleanHtml }}
       style={{
+        boxSizing: 'border-box',
         color: 'inherit',
+        display: 'block',
         maxWidth: '100%',
         minWidth: 0,
         overflowWrap: 'anywhere',
+        whiteSpace: 'normal',
+        width: '100%',
         wordBreak: 'break-word',
+        lineHeight: 'max(1.5, var(--line-height, 1.5))',
       }}
     />
   );

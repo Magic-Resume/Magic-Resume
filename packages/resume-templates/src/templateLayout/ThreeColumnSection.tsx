@@ -87,16 +87,19 @@ export const ThreeColumnSection = React.memo(function ThreeColumnSection({
         {items.map((item, index) => {
           const itemId = item.id != null ? String(item.id) : null;
           const description = getFieldEntry(item, fieldMap.description);
-          const titles = shiftCenterToEmptyRight([
+          const rawTitles: [ColumnValue, ColumnValue, ColumnValue] = [
             getFieldValue(item, fieldMap.leftTitle),
             getFieldValue(item, fieldMap.centerTitle),
             getFieldValue(item, fieldMap.rightTitle),
-          ], shiftCenterToRightWhenRightEmpty);
-          const subtitles = shiftCenterToEmptyRight([
+          ];
+          const shouldShiftCenter = shiftCenterToRightWhenRightEmpty && Boolean(rawTitles[1]) && !rawTitles[2];
+          const titles = shiftCenterToEmptyRight(rawTitles, shouldShiftCenter);
+          const rawSubtitles: [ColumnValue, ColumnValue, ColumnValue] = [
             getFieldValue(item, fieldMap.leftSubtitle),
             getFieldValue(item, fieldMap.centerSubtitle),
             getFieldValue(item, fieldMap.rightSubtitle),
-          ], shiftCenterToRightWhenRightEmpty);
+          ];
+          const subtitles = shiftCenterToEmptyRight(rawSubtitles, shouldShiftCenter);
           const hasSubtitles = subtitles.some(Boolean);
 
           return (

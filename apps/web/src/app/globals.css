@@ -309,6 +309,17 @@ body.grabbing, body.grabbing * {
   list-style-type: decimal;
 }
 
+.wysiwyg {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  width: 100%;
+  word-break: break-word;
+}
+
 .wysiwyg blockquote {
   border-left: 3px solid currentColor;
   margin: 0.5em 0;
@@ -337,7 +348,10 @@ body.grabbing, body.grabbing * {
 .wysiwyg h4, .wysiwyg h5, .wysiwyg h6 { font-size: 1em; }
 
 .wysiwyg p {
-  line-height: 1.5;
+  line-height: max(1.5, var(--line-height, 1.5));
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .wysiwyg a {
