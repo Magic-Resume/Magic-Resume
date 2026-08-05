@@ -1047,7 +1047,7 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
         </Page>
       ) : (
         <Page size={pageSize} style={[baseStyle, pageMinHeightStyle]}>
-          <View style={{ padding, gap: sectionGap, maxWidth: '100%', minWidth: 0, width: '100%' }}>
+          <View style={{ padding, gap: sectionGap }}>
             {main.map((component) => <ComponentBlock key={component.id} component={component} data={data} sidebar={false} context={context} />)}
           </View>
         </Page>
