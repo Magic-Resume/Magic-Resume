@@ -1489,6 +1489,32 @@
       "errorTitle": "Could not confirm this order",
       "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
       "backToDashboard": "Back to dashboard"
+    },
+    "checkout": {
+      "summaryHeading": "Purchase",
+      "planRow": "Plan",
+      "amountRow": "Plan price",
+      "feeRow": "Tax / fees",
+      "totalRow": "Total due",
+      "payHeading": "Payment details",
+      "detailsToggle": "Order details",
+      "accountRow": "Account",
+      "methodHeading": "Choose a payment method",
+      "payNow": "Pay now",
+      "paying": "Taking you to payment…",
+      "back": "Back",
+      "agree": "By continuing you confirm you have read and agree to our",
+      "and": "and",
+      "termsLabel": "Terms of Service",
+      "privacyLabel": "Privacy Policy",
+      "secure": "Payment happens on the channel’s own page — we never see your payment details",
+      "loading": "Loading your order",
+      "missingPlan": "The link carries no plan, so there is nothing to check out.",
+      "planNotFound": "We could not find that plan — it may have been withdrawn.",
+      "noMethod": "No payment method is available in this region yet.",
+      "notSoldHere": "This plan is not sold in this region.",
+      "notBuyable": "This plan cannot be purchased right now.",
+      "loadFailed": "Could not load the plan. Please try again."
     }
   },
   "aiLab": {

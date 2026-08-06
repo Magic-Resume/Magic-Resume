@@ -1489,6 +1489,32 @@
       "errorTitle": "无法确认订单",
       "missingOrder": "链接里没有订单号，无法查询支付结果。",
       "backToDashboard": "返回工作台"
+    },
+    "checkout": {
+      "summaryHeading": "购买",
+      "planRow": "套餐类型",
+      "amountRow": "套餐费用",
+      "feeRow": "税费 / 手续费",
+      "totalRow": "应付总额",
+      "payHeading": "支付详情",
+      "detailsToggle": "订单详情",
+      "accountRow": "账户",
+      "methodHeading": "选择支付方式",
+      "payNow": "立即结账",
+      "paying": "正在前往支付…",
+      "back": "返回",
+      "agree": "点击「立即结账」即表示你已阅读并同意",
+      "and": "与",
+      "termsLabel": "用户协议",
+      "privacyLabel": "隐私政策",
+      "secure": "支付在支付渠道自己的页面完成，我们不接触你的付款信息",
+      "loading": "正在载入订单",
+      "missingPlan": "链接里没有套餐信息，无法结账。",
+      "planNotFound": "找不到这个套餐，它可能已经下架。",
+      "noMethod": "当前地区暂时没有可用的支付方式。",
+      "notSoldHere": "这个套餐在当前地区不出售。",
+      "notBuyable": "这个套餐当前无法购买。",
+      "loadFailed": "载入套餐失败，请稍后重试。"
     }
   },
   "aiLab": {
