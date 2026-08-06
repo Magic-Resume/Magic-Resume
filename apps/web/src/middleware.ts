@@ -20,6 +20,12 @@ const isProtectedRoute = createRouteMatcher([
   '/billing(.*)',
 ]);
 
+// The mirror of the rule above: these are the only routes that require *not*
+// being signed in. Catch-alls, because Clerk drives its own sub-routes under
+// both (`/sign-in/factor-one`, …) and a signed-in visitor has no business on
+// any of them.
+const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
+
 /**
  * Where to send someone back after they sign in.
  *
@@ -43,11 +49,43 @@ function signInUrl(req: NextRequest): string {
   return url.toString();
 }
 
+/**
+ * Where a *signed-in* visitor to the sign-in page should land instead.
+ *
+ * `redirect_url` is honoured because `signInUrl` above put it there: someone
+ * whose session lapsed mid-checkout, signed in, and came back to `/sign-in`
+ * from history should still reach the order they were paying for rather than a
+ * generic dashboard.
+ *
+ * But unlike `signInUrl`, this value arrives from the query string, so it is
+ * attacker-controlled and an unchecked `NextResponse.redirect` on it is an open
+ * redirect — the classic phishing hop through a domain the victim trusts. Only
+ * a same-origin *path* is accepted: it must start with a single `/`, and may
+ * not contain a backslash, which some browsers normalise to `/` and would turn
+ * `/\evil.com` into a protocol-relative jump off-site.
+ */
+function afterAuthUrl(req: NextRequest): URL {
+  const target = req.nextUrl.searchParams.get('redirect_url');
+  const safe =
+    target &&
+    target.startsWith('/') &&
+    !target.startsWith('//') &&
+    !target.includes('\\');
+  return new URL(safe ? target : '/dashboard', req.url);
+}
+
 // cloud: unauthenticated users on protected routes go to the sign-in page
-// (unauthenticatedUrl avoids Clerk's default 404 on protect).
+// (unauthenticatedUrl avoids Clerk's default 404 on protect); signed-in users
+// are kept off the sign-in/sign-up pages, which otherwise render a login form
+// to somebody who is already logged in.
 const cloudHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect({ unauthenticatedUrl: signInUrl(req) });
+    return;
+  }
+  if (isAuthRoute(req)) {
+    const { userId } = await auth();
+    if (userId) return NextResponse.redirect(afterAuthUrl(req));
   }
 });
 
