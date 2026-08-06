@@ -114,7 +114,8 @@ Format: `<emoji> <type>(<scope>?): <subject>` — e.g. `:sparkles: feat(web): ad
 ## Guardrails
 
 - Do not modify Clerk auth (`clerkMiddleware`, `ClerkProvider`, `useAuth`, cloud sync) unless explicitly requested.
-  - Recorded exception: the sign-in redirect carries `redirect_url` (`middleware.ts` → `afterAuthUrl`). `/billing(.*)` is a protected route, and without it a lapsed session loses `?orderId=` — the return page then cannot poll or sync, which is the only thing that captures a PayPal payment from the browser. Same-origin paths only.
+  - Recorded exception: the sign-in redirect carries `redirect_url` (`middleware.ts` → `signInUrl`). `/billing(.*)` is a protected route, and without it a lapsed session loses `?orderId=` — the return page then cannot poll or sync, which is the only thing that captures a PayPal payment from the browser. Same-origin paths only.
+  - Recorded exception: signed-in users are redirected away from `/sign-in(.*)` and `/sign-up(.*)` (`middleware.ts` → `isAuthRoute` / `afterAuthUrl`). Rendering a login form to someone already logged in is the bug this fixes. It honours the `redirect_url` the exception above puts there, so a lapsed-then-restored session still lands on the order it was paying for — and it accepts **same-origin paths only** (leading single `/`, no backslash), because unlike `signInUrl` this value comes off the query string and an unchecked redirect there is an open redirect.
 - Do not add new deployment modes or local/cloud switches unless explicitly requested.
 - MCP tools must remain schema-aware and patch-based. The `@magic-resume/mcp` package must not import from Next.js, React components, browser APIs, or IndexedDB.
 - When adding shared schema or type changes, prefer `packages/resume-schema` over duplicating shapes in `apps/web`.
