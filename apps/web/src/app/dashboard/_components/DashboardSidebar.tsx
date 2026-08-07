@@ -250,7 +250,16 @@ function NavItem({
         )}
         style={labelStyle}
       >
-        {label}
+        {/* 文案要等挂载后才由 i18n 解析出来（见 `label()`）。这段空窗里画一条骨架，
+            而不是留空：留空得到的正是账号页脚特意避免的那个形态——一个没有标签的
+            孤零零图标，和右侧主区域的骨架屏并排时更像渲染坏了而不是在加载。
+            条子与 `AccountRowSkeleton` 同构，整条侧边栏因此说同一句话。 */}
+        {label ?? (
+          <span
+            aria-hidden
+            className="my-1 block h-3 w-16 animate-pulse rounded bg-white/[0.06]"
+          />
+        )}
       </span>
     </Link>
   );
