@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Tailwind v4 从构建的 cwd(apps/web)自动探测源文件,workspace 包不在范围内——它们的
+   工具类只有在本 app 恰好也用了同一个类时才碰巧存在,少样式时不报错(同 postcss/
+   commercial-overlay-sources.cjs 记的那个失败模式)。扫 src 而非 dist:dist 被
+   gitignore,且不保证已构建。新增发布 UI 的 workspace 包时必须往这里加一行。 */
+@source "../../../../packages/genui/src";
+@source "../../../../packages/resume-templates/src";
+
 /* 让 Tailwind 的 `dark:` 变体跟随 <html> 上的 .dark class(由 ThemeProvider / 内联脚本控制),
    而非默认的 prefers-color-scheme。深色为产品默认。 */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -284,10 +291,11 @@ body.grabbing, body.grabbing * {
   cursor: grabbing !important;
 }
 
-/* Classic template primary color */
-.text-primary {
-  color: #3b82f6;
-}
+/* 这里曾有一条 `.text-primary { color: #3b82f6 }`（注释写着给 classic 模板用）。
+   删掉的原因：@theme inline 里的 --color-primary 会让 Tailwind 生成同名工具类，
+   这条手写规则排在后面就把语义 token 整个盖掉——凡是用 text-primary 的正文都变成了
+   蓝色。模板侧早已不用它，唯一被它影响的是 button 的 link 变体（已改为显式取色）。
+   往 @theme inline 里加 token 时，先确认没有同名的手写规则。 */
 
 /* @layer components {
   .add-btn {
@@ -569,51 +577,6 @@ button {
   position: relative;
 }
 
-.ai-loading-effect {
-  --ai-color: 56, 189, 248; /* 默认sky-400颜色的RGB值 */
-  background: rgba(var(--ai-color), 0.2);
-  background-size: 200% 100%;
-  border-radius: 2px;
-  padding: 5px 7px;
-  margin: -5px -7px;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-  animation: ai-text-shimmer 2s ease-in-out infinite, ai-pulse-glow 3s ease-in-out infinite;
-  position: relative;
-  overflow: visible;
-  box-shadow: 
-    0 0 0 1px rgba(var(--ai-color), 0.4),
-    0 0 12px rgba(var(--ai-color), 0.3);
-  display: inline;
-  line-height: 2;
-}
-
-.ai-loading-effect::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: 0;
-  width: 100%;
-  height: calc(100% + 6px);
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.4), 
-    rgba(var(--ai-color), 0.2),
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  animation: ai-sweep 1.8s ease-in-out infinite;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  will-change: transform;
-}
-
-
-.ai-loading-effect:hover {
-  background-size: 150% 100%;
-  animation-duration: 1s, 2s;
-  transform: scale(1.02);
-}
 
 .polaris-fab {
   --polaris-sky: 56, 189, 248;
@@ -636,7 +599,8 @@ button {
   filter: blur(11px);
   opacity: 0.38;
   transition: opacity 0.2s ease-out;
-  animation: polaris-halo calc(5.5s * var(--orb-speed, 1)) ease-in-out infinite;
+  /* 心跳的两倍拍，而不是另取 5.5s——同屏呼吸元素周期互质会看着发飘。 */
+  animation: polaris-halo calc(var(--breath-duration) * 2 * var(--orb-speed, 1)) var(--breath-ease) infinite;
   will-change: transform, opacity;
 }
 
@@ -946,6 +910,16 @@ button {
   --breath-ease: ease-in-out;
   --narrate-duration: 180ms;
   --narrate-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* brief §4 定义了却一直没落到 CSS：贴块扫光一次行程 */
+  --sheen-duration: 1.8s;
+
+  /* GenUI 卡片层。与 @magic-resume/genui 的 motion/tokens.ts 成对：JS 侧给
+     framer-motion,这里给 CSS 动画,改一处必须改另一处。进入曲线复用
+     --narrate-ease,不另起一条。 */
+  --widget-enter: 240ms;
+  --widget-settle: 320ms;
+  --stagger-step: 30ms;
+  --exit-ease: cubic-bezier(0.4, 0, 1, 1);
 }
 
 /* 全局心跳：scale 0.985 → 1.015，opacity 0.75 → 1 */
@@ -1032,6 +1006,30 @@ button {
   animation: ai-narrate-in var(--narrate-duration) var(--narrate-ease) both;
 }
 
+/* ---- 输入框下方 Pro 升级条的辉光 ----
+   设计稿这团光是绿色的，这里换成品牌 sky：绿在本项目已经是简历修订的「新增内容」
+   语义色（--rev-add），右侧画布刚看过绿字=AI 新增，回头又看到绿光=付费广告，会撞。
+   渐变数学留在 CSS 里而不是内联 style，才好在浅色态整体降透明——纸上的光要落地，
+   不能像深色下那样发散（见 docs/specs/light-theme/）。 */
+.composer-pro-glow {
+  background:
+    radial-gradient(
+      ellipse 48% 118% at 88% 46%,
+      color-mix(in oklab, var(--glow-sky) 30%, transparent),
+      transparent 72%
+    );
+  pointer-events: none;
+}
+
+.light .composer-pro-glow {
+  background:
+    radial-gradient(
+      ellipse 48% 118% at 88% 46%,
+      color-mix(in oklab, var(--glow-sky) 11%, transparent),
+      transparent 70%
+    );
+}
+
 /* ---- LivingCanvas 就地编辑（挂载点见 EditableCanvas.tsx）----
    简历纸面恒定近白，深浅主题共用一套。 */
 
@@ -1065,9 +1063,56 @@ button {
   }
 }
 
-/* 接受后：绿色微闪一次落定（绿 = 简历修订语言的"增"） */
+/* 提案出现：卡片与错误 chip 淡入上移一次（living-canvas design §9）。
+   这个类一直挂在 EditableCanvas 上但从没被定义过——提案卡至今是硬弹出来的。 */
+.lc-enter {
+  animation: lc-enter var(--narrate-duration) var(--narrate-ease) both;
+}
+
+@keyframes lc-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 绿增在红删下方展开：过渡 grid 行高而不是 height——height 从 auto 起算没法过渡，
+   0fr → 1fr 可以，且不需要预先知道内容高度。 */
+.lc-grow {
+  display: grid;
+  grid-template-rows: 0fr;
+  animation: lc-grow var(--widget-enter) var(--narrate-ease) both;
+}
+
+@keyframes lc-grow {
+  to {
+    grid-template-rows: 1fr;
+  }
+}
+
+/* 区块标题旁的 `+` 把手：能力按需浮现，不做常驻 chrome（.impeccable.md 原则②）。
+   悬停在标题上或键盘聚焦时才出现。 */
+.lc-section-handle {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+:hover > .lc-section-handle,
+.lc-section-handle:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 接受后：绿色微闪一次落定（绿 = 简历修订语言的"增"）。
+   420ms 不是随手取的：LivingCanvas 在这个点把 accepted 态摘掉,写 700ms 会让闪光
+   永远播到六成被截断。改这里必须同步改 LivingCanvas 的移除延时。 */
 .lc-flash {
-  animation: lc-flash 700ms var(--narrate-ease) both;
+  animation: lc-flash 420ms var(--narrate-ease) both;
 }
 
 @keyframes lc-flash {
@@ -1100,8 +1145,17 @@ button {
   .ai-breath--soft,
   .ai-narrate,
   .ai-narrate-enter,
-  .lc-shimmer::before {
+  .lc-shimmer::before,
+  .lc-flash,
+  .lc-highlight,
+  .lc-enter {
     animation: none;
+  }
+
+  /* 展开动画停掉,但布局还得是展开的——否则绿增那一块高度归零、内容看不见。 */
+  .lc-grow {
+    animation: none;
+    grid-template-rows: 1fr;
   }
 
   /* 退化：叙述文字回到实色 */
@@ -1115,122 +1169,6 @@ button {
   }
 }
 
-
-
-/* 旋转的 bot emoji 动画 */
-.tiptap .rotating-bot,
-.rotating-bot {
-  display: inline-block !important;
-  animation: spin 2s linear infinite !important;
-  transform-origin: center center;
-  will-change: transform;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes progressBar {
-  0% {
-    width: 0%;
-    opacity: 1;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    width: 100%;
-    opacity: 0.7;
-  }
-}
-
-/* AI文本加载效果动画 */
-@keyframes ai-text-shimmer {
-  0%, 100% {
-    background-position: 200% 0;
-  }
-  50% {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes ai-sweep {
-  0% {
-    transform: translate3d(-115%, 0, 0);
-  }
-  100% {
-    transform: translate3d(115%, 0, 0);
-  }
-}
-
-@keyframes ai-sparkle {
-  0%, 100% {
-    opacity: 0.5;
-    transform: scale(0.8) rotate(0deg);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2) rotate(180deg);
-  }
-}
-
-@keyframes ai-hue-cycle {
-  0% { filter: hue-rotate(0deg) brightness(1); }
-  25% { filter: hue-rotate(90deg) brightness(1.2); }
-  50% { filter: hue-rotate(180deg) brightness(1); }
-  75% { filter: hue-rotate(270deg) brightness(1.2); }
-  100% { filter: hue-rotate(360deg) brightness(1); }
-}
-
-@keyframes ai-pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(var(--ai-color), 0.2);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(var(--ai-color), 0.4), 0 0 24px rgba(var(--ai-color), 0.2);
-  }
-}
-
-/* 数据处理复杂度指示器 */
-.ai-loading-effect[data-loading="true"] {
-  cursor: wait;
-}
-
-/* 根据文本长度调整动画强度 */
-.ai-loading-effect[data-complexity="high"] {
-  animation-duration: 1.2s, 2s;
-  border-width: 2px;
-  box-shadow: 0 0 12px rgba(var(--ai-color), 0.3);
-}
-
-.ai-loading-effect[data-complexity="high"]::after {
-  content: '';
-  display: inline-block;
-  width: 0.45em;
-  height: 0.45em;
-  margin-left: 0.35em;
-  border-radius: 9999px;
-  background: rgba(var(--ai-color), 0.82);
-  box-shadow: 0 0 10px rgba(var(--ai-color), 0.5);
-  animation-duration: 0.8s, 2s;
-}
-
-/* AI润色小按钮动画 */
-@keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 
 /* ── 编辑器入场编排(阶段 4 · C1)──────────────────────────────
    骨架 → 内容:左栏 / 画布 / 右栏依次淡入。固定定位的侧栏只用 opacity
@@ -1259,18 +1197,6 @@ button {
   min-height: 150px;
 }
 
-.ai-polish-panel {
-  animation: fadeInScale 0.2s ease-out;
-  pointer-events: auto;
-}
-
-.ai-polish-button {
-  transition: all 0.2s ease;
-}
-
-.ai-polish-button:hover {
-  transform: scale(1.1);
-}
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
@@ -1281,131 +1207,12 @@ button {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* AI思考效果动画 */
-@keyframes breathe {
-  0%, 100% { 
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% { 
-    transform: scale(1.1);
-    opacity: 1;
-  }
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2.5);
-    opacity: 0;
-  }
-}
-
-@keyframes neural-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 20px rgba(34, 211, 238, 0);
-  }
-}
-
-@keyframes data-flow {
-  0% {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100px);
-    opacity: 0;
-  }
-}
-
-@keyframes thinking-glow {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-/* 动画延迟类 */
-.animation-delay-200 {
-  animation-delay: 200ms;
-}
-
-.animation-delay-300 {
-  animation-delay: 300ms;
-}
-
-.animation-delay-400 {
-  animation-delay: 400ms;
-}
-
-.animation-delay-500 {
-  animation-delay: 500ms;
-}
-
-.animation-delay-600 {
-  animation-delay: 600ms;
-}
 
 /* 反向动画 */
 .animation-reverse {
   animation-direction: reverse;
 }
 
-/* 自定义动画类 */
-.animate-breathe {
-  animation: breathe 3s ease-in-out infinite;
-}
-
-.animate-ripple {
-  animation: ripple 2s ease-out infinite;
-}
-
-.animate-neural-pulse {
-  animation: neural-pulse 2s ease-in-out infinite;
-}
-
-.animate-data-flow {
-  animation: data-flow 3s ease-in-out infinite;
-}
-
-.animate-thinking-glow {
-  background: linear-gradient(-45deg, #0284c7, #38bdf8, #0ea5e9, #0284c7);
-  background-size: 400% 400%;
-  animation: thinking-glow 3s ease infinite;
-}
-
-/* 磨砂玻璃效果优化 */
-.ai-overlay-backdrop {
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-}
-
-/* 动态主题色呼吸效果 */
-.ai-theme-pulse {
-  animation: ai-theme-breathe 4s ease-in-out infinite;
-}
-
-@keyframes ai-theme-breathe {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
 
 /* 简历优化页面增强样式 */
 .optimize-container {
@@ -1432,34 +1239,6 @@ button {
   transform: translateY(-2px);
 }
 
-/* 流光效果 */
-.shimmer-effect {
-  position: relative;
-  overflow: hidden;
-}
-
-.shimmer-effect::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.1), 
-    transparent);
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
 
 /* 优化按钮悬停效果 */
 .optimize-button {
@@ -1486,36 +1265,6 @@ button {
   left: 100%;
 }
 
-/* 状态指示器动画 */
-.status-indicator {
-  position: relative;
-}
-
-.status-indicator.processing::after {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: inherit;
-  background: linear-gradient(45deg, #0ea5e9, #3b82f6, #0ea5e9);
-  background-size: 200% 200%;
-  animation: gradient-spin 2s linear infinite;
-  z-index: -1;
-}
-
-@keyframes gradient-spin {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
 
 /* JSON视图增强样式 */
 .json-viewer-enhanced {
@@ -2051,13 +1800,6 @@ button {
     0 1px 3px oklch(0.28 0.02 85 / 0.14);
 }
 
-/* AI 文本加载效果:白底上收敛 glow,加淡描边定形 */
-.light .ai-loading-effect {
-  background: rgba(var(--ai-color), 0.12);
-  box-shadow:
-    0 0 0 1px rgba(var(--ai-color), 0.28),
-    0 1px 6px rgba(var(--ai-color), 0.14);
-}
 
 /* Coming Soon 舞台:暖纸化 —— 网格转极淡暖线、玻璃面板转暖纸卡、
    sky 大光晕降透明、暗晕反相为提亮暖晕保证前景可读、骨架条转纸上浅墨。 */
