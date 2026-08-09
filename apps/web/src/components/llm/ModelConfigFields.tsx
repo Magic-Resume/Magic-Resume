@@ -13,10 +13,17 @@ import {
   PlugZap,
   CheckCircle2,
   XCircle,
+  Image as ImageGlyph,
 } from 'lucide-react';
 import { LockClosedIcon } from '@radix-ui/react-icons';
 import { useSettingStore } from '@/store/useSettingStore';
-import { MODEL_PROVIDERS, getProvider, CUSTOM_PROVIDER_ID } from '@/lib/constants/modals';
+import {
+  MODEL_PROVIDERS,
+  getProvider,
+  CUSTOM_PROVIDER_ID,
+  MODEL_IMAGE_SUPPORT_MAP,
+} from '@/lib/constants/modals';
+import { classifyLlmTestError } from '@/lib/utils/llmTestError';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -88,30 +95,50 @@ export function ModelConfigFields() {
   const [showKey, setShowKey] = useState(false);
   const [testState, setTestState] = useState<TestState>('idle');
   const [testMsg, setTestMsg] = useState('');
+  const [testStatus, setTestStatus] = useState<number | undefined>(undefined);
+  const [testImageSupport, setTestImageSupport] = useState<boolean | undefined>(undefined);
   const canTest = Boolean(apiKey?.trim() && baseUrl?.trim() && model?.trim());
+
+  // Classify the last failure (if any) into a stable kind for friendly copy.
+  const testKind =
+    testState === 'error' ? classifyLlmTestError(testStatus, testMsg) : undefined;
 
   // Any change to the connection inputs invalidates a prior test result.
   useEffect(() => {
     setTestState('idle');
     setTestMsg('');
+    setTestStatus(undefined);
+    setTestImageSupport(undefined);
   }, [provider, apiKey, baseUrl, model]);
 
   const handleTest = async () => {
     setTestState('testing');
     setTestMsg('');
+    setTestStatus(undefined);
+    setTestImageSupport(undefined);
     try {
       const res = await fetch('/api/test-llm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, baseUrl, apiKey, model }),
       });
-      const data = (await res.json()) as { ok?: boolean; message?: string; latencyMs?: number };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        status?: number;
+        latencyMs?: number;
+        supportsImage?: boolean;
+      };
       if (data.ok) {
         setTestState('ok');
         setTestMsg(typeof data.latencyMs === 'number' ? `${data.latencyMs}ms` : '');
+        // Probe result first; when the endpoint gives an inconclusive answer,
+        // fall back to the known capability from the model catalog.
+        setTestImageSupport(data.supportsImage ?? MODEL_IMAGE_SUPPORT_MAP[model]);
       } else {
         setTestState('error');
         setTestMsg(data.message || '');
+        setTestStatus(data.status);
       }
     } catch {
       setTestState('error');
@@ -179,11 +206,29 @@ export function ModelConfigFields() {
               <SelectContent className="rounded-xl border-white/[0.08] bg-neutral-950 text-white shadow-2xl shadow-black/50">
                 {meta?.models.map((m) => (
                   <SelectItem
-                    key={m}
-                    value={m}
+                    key={m.id}
+                    value={m.id}
                     className="rounded-lg transition-colors focus:bg-white/[0.06] focus:text-sky-300"
                   >
-                    {m}
+                    <span className="inline-flex items-center gap-2">
+                      {m.id}
+                      {m.supportsImage ? (
+                        <span
+                          title={t('settings.llm.imageSupported')}
+                          className="inline-flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-emerald-400"
+                        >
+                          <ImageGlyph size={10} />
+                          {t('settings.llm.imageBadge')}
+                        </span>
+                      ) : (
+                        <span
+                          title={t('settings.llm.imageNotSupported')}
+                          className="inline-flex items-center rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-neutral-500"
+                        >
+                          {t('settings.llm.textOnlyBadge')}
+                        </span>
+                      )}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -252,22 +297,42 @@ export function ModelConfigFields() {
               )}
               {testState === 'testing' ? t('settings.llm.testing') : t('settings.llm.testConnection')}
             </button>
-            {testState === 'ok' && (
-              <span className="text-xs inline-flex items-center gap-1 text-emerald-400 truncate">
-                <CheckCircle2 size={14} className="shrink-0" />
-                {testMsg || t('settings.llm.testConnected')}
-              </span>
-            )}
-            {testState === 'error' && (
-              <span
-                className="text-xs inline-flex items-center gap-1 text-red-400 min-w-0"
-                title={testMsg}
-              >
-                <XCircle size={14} className="shrink-0" />
-                <span className="truncate">{t('settings.llm.testFailed')}</span>
-              </span>
-            )}
           </div>
+          {testState === 'ok' && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <CheckCircle2 size={14} className="shrink-0" />
+              <span>
+                {testMsg || t('settings.llm.testConnected')}
+                {testImageSupport !== undefined && (
+                  <>
+                    {' · '}
+                    {testImageSupport
+                      ? t('settings.llm.imageSupported')
+                      : t('settings.llm.imageNotSupported')}
+                  </>
+                )}
+              </span>
+            </span>
+          )}
+          {testState === 'error' && (
+            <span className="flex min-w-0 items-center gap-1 text-xs text-red-400">
+              <XCircle size={14} className="shrink-0" />
+              <span className="min-w-0">
+                {testKind ? (
+                  <>
+                    <span>{t(`settings.llm.testErrors.${testKind}`)}</span>
+                    {testMsg && (
+                      <span className="block truncate text-[11px] text-red-400/60" title={testMsg}>
+                        {testMsg}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="truncate">{testMsg || t('settings.llm.testFailed')}</span>
+                )}
+              </span>
+            </span>
+          )}
         </div>
       </div>
 

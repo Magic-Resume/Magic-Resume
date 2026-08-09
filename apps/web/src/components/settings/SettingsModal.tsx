@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useSettingStore } from "@/store/useSettingStore";
+import { setPreferredLanguage } from "@/i18n";
 import { useTheme, type ThemePreference } from "@/components/providers/ThemeProvider";
 import { useAccountUiStore, type SettingsSection } from "@/store/useAccountUiStore";
 import { isCloudMode } from "@/lib/config/app";
@@ -200,7 +201,7 @@ export function SettingsModal() {
                           groupId="language"
                           value={currentLang}
                           reduce={reduce}
-                          onChange={(code) => i18n.changeLanguage(code)}
+                          onChange={(code) => setPreferredLanguage(code)}
                           options={[
                             { value: "en", label: "English" },
                             { value: "zh", label: "中文" },
