@@ -1533,7 +1533,10 @@
     },
     "draft": {
       "ready": "A resume draft has been generated from the conversation",
-      "apply": "Apply to resume"
+      "apply": "Apply to resume",
+      "discard": "Not this one",
+      "applied": "Draft applied to your resume.",
+      "discarded": "Parked for now. What felt off? Tell me and I'll take another pass."
     },
     "run": {
       "stop": "Stop generation"
@@ -1547,11 +1550,28 @@
       "quotaTitle": "View remaining quota",
       "quotaUnavailable": "Quota is unavailable right now"
     },
+    "closeConfirm": {
+      "title": "Close the AI panel?",
+      "description": "The run in progress will stop. Whatever it already produced stays in the transcript, and the conversation resumes next time you open it.",
+      "confirm": "Stop and close"
+    },
     "reset": {
       "title": "Start a new chat?",
       "descriptionRunning": "The current generation will stop, and this resume's AI chat history, analysis, and canvas state will be cleared. This cannot be undone.",
       "descriptionIdle": "This will clear this resume's AI chat history, analysis, and canvas state, then start a new session. This cannot be undone.",
       "confirm": "Start new chat"
+    },
+    "reasoning": {
+      "done": "See the reasoning"
+    },
+    "activity": {
+      "thinking": "Thinking…",
+      "reading": "Reading your resume…",
+      "analyzing": "Evaluating…",
+      "working": "Working…",
+      "subagent": "Subagent working…",
+      "writing": "Writing…",
+      "awaiting": "Waiting on you"
     },
     "greeting": {
       "title": "Hi! What shall we polish today?"
@@ -1666,9 +1686,9 @@
     },
     "mode": {
       "cocreate": {
-        "name": "Co-create",
-        "ready": "Co-create mode ready",
-        "loading": "Entering co-create mode",
+        "name": "Cowork",
+        "ready": "Cowork mode ready",
+        "loading": "Entering cowork mode",
         "hint": "Can edit your resume; every change is proposed for review",
         "placeholder": "Tell me what to change, or type / for skills"
       },

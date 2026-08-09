@@ -73,6 +73,8 @@ export interface ChatMessage {
   resumePath?: string;
   /** live-streamed assistant text — render raw (no typewriter re-animation) */
   streamed?: boolean;
+  /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */
+  reasoning?: string;
   /** present when role === 'approval' — the pending tool-approval prompt */
   approval?: ApprovalRequest;
   /** present when role === 'plan' — the live review checklist (analyze / subagent todolist) */

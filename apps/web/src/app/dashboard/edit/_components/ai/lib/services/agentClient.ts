@@ -84,6 +84,12 @@ export async function* streamPdfParse(
 
 export interface ChatStreamParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  /**
+   * 对话档位（共创 / 规划 / 问答）。只传枚举——契约文本在服务端，客户端传原文等于
+   * 开放任意系统提示注入。服务端按档位注入到单次模型调用，不进会话历史，所以切
+   * 档位不会留下互相矛盾的旧契约。
+   */
+  agentMode?: 'cocreate' | 'plan' | 'ask';
   mode?: 'create' | 'optimize' | 'analyze' | 'fit' | 'translate' | 'interview' | 'general';
   /** 一次对话 = 一个 sessionId，"新对话"才换新的。服务端据此跨轮次续上下文。 */
   sessionId?: string;
@@ -142,6 +148,8 @@ export interface ApproveToolParams {
   decisions: HitlDecision[];
   /** re-sent so the resumed session keeps the same scope and model settings */
   resumeId?: string;
+  /** 续跑沿用同一档位，否则批准之后那半程回到无约束状态。 */
+  agentMode?: 'cocreate' | 'plan' | 'ask';
   config?: AgentLlmConfig;
   signal?: AbortSignal;
 }

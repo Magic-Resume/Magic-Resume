@@ -16,7 +16,10 @@ import type { WidgetActionResult, WidgetEnvelope, WidgetKind } from '@magic-resu
 import type { CanvasState, ChatMessage, PlanTodo, SkillId } from './types';
 import ChatThread from './conversation/ChatThread';
 import Composer from './conversation/Composer';
+import PolarisPerch from './conversation/PolarisPerch';
+import { setFlightOrigin } from './conversation/polarisFlight';
 import { AGENT_MODES, type AgentMode } from './conversation/modes';
+import { activityForTool, type AgentActivity } from './conversation/agentActivity';
 import WelcomeSuggestions from './conversation/WelcomeSuggestions';
 import ArtifactCanvas from './canvas/ArtifactCanvas';
 import { PolarisAvatar, LabMark } from './PolarisMark';
@@ -126,7 +129,13 @@ export default function AiChatShell({
   const fitReport = aiSession?.fitReport ?? null;
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [running, setRunning] = useState(false);
+  /**
+   * Agent 此刻在干什么。由 SSE 事件推导，不是猜的——见 conversation/agentActivity.ts。
+   * 此前这些事件里除了 read_resume 之外全被丢弃，界面上所有等待都长一个样。
+   */
+  const [activity, setActivity] = useState<AgentActivity | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   // 经「询问 Polaris」抬进输入框的画布片段。
   const [quoted, setQuoted] = useState<
     { path: string; label: string; text: string; selectionText?: string } | null
@@ -197,14 +206,12 @@ export default function AiChatShell({
    */
   const agentModeRef = useRef<AgentMode>(agentMode);
   agentModeRef.current = agentMode;
-  /** 契约作为一条 system 消息随每轮发出。后端的 `mode` 是闭集塞不进新维度,但 messages 收 system。 */
-  const withModeContract = useCallback(
-    (msgs: { role: 'system' | 'user' | 'assistant'; content: string }[]) => {
-      const contract = AGENT_MODES[agentModeRef.current].contract;
-      return contract ? [{ role: 'system' as const, content: contract }, ...msgs] : msgs;
-    },
-    []
-  );
+  // 档位随每轮以 `agentMode` 枚举发出，契约文本由服务端持有。
+  //
+  // 曾经是随消息发一条 `role:'system'` 的契约——**那条从没到过模型**：会话带线程
+  // id 时服务端每轮只取最后一条 user 消息，system 被整条丢弃。改传枚举后契约在
+  // 服务端注入，既不进会话历史（切档位不留旧契约），也堵死了客户端塞任意系统
+  // 提示的口子。
   /** 「问答」模式不发 resumeId——不读简历这件事从请求本身就成立,而不是靠模型自觉。 */
   const scopedResumeId = useCallback(
     () => (AGENT_MODES[agentModeRef.current].allowsResumeRead ? resumeData.id : undefined),
@@ -470,8 +477,11 @@ export default function AiChatShell({
       setRunning(true);
       setIsAiJobRunning(true);
       setAwaitingReply(true);
+      setActivity('thinking');
 
       let acc = '';
+      // 思考与正文分开累加：前者是过程，不进 content、不入库、不参与历史。
+      let reasoningAcc = '';
       // 记住"因审批暂停"，否则收尾时会在审批卡后留下一个空气泡。
       let pausedForApproval = false;
       const patchHandledRunIds = new Set<string>();
@@ -480,7 +490,20 @@ export default function AiChatShell({
         for await (const ev of makeGen(controller.signal)) {
           // 已被更新的运行（或卸载）顶替，不要再碰状态。
           if (!isCurrent()) return;
-          if (ev.type === 'message_chunk' && ev.content) {
+          if (ev.type === 'reasoning_chunk' && ev.content) {
+            // 思考先于正文到达：气泡此时还没建（它等首个正文 chunk），所以这里要
+            // 自己把气泡拉起来，否则思考只能等正文出现才有地方放——而推理模型恰恰
+            // 是「想很久、然后才开口」，那段最该被看见的等待就又变成一片空白。
+            if (!activeSubagentRef.current) {
+              ensureBubble();
+              reasoningAcc += ev.content;
+              const text = reasoningAcc;
+              setMessages((prev) =>
+                prev.map((m) => (m.id === aiId ? { ...m, reasoning: text } : m)),
+              );
+            }
+          } else if (ev.type === 'message_chunk' && ev.content) {
+            setActivity('writing');
             // 子代理的原始 token 不进聊天：它的进度在自己的清单卡上，结果走 resume_update。
             if (!activeSubagentRef.current) {
               ensureBubble();
@@ -498,6 +521,7 @@ export default function AiChatShell({
             } | undefined;
             if (p?.requestId) {
               pausedForApproval = true;
+              setActivity('awaiting');
               setAwaitingReply(false); // the card replaces the thinking dots
               // 一次中断可能挂着多个动作。只渲染第一个会漏卡，而续跑要求裁决数与动作数
               // 相等（engine 的 assertValidDecisions），漏掉的那个必然 400。
@@ -571,13 +595,25 @@ export default function AiChatShell({
             if (envelope?.kind) {
               upsertWidget(envelope.widgetId || nanoid(), envelope);
             }
-          } else if (ev.type === 'tool_started' && (ev.payload as { toolName?: string } | undefined)?.toolName === 'read_resume') {
-            // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
-            if (readApprovalRef.current) {
-              setApprovalReadState(readApprovalRef.current, 'reading');
-            } else {
-              addMessage({ id: nanoid(), role: 'activity', content: '正在读取你的简历…', status: 'running' });
+          } else if (ev.type === 'llm_started') {
+            // 模型开始生成、首字未到 = 思考中。之前这个事件整个被丢掉，于是「已经
+            // 在想」和「还没开始」在界面上没有区别。
+            setActivity((prev) => (prev === 'writing' ? prev : 'thinking'));
+          } else if (ev.type === 'tool_started') {
+            const toolName = (ev.payload as { toolName?: string } | undefined)?.toolName;
+            // 认全部工具。写死只认 read_resume 是此前「看不出 agent 在干什么」的直接原因。
+            setActivity(activityForTool(toolName));
+            if (toolName === 'read_resume') {
+              // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
+              if (readApprovalRef.current) {
+                setApprovalReadState(readApprovalRef.current, 'reading');
+              } else {
+                addMessage({ id: nanoid(), role: 'activity', content: '正在读取你的简历…', status: 'running' });
+              }
             }
+          } else if (ev.type === 'tool_completed') {
+            // 工具收工但流还在跑：回到「思考中」，而不是停在上一个工具的形态上。
+            setActivity((prev) => (prev === 'writing' || prev === 'awaiting' ? prev : 'thinking'));
           } else if (ev.type === 'tool_result' && (ev.payload as { toolName?: string } | undefined)?.toolName === 'read_resume') {
             if (readApprovalRef.current) {
               setApprovalReadState(readApprovalRef.current, 'read'); // → 已读取简历
@@ -635,6 +671,7 @@ export default function AiChatShell({
                     : task
                   : '子代理';
             activeSubagentRef.current = name;
+            setActivity('subagent');
             const planId = nanoid();
             subagentPlanCardRef.current = planId;
             setAwaitingReply(false);
@@ -648,6 +685,7 @@ export default function AiChatShell({
             });
           } else if (ev.type === 'subagent_completed') {
             activeSubagentRef.current = null;
+            setActivity('thinking');
             if (subagentPlanCardRef.current) {
               const planId = subagentPlanCardRef.current;
               subagentPlanCardRef.current = null;
@@ -864,6 +902,7 @@ export default function AiChatShell({
           setRunning(false);
           setIsAiJobRunning(false);
           setAwaitingReply(false);
+          setActivity(null);
           controllerRef.current = null;
         }
       }
@@ -929,7 +968,8 @@ export default function AiChatShell({
       await consumeStream(
         (signal) =>
           streamChat({
-            messages: withModeContract([{ role: 'user', content: SKILLS.analyze.buildIntent({}) }]),
+            messages: [{ role: 'user', content: SKILLS.analyze.buildIntent({}) }],
+            agentMode: agentModeRef.current,
             mode: 'analyze',
             // 不带 sessionId：analyze 是一次性变换，sessionId 留给 create/general 对话。
             resumeId: scopedResumeId(),
@@ -939,7 +979,7 @@ export default function AiChatShell({
         pending,
       );
     },
-    [consumeStream, resolveRunConfig, withModeContract, scopedResumeId]
+    [consumeStream, resolveRunConfig, scopedResumeId]
   );
 
   /**
@@ -958,7 +998,8 @@ export default function AiChatShell({
       await consumeStream(
         (signal) =>
           streamChat({
-            messages: withModeContract([{ role: 'user', content: message }]),
+            messages: [{ role: 'user', content: message }],
+            agentMode: agentModeRef.current,
             mode: 'fit',
             sessionId: sessionIdRef.current,
             resumeId: scopedResumeId(),
@@ -968,7 +1009,7 @@ export default function AiChatShell({
         pending,
       );
     },
-    [consumeStream, resolveRunConfig, markSessionUsed, withModeContract, scopedResumeId]
+    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId]
   );
 
   // 整篇内容技能（optimize / translate）走会话式运行：不弹参数框，需要细节时在对话里用
@@ -985,7 +1026,8 @@ export default function AiChatShell({
       void consumeStream(
         (signal) =>
           streamChat({
-            messages: withModeContract([{ role: 'user', content: message }]),
+            messages: [{ role: 'user', content: message }],
+            agentMode: agentModeRef.current,
             mode: kind,
             sessionId: sessionIdRef.current,
             resumeId: scopedResumeId(),
@@ -999,8 +1041,7 @@ export default function AiChatShell({
       consumeStream,
       resolveRunConfig,
       markSessionUsed,
-      withModeContract,
-      scopedResumeId,
+        scopedResumeId,
       setCanvas,
       setLivingSkillId,
     ]
@@ -1040,6 +1081,8 @@ export default function AiChatShell({
               sessionId: sessionIdRef.current,
               decisions,
               resumeId: scopedResumeId(),
+              // 续跑也要带档位，否则批准之后那半程回到无约束状态。
+              agentMode: agentModeRef.current,
               config,
               signal,
             }),
@@ -1063,7 +1106,8 @@ export default function AiChatShell({
       return consumeStream(
         (signal) =>
           streamChat({
-            messages: withModeContract(history),
+            messages: history,
+            agentMode: agentModeRef.current,
             mode,
             sessionId: sessionIdRef.current,
             // 把对话限定到这份简历，又不必每轮推送整份快照。
@@ -1074,7 +1118,7 @@ export default function AiChatShell({
         pending,
       );
     },
-    [consumeStream, resolveRunConfig, markSessionUsed, withModeContract, scopedResumeId]
+    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId]
   );
 
   // 用户回答了审批卡：带着决定继续会话，续流交给同一个消费者。
@@ -1355,7 +1399,8 @@ export default function AiChatShell({
       void consumeStream(
         (signal) =>
           streamChat({
-            messages: withModeContract([{ role: 'user', content: message }]),
+            messages: [{ role: 'user', content: message }],
+            agentMode: agentModeRef.current,
             mode: 'general',
             sessionId: sessionIdRef.current,
             resumeId: scopedResumeId(),
@@ -1365,7 +1410,7 @@ export default function AiChatShell({
         pending,
       );
     },
-    [consumeStream, resolveRunConfig, markSessionUsed, withModeContract, scopedResumeId],
+    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId],
   );
 
   // 「询问 Polaris」发送：留一条带引用的旁白用户消息，再把指令作为会话轮次跑，改动回到画布上。
@@ -1447,7 +1492,15 @@ export default function AiChatShell({
     setOverlayOpen(false);
     setAwaitingReply(false);
     setDraftReady(null);
-  }, [resetAiSession, resumeId, reportInterviewEnded]);
+    // 运行态必须在这里自己收掉。consumeStream 的 finally 裹着 `if (isCurrent())`
+    // ——那道守卫是防「被顶替的旧运行关掉新运行的转圈」，但上面刚把 generation 抬走，
+    // isCurrent() 已经是 false，清理块整个被跳过；而重置又没有新运行来接手，
+    // 于是 running 永远停在 true：回到欢迎态了，发送键还是停止键。
+    setRunning(false);
+    setIsAiJobRunning(false);
+    setActivity(null);
+    controllerRef.current = null;
+  }, [resetAiSession, resumeId, reportInterviewEnded, setIsAiJobRunning]);
 
   const requestResetSession = useCallback(() => {
     setResetConfirmOpen(true);
@@ -1458,25 +1511,45 @@ export default function AiChatShell({
     controllerRef.current?.abort();
   }, []);
 
-  const handleClose = useCallback(() => {
-    // 运行中关闭会中止流，二次确认只是防手滑。
-    if (
-      running &&
-      typeof window !== 'undefined' &&
-      !window.confirm('AI 正在生成，关闭将停止本次生成。确定关闭？')
-    ) {
-      return;
-    }
+  /** 真正执行关闭：中止在飞行的流，再把面板收起。 */
+  const doClose = useCallback(() => {
     controllerRef.current?.abort();
     onClose();
-  }, [running, onClose]);
+  }, [onClose]);
+
+  const handleClose = useCallback(() => {
+    // 运行中关闭会中止流，二次确认只是防手滑。走项目自己的 ConfirmDialog 而不是
+    // window.confirm：后者是系统弹窗，样式不可控、带 "localhost:3000 显示" 的抬头，
+    // 而且**同步阻塞**——在流式渲染期间卡住主线程。
+    if (running) {
+      setCloseConfirmOpen(true);
+      return;
+    }
+    doClose();
+  }, [running, doClose]);
 
   const applyDraft = useCallback(() => {
     if (!draftReady) return;
     onApplyFullResume(draftReady);
     setDraftReady(null);
-    addAssistant('已把草稿应用到当前简历。');
-  }, [draftReady, onApplyFullResume, addAssistant]);
+    addAssistant(t('aiLab.draft.applied'));
+  }, [draftReady, onApplyFullResume, addAssistant, t]);
+
+  /**
+   * 不用这份草稿。
+   *
+   * 原则 3：「AI 是合作者不是推土机——改动先提案、**可拒绝**、有理由」。此前这张卡
+   * 只有"应用"一个出口，在你点它之前一直挂着——那不是提案，是通知。
+   *
+   * 清掉 `draftReady` 就同时收走了右侧预览（预览直接绑在这个 state 上），简历一个
+   * 字都不写。然后主动问一句把话头交回输入框：要的是「可拒绝、有理由」，所以给出
+   * 说理由的**邀请**，而不是设一道必答题（Anti-reference：冗长问卷）。
+   */
+  const discardDraft = useCallback(() => {
+    if (!draftReady) return;
+    setDraftReady(null);
+    addAssistant(t('aiLab.draft.discarded'));
+  }, [draftReady, addAssistant, t]);
 
   const composer = (
     <>
@@ -1528,14 +1601,25 @@ export default function AiChatShell({
           <div className="max-w-3xl mx-auto flex items-center gap-3 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-2.5 text-xs text-sky-200">
             <FileText size={14} className="text-sky-400 shrink-0" />
             <span className="flex-1">{t('aiLab.draft.ready')}</span>
-            <button
-              type="button"
-              onClick={applyDraft}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-sky-100 transition-colors cursor-pointer"
-            >
-              <Check size={12} />
-              {t('aiLab.draft.apply')}
-            </button>
+            {/* 两个动作归在右端。拒绝走 ghost、不用红色：这不是危险操作，是一个平等的
+                选项——简历一个字都不会被改。也不弹确认框（无损，且 modals are lazy）。 */}
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="rounded-lg px-3 py-1.5 text-sky-200/70 transition-colors hover:bg-sky-500/10 hover:text-sky-100 cursor-pointer"
+              >
+                {t('aiLab.draft.discard')}
+              </button>
+              <button
+                type="button"
+                onClick={applyDraft}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-sky-100 transition-colors cursor-pointer"
+              >
+                <Check size={12} />
+                {t('aiLab.draft.apply')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1607,6 +1691,20 @@ export default function AiChatShell({
       </header>
 
       <ConfirmDialog
+        isOpen={closeConfirmOpen}
+        onClose={() => setCloseConfirmOpen(false)}
+        onConfirm={() => {
+          setCloseConfirmOpen(false);
+          doClose();
+        }}
+        title={t('aiLab.closeConfirm.title')}
+        description={t('aiLab.closeConfirm.description')}
+        confirmText={t('aiLab.closeConfirm.confirm')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+      />
+
+      <ConfirmDialog
         isOpen={resetConfirmOpen}
         onClose={() => setResetConfirmOpen(false)}
         onConfirm={resetSession}
@@ -1641,8 +1739,24 @@ export default function AiChatShell({
                     hidden: { opacity: 0, y: 10, scale: 0.92 },
                     show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: 'easeOut' } },
                   }}
+                  className="mb-5"
                 >
-                  <PolarisAvatar className="mb-5" />
+                  {/* 转场起点：发出第一句话后，这只宠会跳到输入框上方的工位去。
+                      它在卸载前把自己的位置留给工位（见 polarisFlight），工位挂载时
+                      取走算位移——两端不在同一帧共存，只能这样交接。 */}
+                  <div
+                    ref={(el) => {
+                      if (!el) return;
+                      const box = el.getBoundingClientRect();
+                      setFlightOrigin({
+                        x: box.left + box.width / 2,
+                        y: box.top + box.height / 2,
+                        size: box.width,
+                      });
+                    }}
+                  >
+                    <PolarisAvatar />
+                  </div>
                 </motion.div>
                 <motion.h2
                   variants={{
@@ -1669,7 +1783,7 @@ export default function AiChatShell({
                   onApproval={handleApproval}
                   onWidgetAction={handleWidgetAction}
                   thinking={awaitingReply}
-                  running={running}
+                  activity={activity}
                   openCanvasSkillId={
                     canvas.open ? canvas.skillId : livingOpen ? livingSkillId : null
                   }
@@ -1677,6 +1791,10 @@ export default function AiChatShell({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {started && (
+            <PolarisPerch />
+          )}
 
           <motion.div
             layout="position"
@@ -1702,43 +1820,63 @@ export default function AiChatShell({
           </AnimatePresence>
         </div>
 
-        {/* 实时画布以宽度+透明度滑入/滑出（贴元素、不弹跳，缓动同参数表单）。 */}
-        <AnimatePresence initial={false}>
-          {livingOpen && (
-            <motion.div
-              key="living-canvas"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: '58%', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-              className="shrink-0 min-w-0 overflow-hidden"
-            >
-              <LivingCanvas
-                resumeData={resumeData}
-                templateId={templateId}
-                onApplySections={onApplySections}
-                onApplyInfo={onApplyInfo}
-                onLog={logChange}
-                onAskWithTarget={onAskWithTarget}
-                batchRequest={batchRequest}
-                focusRequest={focusRequest}
-                previewResume={draftReady}
-                working={chatMode === 'create' && running && !draftReady}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {!livingOpen && (
-          <ArtifactCanvas
-            state={canvas}
-            resumeData={resumeData}
-            templateId={templateId}
-            analysis={analysis}
-            fitReport={fitReport}
-            onDiscard={() => setCanvas(CLOSED_CANVAS)}
-            onFollowUp={handleSend}
-          />
-        )}
+        {/* 右舞台只有一块。
+            此前实时画布和报告画布是两个各自动画宽度的兄弟节点：切换时一个 58%→0、
+            另一个 0→44% **同时**跑，而且分属 framer-motion 与 CSS transition 两套系统、
+            曲线时长都不同。重叠期间两者宽度之和会超过 100%，中间的对话列被挤到 0 再
+            弹回来——那就是「先开画布再开评分」时看到的闪烁。
+            现在宽度只由这一层动一次（0 ↔ 58% ↔ 44%），里面的内容做交叉淡入。 */}
+        <motion.div
+          className="shrink-0 min-w-0 overflow-hidden"
+          initial={false}
+          animate={{ width: livingOpen ? '58%' : canvas.open ? '44%' : '0%' }}
+          transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {livingOpen ? (
+              <motion.div
+                key="living-canvas"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full"
+              >
+                <LivingCanvas
+                  resumeData={resumeData}
+                  templateId={templateId}
+                  onApplySections={onApplySections}
+                  onApplyInfo={onApplyInfo}
+                  onLog={logChange}
+                  onAskWithTarget={onAskWithTarget}
+                  batchRequest={batchRequest}
+                  focusRequest={focusRequest}
+                  previewResume={draftReady}
+                  working={chatMode === 'create' && running && !draftReady}
+                />
+              </motion.div>
+            ) : canvas.open ? (
+              <motion.div
+                key="artifact-canvas"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full"
+              >
+                <ArtifactCanvas
+                  state={canvas}
+                  resumeData={resumeData}
+                  templateId={templateId}
+                  analysis={analysis}
+                  fitReport={fitReport}
+                  onDiscard={() => setCanvas(CLOSED_CANVAS)}
+                  onFollowUp={handleSend}
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       <InterviewOverlay open={overlayOpen} onBack={() => setOverlayOpen(false)} />

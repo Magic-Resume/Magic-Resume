@@ -33,6 +33,7 @@ export default function ModePicker({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const accent = AGENT_MODES[mode].accentHex;
+  const ActiveIcon = AGENT_MODES[mode].icon;
 
   useEffect(() => {
     if (!open) return;
@@ -63,6 +64,7 @@ export default function ModePicker({
           borderColor: `color-mix(in oklab, ${accent} 32%, transparent)`,
         }}
       >
+        <ActiveIcon size={14} className="shrink-0" />
         {t(modeNameKey(mode))}
         <ChevronUp
           size={13}
@@ -83,6 +85,7 @@ export default function ModePicker({
             {AGENT_MODE_LIST.map((id) => {
               const active = id === mode;
               const itemAccent = AGENT_MODES[id].accentHex;
+              const ItemIcon = AGENT_MODES[id].icon;
               return (
                 <button
                   key={id}
@@ -98,6 +101,13 @@ export default function ModePicker({
                     active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.035]'
                   )}
                 >
+                  {/* 图元始终着本档的色，选中与否只改文字与背景——否则三行图标全是灰的，
+                      "一眼分辨三档"这件事就没发生。 */}
+                  <ItemIcon
+                    size={15}
+                    className="mt-[3px] shrink-0 transition-opacity"
+                    style={{ color: itemAccent, opacity: active ? 1 : 0.75 }}
+                  />
                   <span className="min-w-0 flex-1">
                     <span
                       className="block text-[14px] font-medium"

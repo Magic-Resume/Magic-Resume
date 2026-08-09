@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { Loader2, MessageCircle, X, CheckCircle2, Send } from "lucide-react";
+import { Loader2, Bug, X, CheckCircle2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppAuth } from "@/lib/auth";
 import { feedbackApi } from "@/lib/api/feedback";
@@ -96,7 +96,7 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
               <div className="flex items-start justify-between p-6 pb-4 border-b border-neutral-800/50">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center text-blue-400 ring-1 ring-blue-500/20">
-                    <MessageCircle size={22} strokeWidth={2} />
+                    <Bug size={22} strokeWidth={2} />
                   </div>
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-white mb-1">{t('feedback.title')}</h2>

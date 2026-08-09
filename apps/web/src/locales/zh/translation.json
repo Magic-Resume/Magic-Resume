@@ -1533,7 +1533,10 @@
     },
     "draft": {
       "ready": "已根据对话生成简历草稿",
-      "apply": "应用到简历"
+      "apply": "应用到简历",
+      "discard": "不用这份",
+      "applied": "已把草稿应用到当前简历。",
+      "discarded": "这份先放着。哪儿不对劲？说一声我重来一版。"
     },
     "run": {
       "stop": "停止生成"
@@ -1547,11 +1550,28 @@
       "quotaTitle": "查看剩余额度",
       "quotaUnavailable": "暂时无法获取额度"
     },
+    "closeConfirm": {
+      "title": "关闭 AI 面板？",
+      "description": "当前这次生成会被停止，已经产出的内容保留在对话里。下次打开还能接着聊。",
+      "confirm": "停止并关闭"
+    },
     "reset": {
       "title": "开启新对话？",
       "descriptionRunning": "当前生成会被停止，并清空这份简历的 AI 对话记录、分析结果和画布状态。此操作无法撤销。",
       "descriptionIdle": "将清空这份简历的 AI 对话记录、分析结果和画布状态，并开启一个新的会话。此操作无法撤销。",
       "confirm": "开启新对话"
+    },
+    "reasoning": {
+      "done": "查看思考过程"
+    },
+    "activity": {
+      "thinking": "正在琢磨…",
+      "reading": "正在读你的简历…",
+      "analyzing": "正在评估…",
+      "working": "正在处理…",
+      "subagent": "子代理在工作…",
+      "writing": "正在写…",
+      "awaiting": "等你回应"
     },
     "greeting": {
       "title": "嗨，今天想把简历打磨成什么样？"

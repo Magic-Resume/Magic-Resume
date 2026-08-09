@@ -1,14 +1,19 @@
+import { MessageCircleQuestion, PenLine, Route, type LucideIcon } from 'lucide-react';
+
 /**
  * 输入框的「模式」——与技能正交的一根轴。
  *
  * 技能回答「做什么事」（优化 / 分析 / 翻译…），模式回答「AI 与你的简历是什么关系」：
  * 能不能直接改、要不要读。任何技能都能在任一模式下跑。
  *
- * 关键：这三档**不是靠提示词祈祷**。后端的 `mode` 是与技能绑死的闭集塞不进新维度，
- * 但三档里最硬的约束前端本来就攥着——`resumeId` 发不发、`read_resume` 的审批裁决、
- * `resume_update` 事件消费不消费。`contract` 只是让模型主动配合，真正的闸门在
- * AiChatShell 的 `consumeStream` 与 `scopedResumeId` 里，读 `allowsResumeEdits` /
- * `allowsResumeRead` 两个开关。所以模式不需要后端改动就能确定性生效。
+ * 关键：这三档**不是靠提示词祈祷**。最硬的约束前端自己攥着——`resumeId` 发不发、
+ * `read_resume` 的审批裁决、`resume_update` 事件消费不消费，即下面的
+ * `allowsResumeEdits` / `allowsResumeRead` 两个开关（落在 AiChatShell 的
+ * `consumeStream` 与 `scopedResumeId`）。
+ *
+ * 让模型**知道**自己在哪一档，是另一条路：随每轮发 `agentMode` 枚举，契约文本由
+ * 服务端持有。此处一度自带一份 `contract` 随消息以 `role:'system'` 发出，那条从没
+ * 到过模型——会话带线程 id 时服务端每轮只取最后一条 user 消息，system 被整条丢弃。
  */
 export type AgentMode = 'cocreate' | 'plan' | 'ask';
 
@@ -16,7 +21,7 @@ export const AGENT_MODE_LIST: AgentMode[] = ['cocreate', 'plan', 'ask'];
 
 export const DEFAULT_AGENT_MODE: AgentMode = 'cocreate';
 
-/** 点阵带的每模式形态。三档共用 sky 色相，靠排布/形状/流动区分——见下方说明。 */
+/** 点阵带的每模式形态。 */
 export interface ModeDotStyle {
   /** [列间距, 行间距]，px */
   spacing: [number, number];
@@ -29,14 +34,11 @@ export interface ModeDotStyle {
 
 export interface AgentModeMeta {
   id: AgentMode;
-  /** 模式条文字、胶囊、glyph 的取色 */
+  /** 模式条文字、胶囊、菜单项、glyph 的取色 */
   accentHex: string;
+  /** 菜单项与胶囊上的图元。三档一眼可辨，不用读字。 */
+  icon: LucideIcon;
   dots: ModeDotStyle;
-  /**
-   * 随每轮以 `role: 'system'` 发出的契约。前端闸门已经硬性挡住了越界行为，
-   * 这条是让模型的**表达**也对齐——否则它会一边被挡一边说"我已经改好了"。
-   */
-  contract: string | null;
   /** 这一档是否允许 AI 产出简历改动 */
   allowsResumeEdits: boolean;
   /** 这一档是否允许 AI 读取简历 */
@@ -44,42 +46,40 @@ export interface AgentModeMeta {
 }
 
 /**
- * 配色刻意不照搬 demo 的「蓝 / 青 / 绿」三色相。
+ * 三档一色一形。
  *
- * 项目里 sky 是唯一强调色，而六个技能已经把冷色区占满了（sky / violet / emerald /
- * cyan / amber / rose）——再给模式发三个色相，必然和同屏的技能胶囊撞车。
- * 这里改成：**共创与规划共用 sky，靠点阵形态区分**（demo 本身就给三个模式配了不同
- * 的点阵排布，这个巧思保留）；只有「问答」用中性灰蓝——它是唯一不碰简历的一档，
- * 「AI 退到一边」这件事由颜色本身说出来，比再发一个强调色更准确。
+ * 色相要绕开六个技能已占的 sky / violet / emerald / cyan / amber / rose——同屏可能
+ * 并存，撞色就分不清「在跑什么」和「AI 能不能动我的简历」。所以规划取 indigo：
+ * 与 optimize 的 violet 同族但明显更蓝，和 sky 也拉得开。
+ *
+ * 语义上三色是一条**递减的介入度**：sky（动手写）→ indigo（只谋划）→ slate（退到
+ * 一边）。饱和度一路降下来，颜色本身就说清了 AI 离你的简历有多远。
  */
 export const AGENT_MODES: Record<AgentMode, AgentModeMeta> = {
   cocreate: {
     id: 'cocreate',
     accentHex: '#38bdf8',
+    // 会动笔：一支笔比任何抽象图元都直白。
+    icon: PenLine,
     dots: { spacing: [5, 5], rgb: [56, 189, 248], stagger: false, flow: false },
-    // 默认档 = 现状行为，不需要额外约束。多一条 system 消息只会挤占上下文。
-    contract: null,
     allowsResumeEdits: true,
     allowsResumeRead: true,
   },
   plan: {
     id: 'plan',
-    accentHex: '#38bdf8',
-    dots: { spacing: [7, 6], rgb: [56, 189, 248], stagger: true, flow: false },
-    contract:
-      '当前处于「规划」模式：只给方案、建议和取舍分析，不要产出任何简历改动。' +
-      '需要动笔的地方，说明改哪里、怎么改、为什么，让用户自己决定是否执行。' +
-      '不要声称你已经修改了简历——你在这一模式下没有写入权限。',
+    accentHex: '#818cf8',
+    // 给路线不走路。
+    icon: Route,
+    dots: { spacing: [7, 6], rgb: [129, 140, 248], stagger: true, flow: false },
     allowsResumeEdits: false,
     allowsResumeRead: true,
   },
   ask: {
     id: 'ask',
     accentHex: '#94a3b8',
+    // 纯问答，连简历都不读。
+    icon: MessageCircleQuestion,
     dots: { spacing: [9, 5], rgb: [148, 163, 184], stagger: false, flow: true },
-    contract:
-      '当前处于「问答」模式：只回答问题，不读取用户简历、也不产出任何简历改动。' +
-      '如果问题必须看过简历才能回答，直说需要切换到其它模式，不要猜测简历内容。',
     allowsResumeEdits: false,
     allowsResumeRead: false,
   },

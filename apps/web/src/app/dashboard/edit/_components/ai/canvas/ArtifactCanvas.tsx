@@ -103,7 +103,7 @@ function ScoreView({
 
   if (!analysis) {
     return (
-      <div className="rounded-2xl bg-neutral-900/60 p-6 text-sm text-neutral-500">{t('aiLab.artifact.emptyAnalysis')}</div>
+      <div className="py-6 text-sm text-neutral-500">{t('aiLab.artifact.emptyAnalysis')}</div>
     );
   }
 
@@ -120,7 +120,10 @@ function ScoreView({
   const categories = Object.entries(analysis.category_averages ?? {});
 
   return (
-    <div className="rounded-2xl bg-neutral-900/60 p-6 space-y-6">
+    // 不再套卡片：右侧面板本身就是独立区域，再包一层圆角底就是容器套容器
+    // （impeccable 反模式「DO NOT nest cards inside cards」）。内容直接铺在面板上，
+    // 纵向节奏交给 space-y，留白交给面板自己的 p-5。
+    <div className="space-y-6">
       <div className="flex items-center gap-5">
         <RingGauge value={analysis.overall_score} />
         <div className="min-w-0">
@@ -260,14 +263,17 @@ function MatchView({
 
   if (!fitReport) {
     return (
-      <div className="rounded-2xl bg-neutral-900/60 p-6 text-sm text-neutral-500">{t('aiLab.artifact.match.empty')}</div>
+      <div className="py-6 text-sm text-neutral-500">{t('aiLab.artifact.match.empty')}</div>
     );
   }
 
   const { overall, band, location_pass, dims, matched_keywords, missing_keywords, gaps } = fitReport;
 
   return (
-    <div className="rounded-2xl bg-neutral-900/60 p-6 space-y-6">
+    // 不再套卡片：右侧面板本身就是独立区域，再包一层圆角底就是容器套容器
+    // （impeccable 反模式「DO NOT nest cards inside cards」）。内容直接铺在面板上，
+    // 纵向节奏交给 space-y，留白交给面板自己的 p-5。
+    <div className="space-y-6">
       <div className="flex items-center gap-5">
         <RingGauge value={overall} />
         <div className="min-w-0 space-y-1.5">
@@ -367,12 +373,9 @@ export default function ArtifactCanvas({
 
   return (
     <div
-      className={cn(
-        // 与 LivingCanvas 的滑入同参（0.34s / --narrate-ease）：右舞台是同一块地方，
-        // 三个面板各用各的曲线会让切换手感不一致。
-        'shrink-0 overflow-hidden transition-[width] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col',
-        open ? 'w-[44%] bg-neutral-900/25' : 'w-0'
-      )}
+      // 宽度不再由自己动：右舞台是**一块**地方，宽度统一由 AiChatShell 那一层动一次。
+      // 这里自己再动一遍就会和父层的动画叠加，切换时中间的对话列被挤到 0 再弹回来。
+      className={cn('flex h-full w-full flex-col overflow-hidden', open && 'bg-neutral-900/25')}
     >
       {open && skill && (
         <>
@@ -397,13 +400,13 @@ export default function ArtifactCanvas({
             )}
 
             {view === 'score' && (
-              <div className="mx-auto w-full max-w-sm">
+              <div className="mx-auto w-full max-w-2xl">
                 <ScoreView analysis={analysis} onFollowUp={onFollowUp} />
               </div>
             )}
 
             {view === 'match' && (
-              <div className="mx-auto w-full max-w-sm">
+              <div className="mx-auto w-full max-w-2xl">
                 <MatchView fitReport={fitReport} onFollowUp={onFollowUp} />
               </div>
             )}

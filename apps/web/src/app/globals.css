@@ -935,6 +935,56 @@ button {
   }
 }
 
+/* ---- 任务清单：AI 正在做的那一步自己发光 ----
+   AI-native 的 ambient activity：不用进度条、不用「Agent working…」标签，
+   而是让**正在被处理的那个元素**发光。所有周期都挂在全局心跳 --breath-duration
+   上（同屏呼吸元素周期互质时，明暗会缓慢错开又对齐，看久了像在飘）。 */
+
+/* 导轨已不在这里：它曾是 <ul> 的背景渐变（.step-rail + --rail-fill），画在容器最
+   左侧，而标记点在行内被 padding 推开，两套坐标系永远对不上——量出来差 16px，那条
+   线从不穿过任何一个点，且填充百分比会停在行与行之间的空隙上。现在改由每一行自己
+   画出与相邻标记之间的线段（见 ChatThread 的 PlanCard），x 就是标记盒中心。 */
+
+/* 当前步的点：一圈随心跳张缩的光晕。用 box-shadow 而不是伪元素，省一个节点 */
+.step-dot-active {
+  animation: step-dot-pulse var(--breath-duration) var(--breath-ease) infinite;
+}
+@keyframes step-dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--ink-sky) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ink-sky) 0%, transparent);
+  }
+}
+
+/* 当前步的文字：极轻的辉光呼吸。只动 text-shadow 与 opacity,不动布局 */
+.step-text-active {
+  animation: step-text-glow var(--breath-duration) var(--breath-ease) infinite;
+}
+@keyframes step-text-glow {
+  0%,
+  100% {
+    opacity: 0.82;
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 12px color-mix(in oklab, var(--glow-sky) 34%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-dot-active,
+  .step-text-active {
+    animation: none;
+  }
+  .step-text-active {
+    opacity: 1;
+  }
+}
+
 .ai-breath {
   animation: ai-breath var(--breath-duration) var(--breath-ease) infinite;
   will-change: transform, opacity;

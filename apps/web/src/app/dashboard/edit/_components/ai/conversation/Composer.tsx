@@ -390,8 +390,23 @@ export default function Composer({
             >
               <span className="relative flex min-w-0 items-center gap-2.5">
                 <ModeGlyph mode={mode} />
-                <span className="min-w-0 truncate text-[11px] font-medium tracking-[0.01em]">
-                  {headerLabel}
+                {/* 上滑换字：旧的往上走、新的从下面顶上来，读作「状态推进了一格」，
+                    而不是同一处文字被悄悄替换掉。
+                    key 用**阶段**而不是文案本身——听写时 interim 每识别一个词
+                    headerLabel 就变一次，拿文案当 key 会一路抽搐。 */}
+                <span className="relative min-w-0 overflow-hidden">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={`${mode}:${speech.listening ? 'voice' : settling ? 'settling' : 'ready'}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className="block min-w-0 truncate text-[11px] font-medium tracking-[0.01em]"
+                    >
+                      {headerLabel}
+                    </motion.span>
+                  </AnimatePresence>
                 </span>
               </span>
             </div>
@@ -413,7 +428,11 @@ export default function Composer({
                       title={t('aiLab.composer.clearMode', { skill: activeMeta.name })}
                       initial={{ opacity: 0, scale: 0.96 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.96 }}
+                      // 退场不留时长。chip 是 flex 行里 shrink-0 的一项，它**占着位**
+                      // 淡出 160ms、到最后一帧才被移除——于是 placeholder 先换文案，
+                      // 一百多毫秒后整段文字再向左弹一下。那两拍就是看到的"卡顿"。
+                      // 归零后换文案与让位发生在同一帧，只剩一次干净的位移。
+                      exit={{ opacity: 0, transition: { duration: 0 } }}
                       transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                       // mt-1 让 28px 的 chip 垂直居中对齐首行文字的中线（6px 上内边距 + 12px 半行高）
                       className="group mt-1 inline-flex h-[28px] shrink-0 items-center gap-1.5 rounded-full pl-2.5 pr-2 text-[14px] transition-colors cursor-pointer"
