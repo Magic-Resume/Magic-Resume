@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, CircleCheck, FileDown, ArrowUpRight, MapPin } from 'lucide-react';
+import { ArrowUpRight, Check, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RingGauge } from '@/components/ui/ring-gauge';
 import { cn } from '@/lib/utils';
@@ -19,9 +19,12 @@ type ArtifactCanvasProps = {
   templateId: string;
   analysis: MultiPersonaResumeAnalysis | null;
   fitReport: FitReport | null;
-  onApply: () => void;
   onDiscard: () => void;
-  onExport: () => void;
+  /**
+   * 把报告里的一条结论变成下一步动作。报告本身不是终点：`missing_keywords` 和
+   * weaknesses 正是优化的输入，此前它们只能看,用户得自己把结论重新打一遍字。
+   */
+  onFollowUp?: (text: string) => void;
 };
 
 const PERSONA_COLORS = { peer: '#38bdf8', leader: '#a78bfa', hrbp: '#34d399' };
@@ -69,12 +72,32 @@ function ReportSection({ label, color, children }: { label: string; color: strin
   );
 }
 
+/** 一行「标签 + 进度条 + 数字」，人格分与分类分共用。 */
+function ScoreBar({ label, value, color, index }: { label: string; value: number; color: string; index: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+      <span className="text-xs text-neutral-300 w-24 shrink-0 truncate" title={label}>{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-neutral-800 overflow-hidden">
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+          transition={{ duration: 0.7, delay: 0.15 + index * 0.1, ease: 'easeOut' }}
+        />
+      </div>
+      <span className="text-xs font-medium text-white w-7 text-right tabular-nums">{Math.round(value)}</span>
+    </div>
+  );
+}
+
 function ScoreView({
   analysis,
-  onExport,
+  onFollowUp,
 }: {
   analysis: MultiPersonaResumeAnalysis | null;
-  onExport: () => void;
+  onFollowUp?: (text: string) => void;
 }) {
   const { t } = useTranslation();
 
@@ -90,7 +113,11 @@ function ScoreView({
     { label: t('aiLab.artifact.personas.hrbp'), color: PERSONA_COLORS.hrbp, data: analysis.hrbp_analysis },
   ];
   const strengths = topItems(personas.map((p) => p.data.strengths));
-  const improvements = topItems(personas.map((p) => p.data.weaknesses));
+  const improvements = topItems(personas.map((p) => p.data.weaknesses), 6);
+  // 三个人格各自的 suggestions 此前一条都没渲染过——它们是这份报告里最可执行的部分。
+  const suggestions = topItems(personas.map((p) => p.data.suggestions), 6);
+  // category_averages 同样被整份丢弃：只看总分不知道差在哪一类。
+  const categories = Object.entries(analysis.category_averages ?? {});
 
   return (
     <div className="rounded-2xl bg-neutral-900/60 p-6 space-y-6">
@@ -106,22 +133,25 @@ function ScoreView({
 
       <div className="space-y-3.5">
         {personas.map((p, i) => (
-          <div key={p.label} className="flex items-center gap-3">
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.color }} />
-            <span className="text-xs text-neutral-300 w-16 shrink-0">{p.label}</span>
-            <div className="flex-1 h-1.5 rounded-full bg-neutral-800 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: p.color }}
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.max(0, Math.min(100, p.data.score))}%` }}
-                transition={{ duration: 0.7, delay: 0.15 + i * 0.1, ease: 'easeOut' }}
-              />
-            </div>
-            <span className="text-xs font-medium text-white w-7 text-right tabular-nums">{Math.round(p.data.score)}</span>
-          </div>
+          <ScoreBar key={p.label} label={p.label} value={p.data.score} color={p.color} index={i} />
         ))}
       </div>
+
+      {categories.length > 0 && (
+        <ReportSection label={t('aiLab.artifact.categories')} color="#38bdf8">
+          <div className="space-y-3.5">
+            {categories.map(([key, value], i) => (
+              <ScoreBar
+                key={key}
+                label={t(`aiLab.artifact.category.${key}`, { defaultValue: key })}
+                value={value}
+                color="#38bdf8"
+                index={i}
+              />
+            ))}
+          </div>
+        </ReportSection>
+      )}
 
       {strengths.length > 0 && (
         <ReportSection label={t('aiLab.artifact.strengths')} color="#34d399">
@@ -136,45 +166,96 @@ function ScoreView({
 
       {improvements.length > 0 && (
         <ReportSection label={t('aiLab.artifact.improvements')} color="#fbbf24">
-          {improvements.map((s) => (
-            <li key={s} className="flex gap-2 text-xs text-neutral-400 leading-relaxed">
-              <ArrowUpRight size={13} className="text-amber-400 mt-0.5 shrink-0" />
-              <span>{s}</span>
+          {improvements.map((item) => (
+            <li key={item}>
+              {/* 每条短板都是一次改写的入口：读到问题却要自己把它重新打一遍字，
+                  是这份报告此前最大的浪费。 */}
+              {onFollowUp ? (
+                <button
+                  type="button"
+                  onClick={() => onFollowUp(t('aiLab.artifact.fixWeaknessPrompt', { weakness: item }))}
+                  className="flex w-full gap-2 rounded-lg px-1 py-0.5 text-left text-xs leading-relaxed text-neutral-400 transition-colors hover:bg-neutral-800/60 hover:text-neutral-200 cursor-pointer"
+                >
+                  <ArrowUpRight size={13} className="text-amber-400 mt-0.5 shrink-0" />
+                  <span>{item}</span>
+                </button>
+              ) : (
+                <span className="flex gap-2 text-xs text-neutral-400 leading-relaxed">
+                  <ArrowUpRight size={13} className="text-amber-400 mt-0.5 shrink-0" />
+                  <span>{item}</span>
+                </span>
+              )}
             </li>
           ))}
         </ReportSection>
       )}
 
-      <button
-        type="button"
-        onClick={onExport}
-        className="w-full h-9 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-sm text-neutral-200 transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
-      >
-        <FileDown size={14} />
-        {t('aiLab.artifact.exportReport')}
-      </button>
+      {suggestions.length > 0 && (
+        <ReportSection label={t('aiLab.artifact.suggestions')} color="#a78bfa">
+          {suggestions.map((item) => (
+            <li key={item} className="flex gap-2 text-xs text-neutral-400 leading-relaxed">
+              <ArrowUpRight size={13} className="text-violet-400 mt-0.5 shrink-0" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ReportSection>
+      )}
     </div>
   );
 }
 
-/** Small pill list of keywords (matched = emerald, missing = amber). */
-function KeywordChips({ items, tone }: { items: string[]; tone: 'matched' | 'missing' }) {
+/**
+ * Keyword pills. Missing ones are buttons: a keyword the JD wants and the resume
+ * lacks is the most actionable thing on this whole report, and leaving it as
+ * static text means the user has to retype the conclusion to act on it.
+ */
+function KeywordChips({
+  items,
+  tone,
+  onPick,
+}: {
+  items: string[];
+  tone: 'matched' | 'missing';
+  onPick?: (keyword: string) => void;
+}) {
+  const { t } = useTranslation();
   const cls =
     tone === 'matched'
       ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
       : 'bg-amber-500/10 text-amber-300 border-amber-500/20';
   return (
     <div className="flex flex-wrap gap-1.5">
-      {items.map((k) => (
-        <span key={k} className={cn('rounded-md border px-2 py-0.5 text-[11px] leading-tight', cls)}>
-          {k}
-        </span>
-      ))}
+      {items.map((k) =>
+        onPick ? (
+          <button
+            key={k}
+            type="button"
+            onClick={() => onPick(k)}
+            title={t('aiLab.artifact.match.useKeyword', { keyword: k })}
+            className={cn(
+              'rounded-md border px-2 py-0.5 text-[11px] leading-tight transition-colors cursor-pointer hover:bg-amber-500/20',
+              cls,
+            )}
+          >
+            {k}
+          </button>
+        ) : (
+          <span key={k} className={cn('rounded-md border px-2 py-0.5 text-[11px] leading-tight', cls)}>
+            {k}
+          </span>
+        ),
+      )}
     </div>
   );
 }
 
-function MatchView({ fitReport }: { fitReport: FitReport | null }) {
+function MatchView({
+  fitReport,
+  onFollowUp,
+}: {
+  fitReport: FitReport | null;
+  onFollowUp?: (text: string) => void;
+}) {
   const { t } = useTranslation();
 
   if (!fitReport) {
@@ -234,7 +315,15 @@ function MatchView({ fitReport }: { fitReport: FitReport | null }) {
 
       {missing_keywords.length > 0 && (
         <ReportSection label={t('aiLab.artifact.match.missing')} color="#fbbf24">
-          <KeywordChips items={missing_keywords} tone="missing" />
+          <KeywordChips
+            items={missing_keywords}
+            tone="missing"
+            onPick={
+              onFollowUp
+                ? (k) => onFollowUp(t('aiLab.artifact.match.useKeywordPrompt', { keyword: k }))
+                : undefined
+            }
+          />
         </ReportSection>
       )}
 
@@ -248,6 +337,17 @@ function MatchView({ fitReport }: { fitReport: FitReport | null }) {
           ))}
         </ReportSection>
       )}
+
+      {onFollowUp && (missing_keywords.length > 0 || gaps.length > 0) && (
+        <button
+          type="button"
+          onClick={() => onFollowUp(t('aiLab.artifact.match.closeGapsPrompt'))}
+          className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-sky-500/15 text-sm text-sky-300 transition-colors hover:bg-sky-500/25 cursor-pointer"
+        >
+          <ArrowUpRight size={14} />
+          {t('aiLab.artifact.match.closeGaps')}
+        </button>
+      )}
     </div>
   );
 }
@@ -258,18 +358,19 @@ export default function ArtifactCanvas({
   templateId,
   analysis,
   fitReport,
-  onApply,
   onDiscard,
-  onExport,
+  onFollowUp,
 }: ArtifactCanvasProps) {
   const { t } = useTranslation();
-  const { open, skillId, view, status } = state;
+  const { open, skillId, view } = state;
   const skill = skillId ? SKILLS[skillId] : null;
 
   return (
     <div
       className={cn(
-        'shrink-0 overflow-hidden transition-[width] duration-300 ease-out flex flex-col',
+        // 与 LivingCanvas 的滑入同参（0.34s / --narrate-ease）：右舞台是同一块地方，
+        // 三个面板各用各的曲线会让切换手感不一致。
+        'shrink-0 overflow-hidden transition-[width] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col',
         open ? 'w-[44%] bg-neutral-900/25' : 'w-0'
       )}
     >
@@ -297,47 +398,30 @@ export default function ArtifactCanvas({
 
             {view === 'score' && (
               <div className="mx-auto w-full max-w-sm">
-                <ScoreView analysis={analysis} onExport={onExport} />
+                <ScoreView analysis={analysis} onFollowUp={onFollowUp} />
               </div>
             )}
 
             {view === 'match' && (
               <div className="mx-auto w-full max-w-sm">
-                <MatchView fitReport={fitReport} />
+                <MatchView fitReport={fitReport} onFollowUp={onFollowUp} />
               </div>
             )}
           </div>
 
+          {/* 这里原来有一条「N 处改动待评审 / 放弃 / 应用更改」页脚。它是 LivingCanvas
+              出现之前的遗留：计数写死成 4，「应用更改」把 resumeData.sections 原样再
+              set 一遍（空操作）后回一句「已把 4 处改动应用到当前简历」。真正的改动评审
+              早已在 LivingCanvas 上就地进行，留着只会骗人，故删除。 */}
           {view !== 'score' && view !== 'match' && (
             <div className="px-5 py-3 flex items-center gap-2 shrink-0">
-              {status === 'applied' ? (
-                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
-                  <CircleCheck size={14} />
-                  {t('aiLab.artifact.applied')}
-                </span>
-              ) : (
-                <>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    {t('aiLab.artifact.pendingChanges', { count: 4 })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onDiscard}
-                    className="ml-auto text-xs px-3.5 py-1.5 rounded-lg text-neutral-400 hover:bg-neutral-800 transition-colors cursor-pointer"
-                  >
-                    {t('aiLab.artifact.discard')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onApply}
-                    className="text-xs px-3.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer inline-flex items-center gap-1.5"
-                  >
-                    <Check size={13} />
-                    {t('aiLab.artifact.applyChanges')}
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={onDiscard}
+                className="ml-auto text-xs px-3.5 py-1.5 rounded-lg text-neutral-400 hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                {t('aiLab.artifact.close')}
+              </button>
             </div>
           )}
         </>

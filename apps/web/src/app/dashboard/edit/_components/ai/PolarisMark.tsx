@@ -69,8 +69,10 @@ export function PolarisAvatar({ className }: { className?: string }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={MARKS.pet} width={56} height={56} alt="" aria-hidden="true" className="relative" />
       <style jsx>{`
+        /* 全局心跳的整数倍（两拍一次），而不是另取一个 4s：同屏的呼吸元素周期互质
+           时，明暗会缓慢错开又对齐，看久了像在飘。 */
         .polaris-glow {
-          animation: polarisGlow 4s ease-in-out infinite;
+          animation: polarisGlow calc(var(--breath-duration, 2.4s) * 2) var(--breath-ease, ease-in-out) infinite;
         }
         @keyframes polarisGlow {
           0%,

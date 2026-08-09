@@ -42,6 +42,16 @@ export default function WelcomeSuggestions({ onPrompt }: WelcomeSuggestionsProps
           .mq-mask:hover .mq-track {
             animation-play-state: paused;
           }
+          /* 45s 的无限横向跑马灯是整个界面里 reduce 场景下最刺激的一处：停掉动画，
+             改成可横向滚动，建议本身仍然全部够得到。 */
+          @media (prefers-reduced-motion: reduce) {
+            .mq-track {
+              animation: none;
+            }
+            .mq-mask {
+              overflow-x: auto;
+            }
+          }
           .mq-mask {
             -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
             mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);

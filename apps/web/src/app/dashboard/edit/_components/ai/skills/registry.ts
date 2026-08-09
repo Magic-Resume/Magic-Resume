@@ -1,9 +1,9 @@
-import { Wand2, BarChart3, BotMessageSquare, Mic, Languages } from 'lucide-react';
+import { Wand2, BarChart3, BotMessageSquare, Mic, Languages, Target } from 'lucide-react';
 import i18n from '@/i18n';
 import type { AiSkill, SkillId } from '../types';
 
 /**
- * The AI skill registry — pure metadata (labels, params, intents). The shell
+ * The AI skill registry — pure metadata (labels, icons, intents). The shell
  * wires each skill to its runner: `analyze` calls the backend today, the rest
  * route through `/api/chat` (create) or are being migrated onto it. Editing this
  * metadata never touches the runners.
@@ -19,7 +19,6 @@ export const SKILLS: Record<SkillId, AiSkill> = {
     accentHex: '#38bdf8',
     surface: 'inline',
     isChat: true,
-    params: [],
     buildIntent: () => i18n.t('aiLab.intent.create'),
     doneSummary: '',
   },
@@ -32,19 +31,6 @@ export const SKILLS: Record<SkillId, AiSkill> = {
     accent: 'text-violet-400',
     accentHex: '#a78bfa',
     surface: 'inline',
-    params: [
-      {
-        id: 'jd',
-        label: '目标 JD',
-        kind: 'textarea',
-        placeholder: '粘贴目标职位描述，AI 将据此定向优化…',
-        defaultValue:
-          '负责 C 端产品的需求分析、版本规划与数据驱动迭代，统筹跨团队协作落地。',
-      },
-      { id: 'company', label: '公司', kind: 'text', placeholder: '例如 字节跳动', defaultValue: '字节跳动' },
-      { id: 'title', label: '岗位', kind: 'text', placeholder: '例如 高级产品经理', defaultValue: '高级产品经理' },
-    ],
-    cta: '开始优化',
     canvas: { views: ['preview', 'json'], defaultView: 'preview' },
     buildIntent: (p) => `智能优化 · ${p.company || '—'} · ${p.title || '—'}`,
     doneSummary: '已改写 4 个模块',
@@ -58,10 +44,22 @@ export const SKILLS: Record<SkillId, AiSkill> = {
     accent: 'text-emerald-400',
     accentHex: '#34d399',
     surface: 'inline',
-    params: [],
     canvas: { views: ['score', 'json'], defaultView: 'score' },
     buildIntent: () => i18n.t('aiLab.intent.analyze'),
     doneSummary: '多角色体检完成',
+  },
+  fit: {
+    id: 'fit',
+    scope: ['whole-resume'],
+    name: '岗位匹配',
+    tagline: '按 JD 打分找差距',
+    icon: Target,
+    accent: 'text-cyan-400',
+    accentHex: '#22d3ee',
+    surface: 'inline',
+    canvas: { views: ['match', 'json'], defaultView: 'match' },
+    buildIntent: () => i18n.t('aiLab.intent.fit'),
+    doneSummary: '匹配度评估完成',
   },
   translate: {
     id: 'translate',
@@ -72,21 +70,6 @@ export const SKILLS: Record<SkillId, AiSkill> = {
     accent: 'text-amber-400',
     accentHex: '#fbbf24',
     surface: 'inline',
-    params: [
-      {
-        id: 'lang',
-        label: '目标语言',
-        kind: 'select',
-        options: [
-          { value: 'English', label: 'English' },
-          { value: '日本語', label: '日本語' },
-          { value: '한국어', label: '한국어' },
-          { value: 'Français', label: 'Français' },
-        ],
-        defaultValue: 'English',
-      },
-    ],
-    cta: '开始翻译',
     canvas: { views: ['preview', 'json'], defaultView: 'preview' },
     buildIntent: (p) => `翻译成 ${p.lang || 'English'}`,
     doneSummary: '已生成翻译版',
@@ -100,7 +83,6 @@ export const SKILLS: Record<SkillId, AiSkill> = {
     accent: 'text-rose-400',
     accentHex: '#fb7185',
     surface: 'immersive',
-    params: [],
     buildIntent: () => i18n.t('aiLab.intent.interview'),
     doneSummary: '',
   },

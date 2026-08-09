@@ -32,10 +32,15 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`.
 | Workspace | Package name | Purpose |
 |---|---|---|
 | `apps/web` | `@magic-resume/web` | Next.js 15 App Router frontend |
+| `packages/env` | `@magic-resume/env` | Shared env parsing |
+| `packages/genui` | `@magic-resume/genui` | GenUI widget contract, host, motion, interactive cards |
 | `packages/mcp` | `@magic-resume/mcp` | stdio MCP server + CLI (Node ESM) |
 | `packages/resume-schema` | `@magic-resume/resume-schema` | Shared Zod schemas, types, sample data |
 | `packages/resume-templates` | `@magic-resume/resume-templates` | Template DSL, renderer, registry |
 | `packages/tsconfig` | `@magic-resume/tsconfig` | Shared TypeScript configs |
+| `packages/utils` | `@magic-resume/utils` | Dependency-light helpers (`cn`, time, color) |
+
+**A workspace package that ships Tailwind classes must be declared with `@source` in `apps/web/src/app/globals.css`.** Tailwind v4 auto-detects sources from the build's cwd (`apps/web`) and never scans `packages/` — a missing entry emits no error, it just silently drops any utility the app itself doesn't also use.
 
 ## Architecture
 

@@ -184,7 +184,7 @@ const nextConfig: NextConfig = {
     return config;
   },
   output: "standalone",
-  transpilePackages: ['@magic-resume/resume-templates'],
+  transpilePackages: ['@magic-resume/resume-templates', '@magic-resume/genui'],
 
   // 分享出去的简历页里是真名 / 电话 / 邮箱 / 履历。页面自己已经声明了
   // `robots: { index: false, follow: false }`，这里再发一遍响应头：meta 只在

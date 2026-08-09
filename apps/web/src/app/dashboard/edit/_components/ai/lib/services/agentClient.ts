@@ -84,7 +84,7 @@ export async function* streamPdfParse(
 
 export interface ChatStreamParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
-  mode?: 'create' | 'optimize' | 'analyze' | 'translate' | 'interview' | 'general';
+  mode?: 'create' | 'optimize' | 'analyze' | 'fit' | 'translate' | 'interview' | 'general';
   /** 一次对话 = 一个 sessionId，"新对话"才换新的。服务端据此跨轮次续上下文。 */
   sessionId?: string;
   /**

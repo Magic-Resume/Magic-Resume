@@ -2,30 +2,34 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { WIDGETS } from '../widgets/registry';
-import type { WidgetActionResult, WidgetInstance } from '../widgets/types';
+import type { WidgetActionResult, WidgetInstance, WidgetRegistry } from '../contract';
 
 /**
- * Dispatches a `widget` chat message to its registered component. Unknown kind or
- * props that fail the descriptor's `normalize` degrade to a plain text line — a
- * stray widget never breaks the thread (docs/specs/genui-systematization/design.md §4).
+ * Dispatches a widget message to its registered component. An unknown kind, or
+ * props that fail the descriptor's `normalize`, degrade to a plain text line —
+ * a stray widget must never break the conversation it appears in.
+ *
+ * The registry is passed in rather than imported: which widgets exist is the
+ * consuming app's contract with its agent, not this package's.
  */
 export default function WidgetHost({
+  registry,
   instance,
   onAction,
 }: {
+  registry: WidgetRegistry;
   instance: WidgetInstance;
   onAction: (widgetId: string, result: WidgetActionResult) => void;
 }) {
   const { t } = useTranslation();
-  const descriptor = WIDGETS[instance.kind];
+  const descriptor = registry[instance.kind];
   const normalized = descriptor?.normalize
     ? descriptor.normalize(instance.props)
     : instance.props;
 
   if (!descriptor || !normalized) {
     return (
-      <div className="text-[11px] text-neutral-500">
+      <div className="text-[11px] text-muted">
         <span className="truncate">{t('aiLab.widgets.unsupported', { kind: instance.kind })}</span>
       </div>
     );

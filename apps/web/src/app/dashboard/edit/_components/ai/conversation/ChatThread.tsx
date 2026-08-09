@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
   Check,
@@ -17,9 +17,10 @@ import { cn } from '@/lib/utils';
 import { SKILLS } from '../skills/registry';
 import Markdown from './Markdown';
 import { PolarisGlyph } from '../PolarisMark';
-import WidgetHost from './WidgetHost';
+import { WidgetHost } from '@magic-resume/genui';
+import { WIDGETS } from '../widgets/registry';
 import type { ApprovalRequest, ChatMessage, SkillId } from '../types';
-import type { WidgetActionResult } from '../widgets/types';
+import type { WidgetActionResult } from '@magic-resume/genui/contract';
 
 type ApprovalDecision = (msgId: string, approved: boolean) => void;
 
@@ -76,11 +77,15 @@ function BreathGlyph({ size = 11, className }: { size?: number; className?: stri
  */
 function ThinkingIndicator({ showAvatar }: { showAvatar: boolean }) {
   const { t } = useTranslation();
+  const reduce = useReducedMotion() ?? false;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: reduce ? 0 : 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
+      // 不写 transition 就吃 framer-motion 默认的 spring，跟全局那条 180ms 缓动
+      // 对不上——而这正是「思考中 → 开始落笔」的交接点，最不该是另一种手感。
+      transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
       className="flex gap-3 items-start"
     >
       {/* 状态表达收拢到桌宠本体(抬头冒灵感星),文字旁不再放额外动画 */}
@@ -279,45 +284,6 @@ function PlanCard({
   );
 }
 
-function TypewriterText({ text }: { text: string }) {
-  const [shown, setShown] = useState('');
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    setShown('');
-    setDone(false);
-    let i = 0;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      if (cancelled) return;
-      i += 1;
-      setShown(text.slice(0, i));
-      if (i < text.length) {
-        const ch = text[i - 1];
-        const pause = /[，。！？、；：,.!?]/.test(ch) ? 280 : /\s/.test(ch) ? 40 : 24;
-        timer = setTimeout(tick, pause);
-      } else {
-        setDone(true);
-      }
-    };
-    timer = setTimeout(tick, 320);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [text]);
-
-  return (
-    <span>
-      {shown}
-      {!done && (
-        <span className="inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px] animate-pulse" />
-      )}
-    </span>
-  );
-}
-
 /**
  * Human-in-the-loop approval prompt. The assistant asks before a sensitive action;
  * the user must allow / deny before it continues.
@@ -367,7 +333,12 @@ function ApprovalCard({
           </div>
         ) : (
           <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-neutral-500">
-            {a.status === 'denied' ? (
+            {a.status === 'expired' ? (
+              <>
+                <X size={11} />
+                {t('aiLab.widgets.form.expired')}
+              </>
+            ) : a.status === 'denied' ? (
               <>
                 <X size={11} />
                 {t('aiLab.chat.approval.denied')}
@@ -465,17 +436,12 @@ function Bubble({
     <div className="flex gap-3 items-start">
       <Avatar show={showAvatar} variant={avatarVariant} />
       <div className="flex-1 pt-1 text-sm text-neutral-200 leading-relaxed">
-        {message.streamed ? (
-          <>
-            <Markdown>{message.content ?? ''}</Markdown>
-            {message.status === 'running' && (
-              <span className="inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px] animate-pulse" />
-            )}
-          </>
-        ) : (
-          <span className="whitespace-pre-wrap">
-            <TypewriterText text={message.content ?? ''} />
-          </span>
+        {/* 一种渲染方式、一种手感。这里原来给非流式的助手台词加了 JS 定时器的伪打字
+            （24ms/字），跟真流式并存就是两种节奏；而 brief §3 明确要删掉这类假动效
+            ——它模拟的是并没有在发生的工作。光标同理挂回全局心跳。 */}
+        <Markdown>{message.content ?? ''}</Markdown>
+        {message.streamed && message.status === 'running' && (
+          <span className="ai-breath inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px]" />
         )}
       </div>
     </div>
@@ -499,10 +465,15 @@ type ChatThreadProps = {
 
 export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, running }: ChatThreadProps) {
   const endRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, thinking]);
+    // reduce 下也别平滑滚动——自动滚动是这套界面里最容易让人不适的一个动作。
+    endRef.current?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'end',
+    });
+  }, [messages, thinking, reduceMotion]);
 
   // Avatar grouping: within a run of consecutive bot messages (until the next user
   // turn), only the first "carded" bot message (assistant / exec / approval) shows
@@ -532,13 +503,17 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
     <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
       <div className="max-w-3xl mx-auto flex flex-col gap-5">
         {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
-            so only freshly-mounted turns animate, never re-renders of existing ones. */}
+            so only freshly-mounted turns animate, never re-renders of existing ones.
+            外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
+            替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
+        <AnimatePresence initial={false}>
         {messages.map((m, i) => (
           <motion.div
             key={m.id}
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 16, scale: reduceMotion ? 1 : 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.12 } }}
+            transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
             {m.role === 'exec' ? (
               <ExecCard
@@ -566,7 +541,11 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
               m.widget ? (
                 <div className="flex gap-3 items-start">
                   <Avatar show={showAvatarFor[i]} variant={variantFor(i)} />
-                  <WidgetHost instance={m.widget} onAction={onWidgetAction ?? (() => {})} />
+                  <WidgetHost
+                    registry={WIDGETS}
+                    instance={m.widget}
+                    onAction={onWidgetAction ?? (() => {})}
+                  />
                 </div>
               ) : null
             ) : (
@@ -574,7 +553,10 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
             )}
           </motion.div>
         ))}
-        {thinking && <ThinkingIndicator showAvatar={!botAvatarShown} />}
+        </AnimatePresence>
+        <AnimatePresence>
+          {thinking && <ThinkingIndicator showAvatar={!botAvatarShown} />}
+        </AnimatePresence>
         <div ref={endRef} />
       </div>
     </div>
