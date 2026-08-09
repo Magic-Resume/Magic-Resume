@@ -135,6 +135,20 @@ function shareRuntimeSingletons(
 }
 
 const nextConfig: NextConfig = {
+  /**
+   * 构建产物目录，可用 `NEXT_DIST_DIR` 覆盖。
+   *
+   * `next dev` 与 `next build` 默认共用 `.next/`：dev 跑着的时候在同一棵树上跑一次
+   * 构建，会把 dev server 脚下的 chunk 整个换掉——dev 仍按旧 manifest 发请求，于是
+   * `/_next/static/css/app/layout.css` 之类全部 404，表现为「改完不重新打包就炸」。
+   * 因果其实是反的：不是改完要打包，是打包打坏了 dev。
+   *
+   * 留一个环境变量而不是写死另一个目录：CI / Docker / `pnpm build` 的默认行为完全
+   * 不变（未设时仍是 `.next`），只有想在 dev 开着的情况下验证构建时才需要
+   * `NEXT_DIST_DIR=.next-verify pnpm build`，两边各写各的目录，互不打扰。
+   */
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
   // Magic-Resume commercial overlay alias. Roots are provided only by private commercial builds.
   webpack: (config, { webpack }) => {
     const runtimeRoot = process.env.MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT;
