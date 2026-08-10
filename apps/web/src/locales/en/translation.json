@@ -253,6 +253,19 @@
       "testing": "Testing…",
       "testConnected": "Connected",
       "testFailed": "Connection failed",
+      "imageSupported": "Image input supported",
+      "imageNotSupported": "No image input",
+      "imageBadge": "Image",
+      "textOnlyBadge": "Text only",
+      "testErrors": {
+        "upstream": "The provider's upstream service is temporarily unavailable. Try again later or check the service status.",
+        "auth": "Invalid API key or insufficient permission. Check your key.",
+        "quota": "Insufficient account quota. Check your balance or limits.",
+        "rateLimit": "Too many requests. Please try again later.",
+        "notFound": "Endpoint or model not found. Check the Base URL and model name.",
+        "server": "The provider returned a server error. Please try again later.",
+        "timeout": "Connection timed out. Check your network or try again later."
+      },
       "showKey": "Show key",
       "hideKey": "Hide key"
     },

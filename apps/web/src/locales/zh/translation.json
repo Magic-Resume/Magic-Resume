@@ -253,6 +253,19 @@
       "testing": "测试中…",
       "testConnected": "连接成功",
       "testFailed": "连接失败",
+      "imageSupported": "支持图片",
+      "imageNotSupported": "不支持图片",
+      "imageBadge": "图像",
+      "textOnlyBadge": "纯文本",
+      "testErrors": {
+        "upstream": "服务商上游暂不可用，请稍后重试或检查服务状态。",
+        "auth": "API Key 无效或没有权限，请检查密钥是否正确。",
+        "quota": "账户额度不足，请检查余额或配额。",
+        "rateLimit": "请求过于频繁，请稍后重试。",
+        "notFound": "接口或模型不存在，请检查 Base URL 与模型名称。",
+        "server": "服务商返回服务器错误，请稍后重试。",
+        "timeout": "连接超时，请检查网络或稍后重试。"
+      },
       "showKey": "显示密钥",
       "hideKey": "隐藏密钥"
     },

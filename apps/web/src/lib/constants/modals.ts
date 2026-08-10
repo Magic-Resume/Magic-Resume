@@ -17,6 +17,13 @@
  *      single correct URL to preset, so the template carries a literal
  *      `{WorkspaceId}` placeholder and the form tells the user to replace it.
  */
+export interface ModelInfo {
+  /** exact API `model` string */
+  id: string;
+  /** whether this model accepts image input (known from provider docs) */
+  supportsImage: boolean;
+}
+
 export interface ModelProvider {
   /** stable provider key; also the filename of its mark: /public/providers/{id}.svg */
   id: string;
@@ -24,8 +31,8 @@ export interface ModelProvider {
   label: string;
   /** official API base URL for this provider (empty for custom) */
   baseUrl: string;
-  /** model ids (exact API `model` strings), newest first. Empty = free-text field. */
-  models: string[];
+  /** models (exact API `model` strings), newest first. Empty = free-text field. */
+  models: ModelInfo[];
   /** console URL where the user obtains an API key (empty for custom) */
   keyUrl: string;
   /** recommended default model id picked when this provider is selected */
@@ -58,7 +65,12 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'openai',
     label: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1',
-    models: ['gpt-5.6-sol', 'gpt-5.5-pro', 'gpt-5.5', 'gpt-5.4-mini'],
+    models: [
+      { id: 'gpt-5.6-sol', supportsImage: true },
+      { id: 'gpt-5.5-pro', supportsImage: true },
+      { id: 'gpt-5.5', supportsImage: true },
+      { id: 'gpt-5.4-mini', supportsImage: true },
+    ],
     keyUrl: 'https://platform.openai.com/account/api-keys',
     defaultModel: 'gpt-5.5',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -71,7 +83,12 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     label: 'Anthropic Claude',
     baseUrl: 'https://api.anthropic.com/v1',
     // API ids use dashes (claude-opus-5), not dots.
-    models: ['claude-fable-5', 'claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4-5'],
+    models: [
+      { id: 'claude-fable-5', supportsImage: true },
+      { id: 'claude-opus-5', supportsImage: true },
+      { id: 'claude-sonnet-5', supportsImage: true },
+      { id: 'claude-haiku-4-5', supportsImage: true },
+    ],
     keyUrl: 'https://console.anthropic.com/settings/keys',
     defaultModel: 'claude-sonnet-5',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -82,7 +99,12 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'google',
     label: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    models: ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview', 'gemini-2.5-pro'],
+    models: [
+      { id: 'gemini-3.6-flash', supportsImage: true },
+      { id: 'gemini-3.5-flash-lite', supportsImage: true },
+      { id: 'gemini-3.1-pro-preview', supportsImage: true },
+      { id: 'gemini-2.5-pro', supportsImage: true },
+    ],
     keyUrl: 'https://aistudio.google.com/app/apikey',
     defaultModel: 'gemini-3.6-flash',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -93,7 +115,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'xai',
     label: 'xAI Grok',
     baseUrl: 'https://api.x.ai/v1',
-    models: ['grok-4.5', 'grok-4.3'],
+    models: [
+      { id: 'grok-4.5', supportsImage: true },
+      { id: 'grok-4.3', supportsImage: true },
+    ],
     keyUrl: 'https://console.x.ai',
     defaultModel: 'grok-4.5',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -105,7 +130,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'mistral',
     label: 'Mistral AI',
     baseUrl: 'https://api.mistral.ai/v1',
-    models: ['mistral-large-2512', 'devstral-2512'],
+    models: [
+      { id: 'mistral-large-2512', supportsImage: false },
+      { id: 'devstral-2512', supportsImage: false },
+    ],
     keyUrl: 'https://console.mistral.ai/api-keys',
     defaultModel: 'mistral-large-2512',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -117,7 +145,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     label: 'Cohere',
     // Cohere's OpenAI-SDK compatibility layer, not the native /v1 chat endpoint.
     baseUrl: 'https://api.cohere.ai/compatibility/v1',
-    models: ['command-a-plus-05-2026', 'command-a-03-2025'],
+    models: [
+      { id: 'command-a-plus-05-2026', supportsImage: false },
+      { id: 'command-a-03-2025', supportsImage: false },
+    ],
     keyUrl: 'https://dashboard.cohere.com/api-keys',
     defaultModel: 'command-a-plus-05-2026',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -128,7 +159,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'perplexity',
     label: 'Perplexity',
     baseUrl: 'https://api.perplexity.ai',
-    models: ['sonar-reasoning-pro', 'sonar-pro'],
+    models: [
+      { id: 'sonar-reasoning-pro', supportsImage: false },
+      { id: 'sonar-pro', supportsImage: false },
+    ],
     keyUrl: 'https://www.perplexity.ai/settings/api',
     defaultModel: 'sonar-pro',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -186,7 +220,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'deepseek',
     label: 'DeepSeek 深度求索',
     baseUrl: 'https://api.deepseek.com',
-    models: ['deepseek-v4-pro', 'deepseek-v4-flash'],
+    models: [
+      { id: 'deepseek-v4-pro', supportsImage: false },
+      { id: 'deepseek-v4-flash', supportsImage: false },
+    ],
     keyUrl: 'https://platform.deepseek.com/api_keys',
     defaultModel: 'deepseek-v4-flash',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -199,7 +236,11 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     // 阿里百炼的 OpenAI 兼容端点已改为工作区级，没有一个「正确的」静态地址可预置。
     baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
     baseUrlNeedsEdit: true,
-    models: ['qwen3.7-max', 'qwen3.7-plus', 'qwen3.7-flash'],
+    models: [
+      { id: 'qwen3.7-max', supportsImage: false },
+      { id: 'qwen3.7-plus', supportsImage: true },
+      { id: 'qwen3.7-flash', supportsImage: false },
+    ],
     keyUrl: 'https://bailian.console.aliyun.com/?tab=model#/api-key',
     defaultModel: 'qwen3.7-plus',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -211,7 +252,11 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     label: '月之暗面 Kimi',
     // 官方端点是 .ai，不是 .cn。
     baseUrl: 'https://api.moonshot.ai/v1',
-    models: ['kimi-k3', 'kimi-k2.7-code', 'kimi-k2.6'],
+    models: [
+      { id: 'kimi-k3', supportsImage: true },
+      { id: 'kimi-k2.7-code', supportsImage: false },
+      { id: 'kimi-k2.6', supportsImage: true },
+    ],
     keyUrl: 'https://platform.moonshot.ai/console/api-keys',
     defaultModel: 'kimi-k3',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -223,7 +268,11 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'zhipu',
     label: '智谱 GLM',
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    models: ['glm-5.2', 'glm-5.1', 'glm-5'],
+    models: [
+      { id: 'glm-5.2', supportsImage: false },
+      { id: 'glm-5.1', supportsImage: false },
+      { id: 'glm-5', supportsImage: false },
+    ],
     keyUrl: 'https://bigmodel.cn/usercenter/apikeys',
     defaultModel: 'glm-5.2',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -234,7 +283,11 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'doubao',
     label: '火山方舟 豆包',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-    models: ['doubao-seed-2.0-pro', 'doubao-seed-2.0-lite', 'doubao-seed-2.0-mini'],
+    models: [
+      { id: 'doubao-seed-2.0-pro', supportsImage: true },
+      { id: 'doubao-seed-2.0-lite', supportsImage: true },
+      { id: 'doubao-seed-2.0-mini', supportsImage: true },
+    ],
     keyUrl: 'https://console.volcengine.com/ark',
     defaultModel: 'doubao-seed-2.0-pro',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -245,7 +298,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'wenxin',
     label: '百度千帆 文心',
     baseUrl: 'https://qianfan.baidubce.com/v2',
-    models: ['ernie-5.1', 'ernie-5.0-turbo'],
+    models: [
+      { id: 'ernie-5.1', supportsImage: true },
+      { id: 'ernie-5.0-turbo', supportsImage: true },
+    ],
     keyUrl: 'https://console.bce.baidu.com/qianfan/ais/console/onlineService',
     defaultModel: 'ernie-5.1',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -256,7 +312,10 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'hunyuan',
     label: '腾讯混元',
     baseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
-    models: ['hunyuan-turbos', 'hunyuan-turbos-vision'],
+    models: [
+      { id: 'hunyuan-turbos', supportsImage: false },
+      { id: 'hunyuan-turbos-vision', supportsImage: true },
+    ],
     keyUrl: 'https://console.cloud.tencent.com/hunyuan/api-key',
     defaultModel: 'hunyuan-turbos',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -267,7 +326,9 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     id: 'minimax',
     label: 'MiniMax 稀宇',
     baseUrl: 'https://api.minimax.chat/v1',
-    models: ['MiniMax-M2.5'],
+    models: [
+      { id: 'MiniMax-M2.5', supportsImage: false },
+    ],
     keyUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key',
     defaultModel: 'MiniMax-M2.5',
     defaultMaxTokens: DEFAULT_MAX_TOKENS,
@@ -318,7 +379,18 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
  * two never drift. Used by the settings page to auto-fill the base URL on select.
  */
 export const MODEL_API_URL_MAP: Record<string, string> = Object.fromEntries(
-  MODEL_PROVIDERS.flatMap((provider) => provider.models.map((model) => [model, provider.baseUrl])),
+  MODEL_PROVIDERS.flatMap((provider) =>
+    provider.models.map((model) => [model.id, provider.baseUrl]),
+  ),
+);
+
+/**
+ * model id → known image-input support. `undefined` when unknown (custom models).
+ */
+export const MODEL_IMAGE_SUPPORT_MAP: Record<string, boolean> = Object.fromEntries(
+  MODEL_PROVIDERS.flatMap((provider) =>
+    provider.models.map((model) => [model.id, model.supportsImage]),
+  ),
 );
 
 /** Look up a provider by its stable id. */
@@ -365,7 +437,7 @@ export function resolveProviderIdFromModel(model: string): string | null {
   const name = model.trim().toLowerCase();
   if (!name) return null;
   const exact = MODEL_PROVIDERS.find((p) =>
-    p.models.some((m) => m.toLowerCase() === name),
+    p.models.some((m) => m.id.toLowerCase() === name),
   );
   if (exact) return exact.id;
   const hinted = FAMILY_HINTS.find(([, needles]) => needles.some((n) => name.includes(n)));
