@@ -58,6 +58,8 @@ type ComposerProps = {
   /** 当前模式 —— 提到会话层，因为真正的闸门在 AiChatShell 的运行逻辑里。 */
   mode: AgentMode;
   onModeChange: (mode: AgentMode) => void;
+  /** 对话已开始。升级条只属于欢迎态：一旦开聊，它就是压在输入框下面的一条广告。 */
+  conversationStarted?: boolean;
 };
 
 /**
@@ -104,6 +106,7 @@ export default function Composer({
   onStop,
   mode,
   onModeChange,
+  conversationStarted,
 }: ComposerProps) {
   const { t, i18n } = useTranslation();
   const [value, setValue] = useState('');
@@ -577,7 +580,7 @@ export default function Composer({
           </div>
         </div>
 
-        <ProUpgradeBanner />
+        <ProUpgradeBanner retired={conversationStarted} />
       </div>
     </div>
   );
