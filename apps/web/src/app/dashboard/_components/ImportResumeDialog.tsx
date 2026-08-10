@@ -194,12 +194,22 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
         ? await handlePdfFile(file)
         : await handleJsonFile(file);
 
+      // 解析器对拿不准的地方会给 parse_warnings。它此前既没展示给用户,又跟着 spread
+      // 一路写进了简历记录——那是解析元数据,不是简历内容。取出来、从落库对象里摘掉。
+      const rest = { ...(result as Record<string, unknown>) };
+      const warnings = Array.isArray(rest.parse_warnings)
+        ? (rest.parse_warnings as unknown[]).filter(
+            (w): w is string => typeof w === 'string' && Boolean(w.trim()),
+          )
+        : [];
+      delete rest.parse_warnings;
+
       const resumeName = result.info?.fullName
         ? `${result.info.fullName}'s Resume`
-        : (result as Record<string, unknown>).name as string || t('importDialog.defaultName');
+        : (rest.name as string) || t('importDialog.defaultName');
 
       const newResume: Resume = {
-        ...(result as Record<string, unknown>),
+        ...rest,
         id: Date.now().toString(),
         name: resumeName,
         updatedAt: Date.now(),
@@ -221,6 +231,14 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
           ? t('importDialog.pdf.success', { defaultValue: 'PDF resume imported successfully!' })
           : t('importDialog.success')
       );
+      // 解析器自己说不确定的地方,用户有权知道——不设自动消失,不然等于没说。
+      if (warnings.length) {
+        toast.warning(t('importDialog.pdf.warningsTitle'), {
+          description: warnings.join('\n'),
+          duration: Infinity,
+          closeButton: true,
+        });
+      }
       handleClose(false);
     } catch (e) {
       const message = formatResumeImportError(e, t('importDialog.errors.parseFailed'));

@@ -7,11 +7,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Sparkles,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useSettingStore, type Strength } from "@/store/useSettingStore";
+import ModelMark from "./ModelMark";
 import { useEntitlement } from "@/lib/extensions/billing-client";
 
 const STRENGTHS: Strength[] = ["low", "medium", "high"];
@@ -98,6 +98,13 @@ export default function ModelStrengthPicker({
   }, [open]);
 
   const strengthLabel = t(`aiLab.picker.strength.${strength}`);
+  // modelLabel 可能是「自动」这种文案,认厂商要用真正的模型名。
+  const resolvedModel =
+    preferredSource === "byok"
+      ? byokModel
+      : preferredSource === "internal"
+        ? selectedModel
+        : "";
   const modelLabel =
     preferredSource === "byok"
       ? byokModel || t("aiLab.picker.auto")
@@ -114,15 +121,19 @@ export default function ModelStrengthPicker({
         onPointerEnter={() => void refresh()}
         aria-haspopup="menu"
         aria-expanded={open}
+        // 控件行的第二档重量:无框。它是**状态显示**,只是恰好可点——给它一圈边框,
+        // 就是在假装它和「添加文件 / 模式」那一档一样重。规格见 design-brief §4。
         className={cn(
-          "inline-flex max-w-[220px] items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] transition-colors",
-          "border-white/[0.08] bg-white/[0.03] text-neutral-300 hover:bg-white/[0.06] disabled:opacity-40",
-          open && "border-sky-400/40 bg-sky-400/[0.06]",
+          "inline-flex h-[38px] max-w-[260px] items-center gap-2 rounded-full pl-1 pr-2.5 text-[14px] transition-colors",
+          "text-neutral-100 hover:bg-white/[0.05] disabled:opacity-40 cursor-pointer",
+          open && "bg-white/[0.06]",
         )}
       >
-        <Sparkles size={13} className="shrink-0 text-sky-300/80" />
-        <span className="truncate">
-          {modelLabel} · {strengthLabel}
+        {/* 当前模型所属厂商的标。"自动"由系统挑,没有具体模型 → 中性 sparkle。 */}
+        <ModelMark model={resolvedModel} generic={!resolvedModel} size={26} />
+        <span className="min-w-0 truncate">
+          {modelLabel}
+          <span className="text-neutral-500"> · {strengthLabel}</span>
         </span>
         <ChevronUp
           size={13}
@@ -205,6 +216,7 @@ export default function ModelStrengthPicker({
                   <ModelRow
                     label={t("aiLab.picker.auto")}
                     sub={t("aiLab.picker.autoHint")}
+                    generic
                     active={preferredSource === "auto"}
                     onClick={pickAuto}
                   />
@@ -280,12 +292,15 @@ function ModelRow({
   sub,
   active,
   disabled,
+  generic,
   onClick,
 }: {
   label: string;
   sub?: string;
   active: boolean;
   disabled?: boolean;
+  /** 「自动」行没有具体模型。 */
+  generic?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -294,7 +309,7 @@ function ModelRow({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-colors",
+        "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
         disabled
           ? "cursor-not-allowed opacity-40"
           : active
@@ -302,7 +317,8 @@ function ModelRow({
             : "text-neutral-300 hover:bg-white/[0.035]",
       )}
     >
-      <span className="min-w-0">
+      <ModelMark model={label} generic={generic} size={22} />
+      <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px]">{label}</span>
         {sub && (
           <span className="block truncate text-[11px] text-neutral-500">

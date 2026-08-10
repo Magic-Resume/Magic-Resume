@@ -11,6 +11,8 @@ const MARKS = {
   polaris: '/marks/polaris.svg',
   flask: '/marks/lab-flask.svg',
   pet: '/marks/polaris-pet.svg',
+  petJump: '/marks/polaris-pet-jump.svg',
+  petSit: '/marks/polaris-pet-sit.svg',
 } as const;
 
 export function PolarisGlyph({
@@ -61,16 +63,28 @@ export function LabMark({
  * (two-frame hop / blink / antenna-star twinkle, steps() timing) ships inside
  * polaris-pet.svg, which carries its own reduced-motion query.
  */
-export function PolarisAvatar({ className }: { className?: string }) {
+export function PolarisAvatar({
+  className,
+  size = 56,
+  pose = 'default',
+}: {
+  className?: string;
+  /** 欢迎态 56，落到输入框上的工位 28——同一只宠物，只是远近不同。 */
+  size?: number;
+  /** `jump` = 腾空帧（飞行途中）；`sit` = 坐姿帧（落在输入框上沿时）。 */
+  pose?: 'default' | 'jump' | 'sit';
+}) {
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative', className)} style={{ width: size, height: size }}>
       {/* ambient glow — slow pulse behind the pet */}
       <div className="polaris-glow absolute inset-0 rounded-full bg-sky-500/25 blur-xl" aria-hidden="true" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={MARKS.pet} width={56} height={56} alt="" aria-hidden="true" className="relative" />
+      <img src={pose === 'jump' ? MARKS.petJump : pose === 'sit' ? MARKS.petSit : MARKS.pet} width={size} height={size} alt="" aria-hidden="true" className="relative" />
       <style jsx>{`
+        /* 全局心跳的整数倍（两拍一次），而不是另取一个 4s：同屏的呼吸元素周期互质
+           时，明暗会缓慢错开又对齐，看久了像在飘。 */
         .polaris-glow {
-          animation: polarisGlow 4s ease-in-out infinite;
+          animation: polarisGlow calc(var(--breath-duration, 2.4s) * 2) var(--breath-ease, ease-in-out) infinite;
         }
         @keyframes polarisGlow {
           0%,

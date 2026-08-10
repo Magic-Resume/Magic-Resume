@@ -28,6 +28,39 @@ const fallbackLabel = (key: string) =>
   DEFAULT_LABELS.get(key) ?? (key ? key.charAt(0).toUpperCase() + key.slice(1) : key);
 
 /**
+ * Repair the *shape* of an AI-written `sectionOrder`, keeping its sequence and
+ * adding nothing.
+ *
+ * A model that was told (or guessed) the legacy contract emits
+ * `["experience", …]` instead of `[{key,label}, …]`. Nothing downstream
+ * validates it, so `.map(s => s.key)` yields `undefined` for every entry and
+ * the resume renders with no sections at all — silently, with correct-looking
+ * JSON. Callers that hand a draft straight to a renderer must run this first.
+ *
+ * Deliberately not `normalizeResumeSectionOrder`: that one completes the list
+ * with every default section, which is right for the editor and wrong for a
+ * draft preview, where it would grow empty headings the model never wrote.
+ */
+export function coerceSectionOrder(raw: unknown): SectionOrder[] {
+  if (!Array.isArray(raw)) return [];
+
+  const out: SectionOrder[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') {
+      const key = item.trim();
+      if (key) out.push({ key, label: fallbackLabel(key) });
+      continue;
+    }
+    if (item && typeof item === 'object') {
+      const entry = item as Partial<SectionOrder>;
+      const key = typeof entry.key === 'string' ? entry.key.trim() : '';
+      if (key) out.push(entry as SectionOrder);
+    }
+  }
+  return out;
+}
+
+/**
  * `sectionOrder` also controls which forms exist in the editor. AI-generated
  * resumes may only order sections they found content for, so repair the order
  * without disturbing the sequence or labels it did provide.
@@ -56,7 +89,9 @@ export function normalizeResumeSectionOrder(
     normalized.push(entry);
   };
 
-  for (const item of sectionOrder ?? []) add(item);
+  // Through `coerceSectionOrder` so a legacy string array keeps its order here
+  // too, instead of being skipped and silently replaced by the default order.
+  for (const item of coerceSectionOrder(sectionOrder)) add(item);
   for (const item of DEFAULT_SECTION_ORDER) add(item);
   for (const key of Object.keys(sections ?? {})) add({ key, label: fallbackLabel(key) });
 

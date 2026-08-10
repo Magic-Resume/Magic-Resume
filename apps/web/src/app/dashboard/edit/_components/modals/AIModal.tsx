@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { InfoType, Resume, Section } from '@/types/frontend/resume';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import AiChatShell from '../ai/AiChatShell';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 
 type AIModalProps = {
   isOpen: boolean;
@@ -26,14 +28,14 @@ export default function AIModal({
   isAiJobRunning,
   setIsAiJobRunning,
 }: AIModalProps) {
+  // 点遮罩关闭。生成中先问一句——同 AiChatShell 里那颗关闭按钮走同一套文案与对话框，
+  // 不用 window.confirm：系统弹窗样式不可控、带 "localhost:3000 显示" 抬头，而且同步
+  // 阻塞主线程。
+  const { t } = useTranslation();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const handleBackdropClose = () => {
-    // Closing puts the AI Lab away and preserves the transcript, but an in-flight
-    // stream is still aborted so work does not continue in the background.
-    if (
-      isAiJobRunning &&
-      typeof window !== 'undefined' &&
-      !window.confirm('AI 正在生成，关闭将停止本次生成。确定关闭？')
-    ) {
+    if (isAiJobRunning) {
+      setConfirmOpen(true);
       return;
     }
     onClose();
@@ -68,6 +70,19 @@ export default function AIModal({
               />
             </motion.div>
           </div>
+          <ConfirmDialog
+            isOpen={confirmOpen}
+            onClose={() => setConfirmOpen(false)}
+            onConfirm={() => {
+              setConfirmOpen(false);
+              onClose();
+            }}
+            title={t('aiLab.closeConfirm.title')}
+            description={t('aiLab.closeConfirm.description')}
+            confirmText={t('aiLab.closeConfirm.confirm')}
+            cancelText={t('common.cancel')}
+            variant="danger"
+          />
         </>
       )}
     </AnimatePresence>

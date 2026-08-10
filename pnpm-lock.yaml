@@ -104,6 +104,9 @@ importers:
       '@magic-resume/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@magic-resume/genui':
+        specifier: workspace:*
+        version: link:../../packages/genui
       '@magic-resume/resume-templates':
         specifier: workspace:*
         version: link:../../packages/resume-templates
@@ -209,9 +212,6 @@ importers:
       fs:
         specifier: ^0.0.1-security
         version: 0.0.1-security
-      gsap:
-        specifier: ^3.14.2
-        version: 3.15.0
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
@@ -239,9 +239,6 @@ importers:
       lucide-react:
         specifier: ^0.513.0
         version: 0.513.0(react@19.2.7)
-      motion:
-        specifier: ^12.29.3
-        version: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       nanoid:
         specifier: ^5.1.5
         version: 5.1.11
@@ -284,6 +281,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.0
         version: 3.6.0
+      thinking-orbs:
+        specifier: ^0.2.0
+        version: 0.2.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       zod:
         specifier: ^3.25.56
         version: 3.25.76
@@ -357,6 +357,40 @@ importers:
       '@types/node':
         specifier: ^20.19.41
         version: 20.19.41
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/genui:
+    dependencies:
+      '@magic-resume/utils':
+        specifier: workspace:*
+        version: link:../utils
+      framer-motion:
+        specifier: ^12.17.0
+        version: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: ^0.513.0
+        version: 0.513.0(react@19.2.7)
+      react:
+        specifier: '>=19'
+        version: 19.2.7
+      react-dom:
+        specifier: '>=19'
+        version: 19.2.7(react@19.2.7)
+      react-i18next:
+        specifier: ^15.5.2
+        version: 15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3)
+    devDependencies:
+      '@magic-resume/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/react':
+        specifier: ^19.1.6
+        version: 19.2.16
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.16)
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -4900,9 +4934,6 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  gsap@3.15.0:
-    resolution: {integrity: sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==}
-
   gzip-size@6.0.0:
     resolution: {integrity: sha512-ax7ZYomf6jqPTQ4+XCpUGyXKHk5WweS+e05MBO4/y3WJ5RkmPXNKvX+bx1behVILVwr6JSQvZAku021CHPXG3Q==}
     engines: {node: '>=10'}
@@ -6797,6 +6828,12 @@ packages:
 
   text-segmentation@1.0.3:
     resolution: {integrity: sha512-iOiPUo/BGnZ6+54OsWxZidGCsdU8YbE4PSpdPinp7DeMtUJNJBoJ/ouUSTJjHkh1KntHaltHl/gDs2FC4i5+Nw==}
+
+  thinking-orbs@0.2.0:
+    resolution: {integrity: sha512-CQux/YsLlB9nY60BDpZ/uW7knAvXg+U2T/gzrzuLRw8xlzfJPLXZxAg2tbbIBGp/nE2Kol1GfbMOJnoH+tcb/A==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
 
   through@2.3.8:
     resolution: {integrity: sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==}
@@ -12139,8 +12176,6 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  gsap@3.15.0: {}
-
   gzip-size@6.0.0:
     dependencies:
       duplexer: 0.1.2
@@ -14429,6 +14464,11 @@ snapshots:
   text-segmentation@1.0.3:
     dependencies:
       utrie: 1.0.2
+
+  thinking-orbs@0.2.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+    dependencies:
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   through@2.3.8: {}
 

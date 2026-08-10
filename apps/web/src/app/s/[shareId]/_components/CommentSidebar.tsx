@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { X, MessageSquare, Send } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 import { Comment } from '../_types';
 import { useTranslation } from 'react-i18next';

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useEffect, useState } from 'react';
 import { Loader2, ZoomIn, ZoomOut, MessageSquare, RotateCcw, Eye, Wand2 } from 'lucide-react';
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
