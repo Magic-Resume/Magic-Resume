@@ -1211,7 +1211,8 @@
       "unsupportedFormat": "请上传 PDF 或 JSON 文件。",
       "noApiKey": "使用 PDF 导入需要先完成大模型配置（API Key、Base URL、模型、Max Tokens），请前往",
       "noApiKeyLink": "设置",
-      "noApiKeySuffix": "完成配置后再试。"
+      "noApiKeySuffix": "完成配置后再试。",
+      "modelNoVision": "当前模型「{{model}}」不支持读取图片。请在设置里换一个支持视觉的模型，或改上传 PDF / Word 版简历。"
     },
     "success": "简历导入成功！",
     "cancel": "取消",
@@ -1236,7 +1237,8 @@
       "analyzingScan": "这份 PDF 没有可复制的文字，正在逐页识别",
       "pageUnit": "{{count}} 页",
       "warningsTitle": "有几处我拿不准"
-    }
+    },
+    "documentOption": "简历文件（PDF / Word / 图片 / Markdown）"
   },
   "agentErrors": {
     "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置。",

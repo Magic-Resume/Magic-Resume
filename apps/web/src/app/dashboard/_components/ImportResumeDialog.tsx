@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { MODEL_IMAGE_SUPPORT_MAP } from '@/lib/constants/modals';
 import { Loader2, X, FileText, FileJson, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -116,6 +117,19 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       }
       throw new Error(access.message || '账户额度检查失败，请稍后重试');
     }
+    // 图片只能交给看得见的模型。文本模型不会因为收到图片而报错——它会**默默忽略**
+    // 然后凭空编一份简历，用户拿到的是一份看着像模像样、但和上传内容毫无关系的
+    // 数据。挡在上传前而不是等结果，因为那个结果无法被自动识别为错误。
+    //
+    // 判定放在前端：MODEL_IMAGE_SUPPORT_MAP 就在这一侧，后端再维护一份必然漂移。
+    // modelName 缺省时不拦——那是走内部额度、由服务端选型的情况，我们无从判断。
+    if (file.type.startsWith('image/')) {
+      const model = access.config.modelName;
+      if (model && MODEL_IMAGE_SUPPORT_MAP[model] === false) {
+        throw new Error(t('importDialog.errors.modelNoVision', { model }));
+      }
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('config', JSON.stringify(access.config));
@@ -251,8 +265,20 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
     }
   }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, cloudSync]);
 
+  // 'pdf' 这个取值现在代表的是「走解析的简历文件」这一整条路，不再只是 PDF——
+  // 后端按 mimetype 自己分发（PDF 抽文字 / DOCX 走 mammoth / 图片交视觉模型 /
+  // Markdown 直读）。标识符没跟着改名，是因为它同时是埋点的 source 维度，
+  // 改了会把一条既有指标从中间截断。
   const dropzoneAccept: Record<string, string[]> = fileType === 'pdf'
-    ? { 'application/pdf': ['.pdf'] }
+    ? {
+        'application/pdf': ['.pdf'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+        'text/markdown': ['.md'],
+        'text/plain': ['.txt'],
+        'image/png': ['.png'],
+        'image/jpeg': ['.jpg', '.jpeg'],
+        'image/webp': ['.webp'],
+      }
     : { 'application/json': ['.json'] };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -327,7 +353,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                     >
                       <span className="flex items-center gap-2">
                         <FileText size={15} className="text-sky-400 shrink-0" />
-                        {'PDF'}
+                        {t('importDialog.documentOption')}
                         <span className="inline-flex items-center text-[10px] font-semibold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-full leading-none">
                           {'AI'}
                         </span>
@@ -410,7 +436,9 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                           )}
                           <span className="inline-flex items-center gap-1 text-xs text-neutral-500 bg-neutral-800/60 px-2.5 py-1 rounded-full mt-2.5">
                             {fileType === 'pdf' ? <FileText size={11} /> : <FileJson size={11} />}
-                            {fileType === 'pdf' ? '.pdf' : '.json'}
+                            {fileType === 'pdf'
+                              ? '.pdf · .docx · .png · .jpg · .md'
+                              : '.json'}
                           </span>
                         </div>
                       )}

@@ -1211,7 +1211,8 @@
       "unsupportedFormat": "Please upload a PDF or JSON file.",
       "noApiKey": "PDF import requires AI model configuration (API Key, Base URL, model, and Max Tokens). Go to",
       "noApiKeyLink": "Settings",
-      "noApiKeySuffix": "and try again after saving."
+      "noApiKeySuffix": "and try again after saving.",
+      "modelNoVision": "The selected model \"{{model}}\" cannot read images. Switch to a vision-capable model in settings, or upload a PDF / Word resume instead."
     },
     "success": "Resume imported successfully!",
     "cancel": "Cancel",
@@ -1236,7 +1237,8 @@
       "analyzingScan": "This PDF has no selectable text — reading it page by page",
       "pageUnit": "{{count}} page(s)",
       "warningsTitle": "A few things I wasn't sure about"
-    }
+    },
+    "documentOption": "Resume file (PDF / Word / image / Markdown)"
   },
   "agentErrors": {
     "agent_run_failed": "The parse did not finish. Try again; if it keeps failing, try another PDF or check your model settings.",
