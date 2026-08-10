@@ -104,7 +104,8 @@
         "security": "Security",
         "activity": "Activity",
         "subscription": "Subscription",
-        "billing": "Billing"
+        "billing": "Billing",
+        "invite": "Invite"
       },
       "personalInfo": "Personal information",
       "firstName": "First name",
@@ -204,6 +205,65 @@
         "wechat": "WeChat Pay",
         "stripe": "Stripe",
         "manual": "Manual"
+      },
+      "colOrderId": "Order ID",
+      "copyOrderId": "Copy full order ID"
+    },
+    "invite": {
+      "copied": "Copied",
+      "savePoster": "Save invite poster",
+      "posterAlt": "Magic Resume invite poster",
+      "posterError": "Could not build the poster. Please try again.",
+      "rule": "Rewards land automatically once your friend finishes their first AI chat, for both of you. Paying on signup alone invites bulk fake accounts, so we wait for one real use.",
+      "stats": {
+        "invited": "Invited",
+        "rewarded": "Rewarded",
+        "pending": "Pending"
+      },
+      "headerAction": "Invite friends",
+      "emptyHint": "Send the poster or link to a friend who's job hunting — you both get extra AI allowance, and they get a head start.",
+      "remaining": "{{count}} more rewards available"
+    },
+    "security": {
+      "on": "On",
+      "off": "Off",
+      "cancel": "Cancel",
+      "save": "Save",
+      "done": "Done",
+      "password": {
+        "label": "Password",
+        "set": "Set up",
+        "change": "Change",
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Confirm new password",
+        "mismatch": "The two new passwords do not match.",
+        "signOutNotice": "Changing it signs you out on your other devices."
+      },
+      "totp": {
+        "label": "Two-step verification",
+        "enable": "Enable",
+        "disable": "Disable",
+        "scanHint": "Scan the QR code with an authenticator app (Google Authenticator, 1Password…), or enter the key below manually.",
+        "manualKey": "Manual entry key",
+        "enterCode": "Enter the 6-digit code",
+        "verify": "Verify and enable",
+        "codesWarning": "Save these backup codes now. They are shown only once — if you lose your phone, this is your only way back in.",
+        "copyAll": "Copy all",
+        "copied": "Copied",
+        "download": "Download as file",
+        "confirmSaved": "I have saved these backup codes",
+        "disableWarning": "Once disabled, signing in needs only your password. Existing backup codes stop working.",
+        "confirmDisable": "Confirm disable"
+      },
+      "errors": {
+        "passwordIncorrect": "That current password is not correct.",
+        "passwordPwned": "This password has appeared in a data breach. Please choose another.",
+        "passwordTooShort": "That password is too short.",
+        "passwordWeak": "That password is too weak — mix upper and lower case, numbers and symbols.",
+        "codeIncorrect": "That code is not correct. Check the number currently shown in your authenticator.",
+        "codeExpired": "That code has expired. Enter the current one from your authenticator.",
+        "unknown": "Something went wrong. Please try again."
       }
     }
   },
@@ -773,6 +833,29 @@
       "viewRender": "Preview",
       "viewJson": "JSON",
       "empty": "No versions yet"
+    },
+    "export": {
+      "title": "Export resume",
+      "confirm": "Export",
+      "cancel": "Cancel",
+      "formats": {
+        "pdf": {
+          "name": "PDF",
+          "hint": "Vector, selectable text — best for applying and ATS"
+        },
+        "png": {
+          "name": "Image (PNG)",
+          "hint": "One tall image of the whole resume — good for chats and social"
+        },
+        "json": {
+          "name": "JSON",
+          "hint": "Raw data for backup, migration, and re-import"
+        }
+      },
+      "imaging": "Rendering image…",
+      "imageSuccess": "Image exported.",
+      "imageError": "Image export failed. Please try again.",
+      "jsonSuccess": "JSON exported."
     }
   },
   "sharedPage": {
@@ -1188,7 +1271,8 @@
       "unsupportedFormat": "Please upload a PDF or JSON file.",
       "noApiKey": "PDF import requires AI model configuration (API Key, Base URL, model, and Max Tokens). Go to",
       "noApiKeyLink": "Settings",
-      "noApiKeySuffix": "and try again after saving."
+      "noApiKeySuffix": "and try again after saving.",
+      "modelNoVision": "The selected model \"{{model}}\" cannot read images. Switch to a vision-capable model in settings, or upload a PDF / Word resume instead."
     },
     "success": "Resume imported successfully!",
     "cancel": "Cancel",
@@ -1213,6 +1297,12 @@
       "analyzingScan": "This PDF has no selectable text — reading it page by page",
       "pageUnit": "{{count}} page(s)",
       "warningsTitle": "A few things I wasn't sure about"
+    },
+    "types": {
+      "pdf": "PDF",
+      "image": "Image",
+      "docx": "Word",
+      "markdown": "Markdown"
     }
   },
   "agentErrors": {

@@ -116,3 +116,119 @@ export const exportResumeToPdf = async (resume: Resume, locale?: string): Promis
   const blob = await prepareResumePdfExport(resume, locale);
   downloadBlob(blob, `${sanitizeFilename(resume.name || resume.info.fullName)}.pdf`);
 };
+
+/**
+ * 图片导出的渲染倍率——**按画布预算自适应，不是一个常数**。
+ *
+ * 渲染源是 PDF（矢量），所以"更清晰"的正确做法是用更高的倍率**重新渲染**，而不是把
+ * 已经栅格化的图再放大：插值加不出细节，只会更糊。
+ *
+ * 但倍率不能一味调高。简历导出的 PDF 是**一页连续长图**（见 resume-templates 的
+ * MagicResumePdfDocument），简历越长那一页越高，而浏览器对 canvas 有硬上限——撞上去
+ * 不会报错，会静默得到一张空白图。所以先按目标倍率算出尺寸，超预算就等比降档：
+ * 短简历吃满 3 倍，长简历自动退到还能安全渲染的那个值。
+ */
+const IMAGE_TARGET_SCALE = 3;
+/** 降档下限。低于这个宁可让它超限失败，也别交出一张糊到读不出字的图。 */
+const IMAGE_MIN_SCALE = 1.5;
+/** 单边上限：Chrome / Firefox 的 canvas 边长上限。 */
+const MAX_CANVAS_SIDE = 16384;
+/** 面积上限取 2^24 —— iOS Safari 的文档值，是各家里最紧的那个，按它兜底最安全。 */
+const MAX_CANVAS_AREA = 16_777_216;
+/** 多页拼接时页与页之间的分隔缝，画成纸张之间的留白。 */
+const IMAGE_PAGE_GAP = 24;
+
+/** 在画布预算内能取到的最大倍率。 */
+function fitScale(naturalWidth: number, naturalHeight: number): number {
+  const byArea = Math.sqrt(MAX_CANVAS_AREA / (naturalWidth * naturalHeight));
+  const bySide = Math.min(MAX_CANVAS_SIDE / naturalWidth, MAX_CANVAS_SIDE / naturalHeight);
+  return Math.max(IMAGE_MIN_SCALE, Math.min(IMAGE_TARGET_SCALE, byArea, bySide));
+}
+
+/**
+ * 简历导出成一张长图。
+ *
+ * **渲染源是导出的那份 PDF，不是页面 DOM。** 用 html2canvas 去截预览意味着第二套
+ * 排版实现——字体回退、分页、@react-pdf 的度量差一点，导出的图就和用户投出去的
+ * PDF 对不上，而这类「预览和产物不一致」是最难查的一类问题。这里直接把 PDF blob
+ * 交给 pdfjs 光栅化，两者逐像素同源。
+ *
+ * pdfjs 本就是依赖（预览 PdfCanvasPreview 已在用），blob 也走同一份 WeakMap 缓存，
+ * 所以点了 PDF 再点图片不会重算一遍。
+ */
+export const exportResumeToImage = async (resume: Resume, locale?: string): Promise<void> => {
+  const blob = await prepareResumePdfExport(resume, locale);
+  const [{ GlobalWorkerOptions, getDocument }] = await Promise.all([
+    import('pdfjs-dist/legacy/build/pdf.mjs'),
+  ]);
+  GlobalWorkerOptions.workerSrc ||= new URL(
+    'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+
+  const loadingTask = getDocument({ data: new Uint8Array(await blob.arrayBuffer()) });
+  const doc = await loadingTask.promise;
+  try {
+    // 先量后画：拼接画布的尺寸要在渲染前定下来，否则得为每页各留一张离屏画布。
+    //
+    // 量两遍：第一遍取 1:1 的自然尺寸，算出这份文档能吃多大的倍率；第二遍才按那个
+    // 倍率取真正用于渲染的 viewport。
+    const pages = [];
+    for (let i = 1; i <= doc.numPages; i += 1) {
+      pages.push(await doc.getPage(i));
+    }
+    const natural = pages.map((page) => page.getViewport({ scale: 1 }));
+    const scale = fitScale(
+      Math.max(...natural.map((v) => v.width)),
+      natural.reduce((sum, v) => sum + v.height, 0) + IMAGE_PAGE_GAP * (pages.length - 1)
+    );
+    const viewports = pages.map((page) => ({
+      page,
+      viewport: page.getViewport({ scale }),
+    }));
+    const width = Math.max(...viewports.map((v) => v.viewport.width));
+    const height =
+      viewports.reduce((sum, v) => sum + v.viewport.height, 0) +
+      IMAGE_PAGE_GAP * (viewports.length - 1);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(width);
+    canvas.height = Math.ceil(height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas 2d context unavailable');
+    // 纸是白的：PDF 页面本身透明，不铺底色导出的 PNG 会是透明的，丢进深色聊天窗
+    // 就成了一团看不清的字。
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let offsetY = 0;
+    for (const { page, viewport } of viewports) {
+      await page.render({
+        canvas,
+        canvasContext: ctx,
+        viewport,
+        transform: [1, 0, 0, 1, (width - viewport.width) / 2, offsetY],
+      }).promise;
+      offsetY += viewport.height + IMAGE_PAGE_GAP;
+    }
+
+    const png = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/png')
+    );
+    if (!png) throw new Error('canvas.toBlob returned null');
+    downloadBlob(png, `${sanitizeFilename(resume.name || resume.info.fullName)}.png`);
+  } finally {
+    // 与预览同一套收尾：cleanup 放页面资源，destroy 关掉 worker。漏掉后者会让每次
+    // 导出都留下一个常驻 worker。
+    void doc.cleanup();
+    void loadingTask.destroy();
+  }
+};
+
+/** 简历原始数据。导出即备份，也是跨设备迁移与再导入的那条路。 */
+export const exportResumeToJson = (resume: Resume): void => {
+  const blob = new Blob([JSON.stringify(resume, null, 2)], {
+    type: 'application/json',
+  });
+  downloadBlob(blob, `${sanitizeFilename(resume.name || resume.info.fullName)}.json`);
+};
