@@ -1,9 +1,14 @@
 'use client';
 
-// Cloud-only. Our own dark, READ-ONLY account panel — modelled on the admin
-// UserDetailsModal (资料/安全/活动 + side rail) but rebuilt in our tokens and fed
-// purely from Clerk's client `useUser()` + the app's own resume store (no backend,
-// no embedded Clerk <UserProfile>). Clerk imports stay inside lib/auth.
+// Cloud-only. Our own dark account panel — modelled on the admin UserDetailsModal
+// (资料/安全/活动 + side rail) but rebuilt in our tokens and fed from Clerk's client
+// `useUser()` + the app's own resume store (no backend, no embedded Clerk
+// <UserProfile>). Clerk imports stay inside lib/auth.
+//
+// 除「安全」外全部只读。安全那一节可写是刻意的例外：用户看得见自己没开 2FA、却没有
+// 任何地方能开，等于把一个安全缺口摆着不给补。写操作直接调客户端 SDK 的方法——不经
+// 我们的后端，因为 Clerk Backend API 改密码时不校验旧密码（会话被劫持即可静默改密），
+// 而 TOTP 绑定后端根本做不了（它只能 disable，不能 create）。
 
 import React, { useMemo, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -13,10 +18,6 @@ import {
   Check,
   Copy,
   FileText,
-  KeyRound,
-  Lock,
-  ShieldAlert,
-  ShieldCheck,
 } from 'lucide-react';
 import { isCloudMode } from '@/lib/config/app';
 import { ModalShell } from '@/components/ui/ModalShell';
@@ -27,10 +28,21 @@ import { BillingTab } from '@/components/account/billing/BillingTab';
 import InviteTab from '@/components/account/invite/InviteTab';
 import type { Entitlement } from '@/lib/billing/types';
 import { cn } from '@/lib/utils';
+import { BrandMark } from '@/components/llm/ProviderMark';
+import PasswordSection from '@/components/account/security/PasswordSection';
+import TotpSection from '@/components/account/security/TotpSection';
 
-const PROVIDERS: Record<string, { name: string; color: string }> = {
-  google: { name: 'Google', color: '#ea4335' },
-  github: { name: 'GitHub', color: '#8b949e' },
+/**
+ * `mark` = `/public/providers/{mark}-mono.svg` 的文件名前缀；没有 mark 的档位回退到
+ * 一颗品牌色圆点（即此前所有 provider 的样子）。
+ *
+ * 刻意**不给每家都补图标**：仓里现在只有 GitHub 与 Google 两个单色标，而 Clerk 还可能
+ * 回传 Apple、微信等。缺图时退回色点，是为了让这件事"锦上添花"而不是"全有或全无"——
+ * 硬指一个不存在的 SVG 只会得到一个看不见的方块，比色点更糟。
+ */
+const PROVIDERS: Record<string, { name: string; color: string; mark?: string }> = {
+  google: { name: 'Google', color: '#ea4335', mark: 'google-mono' },
+  github: { name: 'GitHub', color: '#8b949e', mark: 'github-mono' },
   gitlab: { name: 'GitLab', color: '#fc6d26' },
   discord: { name: 'Discord', color: '#5865f2' },
   apple: { name: 'Apple', color: '#a1a1aa' },
@@ -260,7 +272,14 @@ function CloudAccountModal() {
                               key={a.id}
                               className={cn('flex flex-wrap items-center gap-2 py-2', i > 0 && 'border-t border-white/[0.04]')}
                             >
-                              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
+                              {p.mark ? (
+                                <BrandMark file={p.mark} color={p.color} size={15} />
+                              ) : (
+                                <span
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                  style={{ backgroundColor: p.color }}
+                                />
+                              )}
                               <span className="text-[13px] font-medium text-neutral-100">{p.name}</span>
                               {a.label && <span className="truncate text-[12px] text-neutral-500">{a.label}</span>}
                               {a.verified && <Badge tone="emerald">{t('account.profile.verified')}</Badge>}
@@ -285,11 +304,12 @@ function CloudAccountModal() {
 
                 {accountTab === 'security' && (
                   <Section title={t('account.profile.security')}>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <SecurityItem icon={<KeyRound size={16} />} label={t('account.profile.password')} on={!!user.passwordEnabled} t={t} />
-                      <SecurityItem icon={<ShieldCheck size={16} />} label={t('account.profile.twoFactor')} on={!!user.twoFactorEnabled} t={t} />
-                      <SecurityItem icon={<Lock size={16} />} label={t('account.profile.totp')} on={!!user.totpEnabled} t={t} />
-                      <SecurityItem icon={<ShieldAlert size={16} />} label={t('account.profile.backupCodes')} on={!!user.backupCodeEnabled} t={t} />
+                    {/* 四张只读徽章换成两块可操作的：密码与两步验证。原来的 TOTP 与
+                        备用码不再单列——它们不是并列的第三、第四项开关，而是开启两步
+                        验证这一件事的两个环节，拆成四张卡只会让人以为要分别去开。 */}
+                    <div className="space-y-2.5">
+                      <PasswordSection user={user} />
+                      <TotpSection user={user} />
                     </div>
                   </Section>
                 )}
@@ -375,29 +395,6 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function SecurityItem({
-  icon,
-  label,
-  on,
-  t,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  on: boolean;
-  t: (k: string) => string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-md bg-white/[0.04] p-3">
-      <div className="flex items-center gap-2 text-[13px] text-neutral-100">
-        <span className="text-neutral-500">{icon}</span>
-        {label}
-      </div>
-      <Badge tone={on ? 'emerald' : 'neutral'}>
-        {on ? t('account.profile.enabled') : t('account.profile.disabled')}
-      </Badge>
-    </div>
-  );
-}
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (

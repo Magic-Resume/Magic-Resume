@@ -1,6 +1,13 @@
 import type { FileSizeBucket } from '@/lib/utils/fileSize';
 
-export type ResumeImportSource = 'json' | 'pdf';
+/**
+ * 导入来源。四种走 LLM 解析的格式各占一个值，而不是并成一个 'document'——
+ * 「Word 用户占多少」和「有多少人是直接传截图的」是两个会导向不同产品决策的问题，
+ * 合并之后就再也分不出来了。
+ *
+ * 'pdf' 与 'json' 是既有值，语义未变：只增不改，历史指标不会从中间断掉。
+ */
+export type ResumeImportSource = 'json' | 'pdf' | 'image' | 'docx' | 'markdown';
 
 export type ResumeImportCompletedPayload = {
   source: ResumeImportSource;
