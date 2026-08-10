@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.5.2](https://github.com/Magic-Resume/Magic-Resume/compare/v2.5.1...v2.5.2) (2026-08-09)
+
+## 🐛 Bug Fixes
+- [`247e384`](https://github.com/Magic-Resume/Magic-Resume/commit/247e384)  fix(web): LLM 配置体验与错误反馈优化 (#181) (Issues: [`#181`](https://github.com/Magic-Resume/Magic-Resume/issues/181))
+
 # [v2.5.1](https://github.com/Magic-Resume/Magic-Resume/compare/v2.5.0...v2.5.1) (2026-08-05)
 
 # [v2.5.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.4.0...v2.5.0) (2026-07-30)
