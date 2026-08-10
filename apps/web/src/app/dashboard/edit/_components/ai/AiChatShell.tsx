@@ -1635,6 +1635,7 @@ export default function AiChatShell({
         onAttachPdf={handleAttachPdf}
         mode={agentMode}
         onModeChange={setAgentMode}
+        conversationStarted={started}
       />
     </>
   );
