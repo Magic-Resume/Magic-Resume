@@ -34,7 +34,43 @@ import {
   type PdfPhase,
 } from './PdfScanProgress';
 
-type FileType = 'json' | 'pdf' | null;
+/**
+ * 每一种格式单列一项，而不是合成「简历文件（PDF / Word / 图片 / Markdown）」。
+ *
+ * 合起来读着简洁，代价是**支持哪些格式变成了要读完一整行小字才知道的事**——而"原来
+ * Word 也能导"恰恰是最该被看见的信息。四项分开，一眼扫过去就知道自己那份能不能进。
+ *
+ * `'pdf'` 之外的三个值都是新增的：它们同时是埋点的 source 维度，只增不改，既有指标
+ * 不会从中间断掉。
+ */
+type FileType = 'json' | 'pdf' | 'image' | 'docx' | 'markdown' | null;
+
+/** 拖放区那枚小徽章上的扩展名提示。 */
+const ACCEPT_EXT_HINT: Record<string, string> = {
+  json: '.json',
+  pdf: '.pdf',
+  image: '.png · .jpg · .webp',
+  docx: '.docx',
+  markdown: '.md · .txt',
+};
+
+/** 走 LLM 解析的格式（与 json 相对——那条是直接读结构化数据，不花 AI 额度）。 */
+const AI_TYPES = ['pdf', 'image', 'docx', 'markdown'] as const;
+
+/** 每种格式接受的 MIME → 扩展名。后端按 mimetype 自己分发，这里只管把闸门开对。 */
+const ACCEPT_BY_TYPE: Record<string, Record<string, string[]>> = {
+  json: { 'application/json': ['.json'] },
+  pdf: { 'application/pdf': ['.pdf'] },
+  image: {
+    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/webp': ['.webp'],
+  },
+  docx: {
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  },
+  markdown: { 'text/markdown': ['.md'], 'text/plain': ['.txt'] },
+};
 
 type ImportResumeDialogProps = {
   open: boolean;
@@ -204,7 +240,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
     setIsImporting(true);
 
     try {
-      const result = fileType === 'pdf'
+      const result = fileType !== 'json'
         ? await handlePdfFile(file)
         : await handleJsonFile(file);
 
@@ -241,7 +277,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       });
 
       toast.success(
-        fileType === 'pdf'
+        fileType !== 'json'
           ? t('importDialog.pdf.success', { defaultValue: 'PDF resume imported successfully!' })
           : t('importDialog.success')
       );
@@ -265,21 +301,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
     }
   }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, cloudSync]);
 
-  // 'pdf' 这个取值现在代表的是「走解析的简历文件」这一整条路，不再只是 PDF——
-  // 后端按 mimetype 自己分发（PDF 抽文字 / DOCX 走 mammoth / 图片交视觉模型 /
-  // Markdown 直读）。标识符没跟着改名，是因为它同时是埋点的 source 维度，
-  // 改了会把一条既有指标从中间截断。
-  const dropzoneAccept: Record<string, string[]> = fileType === 'pdf'
-    ? {
-        'application/pdf': ['.pdf'],
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-        'text/markdown': ['.md'],
-        'text/plain': ['.txt'],
-        'image/png': ['.png'],
-        'image/jpeg': ['.jpg', '.jpeg'],
-        'image/webp': ['.webp'],
-      }
-    : { 'application/json': ['.json'] };
+  const dropzoneAccept: Record<string, string[]> = ACCEPT_BY_TYPE[fileType ?? 'json'] ?? {};
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -347,18 +369,24 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                         {'Magic Resume JSON'}
                       </span>
                     </SelectItem>
-                    <SelectItem
-                      value="pdf"
-                      className="text-neutral-200 focus:bg-neutral-800 focus:text-white rounded-lg cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2">
-                        <FileText size={15} className="text-sky-400 shrink-0" />
-                        {t('importDialog.documentOption')}
-                        <span className="inline-flex items-center text-[10px] font-semibold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-full leading-none">
-                          {'AI'}
+                    {AI_TYPES.map((type) => (
+                      <SelectItem
+                        key={type}
+                        value={type}
+                        className="text-neutral-200 focus:bg-neutral-800 focus:text-white rounded-lg cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText size={15} className="text-sky-400 shrink-0" />
+                          {t(`importDialog.types.${type}`)}
+                          {/* 每一项都标 AI：这四种都要花模型额度去解析，而 JSON 不用。
+                              标在每一行而不是标一次，是因为用户是逐项扫的，
+                              不会去推断"上面那个标签是不是也管我这一行"。 */}
+                          <span className="inline-flex items-center text-[10px] font-semibold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-full leading-none">
+                            {'AI'}
+                          </span>
                         </span>
-                      </span>
-                    </SelectItem>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -411,7 +439,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                       `}
                     >
                       <input {...getInputProps()} />
-                      {isImporting && fileType === 'pdf' ? (
+                      {isImporting && fileType !== 'json' ? (
                         <PdfScanProgress
                           phase={pdfPhase}
                           charCount={pdfCharCount}
@@ -435,10 +463,8 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                             <p className="text-neutral-300 font-medium text-sm">{t('importDialog.dropzone.default')}</p>
                           )}
                           <span className="inline-flex items-center gap-1 text-xs text-neutral-500 bg-neutral-800/60 px-2.5 py-1 rounded-full mt-2.5">
-                            {fileType === 'pdf' ? <FileText size={11} /> : <FileJson size={11} />}
-                            {fileType === 'pdf'
-                              ? '.pdf · .docx · .png · .jpg · .md'
-                              : '.json'}
+                            {fileType === 'json' ? <FileJson size={11} /> : <FileText size={11} />}
+                            {ACCEPT_EXT_HINT[fileType ?? 'json']}
                           </span>
                         </div>
                       )}

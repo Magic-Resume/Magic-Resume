@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Download, FileJson, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +44,9 @@ export default function ExportModal({
   const { t } = useTranslation();
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [busy, setBusy] = useState(false);
+  // SSR 时没有 document，portal 只能在挂载后建。
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const run = async () => {
     if (busy) return;
@@ -55,7 +59,13 @@ export default function ExportModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  // **必须 portal 到 body。** 两个调用方（Tools / EditorDock）都在带 transform 的
+  // 祖先里——EditorDock 外层就是 framer 的 motion.div——而祖先一旦有 transform，
+  // `position: fixed` 就不再相对视口，而是相对那个盒子：弹窗会被挤成一条窄缝，
+  // 还跟着一起被缩放。portal 出去之后，它挂在哪都不受调用方的布局影响。
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -154,6 +164,7 @@ export default function ExportModal({
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

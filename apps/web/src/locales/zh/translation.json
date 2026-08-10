@@ -205,7 +205,9 @@
         "wechat": "微信支付",
         "stripe": "Stripe",
         "manual": "人工"
-      }
+      },
+      "colOrderId": "账单 ID",
+      "copyOrderId": "复制完整账单 ID"
     },
     "invite": {
       "copied": "已复制",
@@ -221,6 +223,48 @@
       "headerAction": "邀请好友",
       "emptyHint": "把海报或链接发给正在找工作的朋友——你们都会多一份 AI 额度，他也少走点弯路。",
       "remaining": "本月还可获得 {{count}} 次奖励"
+    },
+    "security": {
+      "on": "已启用",
+      "off": "未启用",
+      "cancel": "取消",
+      "save": "保存",
+      "done": "完成",
+      "password": {
+        "label": "密码登录",
+        "set": "设置",
+        "change": "修改",
+        "current": "当前密码",
+        "new": "新密码",
+        "confirm": "确认新密码",
+        "mismatch": "两次输入的新密码不一致。",
+        "signOutNotice": "修改后，你在其它设备上的登录会被退出。"
+      },
+      "totp": {
+        "label": "两步验证",
+        "enable": "开启",
+        "disable": "关闭",
+        "scanHint": "用 Google Authenticator、1Password 等验证器扫描二维码，或手动输入下方密钥。",
+        "manualKey": "手动输入密钥",
+        "enterCode": "输入验证器上的 6 位数字",
+        "verify": "验证并开启",
+        "codesWarning": "请立即保存这些备用码。它们只显示这一次——手机丢失时，这是你唯一的登录方式。",
+        "copyAll": "复制全部",
+        "copied": "已复制",
+        "download": "下载为文件",
+        "confirmSaved": "我已保存好这些备用码",
+        "disableWarning": "关闭后，登录将只需要密码，安全性会下降。已有的备用码同时失效。",
+        "confirmDisable": "确认关闭"
+      },
+      "errors": {
+        "passwordIncorrect": "当前密码不正确。",
+        "passwordPwned": "这个密码曾在数据泄露中出现过，请换一个。",
+        "passwordTooShort": "密码太短了，请设置更长的密码。",
+        "passwordWeak": "密码强度不够，建议混合大小写字母、数字与符号。",
+        "codeIncorrect": "验证码不正确，请检查验证器上当前显示的数字。",
+        "codeExpired": "验证码已过期，请输入验证器上最新的数字。",
+        "unknown": "操作失败，请稍后重试。"
+      }
     }
   },
   "notificationsPage": {
@@ -1254,7 +1298,12 @@
       "pageUnit": "{{count}} 页",
       "warningsTitle": "有几处我拿不准"
     },
-    "documentOption": "简历文件（PDF / Word / 图片 / Markdown）"
+    "types": {
+      "pdf": "PDF",
+      "image": "图片",
+      "docx": "Word",
+      "markdown": "Markdown"
+    }
   },
   "agentErrors": {
     "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置。",
