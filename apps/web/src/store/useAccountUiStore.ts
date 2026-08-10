@@ -5,7 +5,7 @@ export type SettingsSection = 'general' | 'model' | 'cloudSync' | 'mcp';
 
 /** Tabs in the account (个人资料) modal. Billing lives here, with the rest of
  *  what is true about the account rather than about the app. */
-export type AccountTab = 'profile' | 'security' | 'activity' | 'billing';
+export type AccountTab = 'profile' | 'security' | 'activity' | 'billing' | 'invite';
 
 interface AccountUiState {
   settingsOpen: boolean;

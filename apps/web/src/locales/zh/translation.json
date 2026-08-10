@@ -104,7 +104,8 @@
         "security": "安全",
         "activity": "活动",
         "subscription": "订阅",
-        "billing": "账单"
+        "billing": "账单",
+        "invite": "邀请有礼"
       },
       "personalInfo": "个人信息",
       "firstName": "名字",
@@ -204,6 +205,24 @@
         "wechat": "微信支付",
         "stripe": "Stripe",
         "manual": "人工"
+      }
+    },
+    "invite": {
+      "title": "邀请好友，一起把简历改到能投",
+      "subtitle": "对方注册并完成第一次 AI 对话后，你和 TA 各多约 {{percent}}% 的 AI 额度。",
+      "subtitleNoQuota": "对方注册并完成第一次 AI 对话后，你和 TA 各多一份 AI 额度。",
+      "linkLabel": "你的专属邀请链接",
+      "copy": "复制",
+      "copied": "已复制",
+      "savePoster": "保存邀请海报",
+      "posterHint": "海报里已含你的专属二维码，可直接发朋友圈",
+      "posterAlt": "Magic Resume 邀请海报",
+      "posterError": "海报生成失败，请重试。",
+      "rule": "奖励在对方完成首次 AI 对话后自动到账，双方同时生效。注册即得会被批量刷号，所以我们等一次真实使用。",
+      "stats": {
+        "invited": "已邀请",
+        "rewarded": "已到账",
+        "pending": "待完成"
       }
     }
   },

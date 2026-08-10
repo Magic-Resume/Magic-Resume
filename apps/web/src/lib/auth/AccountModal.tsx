@@ -24,6 +24,7 @@ import { useAccountUiStore, type AccountTab } from '@/store/useAccountUiStore';
 import { useResumeStore } from '@/store/useResumeStore';
 import { useEntitlement } from '@/lib/extensions/billing-client';
 import { BillingTab } from '@/components/account/billing/BillingTab';
+import InviteTab from '@/components/account/invite/InviteTab';
 import type { Entitlement } from '@/lib/billing/types';
 import { cn } from '@/lib/utils';
 
@@ -146,6 +147,7 @@ function CloudAccountModal() {
     { key: 'security', label: t('account.profile.tabs.security') },
     { key: 'activity', label: t('account.profile.tabs.activity') },
     { key: 'billing', label: t('account.profile.tabs.billing') },
+    { key: 'invite', label: t('account.profile.tabs.invite') },
   ];
 
   return (
@@ -210,7 +212,12 @@ function CloudAccountModal() {
               ))}
             </div>
 
-            {accountTab === 'billing' ? (
+            {accountTab === 'invite' ? (
+              // 与 billing 同理走整宽：右侧那张海报预览挤在 240px 边栏里没法看。
+              <div className="mt-5">
+                <InviteTab />
+              </div>
+            ) : accountTab === 'billing' ? (
               // Full width, no side rail: a payments table squeezed beside the
               // 240px id/date column wraps into something nobody can read.
               <div className="mt-5 space-y-4">

@@ -104,7 +104,8 @@
         "security": "Security",
         "activity": "Activity",
         "subscription": "Subscription",
-        "billing": "Billing"
+        "billing": "Billing",
+        "invite": "Invite"
       },
       "personalInfo": "Personal information",
       "firstName": "First name",
@@ -204,6 +205,24 @@
         "wechat": "WeChat Pay",
         "stripe": "Stripe",
         "manual": "Manual"
+      }
+    },
+    "invite": {
+      "title": "Invite friends, get your resumes ready together",
+      "subtitle": "Once they sign up and finish their first AI chat, you each get about {{percent}}% more AI allowance.",
+      "subtitleNoQuota": "Once they sign up and finish their first AI chat, you each get extra AI allowance.",
+      "linkLabel": "Your invite link",
+      "copy": "Copy",
+      "copied": "Copied",
+      "savePoster": "Save invite poster",
+      "posterHint": "The poster already carries your QR code — share it anywhere",
+      "posterAlt": "Magic Resume invite poster",
+      "posterError": "Could not build the poster. Please try again.",
+      "rule": "Rewards land automatically once your friend finishes their first AI chat, for both of you. Paying on signup alone invites bulk fake accounts, so we wait for one real use.",
+      "stats": {
+        "invited": "Invited",
+        "rewarded": "Rewarded",
+        "pending": "Pending"
       }
     }
   },
