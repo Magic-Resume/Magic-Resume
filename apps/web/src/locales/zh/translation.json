@@ -1300,9 +1300,9 @@
     },
     "types": {
       "pdf": "PDF",
-      "image": "图片（截图 / 照片）",
-      "docx": "Word 文档",
-      "markdown": "Markdown / 纯文本"
+      "image": "图片",
+      "docx": "Word",
+      "markdown": "Markdown"
     }
   },
   "agentErrors": {

@@ -1300,9 +1300,9 @@
     },
     "types": {
       "pdf": "PDF",
-      "image": "Image (screenshot / photo)",
-      "docx": "Word document",
-      "markdown": "Markdown / plain text"
+      "image": "Image",
+      "docx": "Word",
+      "markdown": "Markdown"
     }
   },
   "agentErrors": {

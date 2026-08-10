@@ -50,7 +50,7 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
       { type: "divider", id: "divider-1" },
       {
         id: "export-pdf",
-        title: isExporting ? t("tools.exportingPDF") : t("tools.exportPDF"),
+        title: isExporting ? t("tools.exportingPDF") : t("modals.export.title"),
         icon: isExporting ? <Loader2 size={16} className="animate-spin text-sky-300" /> : <Download size={16} />,
         onClick: () => setExportOpen(true),
         disabled: isExporting,
