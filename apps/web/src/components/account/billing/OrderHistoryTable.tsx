@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Check, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import type { OrderHistoryRow } from '@/lib/billing/types';
 
 /**
@@ -23,6 +25,43 @@ function formatAmount(amountCents: number, currency: string, locale: string) {
     // whole table.
     return `${(amountCents / 100).toFixed(2)} ${currency}`;
   }
+}
+
+/**
+ * 账单 ID。**屏幕上给短的，剪贴板里给全的。**
+ *
+ * 这两件事的受众不同：屏幕上要的是「能区分开同一天的六笔」，末 8 位就够；而发给客服
+ * 要的是「能粘贴的完整串」。cuid 有 25 位，整串塞进表格会把金额和状态挤出可视区。
+ */
+function OrderIdCell({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    navigator.clipboard.writeText(id);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={id}
+      aria-label={t('account.billing.copyOrderId')}
+      className={cn(
+        'group inline-flex items-center gap-1.5 rounded font-mono text-[12px] transition-colors cursor-pointer',
+        copied ? 'text-emerald-400' : 'text-neutral-400 hover:text-neutral-100'
+      )}
+    >
+      {id.slice(-8)}
+      {copied ? (
+        <Check size={12} className="shrink-0" />
+      ) : (
+        <Copy size={12} className="shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+      )}
+    </button>
+  );
 }
 
 function formatDate(value: string | null | undefined, locale: string) {
@@ -79,6 +118,7 @@ export function OrderHistoryTable({
         <thead>
           <tr className="border-b border-white/[0.06] text-left text-[11.5px] uppercase tracking-wide text-neutral-500">
             <th className="px-4 py-2.5 font-medium">{t('account.billing.colDate')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('account.billing.colOrderId')}</th>
             <th className="px-4 py-2.5 font-medium">{t('account.billing.colItem')}</th>
             <th className="px-4 py-2.5 font-medium">
               {t('account.billing.colAmount')}
@@ -101,6 +141,9 @@ export function OrderHistoryTable({
                 {/* paidAt when it went through, createdAt when it did not —
                     an abandoned checkout still has a date worth showing. */}
                 {formatDate(order.paidAt ?? order.createdAt, locale)}
+              </td>
+              <td className="whitespace-nowrap px-4 py-2.5">
+                <OrderIdCell id={order.id} />
               </td>
               <td className="px-4 py-2.5 text-neutral-200">
                 {order.planName ?? t('account.billing.unknownItem')}

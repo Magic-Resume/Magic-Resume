@@ -2,11 +2,11 @@ import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Share2, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useSettingStore } from "@/store/useSettingStore";
-import { exportResumeToPdf, preloadResumePdfExport } from "@/lib/utils/pdf-export";
+import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
+import ExportModal from "../modals/ExportModal";
+import { useResumeExport } from "../modals/useResumeExport";
 import { Resume } from "@/types/frontend/resume";
-import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 
 type EditorDockProps = {
   zoomIn: (step?: number) => void;
@@ -28,11 +28,11 @@ type DockEntry =
  * `absolute … left-1/2` 自动避开右侧模板栏。
  */
 export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareClick, onJsonClick }: EditorDockProps) {
-  const { t, i18n } = useTranslation();
-  const [isExporting, setIsExporting] = useState(false);
+  const { t } = useTranslation();
+  const [exportOpen, setExportOpen] = useState(false);
+  const { isExporting, runExport } = useResumeExport(resume, 'dock');
   const cloudSync = useSettingStore((state) => state.cloudSync);
   // Match the locale the preview renders with so the export reuses its cached blob.
-  const pdfLocale = i18n.resolvedLanguage || i18n.language;
 
   const warmupPdfExport = () => {
     // Lightweight: only warms the template + fonts. The full blob is produced
@@ -40,36 +40,6 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
     void preloadResumePdfExport(resume).catch(() => {
       // Best-effort warmup only; export handles real failures.
     });
-  };
-
-  const handleExportPdf = async () => {
-    // 客户端用 @react-pdf/renderer 生成矢量、文字可选中(ATS 友好)的 PDF。
-    // 产出是「一整页连续长页」而非分页 A4——见 resume-templates 的
-    // MagicResumePdfDocument 顶部说明。
-    if (isExporting) return;
-    setIsExporting(true);
-    const toastId = toast.loading(t("tools.exportingPDF"));
-    const startedAt = Date.now();
-    try {
-      await exportResumeToPdf(resume, pdfLocale);
-      toast.success(t("tools.exportPDFSuccess"), { id: toastId });
-      appLifecycle.resumeExported({
-        format: "pdf",
-        source: "dock",
-        durationMs: Date.now() - startedAt,
-      });
-    } catch (error) {
-      console.error("PDF export failed:", error);
-      toast.error(t("tools.exportPDFError"), { id: toastId });
-      appLifecycle.resumeExported({
-        format: "pdf",
-        source: "dock",
-        success: false,
-        durationMs: Date.now() - startedAt,
-      });
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   const items: DockEntry[] = useMemo(() => {
@@ -80,9 +50,9 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
       { type: "divider", id: "divider-1" },
       {
         id: "export-pdf",
-        title: isExporting ? t("tools.exportingPDF") : t("tools.exportPDF"),
+        title: isExporting ? t("tools.exportingPDF") : t("modals.export.title"),
         icon: isExporting ? <Loader2 size={16} className="animate-spin text-sky-300" /> : <Download size={16} />,
-        onClick: handleExportPdf,
+        onClick: () => setExportOpen(true),
         disabled: isExporting,
       },
       { id: "view-json", title: t("resumeContent.viewJson"), icon: <FileJson size={16} />, onClick: onJsonClick },
@@ -134,6 +104,13 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
           )}
         </motion.div>
       </motion.div>
+
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        onExport={runExport}
+        resume={resume}
+      />
     </div>
   );
 }

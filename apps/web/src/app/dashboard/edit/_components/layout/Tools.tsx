@@ -5,11 +5,11 @@ import { Bot, History, Share2, MessageCircle, ChevronDown, ChevronUp, Loader2, Z
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { toast } from "sonner";
 import { useSettingStore } from "@/store/useSettingStore";
 import { isCloudMode } from "@/lib/config/app";
-import { exportResumeToPdf, preloadResumePdfExport } from "@/lib/utils/pdf-export";
-import { appLifecycle } from "@/lib/extensions/app-lifecycle";
+import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
+import ExportModal from "../modals/ExportModal";
+import { useResumeExport } from "../modals/useResumeExport";
 
 export type ToolsProps = {
   isMobile: boolean;
@@ -53,22 +53,21 @@ function ToolButton({ title, children, onClick, onFocus, onPointerEnter, disable
 }
 
 export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onShowAI, onVersionClick, rightCollapsed = false, onShareClick, onFeedbackClick }: ToolsProps){
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   // We can fallback to 'default' or handle error if id is missing, but it should be present in this context
   const currentId = (params?.id as string) || resume.id;
 
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const { isExporting, runExport } = useResumeExport(resume, 'tools');
   const cloudSync = useSettingStore((state) => state.cloudSync);
   
   // 计算桌面端工具栏的right位置，避免被模板栏遮挡
   const desktopRightPosition = rightCollapsed ? '76px' : '300px'; // 56px模板栏 + 20px间距 或 280px模板栏 + 20px间距
   
   const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
-  // Match the locale the preview renders with so the export reuses its cached blob.
-  const pdfLocale = i18n.resolvedLanguage || i18n.language;
 
   const warmupPdfExport = () => {
     // Lightweight: only warms the template + fonts. The full blob is produced
@@ -78,38 +77,6 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
     });
   };
 
-  const handleExportPdf = async () => {
-    // 客户端用 @react-pdf/renderer 生成矢量、文字可选中(ATS 友好)的 PDF,
-    // 一键下载、无打印框。同一份文档在浏览器与服务端产出一致。
-    // 产出是「一整页连续长页」而非分页 A4——见 resume-templates 的
-    // MagicResumePdfDocument 顶部说明。
-    if (isExporting) return;
-    setIsExporting(true);
-    const toastId = toast.loading(t('tools.exportingPDF'));
-    const startedAt = Date.now();
-    try {
-      await exportResumeToPdf(resume, pdfLocale);
-      toast.success(t('tools.exportPDFSuccess'), { id: toastId });
-      appLifecycle.resumeExported({
-        format: 'pdf',
-        source: 'tools',
-        durationMs: Date.now() - startedAt,
-      });
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      toast.error(t('tools.exportPDFError'), { id: toastId });
-      // Failures matter as much as successes here: export is where the product
-      // delivers its value, so its success rate is the number worth watching.
-      appLifecycle.resumeExported({
-        format: 'pdf',
-        source: 'tools',
-        success: false,
-        durationMs: Date.now() - startedAt,
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   return (
     <div 
@@ -173,9 +140,9 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
             </ToolButton>
           )}
           <ToolButton
-            onClick={handleExportPdf}
+            onClick={() => setExportOpen(true)}
             disabled={isExporting}
-            title={isExporting ? t('tools.exportingPDF') : t('tools.exportPDF')}
+            title={isExporting ? t('tools.exportingPDF') : t('modals.export.title')}
             onFocus={warmupPdfExport}
             onPointerEnter={warmupPdfExport}
           >
@@ -210,6 +177,13 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
           {isCollapsed ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </ToolButton>
       )}
+
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        onExport={runExport}
+        resume={resume}
+      />
     </div>
   )
 }

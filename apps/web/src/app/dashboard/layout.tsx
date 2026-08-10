@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import DashboardSidebar from "./_components/DashboardSidebar";
 import AccountUiHost from "@/components/providers/AccountUiHost";
+import ReferralClaimer from "@/components/account/invite/ReferralClaimer";
 import metaConfig from "@/lib/constants/metaConfig";
 import { isCloudMode } from "@/lib/config/app";
 import { hasBetaAccess } from "@/lib/auth/betaAccess";
@@ -21,6 +22,7 @@ export default async function DashboardLayout({
   if (isCloudMode && !(await hasBetaAccess())) redirect("/coming-soon");
   return (
     <div className="flex h-screen bg-desk text-white overflow-hidden">
+      <ReferralClaimer />
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {children}
