@@ -773,6 +773,29 @@
       "viewRender": "渲染",
       "viewJson": "JSON",
       "empty": "还没有历史版本"
+    },
+    "export": {
+      "title": "导出简历",
+      "confirm": "导出",
+      "cancel": "取消",
+      "formats": {
+        "pdf": {
+          "name": "PDF",
+          "hint": "矢量、文字可选中，投递与 ATS 首选"
+        },
+        "png": {
+          "name": "图片 PNG",
+          "hint": "整份拼成一张长图，适合聊天窗与朋友圈"
+        },
+        "json": {
+          "name": "JSON",
+          "hint": "原始数据，用于备份、迁移与再导入"
+        }
+      },
+      "imaging": "正在生成图片…",
+      "imageSuccess": "图片导出成功。",
+      "imageError": "图片导出失败，请重试。",
+      "jsonSuccess": "JSON 导出成功。"
     }
   },
   "sharedPage": {

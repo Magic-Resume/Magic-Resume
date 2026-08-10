@@ -8,7 +8,13 @@ import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { useSettingStore } from "@/store/useSettingStore";
 import { isCloudMode } from "@/lib/config/app";
-import { exportResumeToPdf, preloadResumePdfExport } from "@/lib/utils/pdf-export";
+import {
+  exportResumeToImage,
+  exportResumeToJson,
+  exportResumeToPdf,
+  preloadResumePdfExport,
+} from "@/lib/utils/pdf-export";
+import ExportModal, { type ExportFormat } from "../modals/ExportModal";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 
 export type ToolsProps = {
@@ -61,6 +67,7 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const cloudSync = useSettingStore((state) => state.cloudSync);
   
   // 计算桌面端工具栏的right位置，避免被模板栏遮挡
@@ -78,30 +85,40 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
     });
   };
 
-  const handleExportPdf = async () => {
-    // 客户端用 @react-pdf/renderer 生成矢量、文字可选中(ATS 友好)的 PDF,
-    // 一键下载、无打印框。同一份文档在浏览器与服务端产出一致。
-    // 产出是「一整页连续长页」而非分页 A4——见 resume-templates 的
-    // MagicResumePdfDocument 顶部说明。
+  // PDF 走客户端 @react-pdf/renderer,矢量、文字可选中(ATS 友好),无打印框;
+  // 产出是「一整页连续长页」而非分页 A4——见 resume-templates 的
+  // MagicResumePdfDocument 顶部说明。
+  // 图片由同一份 PDF 光栅化而来,两者逐像素同源;JSON 是原始数据,不经渲染。
+  const COPY: Record<ExportFormat, { loading: string; ok: string; fail: string }> = {
+    pdf: { loading: 'tools.exportingPDF', ok: 'tools.exportPDFSuccess', fail: 'tools.exportPDFError' },
+    png: { loading: 'modals.export.imaging', ok: 'modals.export.imageSuccess', fail: 'modals.export.imageError' },
+    json: { loading: '', ok: 'modals.export.jsonSuccess', fail: '' },
+  };
+
+  const handleExport = async (format: ExportFormat) => {
     if (isExporting) return;
     setIsExporting(true);
-    const toastId = toast.loading(t('tools.exportingPDF'));
+    const copy = COPY[format];
+    // JSON 是同步序列化,不该为它闪一下 loading——那会读成"在做很重的事"。
+    const toastId = copy.loading ? toast.loading(t(copy.loading)) : undefined;
     const startedAt = Date.now();
     try {
-      await exportResumeToPdf(resume, pdfLocale);
-      toast.success(t('tools.exportPDFSuccess'), { id: toastId });
+      if (format === 'pdf') await exportResumeToPdf(resume, pdfLocale);
+      else if (format === 'png') await exportResumeToImage(resume, pdfLocale);
+      else exportResumeToJson(resume);
+      toast.success(t(copy.ok), toastId ? { id: toastId } : undefined);
       appLifecycle.resumeExported({
-        format: 'pdf',
+        format,
         source: 'tools',
         durationMs: Date.now() - startedAt,
       });
     } catch (error) {
-      console.error('PDF export failed:', error);
-      toast.error(t('tools.exportPDFError'), { id: toastId });
+      console.error(`${format} export failed:`, error);
+      if (copy.fail) toast.error(t(copy.fail), toastId ? { id: toastId } : undefined);
       // Failures matter as much as successes here: export is where the product
       // delivers its value, so its success rate is the number worth watching.
       appLifecycle.resumeExported({
-        format: 'pdf',
+        format,
         source: 'tools',
         success: false,
         durationMs: Date.now() - startedAt,
@@ -173,9 +190,9 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
             </ToolButton>
           )}
           <ToolButton
-            onClick={handleExportPdf}
+            onClick={() => setExportOpen(true)}
             disabled={isExporting}
-            title={isExporting ? t('tools.exportingPDF') : t('tools.exportPDF')}
+            title={isExporting ? t('tools.exportingPDF') : t('modals.export.title')}
             onFocus={warmupPdfExport}
             onPointerEnter={warmupPdfExport}
           >
@@ -210,6 +227,13 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
           {isCollapsed ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </ToolButton>
       )}
+
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        onExport={handleExport}
+        resume={resume}
+      />
     </div>
   )
 }

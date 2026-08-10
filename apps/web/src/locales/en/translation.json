@@ -773,6 +773,29 @@
       "viewRender": "Preview",
       "viewJson": "JSON",
       "empty": "No versions yet"
+    },
+    "export": {
+      "title": "Export resume",
+      "confirm": "Export",
+      "cancel": "Cancel",
+      "formats": {
+        "pdf": {
+          "name": "PDF",
+          "hint": "Vector, selectable text — best for applying and ATS"
+        },
+        "png": {
+          "name": "Image (PNG)",
+          "hint": "One tall image of the whole resume — good for chats and social"
+        },
+        "json": {
+          "name": "JSON",
+          "hint": "Raw data for backup, migration, and re-import"
+        }
+      },
+      "imaging": "Rendering image…",
+      "imageSuccess": "Image exported.",
+      "imageError": "Image export failed. Please try again.",
+      "jsonSuccess": "JSON exported."
     }
   },
   "sharedPage": {
