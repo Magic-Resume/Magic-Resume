@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Boxes,
   ChevronDown,
   ExternalLink,
   Eye,
@@ -23,48 +22,20 @@ import {
   CUSTOM_PROVIDER_ID,
   MODEL_IMAGE_SUPPORT_MAP,
 } from '@/lib/constants/modals';
+import { ProviderMark } from '@/components/llm/ProviderMark';
 import { classifyLlmTestError } from '@/lib/utils/llmTestError';
 import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 
 type TestState = 'idle' | 'testing' | 'ok' | 'error';
-
-/** Provider ids that have a brand mark under /public/providers/{id}.svg. */
-const PROVIDER_LOGO_IDS = new Set(['openai', 'anthropic', 'google', 'deepseek']);
-
-/**
- * Ink for a provider mark. OpenAI's current logo is monochrome — its legacy green
- * reads wrong on the dark surface — so it takes a neutral tint; the rest keep their
- * brand hue.
- */
-function providerLogoColor(id: string, brandColor: string): string {
-  return id === 'openai' ? '#e5e5e5' : brandColor;
-}
-
-/**
- * Brand logo beside a provider name. The SVG lives as a static asset in
- * /public/providers and is tinted here via CSS mask, so no markup is inlined and
- * the color stays data-driven. Providers without a mark fall back to a generic glyph.
- */
-function ProviderLogo({ id, color }: { id: string; color: string }) {
-  if (!PROVIDER_LOGO_IDS.has(id)) {
-    return <Boxes className="h-4 w-4 shrink-0 text-neutral-400" />;
-  }
-  const mask = `url(/providers/${id}.svg) center / contain no-repeat`;
-  return (
-    <span
-      aria-hidden="true"
-      className="h-4 w-4 shrink-0"
-      style={{ backgroundColor: providerLogoColor(id, color), mask, WebkitMask: mask }}
-    />
-  );
-}
 
 /**
  * Provider-first LLM config fields, bound directly to {@link useSettingStore}.
@@ -88,6 +59,9 @@ export function ModelConfigFields() {
 
   const meta = getProvider(provider);
   const isCustom = provider === CUSTOM_PROVIDER_ID;
+  // 聚合器服务商的目录有几千个、每周都在变,枚举出来发版即过时。它们的 models 是空的,
+  // 这里退回自由填——空列表是刻意的信号,不是没写完。
+  const freeformModel = isCustom || (meta?.models.length ?? 0) === 0;
   const [advancedOpen, setAdvancedOpen] = useState(false);
   // Custom needs base URL up front; presets keep Base URL / Max Tokens tucked away.
   const showAdvanced = advancedOpen || isCustom;
@@ -164,17 +138,28 @@ export function ModelConfigFields() {
             <SelectTrigger className={selectTriggerClass}>
               <SelectValue placeholder={t('settings.llm.providerPlaceholder')} />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-white/[0.08] bg-neutral-950 text-white shadow-2xl shadow-black/50">
-              {MODEL_PROVIDERS.map((p) => (
-                <SelectItem
-                  key={p.id}
-                  value={p.id}
-                  className="rounded-lg transition-colors focus:bg-white/[0.06] focus:text-sky-300"
-                >
-                  <ProviderLogo id={p.id} color={p.brandColor} />
-                  {p.label}
-                </SelectItem>
-              ))}
+            <SelectContent className="max-h-[min(60vh,26rem)] rounded-xl border-white/[0.08] bg-neutral-950 text-white shadow-2xl shadow-black/50">
+              {(['global', 'china', 'custom'] as const).map((region) => {
+                const group = MODEL_PROVIDERS.filter((p) => p.region === region);
+                if (!group.length) return null;
+                return (
+                  <SelectGroup key={region}>
+                    <SelectLabel className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">
+                      {t(`settings.llm.region.${region}`)}
+                    </SelectLabel>
+                    {group.map((p) => (
+                      <SelectItem
+                        key={p.id}
+                        value={p.id}
+                        className="rounded-lg transition-colors focus:bg-white/[0.06] focus:text-sky-300"
+                      >
+                        <ProviderMark provider={p} size={16} />
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -183,7 +168,7 @@ export function ModelConfigFields() {
           <label htmlFor="model" className="text-[13px] font-medium text-neutral-300">
             {t('settings.llm.modelLabel')}
           </label>
-          {isCustom ? (
+          {freeformModel ? (
             <Input
               id="model"
               type="text"
@@ -372,6 +357,12 @@ export function ModelConfigFields() {
                   placeholder={'https://api.openai.com/v1'}
                   className={inputClass}
                 />
+                {/* 这家的端点是工作区级的模板,原样保存必然连不上——把待替换的部分说明白。 */}
+                {meta?.baseUrlNeedsEdit && baseUrl.includes('{') && (
+                  <p className="text-[11px] leading-snug text-amber-400/80">
+                    {t('settings.llm.baseUrlNeedsEdit')}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <label htmlFor="maxTokens" className="text-[13px] font-medium text-neutral-300">

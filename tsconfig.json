@@ -2,6 +2,7 @@
   "extends": "./packages/tsconfig/base.json",
   "files": [],
   "references": [
+    { "path": "./packages/genui" },
     { "path": "./packages/resume-schema" },
     { "path": "./packages/resume-templates" },
     { "path": "./packages/mcp" }

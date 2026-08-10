@@ -231,6 +231,12 @@
       "title": "Model Configuration",
       "description": "Pick a provider and paste your own API key to enable AI. Your key is stored only in this browser and never uploaded.",
       "providerLabel": "API Provider",
+      "region": {
+        "global": "Global",
+        "china": "China",
+        "custom": "Other"
+      },
+      "baseUrlNeedsEdit": "Replace {WorkspaceId} in the URL with your own workspace ID before it will connect.",
       "providerPlaceholder": "Select a provider",
       "apiKeyLabel": "API Key",
       "getKeyLink": "Get an API key",
@@ -1205,7 +1211,8 @@
         "certificates": "Certificates"
       },
       "analyzingScan": "This PDF has no selectable text — reading it page by page",
-      "pageUnit": "{{count}} page(s)"
+      "pageUnit": "{{count}} page(s)",
+      "warningsTitle": "A few things I wasn't sure about"
     }
   },
   "agentErrors": {
@@ -1539,7 +1546,10 @@
     },
     "draft": {
       "ready": "A resume draft has been generated from the conversation",
-      "apply": "Apply to resume"
+      "apply": "Apply to resume",
+      "discard": "Not this one",
+      "applied": "Draft applied to your resume.",
+      "discarded": "Parked for now. What felt off? Tell me and I'll take another pass."
     },
     "run": {
       "stop": "Stop generation"
@@ -1553,22 +1563,39 @@
       "quotaTitle": "View remaining quota",
       "quotaUnavailable": "Quota is unavailable right now"
     },
+    "closeConfirm": {
+      "title": "Close the AI panel?",
+      "description": "The run in progress will stop. Whatever it already produced stays in the transcript, and the conversation resumes next time you open it.",
+      "confirm": "Stop and close"
+    },
     "reset": {
       "title": "Start a new chat?",
       "descriptionRunning": "The current generation will stop, and this resume's AI chat history, analysis, and canvas state will be cleared. This cannot be undone.",
       "descriptionIdle": "This will clear this resume's AI chat history, analysis, and canvas state, then start a new session. This cannot be undone.",
       "confirm": "Start new chat"
     },
+    "reasoning": {
+      "done": "See the reasoning"
+    },
+    "activity": {
+      "thinking": "Thinking…",
+      "reading": "Reading your resume…",
+      "analyzing": "Evaluating…",
+      "working": "Working…",
+      "subagent": "Subagent working…",
+      "writing": "Writing…",
+      "awaiting": "Waiting on you"
+    },
     "greeting": {
-      "title": "Hi! What shall we polish today?",
-      "description": "Tell me the goal — I'll pick the right skill and work through it with you."
+      "title": "Hi! What shall we polish today?"
     },
     "intent": {
       "create": "I want to build a resume from scratch — walk me through it",
       "optimize": "Optimize my resume for my target job.",
       "translate": "Translate my resume into the target language.",
       "analyze": "Analyze how competitive this resume is",
-      "interview": "Mock interview"
+      "interview": "Mock interview",
+      "fit": "Score my resume against this job"
     },
     "error": {
       "serviceUnavailable": "Oops, I hit a snag — give it a beat and try again."
@@ -1613,7 +1640,21 @@
         "locationFail": "Location mismatch",
         "matched": "Covered keywords",
         "missing": "Missing keywords",
-        "gaps": "Suggested fixes"
+        "gaps": "Suggested fixes",
+        "useKeyword": "Work \"{{keyword}}\" in",
+        "useKeywordPrompt": "I do have experience with \"{{keyword}}\" — work it into the resume naturally. If you can't find a basis for it, say so instead of inventing one.",
+        "closeGaps": "Optimize against these gaps",
+        "closeGapsPrompt": "Using the gaps and suggestions from that fit report, optimize my resume. Stick to facts I've given you and ask me about anything missing."
+      },
+      "close": "Close",
+      "categories": "By category",
+      "suggestions": "Suggestions",
+      "fixWeaknessPrompt": "Help me fix this: {{weakness}}",
+      "category": {
+        "ImpactAndActionability": "Impact & actionability",
+        "QuantifiableAchievements": "Quantified results",
+        "ClarityAndReadability": "Clarity & readability",
+        "ProfessionalSummary": "Professional summary"
       }
     },
     "chat": {
@@ -1625,6 +1666,7 @@
       "taskList": "Task list",
       "working": "Working",
       "backToChange": "Back to this change",
+      "interruptExpired": "This card belongs to a conversation that has ended, so I can't pick it up. Tell me again and we'll carry on from here.",
       "approval": {
         "defaultMessage": "I would like to read your resume to make suggestions",
         "allow": "Allow",
@@ -1642,7 +1684,48 @@
       "exit": "Exit",
       "placeholderQuoted": "Tell AI how to change the selected text...",
       "placeholderSkill": "Add optional context, then press Enter to run \"{{skill}}\"...",
-      "placeholderDefault": "Describe a request, or type / to call a skill..."
+      "attachPdf": "Attach an existing resume (PDF)",
+      "attachFile": "Add files",
+      "send": "Send",
+      "clearQuote": "Remove quote",
+      "clearMode": "Leave {{skill}} mode",
+      "voice": {
+        "start": "Voice input",
+        "stop": "Stop recording",
+        "listening": "Listening…",
+        "denied": "Microphone permission denied. Enable it in your browser and try again.",
+        "failed": "Speech recognition failed to start. Try again shortly."
+      }
+    },
+    "mode": {
+      "cocreate": {
+        "name": "Cowork",
+        "ready": "Cowork mode ready",
+        "loading": "Entering cowork mode",
+        "hint": "Can edit your resume; every change is proposed for review",
+        "placeholder": "Tell me what to change, or type / for skills"
+      },
+      "plan": {
+        "name": "Plan",
+        "ready": "Plan mode ready",
+        "loading": "Entering plan mode",
+        "hint": "Advice and options only — your resume stays untouched",
+        "placeholder": "Want to think it through first? Describe your goal"
+      },
+      "ask": {
+        "name": "Ask",
+        "ready": "Ask mode ready",
+        "loading": "Entering ask mode",
+        "hint": "Questions only — your resume is never read or changed",
+        "placeholder": "Ask anything — I won't touch your resume"
+      }
+    },
+    "pro": {
+      "regionLabel": "Upgrade notice",
+      "title": "Upgrade to Pro.",
+      "benefits": "See Pro benefits",
+      "cta": "Upgrade",
+      "dismiss": "Dismiss upgrade notice"
     },
     "picker": {
       "model": "Model",
@@ -1667,14 +1750,46 @@
         "defaultTitle": "Please provide more information",
         "submitted": "Submitted",
         "cancelled": "Cancelled",
-        "submit": "Submit"
+        "submit": "Submit",
+        "expired": "Expired",
+        "pending": ""
+      },
+      "field": {
+        "other": "Other",
+        "present": "Present",
+        "noMatch": "No match — just type it in",
+        "skip": "Skip this step",
+        "optional": "optional",
+        "year": "Year",
+        "month": "Mo"
+      },
+      "gallery": {
+        "template": "Pick a layout — one tap applies it"
+      },
+      "verification": {
+        "title": "Couldn't source these",
+        "body": "These names are new in the rewrite — they weren't in your resume or anywhere in this conversation. Not necessarily wrong, but worth a look before you send it."
+      },
+      "research": {
+        "title": "Job research",
+        "followUp": "{{item}} — walk me through this one. What should I do?",
+        "groups": {
+          "must_have_skills": "Must-haves",
+          "selling_points": "Your selling points",
+          "mismatch_risks": "Risks",
+          "evidence_to_add": "Evidence to add (tap one)",
+          "recruiter_questions": "Ask the recruiter (tap one)",
+          "preparation_plan": "Prep plan"
+        }
       }
     },
     "interview": {
       "title": "Mock interview · Frontend expert",
       "prompt": "\"Could you talk about your most challenging performance optimization project?\"",
       "microphone": "Microphone",
-      "end": "End interview"
+      "end": "End interview",
+      "comingSoonBadge": "Not live yet",
+      "comingSoon": "Voice mock interviews are still being built. They'll draw questions from your resume and target role, follow up as you answer, and leave you a transcript worth reviewing. Not ready yet — and we'd rather not fake it."
     },
     "living": {
       "askPolarisDetail": "Ask Polaris · explain how to improve it",
@@ -1691,6 +1806,13 @@
       "addSectionContent": "Add to this section",
       "reorder": "Reorder",
       "acceptedChangesLog": "Accepted {{count}} changes"
+    },
+    "attach": {
+      "parsing": "Reading your PDF…",
+      "parsed": "Done — the draft is on the right",
+      "failed": "I couldn't read that PDF",
+      "warningsTitle": "A few things I wasn't sure about",
+      "warningsBody": "These parts of the PDF I read with low confidence — worth a look before you apply the draft."
     }
   },
   "report": {

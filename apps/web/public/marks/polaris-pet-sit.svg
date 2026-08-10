@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" shape-rendering="crispEdges">
+  <!-- 坐姿帧（落在输入框上沿）。
+       和站姿的差别不在装饰，在**重心**：整只往下沉一格（坐下去），腿离开身体正下方、
+       收窄并垂到身体轮廓之外——读作「挂在边上」而不是「站在边上」。
+       两条腿各用不同周期轻轻晃，像坐着晃脚；周期互质才不会同步成机械摆动。 -->
+  <style>
+    .leg-l { animation: dangle-l 2.6s steps(1, end) infinite; }
+    .leg-r { animation: dangle-r 3.1s steps(1, end) infinite; }
+    .tw    { animation: sit-tw 4.4s steps(1, end) infinite; }
+    .body  { animation: settle 5.2s steps(1, end) infinite; }
+    @keyframes dangle-l {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-0.7px); }
+    }
+    @keyframes dangle-r {
+      0%, 100% { transform: translateY(-0.7px); }
+      50% { transform: translateY(0); }
+    }
+    /* 坐着时呼吸幅度比站着小：整体只沉浮半格 */
+    @keyframes settle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-0.5px); }
+    }
+    @keyframes sit-tw {
+      0%, 92%, 100% { opacity: 0.9; }
+      96% { opacity: 0.45; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .leg-l, .leg-r, .tw, .body { animation: none; }
+    }
+  </style>
+
+  <!-- 垂在边缘外的腿：比站姿细、更靠内，末端探出身体轮廓 -->
+  <g class="leg-l"><rect x="8" y="20" width="2.5" height="3.5" fill="#2fa8ea"/></g>
+  <g class="leg-r"><rect x="13.5" y="20" width="2.5" height="3.5" fill="#2fa8ea"/></g>
+
+  <g class="body">
+    <!-- 天线：随身体一起下沉一格 -->
+    <g class="tw" fill="#dbeffe">
+      <rect x="11.5" y="1.5" width="1" height="3"/>
+      <rect x="10.5" y="2.5" width="3" height="1"/>
+    </g>
+    <rect x="11.5" y="5" width="1" height="3" fill="#67cdf9"/>
+
+    <!-- 身体：与站姿同一组矩形整体下移 1px，不改宽高——像素画改比例会破网格 -->
+    <rect x="5" y="7" width="14" height="13" fill="#67cdf9"/>
+    <rect x="4" y="8" width="16" height="11" fill="#67cdf9"/>
+    <rect x="5" y="7" width="7" height="1" fill="#a8e2fd"/>
+    <rect x="4" y="8" width="1" height="6" fill="#a8e2fd"/>
+    <rect x="5" y="19" width="14" height="1" fill="#2fa8ea"/>
+    <rect x="19" y="13" width="1" height="6" fill="#2fa8ea"/>
+
+    <!-- 耳朵 -->
+    <rect x="2" y="10" width="2" height="4" fill="#a8e2fd"/>
+    <rect x="20" y="10" width="2" height="4" fill="#2fa8ea"/>
+
+    <!-- 眼睛：坐着放松，比站姿略眯（h=3.5 而非 4） -->
+    <rect x="8" y="11" width="2.5" height="3.5" fill="#082f49"/>
+    <rect x="13.5" y="11" width="2.5" height="3.5" fill="#082f49"/>
+  </g>
+</svg>

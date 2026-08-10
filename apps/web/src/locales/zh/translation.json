@@ -231,6 +231,12 @@
       "title": "模型配置",
       "description": "选择服务商、粘贴你自己的 API Key 即可启用 AI。密钥只保存在你的浏览器本地，不会上传。",
       "providerLabel": "API 提供商",
+      "region": {
+        "global": "国际",
+        "china": "国内",
+        "custom": "其它"
+      },
+      "baseUrlNeedsEdit": "把地址里的 {WorkspaceId} 换成你自己的工作区 ID 才能连通。",
       "providerPlaceholder": "选择服务商",
       "apiKeyLabel": "API 密钥",
       "getKeyLink": "获取 API Key",
@@ -1205,7 +1211,8 @@
         "certificates": "证书"
       },
       "analyzingScan": "这份 PDF 没有可复制的文字，正在逐页识别",
-      "pageUnit": "{{count}} 页"
+      "pageUnit": "{{count}} 页",
+      "warningsTitle": "有几处我拿不准"
     }
   },
   "agentErrors": {
@@ -1539,7 +1546,10 @@
     },
     "draft": {
       "ready": "已根据对话生成简历草稿",
-      "apply": "应用到简历"
+      "apply": "应用到简历",
+      "discard": "不用这份",
+      "applied": "已把草稿应用到当前简历。",
+      "discarded": "这份先放着。哪儿不对劲？说一声我重来一版。"
     },
     "run": {
       "stop": "停止生成"
@@ -1553,22 +1563,39 @@
       "quotaTitle": "查看剩余额度",
       "quotaUnavailable": "暂时无法获取额度"
     },
+    "closeConfirm": {
+      "title": "关闭 AI 面板？",
+      "description": "当前这次生成会被停止，已经产出的内容保留在对话里。下次打开还能接着聊。",
+      "confirm": "停止并关闭"
+    },
     "reset": {
       "title": "开启新对话？",
       "descriptionRunning": "当前生成会被停止，并清空这份简历的 AI 对话记录、分析结果和画布状态。此操作无法撤销。",
       "descriptionIdle": "将清空这份简历的 AI 对话记录、分析结果和画布状态，并开启一个新的会话。此操作无法撤销。",
       "confirm": "开启新对话"
     },
+    "reasoning": {
+      "done": "查看思考过程"
+    },
+    "activity": {
+      "thinking": "正在琢磨…",
+      "reading": "正在读你的简历…",
+      "analyzing": "正在评估…",
+      "working": "正在处理…",
+      "subagent": "子代理在工作…",
+      "writing": "正在写…",
+      "awaiting": "等你回应"
+    },
     "greeting": {
-      "title": "嗨，今天想把简历打磨成什么样？",
-      "description": "说说你的目标，我来挑合适的技能，陪你一起改。"
+      "title": "嗨，今天想把简历打磨成什么样？"
     },
     "intent": {
       "create": "我想从零创建一份简历，带我开始",
       "optimize": "帮我针对目标岗位优化我的简历。",
       "translate": "把我的简历翻译成目标语言。",
       "analyze": "分析这份简历的竞争力",
-      "interview": "模拟面试"
+      "interview": "模拟面试",
+      "fit": "评估我的简历和这个岗位的匹配度"
     },
     "error": {
       "serviceUnavailable": "呀，我这边卡住了——歇一小会儿再试一次。"
@@ -1613,7 +1640,21 @@
         "locationFail": "地点不符",
         "matched": "已覆盖关键词",
         "missing": "缺失关键词",
-        "gaps": "补强建议"
+        "gaps": "补强建议",
+        "useKeyword": "把「{{keyword}}」补进简历",
+        "useKeywordPrompt": "我确实有「{{keyword}}」相关的经历，帮我把它自然地补进简历——没有的话直接告诉我，别编。",
+        "closeGaps": "针对这些差距优化",
+        "closeGapsPrompt": "按刚才那份匹配报告里的缺口和建议，帮我优化简历。只用我已有的事实，缺的地方问我。"
+      },
+      "close": "关闭",
+      "categories": "分类得分",
+      "suggestions": "具体建议",
+      "fixWeaknessPrompt": "帮我改掉这条：{{weakness}}",
+      "category": {
+        "ImpactAndActionability": "影响力与行动力",
+        "QuantifiableAchievements": "量化成果",
+        "ClarityAndReadability": "清晰度与可读性",
+        "ProfessionalSummary": "职业概述"
       }
     },
     "chat": {
@@ -1625,6 +1666,7 @@
       "taskList": "任务清单",
       "working": "工作中",
       "backToChange": "回到这处改动",
+      "interruptExpired": "这张卡片来自一场已经结束的对话，我接不上了。重新说一次，我们从这里继续。",
       "approval": {
         "defaultMessage": "想读取你的简历来给建议",
         "allow": "允许",
@@ -1642,7 +1684,48 @@
       "exit": "退出",
       "placeholderQuoted": "就选中这段告诉 AI 怎么改…",
       "placeholderSkill": "补充说明（可选），回车运行「{{skill}}」…",
-      "placeholderDefault": "描述需求，或输入 / 调用技能…"
+      "attachPdf": "上传一份旧简历（PDF）",
+      "attachFile": "添加文件",
+      "send": "发送",
+      "clearQuote": "移除引用",
+      "clearMode": "退出「{{skill}}」模式",
+      "voice": {
+        "start": "语音输入",
+        "stop": "停止录音",
+        "listening": "正在听…",
+        "denied": "没拿到麦克风权限，可以在浏览器里开启后重试",
+        "failed": "语音识别没跑起来，稍后再试"
+      }
+    },
+    "mode": {
+      "cocreate": {
+        "name": "共创",
+        "ready": "共创模式已就绪",
+        "loading": "正在进入共创模式",
+        "hint": "可以直接改简历，改动先提案给你确认",
+        "placeholder": "说说要改什么，输入 / 唤起技能"
+      },
+      "plan": {
+        "name": "规划",
+        "ready": "规划模式已就绪",
+        "loading": "正在进入规划模式",
+        "hint": "只给方案和建议，不动你的简历",
+        "placeholder": "想先理清思路？说说你的目标"
+      },
+      "ask": {
+        "name": "问答",
+        "ready": "问答模式已就绪",
+        "loading": "正在进入问答模式",
+        "hint": "纯咨询，不读取也不修改简历",
+        "placeholder": "问点什么，我不会碰你的简历"
+      }
+    },
+    "pro": {
+      "regionLabel": "升级提示",
+      "title": "升级到 Pro。",
+      "benefits": "查看 Pro 权益",
+      "cta": "升级",
+      "dismiss": "关闭升级提示"
     },
     "picker": {
       "model": "模型",
@@ -1667,14 +1750,46 @@
         "defaultTitle": "请补充信息",
         "submitted": "已提交",
         "cancelled": "已取消",
-        "submit": "提交"
+        "submit": "提交",
+        "expired": "已过期",
+        "pending": ""
+      },
+      "field": {
+        "other": "其他",
+        "present": "至今",
+        "noMatch": "没有匹配项，直接输入也行",
+        "skip": "跳过这一步",
+        "optional": "可留空",
+        "year": "年",
+        "month": "月"
+      },
+      "gallery": {
+        "template": "挑个版式，点一下就换上"
+      },
+      "verification": {
+        "title": "这几处我没找到出处",
+        "body": "下面这些名字是改动里新出现的，你原来的简历和这次对话里都没提过。不是说它们错，但发出去之前你自己确认一下。"
+      },
+      "research": {
+        "title": "岗位研究",
+        "followUp": "{{item}} —— 就这条展开说说，需要我怎么做？",
+        "groups": {
+          "must_have_skills": "硬性要求",
+          "selling_points": "你的卖点",
+          "mismatch_risks": "风险点",
+          "evidence_to_add": "该补的证据（点一条展开）",
+          "recruiter_questions": "可以问 HR（点一条展开）",
+          "preparation_plan": "准备计划"
+        }
       }
     },
     "interview": {
       "title": "模拟面试 · 前端专家",
       "prompt": "“能聊聊你在项目里最有挑战的一次性能优化吗？”",
       "microphone": "麦克风",
-      "end": "结束面试"
+      "end": "结束面试",
+      "comingSoonBadge": "还没上线",
+      "comingSoon": "语音模拟面试还在打磨中。它会用你的简历和目标岗位出题、边听边追问，做完给你一份可复盘的纪要——现在还差最后一段路，先不上假的给你。"
     },
     "living": {
       "askPolarisDetail": "询问 Polaris · 说说怎么改",
@@ -1691,6 +1806,13 @@
       "addSectionContent": "补充这段",
       "reorder": "调整顺序",
       "acceptedChangesLog": "已接受 {{count}} 处改动"
+    },
+    "attach": {
+      "parsing": "正在读你的 PDF…",
+      "parsed": "读完了，草稿在右边",
+      "failed": "这份 PDF 我没读出来",
+      "warningsTitle": "有几处我拿不准",
+      "warningsBody": "这份 PDF 里下面这些地方我读得不确定，落到草稿里之前你先看一眼。"
     }
   },
   "report": {

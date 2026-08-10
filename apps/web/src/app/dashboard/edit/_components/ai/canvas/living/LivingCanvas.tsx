@@ -14,6 +14,7 @@ import {
   type PendingChangeView,
 } from '../../lib/editableCanvas';
 import ResumePreview from '../../../preview/ResumePreview';
+import AiThinkingOverlay from '../../../modals/AiThinkingOverlay';
 import ActionPopover from './ActionPopover';
 import ReviewBar from './ReviewBar';
 import SelectionActionBar from './SelectionActionBar';
@@ -69,6 +70,18 @@ type LivingCanvasProps = {
   onAskWithTarget?: (ctx: { path: string; label: string; text: string; selectionText?: string }) => void;
   batchRequest?: BatchRequest | null;
   focusRequest?: FocusRequest | null;
+  /**
+   * 一份还没落地的草稿（引导创建的产物）。给了就渲染它而不是当前简历，并关掉就地
+   * 编辑——还没应用的东西不该能改。用户点「应用到简历」后它变成 resumeData，同一张
+   * 纸无缝接上，不用换面板。
+   */
+  previewResume?: Resume | null;
+  /**
+   * 整张纸都在被写、且还没有东西可看时压一层「纸面入定」（与主编辑器预览共用同一
+   * 个遮罩）。**不要**在定向改写时置位：那种情况下设计要的是被作用的片段就地
+   * shimmer、不锁全屏（living-canvas design §5C），盖一层全纸遮罩会把它盖掉。
+   */
+  working?: boolean;
 };
 
 type HighlightRect = { top: number; left: number; width: number; height: number };
@@ -105,6 +118,8 @@ export default function LivingCanvas({
   onAskWithTarget,
   batchRequest,
   focusRequest,
+  previewResume,
+  working,
 }: LivingCanvasProps) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<Record<string, PendingChange>>({});
@@ -143,6 +158,8 @@ export default function LivingCanvas({
   );
 
   const activePath = popover ? pathOf(popover.target) : null;
+  // 纸上画什么：优先未落地的草稿，否则是真简历。
+  const shown = previewResume ?? resumeData;
 
   const fieldHtml = useCallback((target: EditableTarget): string => {
     if (target.sectionKey === 'info') {
@@ -186,7 +203,9 @@ export default function LivingCanvas({
   const scrollToPath = useCallback((path: string) => {
     const el = scrollRef.current?.querySelector(`[data-resume-path="${path}"]`);
     if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // matchMedia 而不是 useReducedMotion：这在 callback 里，且只读一次即可。
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
     el.classList.remove('lc-highlight');
     void (el as HTMLElement).offsetWidth;
     el.classList.add('lc-highlight');
@@ -320,7 +339,10 @@ export default function LivingCanvas({
   }, []);
 
   const runSelectionAction = useCallback(
-    (action: SelectionActionId | 'free', freeText?: string) => {
+    (action: SelectionActionId | 'free', arg?: string) => {
+      // `arg` 对 free 是自由指令，对 translate 是目标语言（此前不带,模型只能猜）。
+      const freeText = action === 'free' ? arg : undefined;
+      const lang = action === 'translate' ? arg : undefined;
       const sel = selectionRef.current;
       if (!sel) return;
       const { target, text } = sel;
@@ -334,8 +356,8 @@ export default function LivingCanvas({
       const fullHtml = fieldHtml(target);
       void runEdit(
         path,
-        { action, resumePath: path, before: fullHtml, selectionText: text, instruction: freeText },
-        (r) => buildSelectionChange(target, fullHtml, text, action, r, { freeText })
+        { action, resumePath: path, before: fullHtml, selectionText: text, instruction: freeText, lang },
+        (r) => buildSelectionChange(target, fullHtml, text, action, r, { freeText, lang })
       );
     },
     [fieldHtml, runEdit, onAskWithTarget]
@@ -409,6 +431,7 @@ export default function LivingCanvas({
           delete next[path];
           return next;
         });
+        // 与 globals.css `.lc-flash` 的时长成对：这里先摘掉,绿闪就播不完。
       }, 420);
     },
     [onApplySections, onApplyInfo, onLog, dropFromOrder]
@@ -648,9 +671,13 @@ export default function LivingCanvas({
     return out;
   }, [pending]);
 
+  // 预览一份未落地的草稿时关掉就地编辑：把手、选区动作、评审卡都不该出现在
+  // 一份用户还没接受的东西上。
+  const editable = !previewResume;
+
   const ctxValue = useMemo<EditableCanvasContextValue>(
     () => ({
-      enabled: true,
+      enabled: editable,
       pendingByPath,
       processingPaths: processing,
       errorsByPath: errors,
@@ -662,7 +689,7 @@ export default function LivingCanvas({
       onRetry: retry,
       onSectionHandleClick,
     }),
-    [pendingByPath, processing, errors, activePath, handleHandleClick, accept, discard, regenerate, retry, onSectionHandleClick]
+    [editable, pendingByPath, processing, errors, activePath, handleHandleClick, accept, discard, regenerate, retry, onSectionHandleClick]
   );
 
   const count = order.length;
@@ -724,7 +751,7 @@ export default function LivingCanvas({
         <div className="flex justify-center pt-6 pb-24 px-12">
           <div style={{ width: PAGE_WIDTH * SCALE }}>
             <div
-              className="bg-[#fff] rounded-lg shadow-2xl"
+              className="relative bg-[#fff] rounded-lg shadow-2xl"
               style={{
                 width: PAGE_WIDTH,
                 transform: `scale(${SCALE})`,
@@ -735,13 +762,16 @@ export default function LivingCanvas({
               <EditableCanvasProvider value={ctxValue}>
                 <div style={{ padding: 4 }}>
                   <ResumePreview
-                    info={resumeData.info}
-                    sections={resumeData.sections}
-                    sectionOrder={resumeData.sectionOrder.map((s) => s.key)}
+                    info={shown.info}
+                    sections={shown.sections}
+                    sectionOrder={shown.sectionOrder.map((s) => s.key)}
                     templateId={templateId}
                   />
                 </div>
               </EditableCanvasProvider>
+              {/* 「纸面入定」——AI 工作中就在这张纸上压一层，而不是另开一块画布。
+                  与主编辑器预览用的是同一个组件。 */}
+              <AiThinkingOverlay isVisible={Boolean(working)} />
             </div>
           </div>
         </div>

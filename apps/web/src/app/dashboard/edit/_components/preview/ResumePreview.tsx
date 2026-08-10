@@ -75,11 +75,13 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
 
   if (loading || !template) {
     return (
-      <div className="w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
+      // 呼吸挂在容器上跑全局心跳（2.4s），而不是每根条自己 animate-pulse（2s）：
+      // 后者既与心跳不同频，各条相位还互相独立，一屏骨架看起来是在各闪各的。
+      <div className="ai-breath--soft w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
         {/* 简化的头部骨架 */}
         <div className="p-8 border-b border-gray-200">
-          <div className="h-6 bg-gray-200 rounded w-48 animate-pulse mb-4" />
-          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+          <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
+          <div className="h-4 bg-gray-200 rounded w-32" />
         </div>
 
         {/* 简化的内容骨架 */}
@@ -87,12 +89,12 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="space-y-3">
               {/* 标题骨架 */}
-              <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
-              
+              <div className="h-5 bg-gray-200 rounded w-24" />
+
               {/* 内容块骨架 */}
               <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
               </div>
             </div>
           ))}

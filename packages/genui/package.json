@@ -1,0 +1,58 @@
+{
+  "name": "@magic-resume/genui",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./contract": {
+      "types": "./dist/contract/index.d.ts",
+      "default": "./dist/contract/index.js"
+    },
+    "./host": {
+      "types": "./dist/host/index.d.ts",
+      "default": "./dist/host/index.js"
+    },
+    "./motion": {
+      "types": "./dist/motion/index.d.ts",
+      "default": "./dist/motion/index.js"
+    },
+    "./primitives": {
+      "types": "./dist/primitives/index.d.ts",
+      "default": "./dist/primitives/index.js"
+    },
+    "./widgets": {
+      "types": "./dist/widgets/index.d.ts",
+      "default": "./dist/widgets/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run lint"
+  },
+  "dependencies": {
+    "@magic-resume/utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "framer-motion": "^12.17.0",
+    "lucide-react": "^0.513.0",
+    "react": ">=19",
+    "react-dom": ">=19",
+    "react-i18next": "^15.5.2"
+  },
+  "devDependencies": {
+    "@magic-resume/tsconfig": "workspace:*",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

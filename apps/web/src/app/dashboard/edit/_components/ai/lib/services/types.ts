@@ -16,11 +16,18 @@ export type AgentEventType =
   | 'tool_result'
   | 'tool_completed'
   | 'tool_approval_request'
+  /** non-blocking GenUI card push — the run keeps going, unlike an interrupt */
+  | 'ui_widget'
   | 'message_chunk'
+  /** 推理模型的思维链增量。不是所有模型都回传——没有就是没有，不构成错误。 */
+  | 'reasoning_chunk'
   | 'resume_patch'
   | 'resume_update'
   | 'resume_analysis'
   | 'fit_report'
+  /** deterministic anti-fabrication gate flagged unsourced names in an edit */
+  | 'resume_verification'
+  | 'run_cancelled'
   | 'translation_result'
   | 'pdf_result'
   | 'interview_question'

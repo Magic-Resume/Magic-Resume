@@ -3,17 +3,20 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-// animate-pulse 的周期(Tailwind 默认 2s)。负 animation-delay 把每个实例的呼吸相位钉到
+// 全局心跳周期(--breath-duration = 2.4s)。负 animation-delay 把每个实例的呼吸相位钉到
 // 挂钟时间:无论骨架在哪个瞬间挂载(面板首帧的 fallback / chunk 就绪后的真身),明暗都处于
 // 同一相位 —— 实例替换在肉眼里"没有发生过"。useState 惰性初始化保证 re-render 不重算,
 // 否则 delay 每次变化会让 CSS 动画反复重启、骨架条抖动。
-const PULSE_PERIOD_MS = 2000;
+//
+// 用 ai-breath--soft 而不是 Tailwind 的 animate-pulse:后者是 2s,与心跳的 2.4s 不同频,
+// 两种骨架在同一屏交接时能肉眼看见相位跳变。
+const BREATH_PERIOD_MS = 2400;
 
 export function PaperSkeletonBars() {
-  const [animationDelay] = useState(() => `-${Date.now() % PULSE_PERIOD_MS}ms`);
+  const [animationDelay] = useState(() => `-${Date.now() % BREATH_PERIOD_MS}ms`);
 
   return (
-    <div className="animate-pulse space-y-6" style={{ animationDelay }}>
+    <div className="ai-breath--soft space-y-6" style={{ animationDelay }}>
       <div className="space-y-3">
         <div className="h-7 w-52 rounded bg-neutral-200" />
         <div className="h-3.5 w-72 rounded bg-neutral-100" />

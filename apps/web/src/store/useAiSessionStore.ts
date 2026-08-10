@@ -8,6 +8,10 @@ import type {
 } from '../app/dashboard/edit/_components/ai/types';
 import type { MultiPersonaResumeAnalysis } from '../types/agent/multi-persona';
 import type { FitReport } from '../types/agent/fit-report';
+import {
+  DEFAULT_AGENT_MODE,
+  type AgentMode,
+} from '../app/dashboard/edit/_components/ai/conversation/modes';
 
 export const AI_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const AI_SESSION_STORAGE_PREFIX = 'ai-session:';
@@ -22,6 +26,12 @@ export interface AiSessionSnapshot {
   started: boolean;
   messages: ChatMessage[];
   chatMode: AiSessionChatMode;
+  /**
+   * 输入框的模式（共创 / 规划 / 问答）——与技能正交的一根轴，决定 AI 能不能改、
+   * 要不要读这份简历。持久化进会话:关掉面板再打开，用户上次选的边界应该还在，
+   * 否则「我明明设成了不许改简历」会在重开后悄悄失效。
+   */
+  agentMode: AgentMode;
   canvas: CanvasState;
   livingOpen: boolean;
   livingSkillId: SkillId | null;
@@ -87,6 +97,7 @@ export function createAiSessionStore(
     started: false,
     messages: [],
     chatMode: 'idle',
+    agentMode: DEFAULT_AGENT_MODE,
     canvas: CLOSED_CANVAS,
     livingOpen: false,
     livingSkillId: null,

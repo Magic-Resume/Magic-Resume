@@ -16,6 +16,8 @@
 
 # next.js
 /.next/
+# dev 开着时的验证构建产物（NEXT_DIST_DIR=.next-verify）
+.next-verify/
 /out/
 
 # production

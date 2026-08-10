@@ -1,28 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
-import type { WidgetInstance } from './widgets/types';
+import type { WidgetInstance } from '@magic-resume/genui/contract';
 
-export type SkillId = 'create' | 'optimize' | 'analyze' | 'translate' | 'interview';
+export type SkillId = 'create' | 'optimize' | 'analyze' | 'fit' | 'translate' | 'interview';
 
-export type CanvasView = 'preview' | 'diff' | 'json' | 'score' | 'match';
+export type CanvasView = 'preview' | 'json' | 'score' | 'match';
 
 /** 技能的作用范围。`whole-resume` 是整篇模式，`element`/`selection` 是 living canvas 驱动的就地调用。 */
 export type SkillScope = 'whole-resume' | 'element' | 'selection';
-
-export type ParamField =
-  | {
-      id: string;
-      label: string;
-      kind: 'textarea' | 'text';
-      placeholder?: string;
-      defaultValue?: string;
-    }
-  | {
-      id: string;
-      label: string;
-      kind: 'select';
-      options: { value: string; label: string }[];
-      defaultValue?: string;
-    };
 
 /** 每项 AI 能力的唯一真源：对话外壳、技能 chip、斜杠菜单都读它。加能力 = 加一条。 */
 export interface AiSkill {
@@ -38,10 +22,6 @@ export interface AiSkill {
   surface: 'inline' | 'immersive';
   /** create is a pure conversation, no artifact */
   isChat?: boolean;
-  /** structured inputs collected before running, rendered as the composer param bar */
-  params: ParamField[];
-  /** run-button label shown in the param bar */
-  cta?: string;
   /** which canvas views this skill produces; omitted = no canvas artifact */
   canvas?: { views: CanvasView[]; defaultView: CanvasView };
   /** scopes this skill can target; defaults to whole-resume when omitted */
@@ -72,7 +52,8 @@ export interface ApprovalRequest {
   toolName?: string;
   /** resource class being requested, e.g. 'resume' (drives the read narration). */
   scope: string;
-  status: 'pending' | 'approved' | 'denied';
+  /** `expired`: restored from an old transcript — the paused run is long gone. */
+  status: 'pending' | 'approved' | 'denied' | 'expired';
   /**
    * For a read_resume approval: how far the read has progressed once approved.
    * Lets the card show 已允许读取 → 正在读取简历… → 已读取简历 in one place instead of
@@ -92,6 +73,8 @@ export interface ChatMessage {
   resumePath?: string;
   /** live-streamed assistant text — render raw (no typewriter re-animation) */
   streamed?: boolean;
+  /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */
+  reasoning?: string;
   /** present when role === 'approval' — the pending tool-approval prompt */
   approval?: ApprovalRequest;
   /** present when role === 'plan' — the live review checklist (analyze / subagent todolist) */
@@ -100,6 +83,12 @@ export interface ChatMessage {
   subagentName?: string;
   /** present when role === 'widget' — a GenUI interactive card (form / decision) */
   widget?: WidgetInstance;
+  /**
+   * present when this card came from a paused run. One interrupt can carry
+   * several actions and the backend rejects a resume whose decision count does
+   * not match, so each card remembers which slot it answers.
+   */
+  interruptSlot?: { requestId: string; index: number };
   /** present when a user message quotes a canvas snippet (「询问 Polaris」bridge) */
   quote?: { label: string; text: string };
 }

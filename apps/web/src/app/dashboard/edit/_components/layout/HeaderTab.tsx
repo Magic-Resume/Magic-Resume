@@ -1,4 +1,4 @@
-import { ChevronLeft, History, MessageCircle } from 'lucide-react';
+import { Bug, ChevronLeft, History } from 'lucide-react';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -88,7 +88,7 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
                                 type="button"
                                 className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:bg-white/[0.06] hover:text-neutral-100"
                             >
-                                <MessageCircle size={16} />
+                                <Bug size={16} />
                                 <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
                                     {t('tools.feedback')}
                                 </span>

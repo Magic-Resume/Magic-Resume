@@ -23,10 +23,12 @@ import {
 import { afterAuthUrl } from '@/components/auth/afterAuthUrl';
 import { migrateResume } from '@/lib/utils/resumeMigrations';
 import {
+  coerceSectionOrder,
   customSectionKey,
   isCustomSection,
   normalizeResumeSectionOrder,
 } from '@/lib/utils/resumeSectionOrder';
+import type { SectionOrder } from '@/types/frontend/resume';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { hexToRgb, rgbToHex } from '@/lib/utils/color';
 import { parseCssPixelValue } from '@/lib/utils/css';
@@ -660,6 +662,43 @@ function testSectionOwnership() {
   assert.equal(withIcon.find((s) => s.key === 'personalStrengths')?.icon, 'trophy');
 }
 
+function testSectionOrderCoercion() {
+  // A model told the legacy contract writes bare strings. Nothing validated it,
+  // so `.map(s => s.key)` gave undefined for every entry and the whole draft
+  // rendered blank — correct-looking JSON, no error anywhere.
+  assert.deepEqual(
+    coerceSectionOrder(['experience', 'projects']),
+    [
+      { key: 'experience', label: 'sections.experience' },
+      { key: 'projects', label: 'sections.projects' },
+    ],
+  );
+
+  // Already-correct input passes through untouched, icon and all.
+  const proper = [{ key: 'skills', label: '专业技能', icon: 'wrench' }];
+  assert.deepEqual(coerceSectionOrder(proper), proper);
+
+  // Junk is dropped rather than turned into keyless entries.
+  assert.deepEqual(coerceSectionOrder(['', '  ', null, 42, {}, { key: '' }]), []);
+  assert.deepEqual(coerceSectionOrder(undefined), []);
+  assert.deepEqual(coerceSectionOrder('experience'), []);
+
+  // Coercion must not complete the list: a draft preview shows what the model
+  // wrote, not every default section as an empty heading.
+  assert.equal(coerceSectionOrder(['experience']).length, 1);
+
+  // But normalize (the editor path) still completes it, and keeps the order the
+  // strings gave instead of falling back to the default sequence.
+  const normalized = normalizeResumeSectionOrder(
+    ['projects', 'experience'] as unknown as SectionOrder[],
+    { projects: [], experience: [] },
+  );
+  const keys = normalized.map((s) => s.key);
+  assert.equal(keys[0], 'basics');
+  assert.ok(keys.indexOf('projects') < keys.indexOf('experience'), 'model order lost');
+  assert.ok(keys.includes('skills'), 'built-in section missing after normalize');
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
@@ -671,6 +710,7 @@ async function main() {
   testResumeMigrations();
   testCustomSections();
   testSectionOwnership();
+  testSectionOrderCoercion();
 }
 
 main().catch((error) => {
