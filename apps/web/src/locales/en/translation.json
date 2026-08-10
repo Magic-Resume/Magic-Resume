@@ -208,14 +208,8 @@
       }
     },
     "invite": {
-      "title": "Invite friends, get your resumes ready together",
-      "subtitle": "Once they sign up and finish their first AI chat, you each get about {{percent}}% more AI allowance.",
-      "subtitleNoQuota": "Once they sign up and finish their first AI chat, you each get extra AI allowance.",
-      "linkLabel": "Your invite link",
-      "copy": "Copy",
       "copied": "Copied",
       "savePoster": "Save invite poster",
-      "posterHint": "The poster already carries your QR code — share it anywhere",
       "posterAlt": "Magic Resume invite poster",
       "posterError": "Could not build the poster. Please try again.",
       "rule": "Rewards land automatically once your friend finishes their first AI chat, for both of you. Paying on signup alone invites bulk fake accounts, so we wait for one real use.",
@@ -223,7 +217,10 @@
         "invited": "Invited",
         "rewarded": "Rewarded",
         "pending": "Pending"
-      }
+      },
+      "headerAction": "Invite friends",
+      "emptyHint": "Send the poster or link to a friend who's job hunting — you both get extra AI allowance, and they get a head start.",
+      "remaining": "{{count}} more rewards available"
     }
   },
   "notificationsPage": {

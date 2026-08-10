@@ -3,6 +3,7 @@
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { AccountModal } from "@/lib/auth";
 import { PricingModal } from "@/lib/extensions/billing-ui";
+import InvitePosterModal from "@/components/account/invite/InvitePosterModal";
 
 /**
  * Mounts the global settings + account + pricing overlays once, high in the
@@ -15,6 +16,7 @@ export default function AccountUiHost() {
       <SettingsModal />
       <AccountModal />
       <PricingModal />
+      <InvitePosterModal />
     </>
   );
 }
