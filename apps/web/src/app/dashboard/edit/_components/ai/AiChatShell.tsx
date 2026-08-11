@@ -40,6 +40,7 @@ import { coerceSectionOrder } from '@/lib/utils/resumeSectionOrder';
 import { useResumeDraftStore } from '@/store/useResumeDraftStore';
 import { useSettingStore } from '@/store/useSettingStore';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
+import type { AiChangesDroppedPayload } from '@/lib/extensions/app-lifecycle';
 import { useAiSessionStore } from '@/store/useAiSessionStore';
 import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -361,9 +362,16 @@ export default function AiChatShell({
    * 而且它进 transcript 可回溯，画布卸载也不会跟着消失。`console.warn` 一律保留给排查。
    */
   const warnDropped = useCallback(
-    (content: string, detail?: unknown) => {
-      console.warn(`[ai] ${content}`, detail ?? '');
+    (
+      content: string,
+      reason: AiChangesDroppedPayload['reason'],
+      extra?: { count?: number; detail?: unknown }
+    ) => {
+      console.warn(`[ai] ${content}`, extra?.detail ?? '');
       addMessage({ id: nanoid(), role: 'log', content, tone: 'warn' });
+      // 同一个汇聚处既说给用户听、也报给我们自己：少了后半句，这类故障只能等人来报，
+      // 而它恰恰是那种「用户觉得产品坏了但懒得说」的失败。
+      appLifecycle.aiChangesDropped({ reason, count: extra?.count });
     },
     [addMessage]
   );
@@ -718,17 +726,25 @@ export default function AiChatShell({
           } else if (ev.type === 'resume_write_failed') {
             // 服务端断言：本轮试过改简历、一次都没成功。这条事件存在的全部意义，就是不让
             // 模型那句「我已经改好了」成为用户唯一能看到的信息。
-            warnDropped(
-              '这轮没能改动简历，画布保持原样 · 可以再说一次试试',
-              ev.payload
-            );
+            // 服务端已经断言过「一整轮没写成」，这是「没产出」不是「没送达」——单独一个事件。
+            console.warn('[ai] resume_write_failed', ev.payload);
+            addMessage({
+              id: nanoid(),
+              role: 'log',
+              content: '这轮没能改动简历，画布保持原样 · 可以再说一次试试',
+              tone: 'warn',
+            });
+            appLifecycle.aiWriteFailed({
+              attempts: (ev.payload as { attempts?: number } | undefined)?.attempts,
+            });
           } else if (ev.type === 'resume_patch' || ev.type === 'resume_update') {
             // 模式闸门（确定性，不靠提示词）：「规划 / 问答」两档不允许简历改动。
             // 模型偶尔仍会产出一份改写——这里丢掉它，用户的简历不会被碰。
             if (!AGENT_MODES[agentModeRef.current].allowsResumeEdits) {
               warnDropped(
                 '当前是只读模式，这次简历改动已丢弃 · 切换到「共创」再试',
-                `mode=${agentModeRef.current} type=${ev.type}`
+                'mode_readonly',
+                { detail: `mode=${agentModeRef.current} type=${ev.type}` }
               );
               continue;
             }
@@ -750,10 +766,9 @@ export default function AiChatShell({
                 nonce: batchNonce.current,
               });
             } else {
-              warnDropped(
-                '收到一份读不懂的简历改动，已忽略',
-                ev.payload ?? ev.data
-              );
+              warnDropped('收到一份读不懂的简历改动，已忽略', 'malformed', {
+                detail: ev.payload ?? ev.data,
+              });
             }
             } else {
             const patchAlreadyHandled = ev.runId ? patchHandledRunIds.has(ev.runId) : patchHandledWithoutRunId;
@@ -797,7 +812,9 @@ export default function AiChatShell({
                 if (activeSkillRef.current === 'create') appLifecycle.aiCreateCompleted();
               }
             } else {
-              warnDropped('收到一份缺少区块结构的简历，已忽略', draft);
+              warnDropped('收到一份缺少区块结构的简历，已忽略', 'malformed', {
+                detail: draft,
+              });
             }
             }
           } else if (ev.type === 'resume_analysis') {
