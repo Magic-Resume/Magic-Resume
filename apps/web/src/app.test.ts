@@ -10,6 +10,7 @@ import {
 import { appErrorCopy } from '@/lib/errors/message';
 import { presentAppError } from '@/lib/errors/present';
 import { APP_ERROR_CODES, opensBillingGate } from '@/lib/errors/types';
+import { projectUpstreamError } from '@/app/api/chat-agent/errorProjection';
 import { ZodError } from 'zod';
 import {
   applyChangeToSections,
@@ -1041,6 +1042,57 @@ function testErrorCopy() {
   assert.ok(!unknown.title.includes('errors.'));
 }
 
+/**
+ * BFF 那一跳：**白名单本身就是安全边界**。
+ *
+ * 之前是整体替换（连码都丢了），改成透传又会把上游写给运营的英文、以及这个部署配了哪些
+ * 支付渠道，一路送到买家屏幕上——commercial 那次事故泄漏的正是「available: paypal」。
+ * 所以是投影，不是代理。
+ */
+function testBffErrorProjection() {
+  const upstream = JSON.stringify({
+    code: 429,
+    message: 'Plan change unavailable: configured channels are paypal, alipay',
+    error: 'QuotaExceededError',
+    errorCode: 'quota_exceeded',
+    subCode: 'daily_cap',
+    params: { period: 'daily', resetAt: '2026-08-13T00:00:00Z' },
+    requestId: 'req-9',
+    retryable: false,
+  });
+
+  const projected = projectUpstreamError(429, upstream);
+  assert.deepEqual(projected, {
+    errorCode: 'quota_exceeded',
+    subCode: 'daily_cap',
+    params: { period: 'daily', resetAt: '2026-08-13T00:00:00Z' },
+    requestId: 'req-9',
+    retryable: false,
+    error: 'quota_exceeded',
+  });
+  // 上游原文一个字都不许过来。
+  assert.ok(!('message' in projected));
+  assert.ok(!JSON.stringify(projected).includes('paypal'));
+
+  // 老后端：只有状态码，`error` 退到一个机器可读的标识而不是英文散文。
+  assert.deepEqual(
+    projectUpstreamError(429, JSON.stringify({ code: 429, message: 'x' })),
+    { error: 'upstream_429' },
+  );
+
+  // 上游回了一页 HTML：不能因此再抛一个错。
+  assert.deepEqual(projectUpstreamError(502, '<html>502</html>'), {
+    error: 'upstream_502',
+  });
+
+  // 走完整条链：投影出来的东西，normalize 必须还能读回同一个码。
+  const roundTrip = fromErrorBody(429, projectUpstreamError(429, upstream), 'bff');
+  assert.equal(roundTrip.errorCode, 'quota_exceeded');
+  assert.notEqual(roundTrip.errorCode, 'rate_limited');
+  assert.equal(roundTrip.params?.period, 'daily');
+  assert.equal(roundTrip.requestId, 'req-9');
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
@@ -1059,6 +1111,7 @@ async function main() {
   testErrorCopyCoverage();
   testErrorNormalize();
   testErrorCopy();
+  testBffErrorProjection();
 }
 
 main().catch((error) => {

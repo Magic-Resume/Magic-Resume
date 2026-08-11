@@ -1,5 +1,3 @@
-import 'server-only';
-
 /**
  * 上游的失败要怎么过 BFF 这一关。
  *
