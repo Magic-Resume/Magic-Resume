@@ -23,6 +23,13 @@ export type AgentEventType =
   | 'reasoning_chunk'
   | 'resume_patch'
   | 'resume_update'
+  /**
+   * 服务端断言：本轮试过改简历、一次都没成功。
+   *
+   * 它存在的全部意义，是不让模型那句「我已经改好了」成为用户唯一能看到的信息——
+   * 这条链路上原本没有任何一处会说「没改成」。
+   */
+  | 'resume_write_failed'
   | 'resume_analysis'
   | 'fit_report'
   /** deterministic anti-fabrication gate flagged unsourced names in an edit */

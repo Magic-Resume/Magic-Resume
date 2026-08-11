@@ -66,6 +66,8 @@ type LivingCanvasProps = {
   onApplySections: (sections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
   onLog: (text: string, resumePath?: string) => void;
+  /** 一次改动没能落到画布上时说一句。与 onLog 分开：那条记「做成了」，这条记「没做成」。 */
+  onWarn: (text: string, detail?: unknown) => void;
   /** lift a snippet into the chat composer for a freeform instruction. */
   onAskWithTarget?: (ctx: { path: string; label: string; text: string; selectionText?: string }) => void;
   batchRequest?: BatchRequest | null;
@@ -115,6 +117,7 @@ export default function LivingCanvas({
   onApplySections,
   onApplyInfo,
   onLog,
+  onWarn,
   onAskWithTarget,
   batchRequest,
   focusRequest,
@@ -413,7 +416,17 @@ export default function LivingCanvas({
         infoRef.current = nextInfo;
         onApplyInfo(nextInfo);
       } else {
-        const nextSections = applyChangeToSections(sectionsRef.current, change);
+        const { sections: nextSections, applied } = applyChangeToSections(
+          sectionsRef.current,
+          change
+        );
+        // 写不进去就把卡片留在原地并标红，绝不假装成功。此前这里无条件往下走：卡片消失、
+        // 日志写「已改写」、420ms 后移除，而 store 一个字都没变。
+        if (!applied) {
+          onWarn(`这条改动没能写进简历 · ${change.target.label}`, change.target);
+          setErrors((prev) => ({ ...prev, [path]: '写入失败，请重试' }));
+          return;
+        }
         sectionsRef.current = nextSections;
         onApplySections(nextSections);
       }
@@ -434,7 +447,7 @@ export default function LivingCanvas({
         // 与 globals.css `.lc-flash` 的时长成对：这里先摘掉,绿闪就播不完。
       }, 420);
     },
-    [onApplySections, onApplyInfo, onLog, dropFromOrder]
+    [onApplySections, onApplyInfo, onLog, onWarn, dropFromOrder]
   );
 
   const discard = useCallback(
@@ -526,22 +539,30 @@ export default function LivingCanvas({
     let nextSections = sectionsRef.current;
     let nextInfo = infoRef.current;
     let infoTouched = false;
+    let failed = 0;
     for (const c of changes) {
       if (c.target.sectionKey === 'info') {
         nextInfo = applyInfoChange(nextInfo, c);
         infoTouched = true;
       } else {
-        nextSections = applyChangeToSections(nextSections, c);
+        const result = applyChangeToSections(nextSections, c);
+        nextSections = result.sections;
+        if (!result.applied) failed += 1;
       }
     }
     onApplySections(nextSections);
     if (infoTouched) onApplyInfo(nextInfo);
-    onLog(t('aiLab.living.acceptedChangesLog', { count: changes.length }));
+    // 报真正落地的条数。一次「全部接受」里混着写不进去的条目时，此前报的是总数——
+    // 数字对不上简历，而用户没有任何办法知道差在哪。
+    onLog(
+      t('aiLab.living.acceptedChangesLog', { count: changes.length - failed })
+    );
+    if (failed > 0) onWarn(`有 ${failed} 处改动没能写进简历`);
     setPending({});
     setOrder([]);
     setCursor(0);
     setPanelOpen(false);
-  }, [order, onApplySections, onApplyInfo, onLog, t]);
+  }, [order, onApplySections, onApplyInfo, onLog, onWarn, t]);
 
   const discardAll = useCallback(() => {
     setPending({});
@@ -592,14 +613,26 @@ export default function LivingCanvas({
     if (!batchRequest || batchRequest.nonce === lastBatchNonce.current) return;
     lastBatchNonce.current = batchRequest.nonce;
     if (!batchRequest.proposedSections) return;
+    const diagnostics = { unmatchedItems: 0 };
     const changes = diffResumeToChanges(
       sectionsRef.current,
       batchRequest.proposedSections,
       batchRequest.kind,
       batchRequest.lang,
-      batchRequest.targetedSelection
+      batchRequest.targetedSelection,
+      diagnostics
     );
-    if (!changes.length) return;
+    // 整条链路的终点。此前这里直接 return——画布不动、评审条不出现、一句提示都没有，
+    // 而聊天里模型已经说「改好了」。这就是用户报的那个症状最后落地的地方。
+    if (!changes.length) {
+      onWarn(
+        diagnostics.unmatchedItems > 0
+          ? `有 ${diagnostics.unmatchedItems} 处改动对不上现有条目，已跳过`
+          : '这次没有可评审的改动，画布保持原样',
+        diagnostics
+      );
+      return;
+    }
     const entries = changes.map((c) => ({ path: pathOf(c.target), change: c }));
     const paths = entries.map((e) => e.path);
     setInteracted(true);
@@ -614,7 +647,7 @@ export default function LivingCanvas({
       setOrder((prev) => [...prev, ...paths.filter((p) => !prev.includes(p))]);
       setCursor(0);
     }, 1000);
-  }, [batchRequest]);
+  }, [batchRequest, onWarn]);
 
   // Click a conversation log entry → jump to that spot on the canvas. The resume
   // template renders async on (re)mount, so poll briefly until the node exists.

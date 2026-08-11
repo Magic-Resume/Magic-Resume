@@ -56,6 +56,10 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
   let buffer = '';
 
   // 按行解析：既容忍标准 `\n\n` 分帧的 SSE，也容忍把 `\n\n` 压成 `\n` 的代理层。
+  //
+  // 解析失败此前是完全无声的：一帧被中间层折行、或 JSON 里混进未转义换行，整条简历改动
+  // 就这么消失，连一句日志都没有。数出来并在流末喊一声——不改行为，只是让它不再无迹可寻。
+  let malformed = 0;
   const parse = (raw: string): AgentSseEvent | null => {
     const line = raw.trim();
     if (!line.startsWith('data:')) return null;
@@ -64,6 +68,10 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
     try {
       return JSON.parse(json) as AgentSseEvent;
     } catch {
+      malformed += 1;
+      if (malformed === 1) {
+        console.warn('[ai] unparsable SSE frame (first 80 chars):', json.slice(0, 80));
+      }
       return null;
     }
   };
@@ -81,6 +89,9 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
   }
   const tail = parse(buffer);
   if (tail) yield tail;
+  if (malformed > 0) {
+    console.warn(`[ai] dropped ${malformed} unparsable SSE frame(s) this run`);
+  }
 }
 
 /** 流式跑一次 agent，产出解析好的 {@link AgentSseEvent}。 */

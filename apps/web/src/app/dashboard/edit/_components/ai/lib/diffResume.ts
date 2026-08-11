@@ -40,12 +40,24 @@ const DIFF_FIELDS: ReadonlyArray<{ key: string; kind: EditableTarget['kind'] }> 
  * changed rich-text field. The change model + apply path in `./changeModel` are
  * untouched, so the living-canvas review (accept/discard/inline diff) works as-is.
  */
+/**
+ * 为什么这次 diff 什么都没产出。
+ *
+ * 空结果此前是终点沉默：画布不动、评审条不出现、一句提示都没有，而聊天里模型已经说
+ * 「改好了」。要把它变成一句人话，得先知道是「一条都对不上」还是「确实没变化」。
+ */
+export interface DiffDiagnostics {
+  /** proposed 里有、但按 id 在 current 里找不到的条目数（agent 重新生成了 id 就会这样）。 */
+  unmatchedItems: number;
+}
+
 export function diffResumeToChanges(
   current: Section,
   proposed: Section,
   kind: BatchKind,
   lang?: string,
-  targetedSelection?: TargetedSelectionDiff
+  targetedSelection?: TargetedSelectionDiff,
+  diagnostics?: DiffDiagnostics
 ): PendingChange[] {
   if (targetedSelection) {
     const targeted = diffTargetedSelection(current, proposed, kind, lang, targetedSelection);
@@ -64,7 +76,12 @@ export function diffResumeToChanges(
       indexInSection += 1;
       // Skills preserve item ids, so match by id; only diff items present in both.
       const cItem = currentItems.find((it) => String(it.id) === String(pItem.id));
-      if (!cItem) continue;
+      if (!cItem) {
+        // 按 id 配对，配不上就整条跳过。agent 是从云端读的简历，只要它重建了 id、
+        // 丢了 id 或整体替换了数组，每一条改动都会在这里无声消失。
+        if (diagnostics) diagnostics.unmatchedItems += 1;
+        continue;
+      }
       for (const { key: fieldKey, kind: fieldKind } of DIFF_FIELDS) {
         const before = typeof cItem[fieldKey] === 'string' ? (cItem[fieldKey] as string) : '';
         const after = typeof pItem[fieldKey] === 'string' ? (pItem[fieldKey] as string) : '';
