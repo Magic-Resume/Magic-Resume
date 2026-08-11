@@ -133,7 +133,7 @@ export const azurillTemplate: MagicTemplateDSL = {
         title: ["company"],
         subtitle: ["position"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -150,7 +150,7 @@ export const azurillTemplate: MagicTemplateDSL = {
         title: ["school"],
         subtitle: ["degree", "major"], 
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     // `languages` is already rendered by `languages-compact` in the sidebar; a
@@ -169,7 +169,7 @@ export const azurillTemplate: MagicTemplateDSL = {
         title: ["certificate", "name"],
         subtitle: ["level"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -186,7 +186,7 @@ export const azurillTemplate: MagicTemplateDSL = {
         title: ["name"],
         subtitle: ["role"],
         date: ["date"], 
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -203,7 +203,7 @@ export const azurillTemplate: MagicTemplateDSL = {
         title: ["name", "platform"],
         subtitle: ["username"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     }
   ]

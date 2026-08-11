@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
 import { ZodError } from 'zod';
 import {
+  applyChangeToSections,
   buildSelectionChange,
   buildSelectionPreview,
   type EditResultLike,
 } from '@/app/dashboard/edit/_components/ai/lib/changeModel';
 import { diffResumeToChanges } from '@/app/dashboard/edit/_components/ai/lib/diffResume';
+import {
+  partitionByAnchor,
+  toPendingView,
+} from '@/app/dashboard/edit/_components/ai/lib/pendingView';
 import {
   pathOf,
   type EditableTarget,
@@ -612,6 +617,185 @@ function testCustomSections() {
   }
 }
 
+/**
+ * 「失败必须有声」的回归。
+ *
+ * 这条链路上原本有八处静默丢弃，用户那边的表现完全一样：模型说「已经改好了」，画布纹丝
+ * 不动，没有任何东西告诉他刚才什么都没发生。这里钉住其中两条最要命的。
+ */
+function testAiFailuresAreVisible() {
+  const current: Section = {
+    experience: [{ id: 'exp-1', visible: true, summary: '<p>Old</p>' }],
+  };
+
+  // ① agent 重建了 id：每一条改动都在 diff 阶段被跳过，结果是一个空数组。空结果此前
+  //    是终点沉默，现在至少能说出「有几条对不上」。
+  const renumbered: Section = {
+    experience: [{ id: 'regenerated-99', visible: true, summary: '<p>New</p>' }],
+  };
+  const diagnostics = { unmatchedItems: 0 };
+  const changes = diffResumeToChanges(
+    current,
+    renumbered,
+    'optimize',
+    undefined,
+    undefined,
+    diagnostics
+  );
+  assert.equal(changes.length, 0);
+  assert.equal(diagnostics.unmatchedItems, 1);
+
+  // 正常配对时不该误报。
+  const matched: Section = {
+    experience: [{ id: 'exp-1', visible: true, summary: '<p>New</p>' }],
+  };
+  const clean = { unmatchedItems: 0 };
+  assert.equal(
+    diffResumeToChanges(current, matched, 'optimize', undefined, undefined, clean).length,
+    1
+  );
+  assert.equal(clean.unmatchedItems, 0);
+
+  // ② 接受一条指向不存在条目的改动：必须如实说没写进去。此前它原样返回 sections，
+  //    而调用方无条件标记成功、移除卡片——用户点了接受，简历却一个字没变。
+  const ghost = {
+    target: {
+      sectionKey: 'experience',
+      itemId: 'does-not-exist',
+      fieldKey: 'summary',
+      kind: 'html',
+      label: 'Ghost',
+    },
+    before: '<p>Old</p>',
+    after: '<p>New</p>',
+  } as Parameters<typeof applyChangeToSections>[1];
+
+  const miss = applyChangeToSections(current, ghost);
+  assert.equal(miss.applied, false);
+  assert.deepEqual(miss.sections, current);
+
+  const hit = applyChangeToSections(current, {
+    ...ghost,
+    target: { ...ghost.target, itemId: 'exp-1' },
+  });
+  assert.equal(hit.applied, true);
+  assert.equal(
+    (hit.sections.experience as Array<Record<string, unknown>>)[0].summary,
+    '<p>New</p>'
+  );
+}
+
+/** 改动到得了画布吗——两条曾经让它到不了的路。 */
+function testCanvasReachability() {
+  // ① 选区级 diff 的三个预览字段必须活着穿过投影。漏掉它们时「选中一句话让 AI 改」
+  //    仍然工作，只是画布上整段变成红删绿增——功能没报错，只是悄悄退化成了整字段替换。
+  const view = toPendingView({
+    'sections.experience[exp-1].summary': {
+      id: 'chg-1',
+      action: 'rewrite',
+      seed: 0,
+      target: {
+        sectionKey: 'experience',
+        itemId: 'exp-1',
+        fieldKey: 'summary',
+        kind: 'html',
+        label: 'Summary',
+      },
+      before: '<p>Whole paragraph.</p>',
+      after: '<p>Whole paragraph, rewritten.</p>',
+      previewBefore: 'one sentence',
+      previewAfter: 'one better sentence',
+      previewKind: 'text',
+      rationale: 'tighter',
+      status: 'pending',
+    },
+  } as Parameters<typeof toPendingView>[0]);
+
+  const projected = view['sections.experience[exp-1].summary'];
+  assert.equal(projected.previewBefore, 'one sentence');
+  assert.equal(projected.previewAfter, 'one better sentence');
+  assert.equal(projected.previewKind, 'text');
+
+  // ② 分辨出「当前模板上没有就地落点」的改动。它们**不会被丢弃**——改动列表能列出、
+  //    「全部接受」能应用，全程不需要 DOM；分辨出来只是为了告诉用户去哪看。丢掉它们等于
+  //    把 company / position / date 这些字段重新变回「AI 改了但你永远看不到」。
+  const mk = (fieldKey: string, isInsert = false) =>
+    ({
+      target: {
+        sectionKey: 'experience',
+        itemId: 'exp-1',
+        fieldKey,
+        kind: 'text',
+        label: fieldKey,
+      },
+      before: 'a',
+      after: 'b',
+      rationale: '',
+      isInsert,
+    }) as Parameters<typeof partitionByAnchor>[0][number];
+
+  const rendered = new Set(['sections.experience[exp-1].summary']);
+  const { renderable, orphaned } = partitionByAnchor(
+    [mk('summary'), mk('company'), mk('newField', true)],
+    (path) => rendered.has(path)
+  );
+
+  assert.equal(renderable.length, 2); // summary 有锚点；新增条目由插槽接住
+  assert.equal(orphaned.length, 1);
+  assert.equal(orphaned[0].target.fieldKey, 'company');
+  // 两边加起来必须是全部——一条都不能在分辨的过程中消失。
+  assert.equal(renderable.length + orphaned.length, 3);
+}
+
+/** diff 覆盖面：白名单之外的字段此前永远不会出现在画布上。 */
+function testDiffFieldCoverage() {
+  const current: Section = {
+    experience: [
+      {
+        id: 'exp-1',
+        visible: true,
+        company: '星河科技',
+        position: '前端工程师',
+        date: '2022.03 - 至今',
+        summary: '<p>负责管理后台。</p>',
+      },
+    ],
+  };
+
+  // 只改公司名——此前 DIFF_FIELDS 里没有 company，这次改动在画布上**永远不出现**，
+  // 用户看到的是「说改了、什么都没变」。
+  const renamed: Section = {
+    experience: [{ ...current.experience[0], company: '星河科技（北京）' }],
+  };
+  const changes = diffResumeToChanges(current, renamed, 'optimize');
+  assert.equal(changes.length, 1);
+  assert.equal(changes[0].target.fieldKey, 'company');
+  // 纯文本字段按值判成 text，不是一律当富文本。
+  assert.equal(changes[0].target.kind, 'text');
+
+  // 富文本仍判为 html。
+  const rewritten: Section = {
+    experience: [{ ...current.experience[0], summary: '<p>负责管理后台，支撑 12 条业务线。</p>' }],
+  };
+  const rich = diffResumeToChanges(current, rewritten, 'optimize');
+  assert.equal(rich.length, 1);
+  assert.equal(rich[0].target.kind, 'html');
+
+  // id / visible 不该被当成内容改动——它们是结构，不是文案。
+  const restructured: Section = {
+    experience: [{ ...current.experience[0], visible: false }],
+  };
+  assert.equal(diffResumeToChanges(current, restructured, 'optimize').length, 0);
+
+  // 一次改多个字段就是多张卡，每张各自可接受/丢弃。
+  const multi: Section = {
+    experience: [
+      { ...current.experience[0], company: '星河科技（北京）', position: '高级前端工程师' },
+    ],
+  };
+  assert.equal(diffResumeToChanges(current, multi, 'optimize').length, 2);
+}
+
 function testAfterAuthUrl() {
   // The middleware puts the original path in `redirect_url`. Nothing read it,
   // so a lapsed session on /billing/return?orderId=… came back to /dashboard
@@ -705,6 +889,9 @@ async function main() {
   testUtilityFunctions();
   testMcpAccessHelpers();
   testAiLib();
+  testAiFailuresAreVisible();
+  testCanvasReachability();
+  testDiffFieldCoverage();
   testAfterAuthUrl();
   testImportedItemIds();
   testResumeMigrations();

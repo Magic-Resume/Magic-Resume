@@ -1889,6 +1889,8 @@
       "inserted": "New",
       "emptyChanges": "No changes awaiting review",
       "discardAll": "Discard all",
+      "accept": "Accept",
+      "discard": "Discard",
       "acceptAll": "Accept all",
       "pendingReviewCount": "{{count}} changes to review",
       "previous": "Previous change",

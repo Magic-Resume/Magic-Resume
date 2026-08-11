@@ -1889,6 +1889,8 @@
       "inserted": "新增",
       "emptyChanges": "暂无待评审改动",
       "discardAll": "全部放弃",
+      "accept": "采纳",
+      "discard": "丢弃",
       "acceptAll": "全部接受",
       "pendingReviewCount": "{{count}} 处改动待评审",
       "previous": "上一处",

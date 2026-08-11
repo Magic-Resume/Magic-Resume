@@ -312,22 +312,32 @@ export function buildInsertChange(target: EditableTarget, result: EditResultLike
 
 // Apply an accepted change onto the resume (patch-style, by item id)
 
-/** Apply an accepted change onto the resume sections (clone + write by item id). */
-export function applyChangeToSections(sections: Section, change: PendingChange): Section {
-  if (change.target.sectionKey === 'info') return sections; // info changes go through applyInfoChange
+/**
+ * Apply an accepted change onto the resume sections (clone + write by item id).
+ *
+ * `applied` 是这个返回值存在的理由。此前失败时它原样返回 `sections`，而调用方无条件把卡片
+ * 标成已接受、写一行「已改写」、420ms 后移除——用户看到的是成功，store 里一个字都没变。
+ * 那是「我明明点了接受，怎么还是老样子」的直接来源。
+ */
+export function applyChangeToSections(
+  sections: Section,
+  change: PendingChange
+): { sections: Section; applied: boolean } {
+  // info 走 applyInfoChange，不是失败。
+  if (change.target.sectionKey === 'info') return { sections, applied: false };
   const next: Section = JSON.parse(JSON.stringify(sections));
   const items = next[change.target.sectionKey];
-  if (!Array.isArray(items)) return sections;
+  if (!Array.isArray(items)) return { sections, applied: false };
   const item = items.find((it) => String(it.id) === change.target.itemId);
   if (item) {
     item[change.target.fieldKey] = change.after;
-    return next;
+    return { sections: next, applied: true };
   }
   if (change.isInsert) {
     items.push({ id: change.target.itemId, visible: true, [change.target.fieldKey]: change.after });
-    return next;
+    return { sections: next, applied: true };
   }
-  return sections;
+  return { sections, applied: false };
 }
 
 /** Apply an accepted change onto resume.info (returns a new InfoType-shaped object). */

@@ -71,6 +71,16 @@ export interface ChatMessage {
   status?: 'running' | 'done';
   /** present when role === 'log' — anchors the entry back to a canvas change */
   resumePath?: string;
+  /**
+   * present when role === 'log' — 这条日志在说什么性质的事。
+   *
+   * 'ok'（缺省，绿）做成了；'info'（蓝）中性事实，既不是成功也不是失败；
+   * 'warn'（琥珀）真的没做成。
+   *
+   * 三档而不是两档，是因为「这几处不在画布上就地显示」既不是成功也不是失败——
+   * 混进琥珀会被读成报错，而那正是它第一版引起的误解。颜色要能替代阅读。
+   */
+  tone?: 'ok' | 'info' | 'warn';
   /** live-streamed assistant text — render raw (no typewriter re-animation) */
   streamed?: boolean;
   /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */

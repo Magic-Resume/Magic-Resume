@@ -39,7 +39,9 @@ import { resolveResumePatchBatch } from './lib/resumePatch';
 import { coerceSectionOrder } from '@/lib/utils/resumeSectionOrder';
 import { useResumeDraftStore } from '@/store/useResumeDraftStore';
 import { useSettingStore } from '@/store/useSettingStore';
+import { diffResumeToChanges } from './lib/diffResume';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
+import type { AiChangesDroppedPayload } from '@/lib/extensions/app-lifecycle';
 import { useAiSessionStore } from '@/store/useAiSessionStore';
 import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -143,6 +145,13 @@ export default function AiChatShell({
   const [batchRequest, setBatchRequest] = useState<BatchRequest | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const batchNonce = useRef(0);
+  /**
+   * 本轮用户主动关过实时画布吗。
+   *
+   * 普通对话现在也会自动展开画布评审，但「自动」必须让位于用户的明确动作：关掉之后
+   * 同一轮里不该再弹回来——那是产品在跟用户拔河。改动仍在，只是改用一行日志提示。
+   */
+  const canvasDismissedForRun = useRef(false);
   const focusNonce = useRef(0);
   // 整篇技能运行期间置位，让它的 resume_update 走 living canvas 而不是聊天草稿条。
   // 要挺过 read_resume 的审批暂停，新运行开始时重置。
@@ -345,8 +354,33 @@ export default function AiChatShell({
   );
 
   const logChange = useCallback(
-    (content: string, resumePath?: string) =>
-      addMessage({ id: nanoid(), role: 'log', content, resumePath }),
+    (content: string, resumePath?: string, tone?: 'ok' | 'info') =>
+      addMessage({ id: nanoid(), role: 'log', content, resumePath, tone }),
+    [addMessage]
+  );
+
+  /**
+   * 一次简历改动没能落到画布上——说出来。
+   *
+   * 这条链路上原本有八处静默丢弃（模式闸门、载荷畸形、帧解析失败、diff 为空、锚点缺失…），
+   * 每一处最多打一句 console.warn。用户那边的表现完全一样：模型说「已经改好了」，画布纹丝
+   * 不动，没有任何东西告诉他刚才什么都没发生。
+   *
+   * 选聊天流当主界面，是因为它和模型的宣称**在同一列**——两句话挨着，用户不必自己推断谁对；
+   * 而且它进 transcript 可回溯，画布卸载也不会跟着消失。`console.warn` 一律保留给排查。
+   */
+  const warnDropped = useCallback(
+    (
+      content: string,
+      reason: AiChangesDroppedPayload['reason'],
+      extra?: { count?: number; detail?: unknown }
+    ) => {
+      console.warn(`[ai] ${content}`, extra?.detail ?? '');
+      addMessage({ id: nanoid(), role: 'log', content, tone: 'warn' });
+      // 同一个汇聚处既说给用户听、也报给我们自己：少了后半句，这类故障只能等人来报，
+      // 而它恰恰是那种「用户觉得产品坏了但懒得说」的失败。
+      appLifecycle.aiChangesDropped({ reason, count: extra?.count });
+    },
     [addMessage]
   );
 
@@ -485,6 +519,7 @@ export default function AiChatShell({
       // 记住"因审批暂停"，否则收尾时会在审批卡后留下一个空气泡。
       let pausedForApproval = false;
       const patchHandledRunIds = new Set<string>();
+      canvasDismissedForRun.current = false;
       let patchHandledWithoutRunId = false;
       try {
         for await (const ev of makeGen(controller.signal)) {
@@ -697,11 +732,29 @@ export default function AiChatShell({
                 )
               );
             }
+          } else if (ev.type === 'resume_write_failed') {
+            // 服务端断言：本轮试过改简历、一次都没成功。这条事件存在的全部意义，就是不让
+            // 模型那句「我已经改好了」成为用户唯一能看到的信息。
+            // 服务端已经断言过「一整轮没写成」，这是「没产出」不是「没送达」——单独一个事件。
+            console.warn('[ai] resume_write_failed', ev.payload);
+            addMessage({
+              id: nanoid(),
+              role: 'log',
+              content: '这轮没能改动简历，画布保持原样 · 可以再说一次试试',
+              tone: 'warn',
+            });
+            appLifecycle.aiWriteFailed({
+              attempts: (ev.payload as { attempts?: number } | undefined)?.attempts,
+            });
           } else if (ev.type === 'resume_patch' || ev.type === 'resume_update') {
             // 模式闸门（确定性，不靠提示词）：「规划 / 问答」两档不允许简历改动。
             // 模型偶尔仍会产出一份改写——这里丢掉它，用户的简历不会被碰。
             if (!AGENT_MODES[agentModeRef.current].allowsResumeEdits) {
-              console.warn(`[ai] dropping ${ev.type}: mode ${agentModeRef.current} forbids resume edits`);
+              warnDropped(
+                '当前是只读模式，这次简历改动已丢弃 · 切换到「共创」再试',
+                'mode_readonly',
+                { detail: `mode=${agentModeRef.current} type=${ev.type}` }
+              );
               continue;
             }
             if (ev.type === 'resume_patch') {
@@ -722,11 +775,18 @@ export default function AiChatShell({
                 nonce: batchNonce.current,
               });
             } else {
-              console.warn('[ai] ignoring malformed resume_patch', ev.payload ?? ev.data);
+              warnDropped('收到一份读不懂的简历改动，已忽略', 'malformed', {
+                detail: ev.payload ?? ev.data,
+              });
             }
             } else {
             const patchAlreadyHandled = ev.runId ? patchHandledRunIds.has(ev.runId) : patchHandledWithoutRunId;
-            if (patchAlreadyHandled) continue;
+            // 同一轮里已经按 patch 铺过画布了。这条全量更新是它的另一种表述，不是新改动——
+            // 但它被吃掉这件事值得留个痕，否则「改动比预期少」无从查起。
+            if (patchAlreadyHandled) {
+              console.warn('[ai] dropping resume_update: this run already applied a patch');
+              continue;
+            }
 
             const raw = (ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume) as
               | Resume
@@ -754,17 +814,44 @@ export default function AiChatShell({
                   targetedSelection: batch.targetedSelection,
                   nonce: batchNonce.current,
                 });
-              } else {
+              } else if (activeSkillRef.current === 'create') {
+                // 引导创建：整份新简历没有 before 可 diff，草稿条才是它的正当用途。
                 setResumeDraft(draft);
                 setDraftReady(draft);
                 // 在这里上报而不是流结束时：一次运行可能跑完却从没产出草稿。
-                if (activeSkillRef.current === 'create') appLifecycle.aiCreateCompleted();
+                appLifecycle.aiCreateCompleted();
+              } else {
+                // 普通对话也走画布评审，与技能路径一致。此前这里只在输入框上方挂一条窄草稿条，
+                // 右侧舞台宽度还停在 0%——用户视角同样是「说改了、画布没动」。
+                //
+                // 先算差异再决定界面：一句「帮我看看」引出的零改动不该把画布弹出来，
+                // 那会让轻量问答变吵。这是防噪的核心闸门。
+                const changed = diffResumeToChanges(
+                  resumeData.sections,
+                  sections,
+                  'optimize'
+                );
+                if (!changed.length) {
+                  warnDropped('这次没有产生可评审的改动', 'no_changes');
+                } else if (canvasDismissedForRun.current) {
+                  // 本轮用户主动关过画布：尊重它，别再弹回来。
+                  logChange(`有 ${changed.length} 处改动待评审 · 打开画布查看`);
+                } else {
+                  batchNonce.current += 1;
+                  setCanvas(CLOSED_CANVAS);
+                  setLivingOpen(true);
+                  setLivingSkillId('optimize');
+                  setBatchRequest({
+                    kind: 'optimize',
+                    proposedSections: sections,
+                    nonce: batchNonce.current,
+                  });
+                }
               }
             } else {
-              console.warn(
-                '[ai] ignoring malformed resume_update (no sections object)',
-                draft,
-              );
+              warnDropped('收到一份缺少区块结构的简历，已忽略', 'malformed', {
+                detail: draft,
+              });
             }
             }
           } else if (ev.type === 'resume_analysis') {
@@ -909,6 +996,8 @@ export default function AiChatShell({
     },
     [
       addMessage,
+      warnDropped,
+      logChange,
       setStarted,
       markReadActivityDone,
       openInterrupt,
@@ -1461,7 +1550,10 @@ export default function AiChatShell({
     (id: SkillId) => {
       // 重跑 optimize/translate 需要参数（JD / 语言），所以这个开关只显示/隐藏上次结果的画布。
       if (isBatchSkill(id)) {
-        setLivingOpen((open) => !open);
+        setLivingOpen((open) => {
+          if (open) canvasDismissedForRun.current = true;
+          return !open;
+        });
         return;
       }
       setLivingOpen(false);
@@ -1849,6 +1941,7 @@ export default function AiChatShell({
                   onApplySections={onApplySections}
                   onApplyInfo={onApplyInfo}
                   onLog={logChange}
+                  onWarn={warnDropped}
                   onAskWithTarget={onAskWithTarget}
                   batchRequest={batchRequest}
                   focusRequest={focusRequest}
