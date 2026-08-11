@@ -351,6 +351,24 @@ export default function AiChatShell({
   );
 
   /**
+   * 一次简历改动没能落到画布上——说出来。
+   *
+   * 这条链路上原本有八处静默丢弃（模式闸门、载荷畸形、帧解析失败、diff 为空、锚点缺失…），
+   * 每一处最多打一句 console.warn。用户那边的表现完全一样：模型说「已经改好了」，画布纹丝
+   * 不动，没有任何东西告诉他刚才什么都没发生。
+   *
+   * 选聊天流当主界面，是因为它和模型的宣称**在同一列**——两句话挨着，用户不必自己推断谁对；
+   * 而且它进 transcript 可回溯，画布卸载也不会跟着消失。`console.warn` 一律保留给排查。
+   */
+  const warnDropped = useCallback(
+    (content: string, detail?: unknown) => {
+      console.warn(`[ai] ${content}`, detail ?? '');
+      addMessage({ id: nanoid(), role: 'log', content, tone: 'warn' });
+    },
+    [addMessage]
+  );
+
+  /**
    * 落一张非阻塞推送来的卡（`ui_widget`）。同 widgetId 再推一次是更新同一张卡，
    * 不是又冒一张——进度、逐步填充的结果卡都靠这个。这类卡不占中断槽，流照跑。
    */
@@ -697,11 +715,21 @@ export default function AiChatShell({
                 )
               );
             }
+          } else if (ev.type === 'resume_write_failed') {
+            // 服务端断言：本轮试过改简历、一次都没成功。这条事件存在的全部意义，就是不让
+            // 模型那句「我已经改好了」成为用户唯一能看到的信息。
+            warnDropped(
+              '这轮没能改动简历，画布保持原样 · 可以再说一次试试',
+              ev.payload
+            );
           } else if (ev.type === 'resume_patch' || ev.type === 'resume_update') {
             // 模式闸门（确定性，不靠提示词）：「规划 / 问答」两档不允许简历改动。
             // 模型偶尔仍会产出一份改写——这里丢掉它，用户的简历不会被碰。
             if (!AGENT_MODES[agentModeRef.current].allowsResumeEdits) {
-              console.warn(`[ai] dropping ${ev.type}: mode ${agentModeRef.current} forbids resume edits`);
+              warnDropped(
+                '当前是只读模式，这次简历改动已丢弃 · 切换到「共创」再试',
+                `mode=${agentModeRef.current} type=${ev.type}`
+              );
               continue;
             }
             if (ev.type === 'resume_patch') {
@@ -722,11 +750,19 @@ export default function AiChatShell({
                 nonce: batchNonce.current,
               });
             } else {
-              console.warn('[ai] ignoring malformed resume_patch', ev.payload ?? ev.data);
+              warnDropped(
+                '收到一份读不懂的简历改动，已忽略',
+                ev.payload ?? ev.data
+              );
             }
             } else {
             const patchAlreadyHandled = ev.runId ? patchHandledRunIds.has(ev.runId) : patchHandledWithoutRunId;
-            if (patchAlreadyHandled) continue;
+            // 同一轮里已经按 patch 铺过画布了。这条全量更新是它的另一种表述，不是新改动——
+            // 但它被吃掉这件事值得留个痕，否则「改动比预期少」无从查起。
+            if (patchAlreadyHandled) {
+              console.warn('[ai] dropping resume_update: this run already applied a patch');
+              continue;
+            }
 
             const raw = (ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume) as
               | Resume
@@ -761,10 +797,7 @@ export default function AiChatShell({
                 if (activeSkillRef.current === 'create') appLifecycle.aiCreateCompleted();
               }
             } else {
-              console.warn(
-                '[ai] ignoring malformed resume_update (no sections object)',
-                draft,
-              );
+              warnDropped('收到一份缺少区块结构的简历，已忽略', draft);
             }
             }
           } else if (ev.type === 'resume_analysis') {
@@ -909,6 +942,7 @@ export default function AiChatShell({
     },
     [
       addMessage,
+      warnDropped,
       setStarted,
       markReadActivityDone,
       openInterrupt,
@@ -1848,6 +1882,7 @@ export default function AiChatShell({
                   onApplySections={onApplySections}
                   onApplyInfo={onApplyInfo}
                   onLog={logChange}
+                  onWarn={warnDropped}
                   onAskWithTarget={onAskWithTarget}
                   batchRequest={batchRequest}
                   focusRequest={focusRequest}

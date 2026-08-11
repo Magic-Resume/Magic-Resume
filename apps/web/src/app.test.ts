@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { ZodError } from 'zod';
 import {
+  applyChangeToSections,
   buildSelectionChange,
   buildSelectionPreview,
   type EditResultLike,
@@ -612,6 +613,74 @@ function testCustomSections() {
   }
 }
 
+/**
+ * 「失败必须有声」的回归。
+ *
+ * 这条链路上原本有八处静默丢弃，用户那边的表现完全一样：模型说「已经改好了」，画布纹丝
+ * 不动，没有任何东西告诉他刚才什么都没发生。这里钉住其中两条最要命的。
+ */
+function testAiFailuresAreVisible() {
+  const current: Section = {
+    experience: [{ id: 'exp-1', visible: true, summary: '<p>Old</p>' }],
+  };
+
+  // ① agent 重建了 id：每一条改动都在 diff 阶段被跳过，结果是一个空数组。空结果此前
+  //    是终点沉默，现在至少能说出「有几条对不上」。
+  const renumbered: Section = {
+    experience: [{ id: 'regenerated-99', visible: true, summary: '<p>New</p>' }],
+  };
+  const diagnostics = { unmatchedItems: 0 };
+  const changes = diffResumeToChanges(
+    current,
+    renumbered,
+    'optimize',
+    undefined,
+    undefined,
+    diagnostics
+  );
+  assert.equal(changes.length, 0);
+  assert.equal(diagnostics.unmatchedItems, 1);
+
+  // 正常配对时不该误报。
+  const matched: Section = {
+    experience: [{ id: 'exp-1', visible: true, summary: '<p>New</p>' }],
+  };
+  const clean = { unmatchedItems: 0 };
+  assert.equal(
+    diffResumeToChanges(current, matched, 'optimize', undefined, undefined, clean).length,
+    1
+  );
+  assert.equal(clean.unmatchedItems, 0);
+
+  // ② 接受一条指向不存在条目的改动：必须如实说没写进去。此前它原样返回 sections，
+  //    而调用方无条件标记成功、移除卡片——用户点了接受，简历却一个字没变。
+  const ghost = {
+    target: {
+      sectionKey: 'experience',
+      itemId: 'does-not-exist',
+      fieldKey: 'summary',
+      kind: 'html',
+      label: 'Ghost',
+    },
+    before: '<p>Old</p>',
+    after: '<p>New</p>',
+  } as Parameters<typeof applyChangeToSections>[1];
+
+  const miss = applyChangeToSections(current, ghost);
+  assert.equal(miss.applied, false);
+  assert.deepEqual(miss.sections, current);
+
+  const hit = applyChangeToSections(current, {
+    ...ghost,
+    target: { ...ghost.target, itemId: 'exp-1' },
+  });
+  assert.equal(hit.applied, true);
+  assert.equal(
+    (hit.sections.experience as Array<Record<string, unknown>>)[0].summary,
+    '<p>New</p>'
+  );
+}
+
 function testAfterAuthUrl() {
   // The middleware puts the original path in `redirect_url`. Nothing read it,
   // so a lapsed session on /billing/return?orderId=… came back to /dashboard
@@ -705,6 +774,7 @@ async function main() {
   testUtilityFunctions();
   testMcpAccessHelpers();
   testAiLib();
+  testAiFailuresAreVisible();
   testAfterAuthUrl();
   testImportedItemIds();
   testResumeMigrations();

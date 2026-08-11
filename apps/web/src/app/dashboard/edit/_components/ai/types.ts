@@ -71,6 +71,13 @@ export interface ChatMessage {
   status?: 'running' | 'done';
   /** present when role === 'log' — anchors the entry back to a canvas change */
   resumePath?: string;
+  /**
+   * present when role === 'log' — 这条记的是「做成了」还是「没做成」。
+   *
+   * 缺省是 'ok'。'warn' 用于一次被丢弃的简历改动：此前这类失败在全链路上一句提示都没有，
+   * 模型说「已经改好了」是用户唯一能看到的信息，而它可能是错的。
+   */
+  tone?: 'ok' | 'warn';
   /** live-streamed assistant text — render raw (no typewriter re-animation) */
   streamed?: boolean;
   /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */

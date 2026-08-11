@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
+  AlertCircle,
   Check,
   ChevronDown,
   Eye,
@@ -540,10 +541,19 @@ function LogLine({
 }) {
   const { t } = useTranslation();
   const clickable = !!message.resumePath && !!onLogClick;
-  const className = 'flex items-center gap-2 text-[11px] text-neutral-500';
+  // 提醒比记录响一档：它是用户唯一会知道「刚才那次改动没落到画布上」的地方。
+  // 仍留在同一行的体量里——不抢戏，只是让人看得见。
+  const warn = message.tone === 'warn';
+  const className = `flex items-center gap-2 text-[11px] ${
+    warn ? 'text-amber-500/90' : 'text-neutral-500'
+  }`;
   const body = (
     <>
-      <Check size={12} className="text-emerald-500/80 shrink-0" />
+      {warn ? (
+        <AlertCircle size={12} className="text-amber-500/80 shrink-0" />
+      ) : (
+        <Check size={12} className="text-emerald-500/80 shrink-0" />
+      )}
       <span className="truncate">{message.content}</span>
     </>
   );
