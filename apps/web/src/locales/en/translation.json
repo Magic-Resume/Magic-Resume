@@ -2028,5 +2028,34 @@
     "iconLabel": "Icon (optional)",
     "deleteTitle": "Delete section",
     "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone."
+  },
+  "errors": {
+    "unauthenticated": "Your session expired. Sign in again to continue.",
+    "forbidden": "This account can't do that.",
+    "plan_required": "Your plan doesn't include this yet — upgrade to continue.",
+    "not_found": "We couldn't find that. It may have been deleted.",
+    "invalid_input": "Something you entered isn't valid. Check it and try again.",
+    "conflict": "Something else changed just now. Refresh and try again.",
+    "session_invalid": "This conversation has expired. Start a new one to continue.",
+    "quota_exceeded": "You've used up this {{period}}'s allowance. It resets {{resetAt}} — or upgrade your plan, or use your own model key.",
+    "rate_limited": "Too many requests. Try again in {{retryAfter}}.",
+    "content_rejected": "That content didn't pass review. Try rephrasing, or use a different file.",
+    "upstream_unavailable": "The service is temporarily unavailable. Try again shortly.",
+    "misconfigured": "This feature is temporarily unavailable. We've been alerted.",
+    "internal_error": "Something went wrong on our side. We've been alerted.",
+    "unknown": "Something went wrong. Please try again.",
+    "period": {
+      "daily": "day",
+      "weekly": "week",
+      "monthly": "month"
+    },
+    "duration": {
+      "seconds": "{{count}}s",
+      "minutes": "{{count}} min"
+    },
+    "actions": {
+      "retry": "Retry",
+      "upgrade": "Add credits"
+    }
   }
 }

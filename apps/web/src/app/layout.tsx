@@ -20,6 +20,7 @@ import PreloadOptimizer from "@/components/shared/PreloadOptimizer";
 import StructuredData from "@/components/shared/StructuredData";
 import I18nProvider from "@/components/providers/I18nProvider";
 import { HttpClientProvider } from "@/components/providers/HttpClientProvider";
+import { GlobalErrorListener } from "@/components/providers/GlobalErrorListener";
 import { CommercialRuntimeProvider } from "@/lib/commercial/runtime";
 import { RuntimeEnvScript } from "@/lib/commercial/runtime-env";
 import { CloudAuthBridge } from "@/lib/auth";
@@ -66,6 +67,9 @@ export default function RootLayout({
                   bundle reads it. Kept OUT of CommercialRuntimeProvider because
                   the commercial overlay replaces that module — see runtime-env.tsx. */}
               <RuntimeEnvScript />
+              {/* window.onerror / unhandledrejection 的唯一汇聚点。挂在最外层，因为
+                  它要能收到 Provider 树自己抛出来的东西。 */}
+              <GlobalErrorListener />
               <CommercialRuntimeProvider>
                 <I18nProvider>
                   <ThemeProvider>

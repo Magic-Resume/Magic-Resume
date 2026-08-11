@@ -28,7 +28,9 @@ import LivingCanvas, { type BatchRequest, type FocusRequest } from './canvas/liv
 import { type BatchKind, type TargetedSelectionDiff } from './lib/diffResume';
 import type { MultiPersonaResumeAnalysis } from '@/types/agent/multi-persona';
 import type { FitReport } from '@/types/agent/fit-report';
-import { streamChat, approveTool, endSessionThread, streamPdfParse, type HitlDecision } from './lib/services/agentClient';
+import { streamChat, approveTool, endSessionThread, streamPdfParse, AgentRequestError, type HitlDecision } from './lib/services/agentClient';
+import { fromSseEvent } from '@/lib/errors/normalize';
+import { errorText } from '@/lib/errors/present';
 import type { AgentLlmConfig, AgentSseEvent } from './lib/services/types';
 import {
   invalidateAiEntitlement,
@@ -909,9 +911,9 @@ export default function AiChatShell({
               }
             }
           } else if (ev.type === 'error') {
-            // 后端只发稳定机器码；老部署可能仍发原始上游报错，绝不能让它进对话或 toast。
-            const code = typeof ev.payload?.code === 'string' ? ev.payload.code : ev.error;
-            throw new Error(code || 'agent_run_failed');
+            // 归一化成 AppError 再抛：下游的额度闸门与文案都读码，不再从字符串里往回猜。
+            // 老部署可能仍发原始上游报错，`fromSseEvent` 只取契约字段，原文进不来。
+            throw new AgentRequestError(fromSseEvent(ev));
           }
         }
         if (pausedForApproval && !bubbleCreated) {
@@ -945,7 +947,7 @@ export default function AiChatShell({
           if (pendingOnQuota) pendingRunRef.current = pendingOnQuota;
           setStarted(true);
           setConfigGateOpen(true);
-          const msg = '账户额度不足，已暂停 AI。可以充值/订阅，或配置自定义模型继续。';
+          const msg = errorText(err, aiServiceErrorMessage());
           ensureBubble();
           setMessages((prev) =>
             prev.map((m) => (m.id === aiId ? { ...m, content: acc || `（${msg}）`, status: 'done' } : m))
@@ -957,7 +959,7 @@ export default function AiChatShell({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === aiId
-              ? { ...m, content: acc || `（${aiServiceErrorMessage()}）`, status: 'done' }
+              ? { ...m, content: acc || `（${errorText(err, aiServiceErrorMessage())}）`, status: 'done' }
               : m
           )
         );
@@ -1287,7 +1289,9 @@ export default function AiChatShell({
             if (ev.type === 'resume_update') {
               parsed = ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume ?? null;
             } else if (ev.type === 'error' || ev.type === 'run_failed') {
-              throw new Error(ev.error || t('aiLab.attach.failed'));
+              // 「这份 PDF 像是扫描件」这类针对具体文档的解释就在帧的 message 里，
+              // 它进 detail 行；标题永远是本地化的码文案。
+              throw new Error(errorText(fromSseEvent(ev), t('aiLab.attach.failed')));
             }
           }
           const record = (parsed ?? {}) as Record<string, unknown>;

@@ -2028,5 +2028,34 @@
     "iconLabel": "图标（可选）",
     "deleteTitle": "删除模块",
     "deleteHint": "「{{name}}」及其中的条目会一并删除，此操作无法撤销。"
+  },
+  "errors": {
+    "unauthenticated": "登录已过期，请重新登录后继续。",
+    "forbidden": "这个账号没有权限做这件事。",
+    "plan_required": "当前套餐还用不了这个能力，升级后即可继续。",
+    "not_found": "没找到这个内容，它可能已经被删除了。",
+    "invalid_input": "填写的内容有问题，请检查后重试。",
+    "conflict": "刚才有另一处改动，请刷新后重试。",
+    "session_invalid": "这段对话已经失效了，开一段新的继续。",
+    "quota_exceeded": "本{{period}}额度已用完，{{resetAt}}恢复；也可以升级套餐或用自己的模型 Key。",
+    "rate_limited": "请求太密集了，{{retryAfter}}后再试。",
+    "content_rejected": "这份内容没能通过审核，换个说法或换份文件再试。",
+    "upstream_unavailable": "服务暂时不可用，稍后再试一次。",
+    "misconfigured": "这个功能暂时不可用，我们已经收到告警。",
+    "internal_error": "出了点问题，我们已经收到告警。",
+    "unknown": "出了点问题，请稍后重试。",
+    "period": {
+      "daily": "日",
+      "weekly": "周",
+      "monthly": "月"
+    },
+    "duration": {
+      "seconds": "{{count}} 秒",
+      "minutes": "{{count}} 分钟"
+    },
+    "actions": {
+      "retry": "重试",
+      "upgrade": "去充值"
+    }
   }
 }

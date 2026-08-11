@@ -4,6 +4,7 @@ import {
   invalidateEntitlementCache,
 } from "@/lib/extensions/billing-client";
 import type { Entitlement } from "@/lib/billing/types";
+import { opensBillingGate } from "@/lib/errors/types";
 import type { AgentLlmConfig } from "./types";
 
 export type AiEntitlement = Entitlement;
@@ -121,9 +122,24 @@ function isInconclusive(error: unknown): boolean {
   );
 }
 
+/**
+ * 这次失败该不该把充值/升级入口亮出来。
+ *
+ * 以前它 grep 的是 `friendlyAgentError` 产出的中文串「额度不足」——一个闸门的正确性，
+ * 挂在另一个函数里的四个汉字上：谁把那句国际化成英文，闸门就静默失效，而没有任何测试
+ * 会红。现在读的是码，两边同源（Core ADR-0018）。
+ *
+ * 仍然容忍纯字符串错误：不是所有调用点都已经带上 `AppError`（Clerk、老 catch 分支），
+ * 那些走原来的关键词兜底——但不再依赖任何一种语言的措辞。
+ */
 export function isQuotaOrCustomConfigError(error: unknown) {
+  const appError = (error as { appError?: { errorCode?: unknown } } | null)
+    ?.appError;
+  if (typeof appError?.errorCode === "string") {
+    return opensBillingGate(appError.errorCode as never);
+  }
   const message = error instanceof Error ? error.message : String(error ?? "");
-  return /insufficient_quota|insufficient quota|额度不足|quota|402/i.test(
+  return /quota_exceeded|plan_required|insufficient_quota|insufficient quota|quota|402/i.test(
     message,
   );
 }

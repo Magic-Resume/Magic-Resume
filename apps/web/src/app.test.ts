@@ -1,4 +1,15 @@
 import assert from 'node:assert/strict';
+import zhCopy from '@/locales/zh/translation.json';
+import enCopy from '@/locales/en/translation.json';
+import {
+  fromErrorBody,
+  fromSseEvent,
+  fromThrown,
+  isAborted,
+} from '@/lib/errors/normalize';
+import { appErrorCopy } from '@/lib/errors/message';
+import { presentAppError } from '@/lib/errors/present';
+import { APP_ERROR_CODES, opensBillingGate } from '@/lib/errors/types';
 import { ZodError } from 'zod';
 import {
   applyChangeToSections,
@@ -883,6 +894,153 @@ function testSectionOrderCoercion() {
   assert.ok(keys.includes('skills'), 'built-in section missing after normalize');
 }
 
+/**
+ * 错误契约（Core ADR-0018）：码是后端下发的，文案是前端的。
+ *
+ * 这条覆盖测试是那条分界能成立的前提——后端加了新码而前端没写文案，就在这里红。没有它，
+ * 「文案归前端」只是一句口号，实际会退化成用户在屏幕上读到一个标识符。
+ */
+function testErrorCopyCoverage() {
+  for (const code of [...APP_ERROR_CODES, 'unknown']) {
+    for (const [lang, dict] of [['zh', zhCopy], ['en', enCopy]] as const) {
+      const copy = (dict.errors as Record<string, unknown>)[code];
+      assert.equal(
+        typeof copy,
+        'string',
+        `${lang} 缺少 errors.${code} 的文案`,
+      );
+      assert.ok((copy as string).trim().length > 0, `${lang} errors.${code} 是空串`);
+    }
+  }
+
+  // 两侧必须同构：只补一种语言等于给另一种语言的用户留了一个标识符。
+  assert.deepEqual(
+    Object.keys(zhCopy.errors).sort(),
+    Object.keys(enCopy.errors).sort(),
+    'zh / en 的 errors 键不同构',
+  );
+}
+
+/**
+ * 归一化：契约的地基。重点不是「新后端发了码」，而是**上游什么都没发时**——老后端还在
+ * 线上的那几周，前端手里只有一个状态码。
+ */
+function testErrorNormalize() {
+  // 本次修复的靶子：额度用完必须是 quota_exceeded，绝不能被读成 rate_limited。
+  const quota = fromErrorBody(
+    429,
+    {
+      code: 429,
+      message: 'quota_exhausted',
+      errorCode: 'quota_exceeded',
+      subCode: 'daily_cap',
+      params: { period: 'daily', resetAt: '2026-08-13T00:00:00Z' },
+      requestId: 'req-1',
+      retryable: false,
+    },
+    'bff',
+  );
+  assert.equal(quota.errorCode, 'quota_exceeded');
+  assert.notEqual(quota.errorCode, 'rate_limited');
+  assert.equal(quota.params?.period, 'daily');
+  assert.equal(quota.requestId, 'req-1');
+  assert.equal(quota.retryable, false);
+  assert.equal(opensBillingGate(quota.errorCode), true);
+
+  // 老后端：只有状态码。降级到今天的粒度，不会更差。
+  const legacyStatus = fromErrorBody(429, { code: 429, message: '' }, 'bff');
+  assert.equal(legacyStatus.errorCode, 'rate_limited');
+  assert.equal(legacyStatus.retryable, true);
+
+  // 老后端 + 存量字符串码：那几周里这就是全部的可用信息。
+  const legacyCode = fromErrorBody(429, { code: 'quota_exhausted' }, 'bff');
+  assert.equal(legacyCode.errorCode, 'quota_exceeded');
+  assert.equal(legacyCode.subCode, 'quota_exhausted');
+
+  // 畸形体：不能因此再抛一个错。
+  assert.equal(fromErrorBody(500, undefined, 'bff').errorCode, 'internal_error');
+  assert.equal(fromErrorBody(500, 'not json', 'bff').errorCode, 'internal_error');
+  assert.equal(fromErrorBody(undefined, {}, 'local').errorCode, 'unknown');
+
+  // 老 BFF 那句 "Backend request failed with status 429" 绝不能当文案渲染。
+  const bffNoise = fromErrorBody(
+    429,
+    { error: 'Backend request failed with status 429' },
+    'bff',
+  );
+  assert.equal(bffNoise.publicMessage, undefined);
+
+  // message 只是机器码时同样不算文案。
+  assert.equal(
+    fromErrorBody(429, { code: 'quota_exhausted', message: 'quota_exhausted' }, 'bff')
+      .publicMessage,
+    undefined,
+  );
+
+  // 网络断了是「依赖够不着」，不是「我们有 bug」。
+  const network = fromThrown(new TypeError('Failed to fetch'));
+  assert.equal(network.errorCode, 'upstream_unavailable');
+  assert.equal(network.retryable, true);
+
+  // 用户点了停止：不是故障，静默丢弃。
+  const aborted = fromThrown(Object.assign(new Error('x'), { name: 'AbortError' }));
+  assert.equal(isAborted(aborted), true);
+  assert.equal(presentAppError(aborted), null);
+
+  // SSE 帧：payload.errorCode 优先，老的 error 字段仍认。
+  assert.equal(
+    fromSseEvent({ error: 'quota_exceeded', payload: { code: 'quota_exceeded' } })
+      .errorCode,
+    'quota_exceeded',
+  );
+  assert.equal(
+    fromSseEvent({ error: 'agent_run_failed', payload: {} }).errorCode,
+    'internal_error',
+  );
+}
+
+/** 文案：本地化的码文案永远当标题，服务端那句只能是补充行。 */
+function testErrorCopy() {
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const value = key
+      .split('.')
+      .reduce<unknown>(
+        (acc, part) =>
+          typeof acc === 'object' && acc !== null
+            ? (acc as Record<string, unknown>)[part]
+            : undefined,
+        zhCopy,
+      );
+    if (typeof value !== 'string') {
+      return (options?.defaultValue as string | undefined) ?? key;
+    }
+    return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+      String(options?.[name] ?? ''),
+    );
+  };
+
+  const copy = appErrorCopy(
+    {
+      errorCode: 'content_rejected',
+      retryable: false,
+      source: 'sse',
+      publicMessage: 'This PDF looks like a scan — we could not read any text.',
+    },
+    t,
+  );
+  // 屏幕上永远不会只剩一句外语：标题一定是本地语言。
+  assert.equal(copy.title, zhCopy.errors.content_rejected);
+  assert.equal(copy.detail, 'This PDF looks like a scan — we could not read any text.');
+
+  // 认不出的码退到通用兜底，而不是把标识符渲染出来。
+  const unknown = appErrorCopy(
+    { errorCode: 'unknown', retryable: false, source: 'http' },
+    t,
+  );
+  assert.equal(unknown.title, zhCopy.errors.unknown);
+  assert.ok(!unknown.title.includes('errors.'));
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
@@ -898,6 +1056,9 @@ async function main() {
   testCustomSections();
   testSectionOwnership();
   testSectionOrderCoercion();
+  testErrorCopyCoverage();
+  testErrorNormalize();
+  testErrorCopy();
 }
 
 main().catch((error) => {
