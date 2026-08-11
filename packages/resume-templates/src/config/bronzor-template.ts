@@ -93,7 +93,7 @@ export const bronzorTemplate: MagicTemplateDSL = {
         title: ["company"],
         subtitle: ["position"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#000000"
@@ -113,7 +113,7 @@ export const bronzorTemplate: MagicTemplateDSL = {
         title: ["school"],
         subtitle: ["degree", "major"], 
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#000000"
@@ -150,7 +150,7 @@ export const bronzorTemplate: MagicTemplateDSL = {
         title: ["name"],
         subtitle: ["role"],
         date: ["date"], 
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#000000"

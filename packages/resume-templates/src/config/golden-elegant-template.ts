@@ -147,7 +147,7 @@ export const goldenElegantTemplate: MagicTemplateDSL = {
         title: ["company"],
         subtitle: ["position"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -164,7 +164,7 @@ export const goldenElegantTemplate: MagicTemplateDSL = {
         title: ["school"],
         subtitle: ["degree", "major"], 
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -181,7 +181,7 @@ export const goldenElegantTemplate: MagicTemplateDSL = {
         title: ["name"],
         subtitle: ["role"],
         date: ["date"], 
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     }
   ]

@@ -17,19 +17,31 @@ export type TargetedSelectionDiff = {
   selectionText: string;
 };
 
-// Item fields surfaced as reviewable in-place changes, with the render kind the
-// living canvas uses. `summary`/`description` are rich-text bodies (html) of
-// experience/education/projects. `name` is the item TITLE — for skills /
-// languages / certificates that's the only visible, translatable text (ListSection
-// renders it via `fieldMap.itemName`), and it's plain text, so it diffs as `text`.
-// Without `name`, a translation rewrites every skill but the canvas diffs none.
-// Non-string / empty fields are skipped by the empty-`after` guard below, so this
-// is safe across all sections (experience/education `name` is null → skipped).
-const DIFF_FIELDS: ReadonlyArray<{ key: string; kind: EditableTarget['kind'] }> = [
-  { key: 'summary', kind: 'html' },
-  { key: 'description', kind: 'html' },
-  { key: 'name', kind: 'text' },
-];
+/**
+ * 不参与 diff 的字段——**黑名单，不是白名单**。
+ *
+ * 此前这里是一份三项的白名单（summary / description / name），于是 agent 改了 company /
+ * position / date / school / degree / level / url 里的任何一个，画布上都**永远不会出现**：
+ * 用户看到的是「说改了、什么都没变」，而实际上改动确实产出了，只是 diff 认不出来。
+ *
+ * 改成黑名单是因为 `SectionItem` 是开放索引签名，且产品支持自定义区块（`customSectionKey`）
+ * ——白名单必然漏，而漏掉的表现恰恰是静默。
+ */
+const NON_DIFFABLE_FIELDS = new Set(['id', 'visible', 'icon', 'customSectionKey']);
+
+/** 富文本还是纯文本：按值里有没有 HTML 标签判，而不是按字段名猜。 */
+const kindOf = (value: string): EditableTarget['kind'] =>
+  /<[a-z][\s\S]*>/i.test(value) ? 'html' : 'text';
+
+/** 这个条目上所有能参与 diff 的字符串字段名。 */
+function diffableKeys(a: Record<string, unknown>, b: Record<string, unknown>): string[] {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  return [...keys].filter(
+    (k) =>
+      !NON_DIFFABLE_FIELDS.has(k) &&
+      (typeof a[k] === 'string' || typeof b[k] === 'string')
+  );
+}
 
 /**
  * Real resume diff → reviewable in-place changes for the living canvas. This is
@@ -82,7 +94,7 @@ export function diffResumeToChanges(
         if (diagnostics) diagnostics.unmatchedItems += 1;
         continue;
       }
-      for (const { key: fieldKey, kind: fieldKind } of DIFF_FIELDS) {
+      for (const fieldKey of diffableKeys(cItem, pItem)) {
         const before = typeof cItem[fieldKey] === 'string' ? (cItem[fieldKey] as string) : '';
         const after = typeof pItem[fieldKey] === 'string' ? (pItem[fieldKey] as string) : '';
         // Compare text content (ignore pure HTML-formatting churn); skip empties / no-ops.
@@ -91,7 +103,7 @@ export function diffResumeToChanges(
           sectionKey,
           itemId: String(pItem.id),
           fieldKey,
-          kind: fieldKind,
+          kind: kindOf(after),
           label: `${sectionTitle(sectionKey)} · 第 ${indexInSection} 条`,
         };
         out.push({
@@ -129,7 +141,6 @@ function diffTargetedSelection(
   const proposedItem = proposedItems.find((it) => String(it.id) === parsed.itemId);
   if (!currentItem || !proposedItem) return null;
 
-  const fieldMeta = DIFF_FIELDS.find((f) => f.key === parsed.fieldKey);
   const before = typeof currentItem[parsed.fieldKey] === 'string' ? (currentItem[parsed.fieldKey] as string) : '';
   const after = typeof proposedItem[parsed.fieldKey] === 'string' ? (proposedItem[parsed.fieldKey] as string) : '';
   if (!after.trim() || stripHtml(before) === stripHtml(after)) return null;
@@ -140,7 +151,9 @@ function diffTargetedSelection(
 
   const target: EditableTarget = {
     ...parsed,
-    kind: fieldMeta?.kind ?? 'html',
+    // 按值判富文本还是纯文本，与整篇 diff 同一套规则。此前查的是那份三项白名单，
+    // 白名单外的字段一律当 'html' —— 一处纯文本改动会被当富文本渲染。
+    kind: kindOf(after),
     label: `${sectionTitle(parsed.sectionKey)} · 第 ${visibleIndex >= 0 ? visibleIndex + 1 : 1} 条`,
   };
 

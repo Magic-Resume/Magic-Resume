@@ -134,7 +134,7 @@ export const chikoritaTemplate: MagicTemplateDSL = {
         title: ["company"],
         subtitle: ["position"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -151,7 +151,7 @@ export const chikoritaTemplate: MagicTemplateDSL = {
         title: ["school"],
         subtitle: ["degree", "major"], 
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -168,7 +168,7 @@ export const chikoritaTemplate: MagicTemplateDSL = {
         title: ["certificate", "name"],
         subtitle: ["level"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -185,7 +185,7 @@ export const chikoritaTemplate: MagicTemplateDSL = {
         title: ["name"],
         subtitle: ["role"],
         date: ["date"], 
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     },
     {
@@ -202,7 +202,7 @@ export const chikoritaTemplate: MagicTemplateDSL = {
         title: ["name", "platform"],
         subtitle: ["username"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       }
     }
   ]

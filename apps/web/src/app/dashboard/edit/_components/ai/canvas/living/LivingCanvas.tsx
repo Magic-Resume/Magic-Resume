@@ -13,6 +13,7 @@ import {
   type EditableCanvasContextValue,
   type PendingChangeView,
 } from '../../lib/editableCanvas';
+import { partitionByAnchor, toPendingView } from '../../lib/pendingView';
 import ResumePreview from '../../../preview/ResumePreview';
 import AiThinkingOverlay from '../../../modals/AiThinkingOverlay';
 import ActionPopover from './ActionPopover';
@@ -647,11 +648,26 @@ export default function LivingCanvas({
       );
       return;
     }
-    const entries = changes.map((c) => ({ path: pathOf(c.target), change: c }));
+    // 锚点对账：当前模板上没有落点的改动不进 order。此前它们照样进：评审条说「有 N 处
+    // 改动」而画布上一处都看不见，用户永远点不到、也不知道为什么。
+    const { renderable, orphaned } = partitionByAnchor(changes, (path) =>
+      Boolean(scrollRef.current?.querySelector(`[data-resume-path="${path}"]`))
+    );
+    if (orphaned.length > 0) {
+      onWarn(
+        `有 ${orphaned.length} 处改动在当前模板上无法展示，已跳过 · 换个模板可以看到`,
+        'no_anchor',
+        { count: orphaned.length, detail: orphaned.map((c) => pathOf(c.target)) }
+      );
+    }
+    if (!renderable.length) return;
+    const entries = renderable.map((c) => ({ path: pathOf(c.target), change: c }));
     const paths = entries.map((e) => e.path);
     setInteracted(true);
     setProcessing((prev) => [...prev, ...paths.filter((p) => !prev.includes(p))]);
-    window.setTimeout(() => {
+    // shimmer 一秒让改动「长出来」而不是「弹出来」。这一秒里画布可能被关掉——不清理的话
+    // 定时器会在卸载后往一个已经不存在的组件里写，整批改动就那么蒸发了，且没有任何提示。
+    const timer = window.setTimeout(() => {
       setProcessing((prev) => prev.filter((p) => !paths.includes(p)));
       setPending((prev) => {
         const next = { ...prev };
@@ -661,7 +677,26 @@ export default function LivingCanvas({
       setOrder((prev) => [...prev, ...paths.filter((p) => !prev.includes(p))]);
       setCursor(0);
     }, 1000);
+    return () => window.clearTimeout(timer);
   }, [batchRequest, onWarn]);
+
+  // 画布被关掉时，还没评审的提案会跟着组件一起消失（外层 AnimatePresence 是 mode="wait"，
+  // 关闭即卸载）。把状态上提能保住它们，但那要动这个组件里最有状态的一块，风险不小；
+  // 真正的伤害其实是「无声」——用户不知道自己刚才丢了什么。所以先让它出声。
+  const pendingCountRef = useRef(0);
+  pendingCountRef.current = Object.keys(pending).length;
+  useEffect(
+    () => () => {
+      if (pendingCountRef.current > 0) {
+        onWarn(
+          `关闭画布时还有 ${pendingCountRef.current} 处改动没有评审，已丢弃`,
+          'no_changes',
+          { count: pendingCountRef.current }
+        );
+      }
+    },
+    [onWarn]
+  );
 
   // Click a conversation log entry → jump to that spot on the canvas. The resume
   // template renders async on (re)mount, so poll briefly until the node exists.
@@ -703,20 +738,10 @@ export default function LivingCanvas({
     setOrder((prev) => prev.filter((p) => !stalePaths.has(p)));
   }, [resumeData.sections, resumeData.info, fieldHtml]);
 
-  const pendingByPath = useMemo<Record<string, PendingChangeView>>(() => {
-    const out: Record<string, PendingChangeView> = {};
-    for (const [path, c] of Object.entries(pending)) {
-      out[path] = {
-        before: c.before,
-        after: c.after,
-        rationale: c.rationale,
-        rationaleDetail: c.rationaleDetail,
-        status: c.status,
-        isInsert: c.isInsert,
-      };
-    }
-    return out;
-  }, [pending]);
+  const pendingByPath = useMemo<Record<string, PendingChangeView>>(
+    () => toPendingView(pending),
+    [pending]
+  );
 
   // 预览一份未落地的草稿时关掉就地编辑：把手、选区动作、评审卡都不该出现在
   // 一份用户还没接受的东西上。

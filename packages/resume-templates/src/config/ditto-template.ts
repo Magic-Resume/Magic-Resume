@@ -96,7 +96,7 @@ export const dittoTemplate: MagicTemplateDSL = {
         title: ["company"],
         subtitle: ["position"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         backgroundColor: "#ffffff",
@@ -120,7 +120,7 @@ export const dittoTemplate: MagicTemplateDSL = {
         title: ["school"],
         subtitle: ["degree", "major"], 
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         backgroundColor: "#ffffff",
@@ -144,7 +144,7 @@ export const dittoTemplate: MagicTemplateDSL = {
         title: ["certificate", "name"],
         subtitle: ["level"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         backgroundColor: "#ffffff",
@@ -211,7 +211,7 @@ export const dittoTemplate: MagicTemplateDSL = {
         title: ["name"],
         subtitle: ["role"],
         date: ["date"], 
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         backgroundColor: "#ffffff",
@@ -235,7 +235,7 @@ export const dittoTemplate: MagicTemplateDSL = {
         title: ["name", "platform"],
         subtitle: ["username"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         backgroundColor: "#ffffff",
