@@ -354,8 +354,8 @@ export default function AiChatShell({
   );
 
   const logChange = useCallback(
-    (content: string, resumePath?: string) =>
-      addMessage({ id: nanoid(), role: 'log', content, resumePath }),
+    (content: string, resumePath?: string, tone?: 'ok' | 'info') =>
+      addMessage({ id: nanoid(), role: 'log', content, resumePath, tone }),
     [addMessage]
   );
 

@@ -66,7 +66,7 @@ type LivingCanvasProps = {
   templateId: string;
   onApplySections: (sections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
-  onLog: (text: string, resumePath?: string) => void;
+  onLog: (text: string, resumePath?: string, tone?: 'ok' | 'info') => void;
   /**
    * 一次改动没能落到画布上时说一句。与 onLog 分开：那条记「做成了」，这条记「没做成」。
    * `reason` 是可枚举的拦截层——它同时进遥测，要能直接分组指向该修哪一处。
@@ -657,7 +657,12 @@ export default function LivingCanvas({
     );
     if (orphaned.length > 0) {
       // 中性语气：这不是失败，只是这几处不在画布上就地显示。仍然上报，好知道哪些模板缺锚点。
-      onLog(`其中 ${orphaned.length} 处不在画布上就地显示，可在「全部改动」里查看`);
+      // info 而不是 warn：这不是失败，改动照样能在列表里逐条采纳。混进琥珀会被读成报错。
+      onLog(
+        `其中 ${orphaned.length} 处不在画布上就地显示，可在「全部改动」里逐条采纳`,
+        undefined,
+        'info'
+      );
       appLifecycle.aiChangesDropped({ reason: 'no_anchor', count: orphaned.length });
     }
     const entries = changes.map((c) => ({ path: pathOf(c.target), change: c }));

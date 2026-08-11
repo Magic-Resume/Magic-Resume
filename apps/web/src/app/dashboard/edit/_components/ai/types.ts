@@ -72,12 +72,15 @@ export interface ChatMessage {
   /** present when role === 'log' — anchors the entry back to a canvas change */
   resumePath?: string;
   /**
-   * present when role === 'log' — 这条记的是「做成了」还是「没做成」。
+   * present when role === 'log' — 这条日志在说什么性质的事。
    *
-   * 缺省是 'ok'。'warn' 用于一次被丢弃的简历改动：此前这类失败在全链路上一句提示都没有，
-   * 模型说「已经改好了」是用户唯一能看到的信息，而它可能是错的。
+   * 'ok'（缺省，绿）做成了；'info'（蓝）中性事实，既不是成功也不是失败；
+   * 'warn'（琥珀）真的没做成。
+   *
+   * 三档而不是两档，是因为「这几处不在画布上就地显示」既不是成功也不是失败——
+   * 混进琥珀会被读成报错，而那正是它第一版引起的误解。颜色要能替代阅读。
    */
-  tone?: 'ok' | 'warn';
+  tone?: 'ok' | 'info' | 'warn';
   /** live-streamed assistant text — render raw (no typewriter re-animation) */
   streamed?: boolean;
   /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   AlertCircle,
   Check,
+  Info,
   ChevronDown,
   Eye,
   EyeOff,
@@ -541,19 +542,19 @@ function LogLine({
 }) {
   const { t } = useTranslation();
   const clickable = !!message.resumePath && !!onLogClick;
-  // 提醒比记录响一档：它是用户唯一会知道「刚才那次改动没落到画布上」的地方。
-  // 仍留在同一行的体量里——不抢戏，只是让人看得见。
-  const warn = message.tone === 'warn';
-  const className = `flex items-center gap-2 text-[11px] ${
-    warn ? 'text-amber-500/90' : 'text-neutral-500'
-  }`;
+  // 颜色替代阅读：扫一眼就知道这行是「成了 / 只是说明 / 没成」，不必读完文字。
+  // 三档都留在同一行的体量里——不抢戏，只是让人看得见。
+  const tone = message.tone ?? 'ok';
+  const toneStyle = {
+    ok: { text: 'text-neutral-500', icon: 'text-emerald-500/80', Icon: Check },
+    info: { text: 'text-sky-400/85', icon: 'text-sky-400/70', Icon: Info },
+    warn: { text: 'text-amber-500/90', icon: 'text-amber-500/80', Icon: AlertCircle },
+  }[tone];
+  const { Icon } = toneStyle;
+  const className = `flex items-center gap-2 text-[11px] ${toneStyle.text}`;
   const body = (
     <>
-      {warn ? (
-        <AlertCircle size={12} className="text-amber-500/80 shrink-0" />
-      ) : (
-        <Check size={12} className="text-emerald-500/80 shrink-0" />
-      )}
+      <Icon size={12} className={`${toneStyle.icon} shrink-0`} />
       <span className="truncate">{message.content}</span>
     </>
   );
