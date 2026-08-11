@@ -648,20 +648,19 @@ export default function LivingCanvas({
       );
       return;
     }
-    // 锚点对账：当前模板上没有落点的改动不进 order。此前它们照样进：评审条说「有 N 处
-    // 改动」而画布上一处都看不见，用户永远点不到、也不知道为什么。
-    const { renderable, orphaned } = partitionByAnchor(changes, (path) =>
+    // 锚点对账。模板只给正文类字段渲染 `<Editable>`，所以 company / position / date 这类
+    // 改动天生没有就地卡片可画——但它们**照样是有效改动**：改动列表能列出、「全部接受」能
+    // 应用，全程不需要 DOM。所以这里只是告诉用户去哪看，绝不丢弃：丢掉等于把这些字段
+    // 重新变回「AI 改了但你永远看不到」，那正是这轮要修的东西。
+    const { orphaned } = partitionByAnchor(changes, (path) =>
       Boolean(scrollRef.current?.querySelector(`[data-resume-path="${path}"]`))
     );
     if (orphaned.length > 0) {
-      onWarn(
-        `有 ${orphaned.length} 处改动在当前模板上无法展示，已跳过 · 换个模板可以看到`,
-        'no_anchor',
-        { count: orphaned.length, detail: orphaned.map((c) => pathOf(c.target)) }
-      );
+      // 中性语气：这不是失败，只是这几处不在画布上就地显示。仍然上报，好知道哪些模板缺锚点。
+      onLog(`其中 ${orphaned.length} 处不在画布上就地显示，可在「全部改动」里查看`);
+      appLifecycle.aiChangesDropped({ reason: 'no_anchor', count: orphaned.length });
     }
-    if (!renderable.length) return;
-    const entries = renderable.map((c) => ({ path: pathOf(c.target), change: c }));
+    const entries = changes.map((c) => ({ path: pathOf(c.target), change: c }));
     const paths = entries.map((e) => e.path);
     setInteracted(true);
     setProcessing((prev) => [...prev, ...paths.filter((p) => !prev.includes(p))]);
@@ -678,7 +677,7 @@ export default function LivingCanvas({
       setCursor(0);
     }, 1000);
     return () => window.clearTimeout(timer);
-  }, [batchRequest, onWarn]);
+  }, [batchRequest, onLog, onWarn]);
 
   // 画布被关掉时，还没评审的提案会跟着组件一起消失（外层 AnimatePresence 是 mode="wait"，
   // 关闭即卸载）。把状态上提能保住它们，但那要动这个组件里最有状态的一块，风险不小；

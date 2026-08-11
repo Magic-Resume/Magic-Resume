@@ -716,8 +716,9 @@ function testCanvasReachability() {
   assert.equal(projected.previewAfter, 'one better sentence');
   assert.equal(projected.previewKind, 'text');
 
-  // ② 当前模板上没有落点的改动不进 order。此前它们照样进：评审条说「有 N 处改动」，
-  //    画布上一处都看不见，scrollToPath 里 `if (!el) return` 静静地什么都不做。
+  // ② 分辨出「当前模板上没有就地落点」的改动。它们**不会被丢弃**——改动列表能列出、
+  //    「全部接受」能应用，全程不需要 DOM；分辨出来只是为了告诉用户去哪看。丢掉它们等于
+  //    把 company / position / date 这些字段重新变回「AI 改了但你永远看不到」。
   const mk = (fieldKey: string, isInsert = false) =>
     ({
       target: {
@@ -742,6 +743,8 @@ function testCanvasReachability() {
   assert.equal(renderable.length, 2); // summary 有锚点；新增条目由插槽接住
   assert.equal(orphaned.length, 1);
   assert.equal(orphaned[0].target.fieldKey, 'company');
+  // 两边加起来必须是全部——一条都不能在分辨的过程中消失。
+  assert.equal(renderable.length + orphaned.length, 3);
 }
 
 /** diff 覆盖面：白名单之外的字段此前永远不会出现在画布上。 */
