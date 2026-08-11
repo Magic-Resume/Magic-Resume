@@ -807,6 +807,8 @@ export default function LivingCanvas({
           <ChangesPanel
             rows={changeRows}
             onJump={jumpTo}
+            onAccept={accept}
+            onDiscard={discard}
             onAcceptAll={acceptAll}
             onDiscardAll={discardAll}
             onClose={() => setPanelOpen(false)}
