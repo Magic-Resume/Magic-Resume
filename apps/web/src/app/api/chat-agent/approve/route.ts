@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUserId } from '@/lib/auth/server';
 import { serverFetchBackend } from '@/lib/auth/serverFetchBackend';
+import { projectUpstreamError } from '../errorProjection';
 
 /**
  * Human-in-the-loop tool-approval reply. Forwards the user's decision and proxies
@@ -24,10 +25,10 @@ export async function POST(req: NextRequest) {
       // Log the upstream body server-side only; never surface it to the client.
       const errorText = await backendResponse.text();
       console.error(`[AGENT_APPROVE] Backend error ${backendResponse.status}: ${errorText}`);
-      // Forward the upstream status (e.g. 402) so the client's quota gate can
-      // react, but with a generic message — never surface the upstream body.
+      // 投影而非代理：只放行契约里那五个键，`message` 一律不转发——上游的 4xx 原文
+      // 可能是写给运营的英文，甚至说出这个部署配了哪些渠道（见 errorProjection.ts）。
       return NextResponse.json(
-        { error: `Backend request failed with status ${backendResponse.status}` },
+        projectUpstreamError(backendResponse.status, errorText),
         { status: backendResponse.status },
       );
     }
@@ -94,9 +95,14 @@ export async function POST(req: NextRequest) {
     const data = await backendResponse.json().catch(() => ({}));
     return NextResponse.json(data, { status: backendResponse.status });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // 诊断进服务端日志，不进响应体。
+    console.error(
+      `[AGENT_APPROVE] forward failed:`,
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
-      { error: '授权转发失败', errorMessage },
+      // 只回码：`errorMessage` 会把 undici 内部与内网 host 泄漏出去。
+      { errorCode: 'upstream_unavailable', error: 'upstream_unavailable', retryable: true },
       { status: 500 }
     );
   }

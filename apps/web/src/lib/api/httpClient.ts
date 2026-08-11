@@ -1,6 +1,8 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { API_ORIGIN } from './routes';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
+import { fromAxiosError } from '@/lib/errors/normalize';
+import type { AppError } from '@/lib/errors/types';
 
 // Mutable getter — set once by HttpClientProvider at app startup
 let _getToken: (() => Promise<string | null>) | null = null;
@@ -48,10 +50,21 @@ const createClient = (baseURL: string): AxiosInstance => {
   client.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
+      // 归一化后挂回错误对象上：调用方的 catch 因此能读码，而不必再解一遍响应体。
+      // 这是全应用唯一一个已经存在的 HTTP 汇聚点，判定放在这里只此一处。
+      const appError = fromAxiosError(error);
+      (error as AxiosError & { appError?: AppError }).appError = appError;
+
       if (error.response) {
-        console.error('API Error:', error.response.status, error.response.data);
+        console.error(
+          'API Error:',
+          error.response.status,
+          appError.errorCode,
+          appError.subCode ?? '',
+          appError.requestId ?? ''
+        );
       } else if (error.request) {
-        console.error('Network Error:', error.message);
+        console.error('Network Error:', appError.errorCode, error.message);
       } else {
         console.error('Request Error:', error.message);
       }

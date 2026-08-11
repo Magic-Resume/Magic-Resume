@@ -24,9 +24,14 @@ export async function DELETE(req: NextRequest) {
     const data = await backendResponse.json().catch(() => ({}));
     return NextResponse.json(data, { status: backendResponse.status });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // 诊断进服务端日志，不进响应体。
+    console.error(
+      `[AGENT_SESSION] forward failed:`,
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
-      { error: 'session 回收失败', errorMessage },
+      // 只回码：`errorMessage` 会把 undici 内部与内网 host 泄漏出去。
+      { errorCode: 'upstream_unavailable', error: 'upstream_unavailable', retryable: true },
       { status: 500 }
     );
   }

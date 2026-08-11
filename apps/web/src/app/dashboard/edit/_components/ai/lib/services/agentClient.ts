@@ -1,4 +1,6 @@
 import { WEB_AGENT_ROUTES } from '@/lib/api/routes';
+import { fromResponse } from '@/lib/errors/normalize';
+import type { AppError } from '@/lib/errors/types';
 import type { AgentLlmConfig, AgentSseEvent } from './types';
 
 /**
@@ -7,40 +9,24 @@ import type { AgentLlmConfig, AgentSseEvent } from './types';
  */
 
 /**
- * 把上游错误消息映射成用户能行动的友好文案。后端透传的原始字符串
- * （如 `Upstream 'agent' unavailable`、`invalid_api_key`）对用户没有意义，
- * 按状态码 + 关键词归类后再展示；无法归类时回退原始信息。
+ * 把一次失败响应变成可抛的 {@link AgentRequestError}。
+ *
+ * 以前这里是七条按英文散文匹配的正则。它们判错过一次真实故障：BFF 把上游响应整体换成
+ * "Backend request failed with status 429"，正则命中里面那个 "429"，于是「日额度用完」
+ * 被说成「请求过于频繁」，而下游的充值闸门测的是中文串「额度不足」——两边都没命中，
+ * 用户看到一句不相干的话，且没有任何充值入口。
+ *
+ * 现在读码不读字符串。判定只此一处（`fromResponse`），闸门也读同一个码。
  */
-function friendlyAgentError(status: number, raw: string): string {
-  const haystack = `${status} ${raw}`;
-  let friendly = '';
-  if (/timeout|timed out|ETIMEDOUT|abort/i.test(haystack)) {
-    friendly = '请求超时，请检查网络后重试';
-  } else if (/unauthori[sz]ed|forbidden|invalid.*(api.?key|key|token|credential)|authentication|401|403/.test(haystack)) {
-    friendly = 'API Key 无效或没有权限，请检查密钥';
-  } else if (/quota|insufficient.*(balance|credit|quota)|balance|billing|402/.test(haystack)) {
-    friendly = '账户额度不足，请检查余额或配额';
-  } else if (/rate.?limit|too many requests|429/.test(haystack)) {
-    friendly = '请求过于频繁，请稍后重试';
-  } else if (/upstream|origin|gateway|backend.*(unavail|down|error)|502|503/.test(haystack)) {
-    friendly = '服务商上游暂不可用，请稍后重试或检查服务状态';
-  } else if (/not found|no such model|404/.test(haystack)) {
-    friendly = '接口或模型不存在，请检查配置';
-  } else if (status >= 500) {
-    friendly = '服务商返回服务器错误，请稍后重试';
-  }
-  if (!friendly) return raw;
-  return raw && raw !== friendly ? `${friendly}（${raw}）` : friendly;
+async function readError(res: Response): Promise<AgentRequestError> {
+  return new AgentRequestError(await fromResponse(res, 'bff'));
 }
 
-async function readError(res: Response): Promise<string> {
-  try {
-    const data = await res.json();
-    const raw =
-      (data?.error || data?.message || data?.detail || `请求失败（${res.status}）`) as string;
-    return friendlyAgentError(res.status, raw);
-  } catch {
-    return `请求失败（${res.status}）`;
+/** 带上归一化后的 {@link AppError}，让 catch 侧不必再从 message 里往回猜。 */
+export class AgentRequestError extends Error {
+  constructor(readonly appError: AppError) {
+    super(appError.errorCode);
+    this.name = 'AgentRequestError';
   }
 }
 
@@ -49,7 +35,7 @@ async function readError(res: Response): Promise<string> {
  * 遇到非流式错误响应（后端开流前发的 401/422/429）会抛错。
  */
 export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseEvent> {
-  if (!res.ok || !res.body) throw new Error(await readError(res));
+  if (!res.ok || !res.body) throw await readError(res);
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
