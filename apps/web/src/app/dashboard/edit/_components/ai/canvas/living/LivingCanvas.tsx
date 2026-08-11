@@ -66,8 +66,15 @@ type LivingCanvasProps = {
   onApplySections: (sections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
   onLog: (text: string, resumePath?: string) => void;
-  /** 一次改动没能落到画布上时说一句。与 onLog 分开：那条记「做成了」，这条记「没做成」。 */
-  onWarn: (text: string, detail?: unknown) => void;
+  /**
+   * 一次改动没能落到画布上时说一句。与 onLog 分开：那条记「做成了」，这条记「没做成」。
+   * `reason` 是可枚举的拦截层——它同时进遥测，要能直接分组指向该修哪一处。
+   */
+  onWarn: (
+    text: string,
+    reason: 'unmatched_items' | 'no_changes' | 'no_anchor' | 'apply_failed',
+    extra?: { count?: number; detail?: unknown }
+  ) => void;
   /** lift a snippet into the chat composer for a freeform instruction. */
   onAskWithTarget?: (ctx: { path: string; label: string; text: string; selectionText?: string }) => void;
   batchRequest?: BatchRequest | null;
@@ -423,7 +430,11 @@ export default function LivingCanvas({
         // 写不进去就把卡片留在原地并标红，绝不假装成功。此前这里无条件往下走：卡片消失、
         // 日志写「已改写」、420ms 后移除，而 store 一个字都没变。
         if (!applied) {
-          onWarn(`这条改动没能写进简历 · ${change.target.label}`, change.target);
+          onWarn(
+            `这条改动没能写进简历 · ${change.target.label}`,
+            'apply_failed',
+            { count: 1, detail: change.target }
+          );
           setErrors((prev) => ({ ...prev, [path]: '写入失败，请重试' }));
           return;
         }
@@ -557,7 +568,9 @@ export default function LivingCanvas({
     onLog(
       t('aiLab.living.acceptedChangesLog', { count: changes.length - failed })
     );
-    if (failed > 0) onWarn(`有 ${failed} 处改动没能写进简历`);
+    if (failed > 0) {
+      onWarn(`有 ${failed} 处改动没能写进简历`, 'apply_failed', { count: failed });
+    }
     setPending({});
     setOrder([]);
     setCursor(0);
@@ -629,7 +642,8 @@ export default function LivingCanvas({
         diagnostics.unmatchedItems > 0
           ? `有 ${diagnostics.unmatchedItems} 处改动对不上现有条目，已跳过`
           : '这次没有可评审的改动，画布保持原样',
-        diagnostics
+        diagnostics.unmatchedItems > 0 ? 'unmatched_items' : 'no_changes',
+        { count: diagnostics.unmatchedItems || undefined, detail: diagnostics }
       );
       return;
     }
