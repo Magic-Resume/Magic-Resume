@@ -520,12 +520,11 @@ function Bubble({
         {/* 一种渲染方式、一种手感。这里原来给非流式的助手台词加了 JS 定时器的伪打字
             （24ms/字），跟真流式并存就是两种节奏；而 brief §3 明确要删掉这类假动效
             ——它模拟的是并没有在发生的工作。光标同理挂回全局心跳。 */}
+        {/* 光标由 Markdown 自己发：放在这里它是块级 `<p>` 的兄弟节点，会掉到段落下面
+            单独占一行，而它该跟在最后一个字后面。 */}
         <Markdown streaming={message.streamed && message.status === 'running'}>
           {message.content ?? ''}
         </Markdown>
-        {message.streamed && message.status === 'running' && (
-          <span className="ai-breath inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px]" />
-        )}
         {/* 取自 Beautiful UI 的 StreamingText：一段回复写完之后该能被拿走。
             此前只能手动框选——而模型给的建议、改写后的段落，用户十有八九是要复制的。
             只在写完后出现：流式途中出现等于让人去点一个还在长的东西。 */}

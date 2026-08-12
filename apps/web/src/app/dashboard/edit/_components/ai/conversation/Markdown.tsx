@@ -32,17 +32,30 @@ const LANG_LABEL: Record<string, string> = {
 function CodeRenderer({ className, children }: { className?: string; children?: React.ReactNode }) {
   const { t } = useTranslation();
   const lang = /language-(\w+)/.exec(className ?? '')?.[1];
+  // 围栏还没闭合时，光标标记会被解析进代码块。它不可见，但会跟着「复制」进用户的剪贴板
+  // ——粘出来是一个看不见的字符。这里剥掉。
+  const raw = String(children ?? '');
+  const code = raw.split(CARET).join('');
+  // 标记落进了这里 = 围栏还没闭合，写入头此刻就在代码块末尾。光标得跟过来，
+  // 否则它会在整个代码块流式期间凭空消失。
+  const writing = code !== raw;
   if (!lang) {
-    return <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-[12px] font-mono text-sky-300">{children}</code>;
+    return (
+      <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-[12px] font-mono text-sky-300">
+        {code}
+        {writing && <Caret />}
+      </code>
+    );
   }
   return (
     <div className="my-2">
       <Beautiful.CodeBlock
-        code={String(children ?? '')}
+        code={code}
         lang={LANG_LABEL[lang] ?? lang}
         copyLabel={t('aiLab.chat.copy')}
         copiedLabel={t('aiLab.chat.copied')}
       />
+      {writing && <Caret />}
     </div>
   );
 }
@@ -57,7 +70,18 @@ function CodeRenderer({ className, children }: { className?: string; children?: 
 
 /** 中日韩没有词间空格。按空格切，一整段中文会是**一个** token——那就等于没有效果。 */
 const CJK = '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}';
-const TOKEN_RE = new RegExp(`[${CJK}]|[^\\s${CJK}]+|\\s+`, 'gu');
+
+/**
+ * 光标的位置标记（U+2063 隐形分隔符）。
+ *
+ * 光标必须**跟在最后一个字后面**。原来它是 `<Markdown>` 的兄弟节点，而 markdown 渲染出来
+ * 的是块级元素，所以它掉到段落下面单独占一行。React 这边拿不到「全篇最后一个 token」，
+ * CSS 的 `:last-child::after` 又表达不了「最深的那个末节点」——把标记混进 markdown 源码，
+ * 解析器会把它并进最后一段的最后一个文本节点，位置于是天然正确。
+ */
+const CARET = '⁣';
+
+const TOKEN_RE = new RegExp(`${CARET}|[${CJK}]|[^\\s${CJK}${CARET}]+|\\s+`, 'gu');
 
 /** 不写 `both`：跑完让元素回到自然样式。留 forwards 等于给每个 span 永久挂一个
  *  filter，几百个 filter 就是几百个层叠上下文。 */
@@ -73,6 +97,16 @@ function tokenize(text: string): string[] {
   return out;
 }
 
+/**
+ * 写入光标。用 `bg-[#fff]` 不用 `bg-white`——本仓把 `--color-white` 重定义成了暖墨色
+ * （为浅色主题服务），`text-white`/`bg-white` 在深色下算出来是深的。
+ */
+function Caret() {
+  return (
+    <span className="ai-breath ml-0.5 inline-block h-[0.95em] w-[2px] translate-y-[2px] rounded-[1px] bg-[#fff] align-baseline" />
+  );
+}
+
 const StreamingCtx = React.createContext(false);
 
 /**
@@ -86,11 +120,15 @@ function Words({ children }: { children?: React.ReactNode }) {
     <>
       {React.Children.map(children, (child, ci) =>
         typeof child === 'string'
-          ? tokenize(child).map((token, i) => (
-              <span key={`${ci}:${i}`} style={{ animation: STREAM_IN }}>
-                {token}
-              </span>
-            ))
+          ? tokenize(child).map((token, i) =>
+              token === CARET ? (
+                <Caret key={`${ci}:${i}`} />
+              ) : (
+                <span key={`${ci}:${i}`} style={{ animation: STREAM_IN }}>
+                  {token}
+                </span>
+              ),
+            )
           : child,
       )}
     </>
@@ -138,7 +176,7 @@ export default function Markdown({ children, streaming = false }: { children: st
   return (
     <StreamingCtx.Provider value={streaming}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
-        {children}
+        {streaming ? children + CARET : children}
       </ReactMarkdown>
     </StreamingCtx.Provider>
   );
