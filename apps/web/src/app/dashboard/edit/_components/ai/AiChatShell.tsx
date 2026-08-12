@@ -13,7 +13,7 @@ import { GenUIProvider } from '@magic-resume/genui';
 import { WIDGETS, askChoiceKind } from './widgets/registry';
 import { AI_WIDGET_SOURCES } from './widgets/sources';
 import type { WidgetActionResult, WidgetEnvelope, WidgetKind } from '@magic-resume/genui/contract';
-import type { ApprovalRequest, CanvasState, ChatMessage, PlanTodo, SkillId } from './types';
+import type { CanvasState, ChatMessage, PlanTodo, SkillId } from './types';
 import ChatThread from './conversation/ChatThread';
 import Composer from './conversation/Composer';
 import PolarisPerch from './conversation/PolarisPerch';
@@ -21,6 +21,7 @@ import { setFlightOrigin } from './conversation/polarisFlight';
 import { AGENT_MODES, type AgentMode } from './conversation/modes';
 import { activityForTool, type AgentActivity } from './conversation/agentActivity';
 import { subjectOf, type ToolCallSummary } from './conversation/toolTrace';
+import { planInterrupt, openDecisions, fillDecision } from './lib/interruptPlan';
 import WelcomeSuggestions from './conversation/WelcomeSuggestions';
 import ArtifactCanvas from './canvas/ArtifactCanvas';
 import { PolarisAvatar, LabMark } from './PolarisMark';
@@ -498,7 +499,7 @@ export default function AiChatShell({
   const openInterrupt = useCallback((requestId: string, count: number) => {
     pendingInterruptRef.current = {
       requestId,
-      decisions: Array.from({ length: count }, () => null),
+      decisions: openDecisions<HitlDecision>(count),
     };
   }, []);
 
@@ -585,44 +586,28 @@ export default function AiChatShell({
               openInterrupt(requestId, actions.length);
               // 「问答」模式承诺了不读简历。弹一张「要不要读简历」的卡等于把已经作过的
               // 承诺又推回给用户,所以这里直接替他拒掉,并把理由带给模型让它换个说法。
-              const autoRejected: { requestId: string; index: number }[] = [];
-              // 闸门类的动作攒起来发**一张分页卡**，不是一个动作一张。有表单/选择卡的
-              // 动作仍各自成卡——任意字段布局塞不进「单选 + 一个自由输入」的一页。
-              const gates: ApprovalRequest[] = [];
-              actions.forEach((action, index) => {
-                const slot = { requestId, index };
-                const toolName = action.name;
-                if (toolName === 'read_resume' && !AGENT_MODES[agentModeRef.current].allowsResumeRead) {
-                  autoRejected.push(slot);
-                  return;
-                }
-                // 同一个工具可以按参数路由到不同的卡：`ask_choice` 表了态就走推荐卡。
-                // `toolName` 仍带上真实工具名——`edit` 续跑要靠它指回那个工具。
-                const kind =
-                  toolName === 'ask_choice' ? askChoiceKind(action.args) : toolName;
-                if (kind && WIDGETS[kind]) {
-                  addMessage({
-                    id: nanoid(),
-                    role: 'widget',
-                    interruptSlot: slot,
-                    widget: {
-                      widgetId: `${requestId}#${index}`,
-                      kind: kind as WidgetKind,
-                      toolName,
-                      props: action.args ?? {},
-                      status: 'pending',
-                    },
-                  });
-                } else {
-                  gates.push({
-                    requestId,
-                    toolName,
-                    scope: 'resume',
+              // 判定在 `interruptPlan` 里（纯函数，有用例钉着）；这里只负责画出来。
+              const plan = planInterrupt(requestId, actions, {
+                hasWidget: (kind) => Boolean(WIDGETS[kind]),
+                resolveKind: (toolName, args) =>
+                  toolName === 'ask_choice' ? askChoiceKind(args) : toolName,
+                allowsResumeRead: AGENT_MODES[agentModeRef.current].allowsResumeRead,
+              });
+              const autoRejected = plan.autoRejected;
+              const gates = plan.gates;
+              plan.widgets.forEach((w) => {
+                addMessage({
+                  id: nanoid(),
+                  role: 'widget',
+                  interruptSlot: w.slot,
+                  widget: {
+                    widgetId: `${requestId}#${w.slot.index}`,
+                    kind: w.kind as WidgetKind,
+                    toolName: w.toolName,
+                    props: w.args,
                     status: 'pending',
-                    slotIndex: index,
-                    question: typeof action.args?.reason === 'string' ? action.args.reason : undefined,
-                  });
-                }
+                  },
+                });
               });
               if (gates.length) {
                 const approvalId = nanoid();
@@ -1253,10 +1238,11 @@ export default function AiChatShell({
         addAssistant(t('aiLab.chat.interruptExpired'));
         return;
       }
-      pending.decisions[slot.index] = decision;
-      if (pending.decisions.some((d) => d === null)) return; // 还有卡没答
+      const filled = fillDecision(pending.decisions, slot.index, decision);
+      pending.decisions = filled.slots;
+      if (!filled.ready) return; // 还有卡没答
 
-      const decisions = pending.decisions as HitlDecision[];
+      const decisions = filled.slots as HitlDecision[];
       pendingInterruptRef.current = null;
       // 卡片自己已经变成「已提交」，但线程这边到续流开始之间还有一段异步（解析模型
       // 配置、可能弹补 key）。不先置位的话，这段时间界面上什么都没有在发生。

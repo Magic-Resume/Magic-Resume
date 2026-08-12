@@ -16,6 +16,15 @@ import {
   isRetirablePlan,
   segmentsOf,
 } from '@/app/dashboard/edit/_components/ai/conversation/TasksCard';
+import {
+  planInterrupt,
+  openDecisions,
+  fillDecision,
+} from '@/app/dashboard/edit/_components/ai/lib/interruptPlan';
+import {
+  WIDGETS,
+  askChoiceKind,
+} from '@/app/dashboard/edit/_components/ai/widgets/registry';
 import type {
   ChatMessage,
   PlanTodo,
@@ -1143,6 +1152,94 @@ function testTasksCard() {
   assert.deepEqual(segmentsOf({ content: '读取 简历 再决定', status: 'pending', segments: segs }), segs);
 }
 
+/**
+ * 一次中断的分派与续跑闸门。
+ *
+ * 这一组全部对着**错了不会报错**的失败模式：引擎只校验「裁决数量等于动作数量」，装错了槽
+ * 它照样接受，然后模型收到的是别的动作的答复；界面上什么都不会红，人也看不出来。
+ */
+function testInterruptPlan() {
+  // 用**真注册表**而不是桩：路由出来的 kind 要是没登记，卡就静默降级成一行文本，
+  // 而桩会永远说「登记了」。
+  const opts = {
+    hasWidget: (kind: string) => Boolean(WIDGETS[kind]),
+    resolveKind: (toolName: string, args?: Record<string, unknown>) =>
+      toolName === 'ask_choice' ? askChoiceKind(args) : toolName,
+    allowsResumeRead: true,
+  };
+
+  // ① 页号 ≠ 槽号。被跳过的动作不占页，从那之后两者永远错开——这正是最容易写成
+  //    `decisions[pageIndex]` 的地方。
+  const skipped = planInterrupt(
+    'req-1',
+    [
+      { name: 'read_resume' },
+      { name: 'request_form', args: { formKind: 'job_info' } },
+      { name: 'write_resume', args: { reason: '改写第 2 段' } },
+    ],
+    { ...opts, allowsResumeRead: false },
+  );
+  assert.equal(skipped.total, 3, '裁决数必须等于动作数，跳过的也算');
+  assert.deepEqual(skipped.autoRejected, [{ requestId: 'req-1', index: 0 }]);
+  assert.equal(skipped.gates.length, 1);
+  // 闸门是第 3 个动作，但它是这张卡的**第 1 页**。写成页号就是 0，那会把裁决装进
+  // 已经被自动拒掉的读简历槽里。
+  assert.equal(skipped.gates[0].slotIndex, 2);
+  assert.equal(skipped.widgets[0].slot.index, 1);
+
+  // ② 闸门收成一张卡，表单各自成卡——不是「全塞一张」也不是「一个动作一张」。
+  const mixed = planInterrupt(
+    'req-2',
+    [
+      { name: 'read_resume', args: { reason: '想读你的简历' } },
+      { name: 'request_form', args: { formKind: 'job_info' } },
+      { name: 'write_resume' },
+    ],
+    opts,
+  );
+  assert.equal(mixed.gates.length, 2, '两个闸门 → 一张卡两页');
+  assert.deepEqual(mixed.gates.map((g) => g.slotIndex), [0, 2]);
+  assert.equal(mixed.gates[0].question, '想读你的简历');
+  assert.equal(mixed.widgets.length, 1);
+
+  // ③ 卡的 kind 可能是路由出来的别名，但 `edit` 续跑必须报回真实工具名——拿别名去续跑
+  //    会指向一个不存在的工具。
+  const routed = planInterrupt(
+    'req-3',
+    [{ name: 'ask_choice', args: { message: '先改哪段？', recommended: 0 } }],
+    opts,
+  );
+  assert.equal(routed.widgets[0].kind, 'ask_choice_recommended');
+  assert.equal(routed.widgets[0].toolName, 'ask_choice');
+  // 没表态就不该被路由走，否则存量的一排 chips 全变成推荐卡。
+  const plain = planInterrupt('req-4', [{ name: 'ask_choice', args: { message: '先改哪段？' } }], opts);
+  assert.equal(plain.widgets[0].kind, 'ask_choice');
+
+  // ④ 续跑闸门：少一个裁决就不许发。漏发必然 400，而多发一次会重复计费。
+  let slots = openDecisions<string>(3);
+  let step = fillDecision(slots, 2, 'approve');
+  assert.equal(step.ready, false, '只答了一个不能续跑');
+  step = fillDecision(step.slots, 0, 'reject');
+  assert.equal(step.ready, false);
+  step = fillDecision(step.slots, 1, 'approve');
+  assert.equal(step.ready, true, '填满才续跑');
+  assert.deepEqual(step.slots, ['reject', 'approve', 'approve']);
+
+  // ⑤ 越界的裁决必须是空操作，且**不能**让运行判定「答完了」。
+  //    这条不变量由 `fillDecision` 的构造保证（map 重建而非下标赋值）；下标赋值会把
+  //    数组撑长并留下空洞，而 `every` 跳过空洞——运行会带着半份裁决续跑。
+  slots = openDecisions<string>(2);
+  const oob = fillDecision(slots, 5, 'approve');
+  assert.equal(oob.ready, false);
+  assert.deepEqual(oob.slots, [null, null]);
+  assert.equal(oob.slots.length, 2, '越界不许改变槽位数——它就是裁决数');
+
+  // ⑥ 同一个槽答两次是覆盖，不是追加——否则重复点击会把数量撑过动作数。
+  const twice = fillDecision(fillDecision(openDecisions<string>(1), 0, 'approve').slots, 0, 'reject');
+  assert.deepEqual(twice.slots, ['reject']);
+  assert.equal(twice.ready, true);
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
@@ -1163,6 +1260,7 @@ async function main() {
   testErrorCopy();
   testBffErrorProjection();
   testTasksCard();
+  testInterruptPlan();
 }
 
 main().catch((error) => {
