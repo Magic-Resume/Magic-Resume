@@ -1765,7 +1765,10 @@
         "read": "已读取简历",
         "reading": "正在读取简历…",
         "allowed": "已允许读取"
-      }
+      },
+      "tasks": "任务",
+      "completed": "已完成",
+      "elapsed": "{{seconds}}s"
     },
     "composer": {
       "skills": "技能",

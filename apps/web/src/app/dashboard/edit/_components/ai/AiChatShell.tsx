@@ -687,6 +687,9 @@ export default function AiChatShell({
                   ...(sub ? { subagentName: sub } : { skillId: canvasSkill }),
                   content: sub ? '' : payload?.label || '任务清单',
                   todos,
+                  // 卡片自己走秒。以第一条 plan_update 为起点而不是 run_started：
+                  // 用户看到的这张卡就是从这一刻开始的。
+                  startedAt: Date.now(),
                   status: allDone ? 'done' : 'running',
                 });
               }

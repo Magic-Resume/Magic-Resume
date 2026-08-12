@@ -11,6 +11,16 @@ import { appErrorCopy } from '@/lib/errors/message';
 import { presentAppError } from '@/lib/errors/present';
 import { APP_ERROR_CODES, opensBillingGate } from '@/lib/errors/types';
 import { projectUpstreamError } from '@/app/api/chat-agent/errorProjection';
+import {
+  isPlanFulfilled,
+  isRetirablePlan,
+  segmentsOf,
+} from '@/app/dashboard/edit/_components/ai/conversation/TasksCard';
+import type {
+  ChatMessage,
+  PlanTodo,
+  TodoSegment,
+} from '@/app/dashboard/edit/_components/ai/types';
 import { ZodError } from 'zod';
 import {
   applyChangeToSections,
@@ -1093,6 +1103,46 @@ function testBffErrorProjection() {
   assert.equal(roundTrip.requestId, 'req-9');
 }
 
+/**
+ * 任务清单卡的两条判据 + 片段降级。
+ *
+ * 判据是从 ChatThread 搬到 TasksCard 的——搬动最容易在语义上出错的地方，正是这种
+ * 「看起来只是换个文件」的改动，所以把行为钉死在这里。
+ */
+function testTasksCard() {
+  const plan = (todos: PlanTodo[], extra: Partial<ChatMessage> = {}): ChatMessage =>
+    ({ id: 'p', role: 'plan', content: '', todos, ...extra }) as ChatMessage;
+
+  // 一条未完成就不算跑完；空清单也不算——否则卡片刚建好、一条 todo 都还没到时
+  // 就会被判成"完成"，然后立刻退场。
+  assert.equal(isPlanFulfilled(plan([])), false);
+  assert.equal(
+    isPlanFulfilled(plan([{ content: 'a', status: 'completed' }, { content: 'b', status: 'pending' }])),
+    false,
+  );
+  assert.equal(isPlanFulfilled(plan([{ content: 'a', status: 'completed' }])), true);
+
+  // 子代理清单没有右侧产物，不能退场——退了就"起过一个子代理"这件事无迹可寻。
+  const doneTodos: PlanTodo[] = [{ content: 'a', status: 'completed' }];
+  assert.equal(isRetirablePlan(plan(doneTodos)), true);
+  assert.equal(isRetirablePlan(plan(doneTodos, { subagentName: 'translator' })), false);
+  assert.equal(isRetirablePlan(plan([{ content: 'a', status: 'pending' }])), false);
+
+  // 片段降级：后端没发 segments（老后端、或模型没写标记）时，整条 content 当一段纯文本。
+  assert.deepEqual(segmentsOf({ content: '把摘要改短', status: 'pending' }), [
+    { type: 'text', text: '把摘要改短' },
+  ]);
+  assert.deepEqual(segmentsOf({ content: 'x', status: 'pending', segments: [] }), [
+    { type: 'text', text: 'x' },
+  ]);
+  // 有 segments 就用它，content 只是给不认 segments 的消费者看的。
+  const segs: TodoSegment[] = [
+    { type: 'chip', verb: '读取', rest: '简历', kind: 'read' },
+    { type: 'text', text: '再决定' },
+  ];
+  assert.deepEqual(segmentsOf({ content: '读取 简历 再决定', status: 'pending', segments: segs }), segs);
+}
+
 async function main() {
   await testAiSessionStore();
   testImportResumeValidation();
@@ -1112,6 +1162,7 @@ async function main() {
   testErrorNormalize();
   testErrorCopy();
   testBffErrorProjection();
+  testTasksCard();
 }
 
 main().catch((error) => {

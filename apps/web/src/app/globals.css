@@ -1968,3 +1968,11 @@ button {
     transform: translateY(2px);
   }
 }
+
+/* 任务卡的极光。两团径向渐变缓慢漂移——只动 transform，交给合成器，
+   流式那几帧再忙也不掉帧。见 conversation/TasksCard.tsx。 */
+@keyframes aurora {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-6%, 3%, 0) scale(1.12); }
+  100% { transform: translate3d(4%, -2%, 0) scale(1.04); }
+}

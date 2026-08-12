@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -21,6 +21,11 @@ import { PolarisGlyph } from '../PolarisMark';
 import { WidgetHost } from '@magic-resume/genui';
 import { WIDGETS } from '../widgets/registry';
 import type { ApprovalRequest, ChatMessage, SkillId } from '../types';
+import TasksCard, {
+  PLAN_DWELL_MS,
+  isPlanFulfilled,
+  isRetirablePlan,
+} from './TasksCard';
 import type { WidgetActionResult } from '@magic-resume/genui/contract';
 import ActivityOrb from './ActivityOrb';
 import { activityLabelKey, type AgentActivity } from './agentActivity';
@@ -162,299 +167,6 @@ function ExecCard({
   );
 }
 
-/**
- * A live review checklist (the analyze todolist). The agent ticks each step —
- * 读取简历 → 每个角色评审 → 汇总评分 — as its backend progress events land, so the
- * card is the narration of "分别 review" instead of one opaque "完成" badge. Once
- * done it doubles as the score-canvas toggle (the old exec-card affordance).
- */
-/**
- * 判据：这次运行是**真正跑完**，还是被中止 / 失败了。
- *
- * 两者都会被 `consumeStream` 的收尾置成 `status: 'done'`，光看它区分不了。差异在
- * 步骤上——正常收尾会把全部步骤置为 completed，而中止时只是把 in_progress 退回
- * pending。所以"全部 completed"才是跑完；有 pending 残留的那张卡必须留在对话里，
- * 否则一次被打断的运行会无声消失，用户连"它做到哪一步停的"都看不到。
- */
-/** 跑完之后停留多久再退场——让用户看见它确实完成了。 */
-const PLAN_DWELL_MS = 700;
-
-/**
- * 时间线几何。
- *
- * 这几个数**必须互相咬合**——导轨的 x 要等于标记盒中心、断口要等于图元自身高度、
- * orb 的落点要等于行高——所以集中成常量、由代码算出彼此，而不是散成一堆 Tailwind
- * arbitrary class 各写各的。上一版把 `left-[9.5px]` 和 `9.5 = 20/2 - 1/2` 的来历
- * 分开写在两处，读代码的人看不出它们是同一个数。
- */
-const TL = {
-  /** 一行文字的行高，也是标记盒的高度 */
-  rowH: 18,
-  /** 标记列宽。导轨画在它的中轴上 */
-  colW: 20,
-  /** 行与行之间的留白 */
-  gapY: 10,
-  /** 未开始 / 进行中的圆点直径 */
-  dot: 8,
-  /** 完成的 ✓ 尺寸 */
-  check: 12,
-  /** orb 换步时滑过去的时长 */
-  strideMs: 380,
-} as const;
-/** 导轨中轴。1px 的线要压在中心上，所以再减半个线宽。 */
-const TL_AXIS = TL.colW / 2 - 0.5;
-/** 图元在行内的上下边界——导轨在这里让开，不糊在标记上。 */
-const gapFor = (glyph: number) => ({
-  top: (TL.rowH - glyph) / 2,
-  bottom: (TL.rowH + glyph) / 2,
-});
-
-export function isPlanFulfilled(message: ChatMessage): boolean {
-  const todos = message.todos ?? [];
-  return todos.length > 0 && todos.every((t) => t.status === 'completed');
-}
-
-/** 技能清单（有 skillId、结果落在右侧画布）才退场；子代理清单没有产物，不能退场。 */
-export function isRetirablePlan(message: ChatMessage): boolean {
-  return message.role === 'plan' && !message.subagentName && isPlanFulfilled(message);
-}
-
-function PlanCard({
-  message,
-  retired,
-  onToggleCanvas,
-  isCanvasOpen,
-  activity,
-}: {
-  message: ChatMessage;
-  /** 已过完停留期：技能清单收成一行可点的指针，不再是卡。 */
-  retired?: boolean;
-  onToggleCanvas: (id: SkillId) => void;
-  isCanvasOpen: boolean;
-  /** agent 此刻在做哪一类活儿——决定骑在导轨上那颗 orb 的形态。 */
-  activity?: AgentActivity | null;
-}) {
-  const { t } = useTranslation();
-  const todos = message.todos ?? [];
-  const total = todos.length;
-  const done = todos.filter((t) => t.status === 'completed').length;
-  const fulfilled = isPlanFulfilled(message);
-  const finished = message.status === 'done' || fulfilled;
-  const reduce = useReducedMotion() ?? false;
-
-  // orb 落在哪一行——量出来的，不是算出来的：标签可能折行，行高就不再等距，
-  // 用 index × 行高推位置迟早会错位。
-  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
-  const [orbTop, setOrbTop] = useState<number | null>(null);
-
-  // 当前这一步 = 第一个未完成的。后端会同时把多步标成 in_progress，只认第一个，
-  // 否则三处一起发光就读成「三件事在并行」，而实际上只是状态没细分。
-  // （放在早退分支之前，因为下面那个 hook 依赖它——hooks 不能在 return 之后。）
-  const activeIndex = todos.findIndex((x) => x.status !== 'completed');
-  /** 已走完的行数。-1 表示一条未完成的都没有，即全部完成。 */
-  const doneUpTo = activeIndex === -1 ? total : activeIndex;
-
-  // useLayoutEffect：位置必须在绘制前写进 transform，否则 orb 会先在第一行闪一帧
-  // 再跳到当前行。
-  useLayoutEffect(() => {
-    if (finished || activeIndex < 0) {
-      setOrbTop(null);
-      return;
-    }
-    const el = itemRefs.current[activeIndex];
-    setOrbTop(el ? el.offsetTop : null);
-  }, [activeIndex, finished, total]);
-
-  // 技能清单跑完并过了停留期 → 收成一行可点的指针。
-  //
-  // 它必须留下点什么：右侧那份报告没有别的入口了——实时画布会把它顶掉，而“再加一
-  // 颗头部按钮”被否掉。时间线上留一条指针既不是卡也不是新控件，位置还正好在这次
-  // 运行发生的地方。
-  if (retired) {
-    return (
-      <button
-        type="button"
-        onClick={() => onToggleCanvas(message.skillId ?? 'analyze')}
-        className="group flex items-center gap-2 text-[11px] text-neutral-500 transition-colors hover:text-neutral-300 cursor-pointer"
-      >
-        <Check size={11} className="shrink-0 text-neutral-600" />
-        <span className="truncate">{message.content || t('aiLab.chat.taskList')}</span>
-        <span className="shrink-0 text-sky-400/70 transition-colors group-hover:text-sky-300">
-          {isCanvasOpen ? t('aiLab.chat.collapse') : t('aiLab.chat.view')}
-        </span>
-      </button>
-    );
-  }
-
-  // 子代理跑完 → 降成一行日志。它没有右侧产物，整张卡留着只是噪音；但完全抹掉
-  // 又会让"起过一个子代理"这件事无迹可寻，所以留一行。
-  if (message.subagentName && finished) {
-    const name =
-      message.subagentName !== '子代理' && message.subagentName !== 'general-purpose'
-        ? ` · ${message.subagentName}`
-        : '';
-    return (
-      <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-        <Check size={11} className="shrink-0 text-neutral-600" />
-        <span className="truncate">
-          {t('aiLab.chat.subagent')}
-          {name}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    // AI-native 的 ambient activity（skill: ai-native-ui-design）：不用进度条、不用
-    // 「Agent working…」标签，让**正在被处理的那一步自己发光**。上一版把卡片扒光后
-    // 五行长得一模一样、只差颜色深浅，等于把"AI 此刻在哪儿"这条最重要的信息扔了。
-    <div className="flex items-start">
-      <div className="min-w-[240px] max-w-sm">
-        {/* 计数右对齐：它是行尾的说明，不是标题旁的徽章。进度已经由导轨承载，
-            这里只补一个"总共多少步"——长清单里那是唯一说得出总量的地方。 */}
-        <div className="flex items-center justify-between gap-3 text-[12px]">
-          <span className="min-w-0 truncate font-medium text-neutral-300">
-            {message.subagentName ? (
-              <>
-                <span className="text-sky-400">{t('aiLab.chat.subagent')}</span>
-                {message.subagentName !== '子代理' && message.subagentName !== 'general-purpose'
-                  ? ` · ${message.subagentName}`
-                  : ''}
-              </>
-            ) : (
-              message.content || t('aiLab.chat.taskList')
-            )}
-          </span>
-          {finished ? (
-            <Check size={12} className="shrink-0 text-emerald-400" />
-          ) : total > 0 ? (
-            <span className="shrink-0 text-[11px] tabular-nums text-neutral-600">
-              {done}/{total}
-            </span>
-          ) : (
-            <BreathGlyph size={11} className="text-sky-400/70" />
-          )}
-        </div>
-
-        {/* 导轨由每一行**自己**画出与相邻标记之间的那一小段，而不再是 <ul> 的背景渐变。
-            旧写法里导轨画在容器最左侧、标记被 pl-3.5 推到 14px 之外，两套坐标系，
-            那条线从设计上就不可能穿过任何一个点——量出来差 16px。现在线段的 x 直接
-            由标记盒宽度算出（TL_AXIS），穿过是**构造**出来的，不是调出来的。
-            断口取各自图元的实际高度（✓ 12px / 圆点 8px），线在标记处让开。 */}
-        <ul className="relative mt-2.5">
-          {/* 骑在导轨上的那颗 orb —— 这张卡最想说的一句话。
-              它不是"第三种标记"，而是 **agent 本人站在计划的哪一级台阶上**：形态随
-              activity 变（读简历 / 评估 / 干活各不相同），位置随进度往下滑。这样一颗
-              球同时回答了「在做什么」和「做到哪儿」，而计数和导轨都只回答后者。
-              落点是量出来的（li.offsetTop），标签折行也不会错位；位移只动 transform，
-              交给合成器，流式那几帧再忙也不掉帧。 */}
-          {orbTop !== null && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute z-10 grid place-items-center"
-              style={{
-                left: 0,
-                top: 0,
-                width: TL.colW,
-                height: TL.rowH,
-                transform: `translateY(${orbTop}px)`,
-                transition: reduce ? undefined : `transform ${TL.strideMs}ms cubic-bezier(0.22,1,0.36,1)`,
-              }}
-            >
-              <ActivityOrb activity={activity ?? 'working'} />
-            </span>
-          )}
-          {todos.map((todo, i) => {
-            const isActive = !finished && i === activeIndex;
-            const isDone = todo.status === 'completed';
-            const ridden = isActive && orbTop !== null;
-            const gap = gapFor(isDone ? TL.check : TL.dot);
-            // 一个接头由「上一行的下半段 + 本行的上半段」拼成，两者必须同色，
-            // 所以都用「上一行是否已完成」来判定。
-            const linkAboveDone = i - 1 < doneUpTo;
-            const linkBelowDone = i < doneUpTo;
-            return (
-              <li
-                key={`${todo.content}-${i}`}
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                }}
-                aria-current={isActive ? 'step' : undefined}
-                className="relative flex gap-2"
-                style={{ paddingBottom: i === total - 1 ? 0 : TL.gapY }}
-              >
-                {i > 0 && (
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'absolute top-0 transition-colors duration-150',
-                      linkAboveDone ? 'bg-sky-400/45' : 'bg-neutral-800'
-                    )}
-                    style={{ left: TL_AXIS, width: 1, height: gap.top }}
-                  />
-                )}
-                {i < total - 1 && (
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'absolute bottom-0 transition-colors duration-150',
-                      linkBelowDone ? 'bg-sky-400/45' : 'bg-neutral-800'
-                    )}
-                    style={{ left: TL_AXIS, width: 1, top: gap.bottom }}
-                  />
-                )}
-                {/* 固定 20×18 的标记盒：三种状态占位完全相同，标签左缘才能齐平。
-                    旧写法把 12px 的 ✓ 和 6px 的圆点直接并排塞进 flex，宽度不等，
-                    量出来首行标签比其余行右移 12px。 */}
-                <span
-                  className="relative grid shrink-0 place-items-center"
-                  style={{ width: TL.colW, height: TL.rowH }}
-                >
-                  {isDone ? (
-                    // 打勾是这张卡上唯一"有事发生"的瞬间，给它一个极短的落定：
-                    // 只动 scale/opacity，不弹跳。
-                    <motion.span
-                      initial={reduce ? false : { opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                      className="flex"
-                    >
-                      <Check size={TL.check} className="text-neutral-500" />
-                    </motion.span>
-                  ) : (
-                    // 当前行的点被 orb 盖住了，就别再画一颗——两颗同心圆只会糊在一起。
-                    !ridden && (
-                      <span
-                        className={cn(
-                          'rounded-full transition-colors duration-150',
-                          isActive ? 'step-dot-active bg-sky-400' : 'border border-neutral-700'
-                        )}
-                        style={{ width: TL.dot, height: TL.dot }}
-                      />
-                    )
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    'min-w-0 text-[12px] transition-colors duration-150',
-                    isDone
-                      ? 'text-neutral-500'
-                      : isActive
-                        ? 'step-text-active text-sky-100'
-                        : 'text-neutral-600'
-                  )}
-                  style={{ lineHeight: `${TL.rowH}px` }}
-                >
-                  {todo.content}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Human-in-the-loop approval prompt. The assistant asks before a sensitive action;
@@ -767,6 +479,8 @@ type ChatThreadProps = {
   activity?: AgentActivity | null;
 };
 
+export { isPlanFulfilled, isRetirablePlan };
+
 export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, activity }: ChatThreadProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
@@ -852,7 +566,7 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
             ) : m.role === 'approval' ? (
               <ApprovalCard message={m} onApproval={onApproval} />
             ) : m.role === 'plan' ? (
-              <PlanCard
+              <TasksCard
                 message={m}
                 retired={retired.has(m.id)}
                 onToggleCanvas={onToggleCanvas}

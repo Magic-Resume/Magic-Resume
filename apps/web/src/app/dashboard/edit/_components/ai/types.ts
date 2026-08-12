@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { WidgetInstance } from '@magic-resume/genui/contract';
+import type { AgentActivity } from './conversation/agentActivity';
 
 export type SkillId = 'create' | 'optimize' | 'analyze' | 'fit' | 'translate' | 'interview';
 
@@ -34,10 +35,37 @@ export interface AiSkill {
 
 export type ChatRole = 'user' | 'assistant' | 'exec' | 'log' | 'approval' | 'activity' | 'plan' | 'widget';
 
+/**
+ * 一条 todo 的可渲染片段。
+ *
+ * 后端从 `[[kind:label]]` 标记里解析出来（`todo-segments.ts`）——`write_todos` 是
+ * deepagents 的内置工具、schema 换不掉，标记是模型唯一能往外带结构的通道。
+ * 没有标记就是单独一段 text，这是默认路径而非异常路径。
+ */
+export type TodoSegment =
+  | { type: 'text'; text: string }
+  | {
+      type: 'chip';
+      /** 芯片里加重的那个动词。 */
+      verb: string;
+      /** 动词之后的部分，可为空。 */
+      rest: string;
+      kind: 'read' | 'write' | 'analyze' | 'search' | 'ask' | 'tool';
+    };
+
 /** A single checklist item in a `plan` message — the live analyze todolist. */
 export interface PlanTodo {
   content: string;
   status: 'pending' | 'in_progress' | 'completed';
+  /** 芯片与纯文本混排。缺席时按 `content` 渲染成一段纯文本。 */
+  segments?: TodoSegment[];
+  /**
+   * 这一步在干哪一类活儿，决定左侧 orb 的形态。
+   *
+   * **由 agent 自己声明**（后端从标记的 kind 派生），不是我们猜的——`agentActivity.ts`
+   * 里那条「不演一个并没有发生的状态」因此仍然成立：现在有真实来源了。
+   */
+  activity?: AgentActivity;
 }
 
 /**
@@ -91,6 +119,8 @@ export interface ChatMessage {
   todos?: PlanTodo[];
   /** present when role === 'plan' and the todolist belongs to a subagent (the `task` tool) */
   subagentName?: string;
+  /** present when role === 'plan' — 本轮开始的时刻，卡片据此走秒。 */
+  startedAt?: number;
   /** present when role === 'widget' — a GenUI interactive card (form / decision) */
   widget?: WidgetInstance;
   /**
