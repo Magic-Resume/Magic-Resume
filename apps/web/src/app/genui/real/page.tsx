@@ -5,6 +5,7 @@ import { ToolChips } from '@magic-resume/genui/beautiful';
 import { useTranslation } from 'react-i18next';
 import ChatThread from '@/app/dashboard/edit/_components/ai/conversation/ChatThread';
 import { toToolChipRows, subjectOf } from '@/app/dashboard/edit/_components/ai/conversation/toolTrace';
+import { WIDGETS, askChoiceKind } from '@/app/dashboard/edit/_components/ai/widgets/registry';
 import type { ChatMessage, PlanTodo } from '@/app/dashboard/edit/_components/ai/types';
 import EVENTS from '../__fixtures__/real-agent-events.json';
 
@@ -21,6 +22,108 @@ import EVENTS from '../__fixtures__/real-agent-events.json';
  */
 
 type AgentEvent = { type: string; payload?: Record<string, unknown> };
+
+/**
+ * 一次中断挂两个闸门动作 → 一张分页卡，两页都答完才算数。
+ *
+ * 这里不发真请求，只把裁决按下标记在页面上：要验的正是「答一页时**不该**续跑」，
+ * 而那件事在真实环境里表现为「什么都没发生」，不摆出来就看不见。
+ */
+function InterruptProbe() {
+  const [decisions, setDecisions] = useState<(boolean | null)[]>([null, null]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 'gate',
+      role: 'approval',
+      content: '想读取你的简历来给建议',
+      approvals: [
+        { requestId: 'req-1', toolName: 'read_resume', scope: 'resume', status: 'pending', slotIndex: 0, question: '允许我读取你的简历吗？' },
+        { requestId: 'req-1', toolName: 'write_resume', scope: 'resume', status: 'pending', slotIndex: 2, question: '允许我直接改写工作经历第 2 段吗？' },
+      ],
+    },
+  ]);
+  const settled = decisions.every((d) => d !== null);
+
+  return (
+    <div>
+      <ChatThread
+        messages={messages}
+        onToggleCanvas={() => undefined}
+        openCanvasSkillId={null}
+        onApproval={(msgId, pageIndex, approved) => {
+          setDecisions((prev) => prev.map((d, i) => (i === pageIndex ? approved : d)));
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId && m.approvals
+                ? {
+                    ...m,
+                    approvals: m.approvals.map((a, i) =>
+                      i === pageIndex ? { ...a, status: approved ? 'approved' : 'denied' } : a,
+                    ),
+                  }
+                : m,
+            ),
+          );
+        }}
+      />
+      <pre className="mt-3 rounded-lg bg-sunk p-3 font-mono text-[11px] leading-relaxed text-secondary">
+        {`slot 0 → ${decisions[0] === null ? '未答' : decisions[0] ? 'approve' : 'reject'}
+slot 2 → ${decisions[1] === null ? '未答' : decisions[1] ? 'approve' : 'reject'}
+续跑：${settled ? '发（两页都答完）' : '不发（还有页没答）'}`}
+        {/* i18n-ignore：仅开发验收页 */}
+      </pre>
+    </div>
+  );
+}
+
+/** 同一个 `ask_choice`，表不表态路由到两张不同的卡。 */
+function ChoiceRoutingProbe() {
+  const [picked, setPicked] = useState<string>('');
+  const rich = {
+    message: '先改哪一段？',
+    options: [
+      { label: '工作经历', why: '这段占篇幅最大，改动收益最高', confidence: 'high' },
+      { label: '项目经历', why: '数字密度够，但结果写得薄', confidence: 'medium' },
+      { label: '技能清单' },
+    ],
+    recommended: 0,
+  };
+  const plain = { message: '先改哪一段？', options: ['工作经历', '项目经历', '技能清单'] };
+
+  const render = (label: string, args: Record<string, unknown>) => {
+    const kind = askChoiceKind(args);
+    const descriptor = WIDGETS[kind];
+    const props = descriptor?.normalize?.(args) ?? args;
+    const Card = descriptor?.component;
+    return (
+      <div className="flex-1">
+        <div className="mb-2 font-mono text-[11px] text-muted">
+          {label} → {kind}
+          {/* i18n-ignore：仅开发验收页 */}
+        </div>
+        {Card && (
+          <Card
+            instance={{ widgetId: label, kind, props, status: 'pending' }}
+            onAction={(r) => setPicked(`${label}: ${r.values?.choice ?? '(取消)'}`)}
+          />
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-start gap-6">
+        {render('表了态', rich)}
+        {render('没表态', plain)}
+      </div>
+      <pre className="mt-3 rounded-lg bg-sunk p-3 font-mono text-[11px] text-secondary">
+        {`提交的 values.choice：${picked || '（还没点）'}`}
+        {/* i18n-ignore：仅开发验收页 */}
+      </pre>
+    </div>
+  );
+}
 
 /**
  * 把一段正文按 chunk 喂进真实的 `ChatThread`，看逐词显影。
@@ -167,6 +270,24 @@ export default function RealDataHarness() {
             流式逐词显影（真的走 ChatThread，不是 demo 组件）{/* i18n-ignore：仅开发验收页 */}
           </div>
           {ready && <StreamingProbe text={messages[3].content ?? ''} />}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-hairline p-4">
+          <div className="mb-3 font-mono text-[11px] uppercase tracking-wider text-muted">
+            HITL：一次中断两个闸门 → 一张分页卡{/* i18n-ignore：仅开发验收页 */}
+          </div>
+          <p className="mb-3 text-[12px] text-muted">
+            判据是「两页都答完才发续跑」。答一页看控制台，不该有请求。
+            {/* i18n-ignore：仅开发验收页 */}
+          </p>
+          {ready && <InterruptProbe />}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-hairline p-4">
+          <div className="mb-3 font-mono text-[11px] uppercase tracking-wider text-muted">
+            ask_choice 表了态 → 推荐卡（没表态仍是一排 chips）{/* i18n-ignore：仅开发验收页 */}
+          </div>
+          {ready && <ChoiceRoutingProbe />}
         </div>
       </div>
     </div>

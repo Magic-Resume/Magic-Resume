@@ -2,6 +2,8 @@ import { ChoiceCard, FormCard } from '@magic-resume/genui';
 import TemplateGalleryCard from './TemplateGalleryCard';
 import FabricationNotice from './FabricationNotice';
 import JobResearchCard from './JobResearchCard';
+import RecommendationChoiceCard from './RecommendationChoiceCard';
+import type { RecommendationOption } from '@magic-resume/genui/beautiful';
 import type {
   WidgetFormField,
   WidgetOption,
@@ -25,18 +27,66 @@ const MAX_OPTION_LABEL = 24;
  * chip row with nothing in it.
  */
 function sanitizeOptions(raw: unknown): WidgetOption[] {
+  return sanitizeRichOptions(raw).map(({ label }) => ({ value: label, label }));
+}
+
+const MAX_OPTION_WHY = 90;
+const CONFIDENCE = new Set(['high', 'medium', 'low']);
+
+/**
+ * 同一份清洗，但保住模型给的理由与置信度。
+ *
+ * `ask_choice` 的选项从「字符串数组」放宽成了「字符串或 `{label, why, confidence}`」，
+ * 两种写法混在一个数组里也合法——所以先在这里统一成一种形状，上面的
+ * `sanitizeOptions` 再把它压回纯标签给不需要理由的卡。
+ *
+ * `why` 也要截断：它和 `label` 一样是模型写的，长度不由我们说了算。
+ */
+function sanitizeRichOptions(raw: unknown): RecommendationOption[] {
   if (!Array.isArray(raw)) return [];
   const seen = new Set<string>();
-  const out: WidgetOption[] = [];
+  const out: RecommendationOption[] = [];
   for (const item of raw) {
-    if (typeof item !== 'string') continue;
-    const label = item.trim().slice(0, MAX_OPTION_LABEL);
+    const source =
+      typeof item === 'string'
+        ? { label: item }
+        : isRecord(item) && typeof item.label === 'string'
+          ? item
+          : null;
+    if (!source) continue;
+    const label = String(source.label).trim().slice(0, MAX_OPTION_LABEL);
     if (!label || seen.has(label)) continue;
     seen.add(label);
-    out.push({ value: label, label });
+    const why =
+      typeof source.why === 'string' && source.why.trim()
+        ? source.why.trim().slice(0, MAX_OPTION_WHY)
+        : undefined;
+    const confidence =
+      typeof source.confidence === 'string' && CONFIDENCE.has(source.confidence)
+        ? (source.confidence as RecommendationOption['confidence'])
+        : undefined;
+    out.push({ label, ...(why ? { why } : {}), ...(confidence ? { confidence } : {}) });
     if (out.length >= MAX_MODEL_OPTIONS) break;
   }
   return out;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * 这次的选择带没带「我推荐哪个」。
+ *
+ * 判据是模型**表了态**：给了 `recommended`，或至少一项写了理由/置信度。没表态就走
+ * 普通的一排 chips——把没有主见的选择渲染成推荐卡，等于替模型编一个它没说过的倾向。
+ */
+function hasRecommendation(
+  options: RecommendationOption[],
+  recommended: unknown,
+): boolean {
+  if (typeof recommended === 'number' && Number.isInteger(recommended)) return true;
+  return options.some((o) => o.why !== undefined || o.confidence !== undefined);
 }
 
 /**
@@ -322,4 +372,34 @@ export const WIDGETS: WidgetRegistry = {
       return { message, options, allowFreeText: props.allowFreeText === true };
     },
   },
+
+  /**
+   * `ask_choice` 表了态的那一支：主推项占满卡面并带理由，其余收进抽屉。
+   *
+   * 它不是一个独立的工具——中断分发时按 `hasRecommendation` 把 `ask_choice` 改写成这个
+   * kind。提交发的仍是 `{ choice }`，所以 HITL 的 `edit` 那条路一行未改。
+   */
+  ask_choice_recommended: {
+    component: RecommendationChoiceCard,
+    interaction: 'resume',
+    normalize: (props) => {
+      const message = typeof props.message === 'string' ? props.message.trim() : '';
+      const options = sanitizeRichOptions(props.options);
+      if (!message || options.length < 2) return null;
+      const raw = props.recommended;
+      const recommended =
+        typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw < options.length
+          ? raw
+          : 0;
+      return { message, options, recommended };
+    },
+  },
 };
+
+/** 中断分发用：这一次 `ask_choice` 该走推荐卡还是普通选择卡。 */
+export function askChoiceKind(args: Record<string, unknown> | undefined): string {
+  const options = sanitizeRichOptions(args?.options);
+  return hasRecommendation(options, args?.recommended)
+    ? 'ask_choice_recommended'
+    : 'ask_choice';
+}

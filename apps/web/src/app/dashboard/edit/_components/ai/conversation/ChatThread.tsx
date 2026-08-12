@@ -10,8 +10,6 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
-  ShieldQuestion,
-  X,
   CornerUpLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,7 +19,12 @@ import { PolarisGlyph } from '../PolarisMark';
 import { WidgetHost } from '@magic-resume/genui';
 import { WIDGETS } from '../widgets/registry';
 import type { ApprovalRequest, ChatMessage, SkillId } from '../types';
-import { Icon, ToolChips } from '@magic-resume/genui/beautiful';
+import {
+  Icon,
+  ToolChips,
+  ApprovalCard as ApprovalPager,
+  type ApprovalQuestion,
+} from '@magic-resume/genui/beautiful';
 import { toToolChipRows } from './toolTrace';
 import TasksCard, {
   PLAN_DWELL_MS,
@@ -32,7 +35,8 @@ import type { WidgetActionResult } from '@magic-resume/genui/contract';
 import ActivityOrb from './ActivityOrb';
 import { activityLabelKey, type AgentActivity } from './agentActivity';
 
-type ApprovalDecision = (msgId: string, approved: boolean) => void;
+/** 审批卡上的一页答完了。一次中断可以带多个动作，所以要带页号。 */
+type ApprovalDecision = (msgId: string, pageIndex: number, approved: boolean) => void;
 
 /**
  * Bot-side avatar. Consecutive bot messages share one avatar: only the first in a
@@ -234,6 +238,15 @@ function ExecCard({
  * Human-in-the-loop approval prompt. The assistant asks before a sensitive action;
  * the user must allow / deny before it continues.
  */
+/**
+ * 这一轮要用户拍的板，一页一个。
+ *
+ * 此前每个待批准的动作各是一张卡，竖着排；用户看不出「这一轮要我拍几个板、拍到第几个
+ * 了」。换成分页卡之后，进度胶囊把它说出来了。
+ *
+ * 这里只做翻译：把中断动作翻成 `ApprovalQuestion`，把「第几页选了什么」翻回
+ * approve/reject。判定与续跑都在 shell 那边（`handleApproval` → `answerInterrupt`）。
+ */
 function ApprovalCard({
   message,
   onApproval,
@@ -242,67 +255,47 @@ function ApprovalCard({
   onApproval?: ApprovalDecision;
 }) {
   const { t } = useTranslation();
-  const a = message.approval as ApprovalRequest | undefined;
-  if (!a) return null;
-  const decide = (approved: boolean) => onApproval?.(message.id, approved);
+  const pages = message.approvals;
+  if (!pages?.length) return null;
+
+  const allow = t('aiLab.chat.approval.allow');
+  const deny = t('aiLab.chat.approval.deny');
+
+  /** 已答的那一页显示什么。读简历还有「正在读 / 已读取」两级进度。 */
+  const answeredOf = (a: ApprovalRequest): string | undefined => {
+    if (a.status === 'pending') return undefined;
+    if (a.status === 'expired') return t('aiLab.widgets.form.expired');
+    if (a.status === 'denied') return t('aiLab.chat.approval.denied');
+    if (a.readState === 'read') return t('aiLab.chat.approval.read');
+    if (a.readState === 'reading') return t('aiLab.chat.approval.reading');
+    return t('aiLab.chat.approval.allowed');
+  };
+
+  const questions: ApprovalQuestion[] = pages.map((a) => ({
+    q: a.question || message.content || t('aiLab.chat.approval.defaultMessage'),
+    type: 'radio',
+    options: [allow, deny],
+    answered: answeredOf(a),
+  }));
 
   return (
     <div className="flex items-start">
-      <div className="min-w-[260px] max-w-md rounded-2xl border border-sky-500/30 bg-sky-500/[0.07] px-4 py-3.5">
-        <div className="flex items-start gap-2 text-[13px] text-sky-100 leading-relaxed">
-          <ShieldQuestion size={15} className="text-sky-400 shrink-0 mt-0.5" />
-          <span className="flex-1">{message.content || t('aiLab.chat.approval.defaultMessage')}</span>
-        </div>
-        {a.status === 'pending' ? (
-          <div className="mt-3 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => decide(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-xs font-medium text-sky-100 transition-colors cursor-pointer"
-            >
-              <Check size={12} />
-              {t('aiLab.chat.approval.allow')}
-            </button>
-            <button
-              type="button"
-              onClick={() => decide(false)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X size={12} />
-              {t('aiLab.chat.approval.deny')}
-            </button>
-          </div>
-        ) : (
-          <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-neutral-500">
-            {a.status === 'expired' ? (
-              <>
-                <X size={11} />
-                {t('aiLab.widgets.form.expired')}
-              </>
-            ) : a.status === 'denied' ? (
-              <>
-                <X size={11} />
-                {t('aiLab.chat.approval.denied')}
-              </>
-            ) : a.readState === 'read' ? (
-              <>
-                <Check size={11} className="text-emerald-500/80" />
-                {t('aiLab.chat.approval.read')}
-              </>
-            ) : a.readState === 'reading' ? (
-              <>
-                <BreathGlyph size={11} className="text-sky-400/70" />
-                <span className="ai-narrate">{t('aiLab.chat.approval.reading')}</span>
-              </>
-            ) : (
-              <>
-                <Check size={11} className="text-emerald-500/80" />
-                {t('aiLab.chat.approval.allowed')}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+      <ApprovalPager
+        questions={questions}
+        // 会话从本地记录恢复时后端线程早已回收，续跑必失败——那时整张卡只能读不能点。
+        disabled={pages.every((a) => a.status === 'expired')}
+        labels={{
+          previous: t('aiLab.chat.approval.previous'),
+          next: t('aiLab.chat.approval.next'),
+          send: t('aiLab.chat.approval.send'),
+          goTo: t('aiLab.chat.approval.goTo'),
+          freeText: '',
+          freeTextAria: '',
+        }}
+        onAnswer={(pageIndex, answer) =>
+          onApproval?.(message.id, pageIndex, answer[0] === allow)
+        }
+      />
     </div>
   );
 }

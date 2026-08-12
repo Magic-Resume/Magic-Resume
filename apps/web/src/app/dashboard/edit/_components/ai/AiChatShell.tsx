@@ -10,10 +10,10 @@ import { toast } from 'sonner';
 import { InfoType, Resume, Section } from '@/types/frontend/resume';
 import { SKILLS } from './skills/registry';
 import { GenUIProvider } from '@magic-resume/genui';
-import { WIDGETS } from './widgets/registry';
+import { WIDGETS, askChoiceKind } from './widgets/registry';
 import { AI_WIDGET_SOURCES } from './widgets/sources';
 import type { WidgetActionResult, WidgetEnvelope, WidgetKind } from '@magic-resume/genui/contract';
-import type { CanvasState, ChatMessage, PlanTodo, SkillId } from './types';
+import type { ApprovalRequest, CanvasState, ChatMessage, PlanTodo, SkillId } from './types';
 import ChatThread from './conversation/ChatThread';
 import Composer from './conversation/Composer';
 import PolarisPerch from './conversation/PolarisPerch';
@@ -337,7 +337,9 @@ export default function AiChatShell({
     if (staleSweptRef.current || messages.length === 0) return;
     staleSweptRef.current = true;
     const hasStale = messages.some(
-      (m) => m.widget?.status === 'pending' || m.approval?.status === 'pending',
+      (m) =>
+        m.widget?.status === 'pending' ||
+        m.approvals?.some((a) => a.status === 'pending'),
     );
     if (!hasStale) return;
     setMessages((prev) =>
@@ -345,8 +347,13 @@ export default function AiChatShell({
         if (m.widget?.status === 'pending') {
           return { ...m, widget: { ...m.widget, status: 'expired' as const } };
         }
-        if (m.approval?.status === 'pending') {
-          return { ...m, approval: { ...m.approval, status: 'expired' as const } };
+        if (m.approvals?.some((a) => a.status === 'pending')) {
+          return {
+            ...m,
+            approvals: m.approvals.map((a) =>
+              a.status === 'pending' ? { ...a, status: 'expired' as const } : a,
+            ),
+          };
         }
         return m;
       }),
@@ -449,8 +456,14 @@ export default function AiChatShell({
     (msgId: string, readState: 'reading' | 'read') => {
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === msgId && m.approval
-            ? { ...m, approval: { ...m.approval, readState } }
+          m.id === msgId && m.approvals
+            ? {
+                ...m,
+                // 只动读简历那一页：同一张卡上可能还有别的闸门，它们的状态与这次读取无关。
+                approvals: m.approvals.map((a) =>
+                  a.toolName === 'read_resume' ? { ...a, readState } : a
+                ),
+              }
             : m
         )
       );
@@ -573,6 +586,9 @@ export default function AiChatShell({
               // 「问答」模式承诺了不读简历。弹一张「要不要读简历」的卡等于把已经作过的
               // 承诺又推回给用户,所以这里直接替他拒掉,并把理由带给模型让它换个说法。
               const autoRejected: { requestId: string; index: number }[] = [];
+              // 闸门类的动作攒起来发**一张分页卡**，不是一个动作一张。有表单/选择卡的
+              // 动作仍各自成卡——任意字段布局塞不进「单选 + 一个自由输入」的一页。
+              const gates: ApprovalRequest[] = [];
               actions.forEach((action, index) => {
                 const slot = { requestId, index };
                 const toolName = action.name;
@@ -580,30 +596,47 @@ export default function AiChatShell({
                   autoRejected.push(slot);
                   return;
                 }
-                if (toolName && WIDGETS[toolName]) {
+                // 同一个工具可以按参数路由到不同的卡：`ask_choice` 表了态就走推荐卡。
+                // `toolName` 仍带上真实工具名——`edit` 续跑要靠它指回那个工具。
+                const kind =
+                  toolName === 'ask_choice' ? askChoiceKind(action.args) : toolName;
+                if (kind && WIDGETS[kind]) {
                   addMessage({
                     id: nanoid(),
                     role: 'widget',
                     interruptSlot: slot,
                     widget: {
                       widgetId: `${requestId}#${index}`,
-                      kind: toolName as WidgetKind,
+                      kind: kind as WidgetKind,
+                      toolName,
                       props: action.args ?? {},
                       status: 'pending',
                     },
                   });
                 } else {
-                  const approvalId = nanoid();
-                  if (toolName === 'read_resume') readApprovalRef.current = approvalId;
-                  addMessage({
-                    id: approvalId,
-                    role: 'approval',
-                    interruptSlot: slot,
-                    content: p.reason || '想读取你的简历来给建议',
-                    approval: { requestId, toolName, scope: 'resume', status: 'pending' },
+                  gates.push({
+                    requestId,
+                    toolName,
+                    scope: 'resume',
+                    status: 'pending',
+                    slotIndex: index,
+                    question: typeof action.args?.reason === 'string' ? action.args.reason : undefined,
                   });
                 }
               });
+              if (gates.length) {
+                const approvalId = nanoid();
+                // 读简历那一页的进度（正在读→已读取）要能找回这张卡。
+                if (gates.some((g) => g.toolName === 'read_resume')) {
+                  readApprovalRef.current = approvalId;
+                }
+                addMessage({
+                  id: approvalId,
+                  role: 'approval',
+                  content: p.reason || '想读取你的简历来给建议',
+                  approvals: gates,
+                });
+              }
               if (autoRejected.length) {
                 // 延到本轮事件循环之后:裁决会另起一条续流并 abort 当前 controller,
                 // 而我们此刻正站在它的 for await 里。等这条流自然收尾再动手。
@@ -1285,18 +1318,27 @@ export default function AiChatShell({
     [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId]
   );
 
-  // 用户回答了审批卡：带着决定继续会话，续流交给同一个消费者。
+  // 审批卡上的**一页**答完了：裁决按该页自己的下标归位，全答完才续跑。
   const handleApproval = useCallback(
-    (msgId: string, approved: boolean) => {
+    (msgId: string, pageIndex: number, approved: boolean) => {
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === msgId && m.approval
-            ? { ...m, approval: { ...m.approval, status: approved ? 'approved' : 'denied' } }
+          m.id === msgId && m.approvals
+            ? {
+                ...m,
+                approvals: m.approvals.map((a, i) =>
+                  i === pageIndex ? { ...a, status: approved ? 'approved' : 'denied' } : a
+                ),
+              }
             : m
         )
       );
-      const slot = messagesRef.current.find((m) => m.id === msgId)?.interruptSlot;
-      answerInterrupt(slot, { type: approved ? 'approve' : 'reject' });
+      const page = messagesRef.current.find((m) => m.id === msgId)?.approvals?.[pageIndex];
+      if (!page) return;
+      answerInterrupt(
+        { requestId: page.requestId, index: page.slotIndex },
+        { type: approved ? 'approve' : 'reject' }
+      );
     },
     [answerInterrupt, setMessages]
   );
@@ -1496,7 +1538,9 @@ export default function AiChatShell({
               ? {
                   type: 'edit',
                   editedAction: {
-                    name: w?.kind ?? 'request_form',
+                    // 报真实工具名：卡的 kind 可能是按参数路由出来的别名
+                    // （ask_choice_recommended），拿它去续跑会指向一个不存在的工具。
+                    name: w?.toolName ?? w?.kind ?? 'request_form',
                     args: { ...(w?.props ?? {}), values: result.values ?? {} },
                   },
                 }

@@ -88,6 +88,16 @@ export interface ApprovalRequest {
    * spawning a separate activity line.
    */
   readState?: 'reading' | 'read';
+  /**
+   * 这一页对应中断里的第几个动作。
+   *
+   * 一次中断可以带多个动作，续跑要求**每个动作一个裁决**（引擎会拒绝数量不匹配的
+   * 续跑）。此前每个动作各发一张卡、各带一个 `interruptSlot`；现在闸门类的动作收成
+   * 一张分页卡，下标就得跟着页走。
+   */
+  slotIndex: number;
+  /** 这一页问什么（模型给的 reason，缺省由渲染层兜底）。 */
+  question?: string;
 }
 
 export interface ChatMessage {
@@ -113,8 +123,13 @@ export interface ChatMessage {
   streamed?: boolean;
   /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */
   reasoning?: string;
-  /** present when role === 'approval' — the pending tool-approval prompt */
-  approval?: ApprovalRequest;
+  /**
+   * present when role === 'approval' —— 这一次中断里所有走闸门的动作，一页一个。
+   *
+   * 是数组而不是单个：一次中断本来就可能挂着几个待拍板的动作，此前它们被摊成几张
+   * 竖着排的卡，用户看不出「这一轮要我拍几个板、拍到第几个了」。
+   */
+  approvals?: ApprovalRequest[];
   /** present when role === 'plan' — the live review checklist (analyze / subagent todolist) */
   todos?: PlanTodo[];
   /** present when role === 'plan' and the todolist belongs to a subagent (the `task` tool) */

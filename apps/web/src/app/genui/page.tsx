@@ -98,11 +98,15 @@ const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
     'ApprovalCard',
     () => (
       <Beautiful.ApprovalCard
-        submitLabel="确认"
         freeTextPlaceholder="或者直接说…" /* i18n-ignore：开发陈列页样例 */
+        labels={{
+          previous: '上一个', next: '下一个', send: '确认',
+          goTo: '第 {{n}} 个', freeText: '其他', freeTextAria: '自己写',
+        }} /* i18n-ignore：开发陈列页样例 */
         questions={[
           { q: '要把工作经历改得更量化吗？', type: 'radio', options: ['好，改', '先看看建议', '不用'] },
-        ]}
+          { q: '允许读取你的简历吗？', type: 'radio', options: ['允许', '拒绝'] },
+        ]} /* i18n-ignore：开发陈列页样例 */
       />
     ),
     'props',
@@ -137,7 +141,26 @@ const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
     'props',
   ],
   ['StreamingText', () => <Beautiful.StreamingText />, 'demo'],
-  ['RecommendationCard', () => <Beautiful.RecommendationCard />, 'demo'],
+  [
+    'RecommendationCard',
+    () => (
+      <Beautiful.RecommendationCard
+        message="先改哪一段？" /* i18n-ignore：开发陈列页样例 */
+        recommended={0}
+        options={[
+          { label: '工作经历', why: '这段占篇幅最大，改动收益最高', confidence: 'high' },
+          { label: '项目经历', why: '数字密度够，但结果写得薄', confidence: 'medium' },
+          { label: '技能清单', confidence: 'low' },
+        ]} /* i18n-ignore：开发陈列页样例 */
+        labels={{
+          alternatives: '其他方案', others: '别的选择',
+          accept: '就这个', accepted: '已选择',
+          confidence: { high: '很有把握', medium: '需要你确认', low: '信息不足', none: '没说' },
+        }} /* i18n-ignore：开发陈列页样例 */
+      />
+    ),
+    'props',
+  ],
   ['ChatComposer', () => <Beautiful.ChatComposer />, 'demo'],
   ['DiffTable', () => <Beautiful.DiffTable />, 'demo'],
   ['RecordsTable', () => <Beautiful.RecordsTable />, 'demo'],

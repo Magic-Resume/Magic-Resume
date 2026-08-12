@@ -80,6 +80,12 @@ export interface WidgetInstance {
   /** upsert key — the interrupt requestId (or an emit widgetId). */
   widgetId: string;
   kind: WidgetKind;
+  /**
+   * 暂停在哪个工具上。**只有当 kind 不等于工具名时才需要给**：同一个工具可以按参数
+   * 路由到不同的卡（`ask_choice` 有没有推荐 → 两种 kind），而 HITL 的 `edit` 必须
+   * 报回真实的工具名，否则续跑会指向一个不存在的工具。
+   */
+  toolName?: string;
   props: Record<string, unknown>;
   /**
    * `expired` is its own state rather than being folded into `cancelled`: a card

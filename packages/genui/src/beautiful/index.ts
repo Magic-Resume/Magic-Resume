@@ -23,5 +23,11 @@ export type { CodeBlockProps } from './CodeBlock';
 export type { LoadingStateProps } from './LoadingState';
 export type { ToolChipRow, ToolChipDetail, ToolChipDiff, ToolChipsProps } from './ToolChips';
 export type { TaskRowItem, TaskRowDetail } from './TaskRows';
-export type { ApprovalQuestion, ApprovalCardProps } from './ApprovalCard';
+export type { ApprovalQuestion, ApprovalLabels, ApprovalCardProps } from './ApprovalCard';
+export type {
+  RecommendationOption,
+  RecommendationLabels,
+  RecommendationConfidence,
+  RecommendationCardProps,
+} from './RecommendationCard';
 export type { ContextChunk } from './ContextCards';

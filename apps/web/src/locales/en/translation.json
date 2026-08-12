@@ -1764,7 +1764,11 @@
         "denied": "Denied",
         "read": "Resume read",
         "reading": "Reading resume...",
-        "allowed": "Read allowed"
+        "allowed": "Read allowed",
+        "previous": "Previous",
+        "next": "Next",
+        "send": "Confirm",
+        "goTo": "Question {{n}}"
       },
       "tasks": "Tasks",
       "completed": "Completed",
@@ -1876,6 +1880,18 @@
           "evidence_to_add": "Evidence to add (tap one)",
           "recruiter_questions": "Ask the recruiter (tap one)",
           "preparation_plan": "Prep plan"
+        }
+      },
+      "recommendation": {
+        "alternatives": "Alternatives",
+        "others": "Other options",
+        "accept": "Go with this",
+        "accepted": "Chosen",
+        "confidence": {
+          "high": "High confidence",
+          "medium": "Needs your call",
+          "low": "Not enough to go on",
+          "none": "No signal"
         }
       }
     },
