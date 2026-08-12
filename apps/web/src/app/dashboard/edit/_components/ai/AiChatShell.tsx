@@ -511,6 +511,9 @@ export default function AiChatShell({
       pendingOnQuota?: PendingRun,
     ) => {
       const aiId = nanoid();
+      // 本轮模型给的逐条改动理由（`explain_changes`）。按 `section/itemId` 配到评审卡上；
+      // 它先于 `resume_update` 到达，所以攒在这一轮的作用域里。
+      const changeNotes = new Map<string, string>();
       // 气泡延迟到首个 chunk 才创建，好让 read_resume 活动行落在回复上方。
       let bubbleCreated = false;
       const ensureBubble = () => {
@@ -825,6 +828,11 @@ export default function AiChatShell({
                 )
               );
             }
+          } else if (ev.type === 'resume_change_notes') {
+            const notes = (ev.payload as { notes?: { section?: string; itemId?: string; why?: string }[] } | undefined)?.notes;
+            for (const n of notes ?? []) {
+              if (n.section && n.itemId && n.why) changeNotes.set(`${n.section}/${n.itemId}`, n.why);
+            }
           } else if (ev.type === 'resume_write_failed') {
             // 服务端断言：本轮试过改简历、一次都没成功。这条事件存在的全部意义，就是不让
             // 模型那句「我已经改好了」成为用户唯一能看到的信息。
@@ -866,6 +874,7 @@ export default function AiChatShell({
                 proposedSections: resolved.proposedSections,
                 targetedSelection: resolved.targetedSelection,
                 nonce: batchNonce.current,
+                changeNotes,
               });
             } else {
               warnDropped('收到一份读不懂的简历改动，已忽略', 'malformed', {
@@ -906,6 +915,7 @@ export default function AiChatShell({
                   proposedSections: sections,
                   targetedSelection: batch.targetedSelection,
                   nonce: batchNonce.current,
+                  changeNotes,
                 });
               } else if (activeSkillRef.current === 'create') {
                 // 引导创建：整份新简历没有 before 可 diff，草稿条才是它的正当用途。
@@ -922,7 +932,11 @@ export default function AiChatShell({
                 const changed = diffResumeToChanges(
                   resumeData.sections,
                   sections,
-                  'optimize'
+                  'optimize',
+                  undefined,
+                  undefined,
+                  undefined,
+                  changeNotes
                 );
                 if (!changed.length) {
                   warnDropped('这次没有产生可评审的改动', 'no_changes');
@@ -938,6 +952,7 @@ export default function AiChatShell({
                     kind: 'optimize',
                     proposedSections: sections,
                     nonce: batchNonce.current,
+                    changeNotes,
                   });
                 }
               }
@@ -1088,6 +1103,7 @@ export default function AiChatShell({
       }
     },
     [
+      t,
       addMessage,
       warnDropped,
       logChange,

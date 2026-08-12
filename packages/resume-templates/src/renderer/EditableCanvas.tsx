@@ -371,6 +371,10 @@ function PendingChangeCard({
           borderTop: '1px solid #f0f0f0',
         }}
       >
+        {/* 没有理由就不占这一行：一句「AI 按目标岗位优化」对每条改动都成立，因此对每条
+            都没有信息量，还会让人以为已经有人替他判断过了。理由只有模型知道，它经
+            `explain_changes` 送来；送不到就诚实地空着。 */}
+        {pending.rationale ? (
         <button
           type="button"
           onClick={() => pending.rationaleDetail && setExpanded((v) => !v)}
@@ -403,6 +407,7 @@ function PendingChangeCard({
             />
           )}
         </button>
+        ) : null}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 2, flexShrink: 0 }}>
           <CtrlButton onClick={() => ctx.onAccept(path)} label="接受" color={INS_COLOR}>
             <Check size={15} strokeWidth={2.4} />

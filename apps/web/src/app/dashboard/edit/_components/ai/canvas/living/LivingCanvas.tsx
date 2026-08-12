@@ -58,6 +58,8 @@ export type BatchRequest = {
   proposedSections?: Section;
   /** Present when a chat turn started from a text selection. */
   targetedSelection?: TargetedSelectionDiff;
+  /** 模型给的逐条改动理由，键为 `section/itemId`（`explain_changes`）。 */
+  changeNotes?: Map<string, string>;
 };
 export type FocusRequest = { path: string; nonce: number };
 
@@ -634,7 +636,8 @@ export default function LivingCanvas({
       batchRequest.kind,
       batchRequest.lang,
       batchRequest.targetedSelection,
-      diagnostics
+      diagnostics,
+      batchRequest.changeNotes
     );
     // 整条链路的终点。此前这里直接 return——画布不动、评审条不出现、一句提示都没有，
     // 而聊天里模型已经说「改好了」。这就是用户报的那个症状最后落地的地方。

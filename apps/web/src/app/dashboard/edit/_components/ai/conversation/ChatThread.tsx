@@ -39,6 +39,29 @@ import { activityLabelKey, type AgentActivity } from './agentActivity';
 type ApprovalDecision = (msgId: string, pageIndex: number, approved: boolean) => void;
 
 /**
+ * 思维链 → 可读的行。
+ *
+ * 推理模型（gpt-5.6 一类）回传的是一串 `**Planning resume summary revision**` 这样的
+ * 小标题，之间隔着空行。原来整段按 `whitespace-pre-wrap` 直出，于是屏幕上是一列带着
+ * 星号、彼此隔开一大截的英文——星号是给 markdown 看的，不是给人看的。
+ *
+ * 不上 markdown 渲染器：思维链只有「标题行 + 普通行」两种形态，为它拖一整套解析器
+ * 进来（还要处理列表、代码块、表格）不划算。空行丢掉，间距交给 CSS。
+ */
+function reasoningLines(text: string): { text: string; strong: boolean }[] {
+  return text
+    .split('\n')
+    .map((raw) => raw.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const bold = /^\*\*(.+?)\*\*$/.exec(line);
+      return bold
+        ? { text: bold[1], strong: true }
+        : { text: line.replace(/\*\*(.+?)\*\*/g, '$1'), strong: false };
+    });
+}
+
+/**
  * Bot-side avatar. Consecutive bot messages share one avatar: only the first in a
  * run renders it, the rest pass `show={false}` and get a spacer so their text stays
  * aligned under the same column.
@@ -445,9 +468,13 @@ function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
               用户要的。不用 scrollbar-hide：一个能滚的区域藏掉滚动条就等于没了可滚的提示。 */}
           <div
             ref={scrollRef}
-            className="mt-1.5 max-h-[200px] overflow-y-auto whitespace-pre-wrap border-l border-white/[0.07] pl-3 text-[12px] leading-relaxed text-neutral-500"
+            className="mt-1.5 max-h-[200px] overflow-y-auto border-l border-white/[0.07] pl-3 text-[12px] leading-relaxed text-neutral-500"
           >
-            {text}
+            {reasoningLines(text).map((line, i) => (
+              <p key={i} className={cn('my-1 first:mt-0 last:mb-0', line.strong && 'font-medium text-neutral-400')}>
+                {line.text}
+              </p>
+            ))}
           </div>
         </div>
       </div>

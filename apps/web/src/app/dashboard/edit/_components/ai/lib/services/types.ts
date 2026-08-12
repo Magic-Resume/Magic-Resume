@@ -34,6 +34,13 @@ export type AgentEventType =
   | 'fit_report'
   /** deterministic anti-fabrication gate flagged unsourced names in an edit */
   | 'resume_verification'
+  /**
+   * 逐条改动的理由（`explain_changes`）。
+   *
+   * 整篇改写此前给每条改动盖同一句「AI 按目标岗位优化」——对每条都成立，因此对每条都
+   * 没有信息量。理由只有模型知道，所以它必须由模型说出来。
+   */
+  | 'resume_change_notes'
   | 'run_cancelled'
   | 'translation_result'
   | 'pdf_result'

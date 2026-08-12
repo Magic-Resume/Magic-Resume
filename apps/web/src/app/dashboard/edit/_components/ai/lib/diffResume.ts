@@ -69,7 +69,9 @@ export function diffResumeToChanges(
   kind: BatchKind,
   lang?: string,
   targetedSelection?: TargetedSelectionDiff,
-  diagnostics?: DiffDiagnostics
+  diagnostics?: DiffDiagnostics,
+  /** 模型给的逐条理由，键为 `section/itemId`。配不上的条目宁可没有理由。 */
+  changeNotes?: Map<string, string>
 ): PendingChange[] {
   if (targetedSelection) {
     const targeted = diffTargetedSelection(current, proposed, kind, lang, targetedSelection);
@@ -77,7 +79,11 @@ export function diffResumeToChanges(
   }
 
   const out: PendingChange[] = [];
-  const rationale = kind === 'translate' ? `翻译为 ${lang || 'English'}` : 'AI 按目标岗位优化';
+  // 翻译只有一个理由，说出来是准确的；改写没有——每条改动的理由只有模型知道，
+  // 它经 `explain_changes` 送过来（`changeNotes`）。拿不到就**留空**：
+  // 「AI 按目标岗位优化」对每条改动都成立，因此对每条改动都没有信息量，
+  // 用户没法据此判断哪条值得接受，而一句听起来像理由的话会让他以为判断过了。
+  const fallbackRationale = kind === 'translate' ? `翻译为 ${lang || 'English'}` : '';
   for (const sectionKey of Object.keys(proposed)) {
     const proposedItems = proposed[sectionKey];
     const currentItems = current[sectionKey];
@@ -111,7 +117,8 @@ export function diffResumeToChanges(
           target,
           before,
           after,
-          rationale,
+          rationale:
+            changeNotes?.get(`${sectionKey}/${String(pItem.id)}`) ?? fallbackRationale,
           action: kind === 'translate' ? 'translate' : 'rewrite',
           lang,
           seed: 0,
