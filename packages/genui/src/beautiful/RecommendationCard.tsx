@@ -108,7 +108,10 @@ export default function RecommendationCard({
         </p>
       </div>
 
-      {/* alternatives drawer — a distinctly new section of the card */}
+      {/* alternatives drawer — a distinctly new section of the card
+          底色用**叠加**（bg-hover）而不是原版的 `bg-inset`：`inset` 在我们的深色主题里是
+          0.12，比页面底（0.145）还暗——「凹」直接凹穿了页面，卡片下半截和背景糊成一片。
+          叠加在两个主题里方向自动相反：深色叠白、浅色叠黑，都是相对卡片的一层浅浮雕。 */}
       {others.length > 0 && (
         <div
           className="grid transition-[grid-template-rows,opacity] duration-300"
@@ -119,7 +122,7 @@ export default function RecommendationCard({
           }}
         >
           <div className="overflow-hidden">
-            <div className="border-t border-line bg-inset px-2 py-2">
+            <div className="border-t border-line bg-hover px-2 py-2">
               <p className="px-1.5 pb-1 text-[11px] font-medium text-ink-3">{labels.others}</p>
               {others.map(({ o, i }) => {
                 const s = o.confidence ? SIGNAL[o.confidence] : { bars: 0, tone: "var(--ink-3)" };
@@ -133,7 +136,7 @@ export default function RecommendationCard({
                       setOpen(false);
                     }}
                     className="flex w-full items-center gap-2.5 rounded-control px-1.5 py-1.5
-                      text-left transition-colors duration-100 enabled:hover:bg-hover disabled:opacity-50"
+                      text-left transition-colors duration-100 enabled:hover:bg-hover-2 disabled:opacity-50"
                   >
                     <Meter signal={s.bars} tone={s.tone} />
                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">{o.label}</span>
@@ -148,7 +151,7 @@ export default function RecommendationCard({
         </div>
       )}
 
-      <div className="primitive-card-footer flex items-center justify-between gap-3 border-t border-line bg-inset">
+      <div className="primitive-card-footer flex items-center justify-between gap-3 border-t border-line bg-hover">
         <span className="flex items-center gap-2">
           <Meter signal={signal.bars} tone={signal.tone} />
           <span className="text-[12.5px] font-medium text-ink-2">{confidenceLabel}</span>
@@ -162,7 +165,7 @@ export default function RecommendationCard({
               onClick={() => setOpen((current) => !current)}
               className={`h-7 rounded-control px-2.5 text-[12.5px] font-medium shadow-btn
                 transition-[background-color,transform] duration-100 active:scale-[0.96]
-                ${open ? "bg-hover text-ink" : "bg-surface text-ink hover:bg-hover"}`}
+                ${open ? "bg-hover-2 text-ink" : "bg-surface text-ink hover:bg-hover-2"}`}
             >
               {labels.alternatives}
             </button>
