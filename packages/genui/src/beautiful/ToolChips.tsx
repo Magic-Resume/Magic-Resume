@@ -101,10 +101,14 @@ export default function ToolChips({ rows, diffs = [], working = false, title }: 
                   </svg>
                 </span>
                 <span className="shrink-0 text-[12.5px] font-medium text-ink">{row.label}</span>
+                {/* 原版是 `flex-1`：芯片撑满整行。他们的示例里装的是长文件路径，撑满看着刚好；
+                    我们装的是 `resume.json` 这种短词，撑满就成了一个几乎全空的框——再叠上
+                    描边和输入框底色，它读起来像个禁用的输入框，不像标签。改成裹住内容，
+                    长路径仍靠 max-w-full + truncate 收住。 */}
                 {row.chip ? <span
-                  className={`inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-hover-2 px-1.5
+                  className={`inline-flex h-5.5 min-w-0 max-w-full cursor-pointer items-center truncate rounded-chip bg-hover-2 px-1.5
                     text-[11.5px] text-[#43464c] shadow-hairline transition-colors duration-100 hover:bg-line-strong
-                    dark:bg-field dark:text-ink-2 dark:hover:bg-hover
+                    dark:bg-hover-2 dark:text-ink-2 dark:shadow-none dark:hover:bg-hover
                     ${row.mono ? "font-mono" : ""}`}
                 >
                   {row.chip}

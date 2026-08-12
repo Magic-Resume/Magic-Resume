@@ -2089,3 +2089,52 @@ button {
   .records-header-button { display: inline-flex; align-items: center; gap: 0.25rem; }
   .records-header-icon { opacity: 0.5; }
 }
+
+/* ── Beautiful UI 的关键帧 ────────────────────────────────────────────────
+   这批组件用内联 `animation: fade-up ...` 声明入场，关键帧却在它们站点的 CSS 里——
+   我第一次只搬了令牌，没搬关键帧。缺了它们 CSS 不报错也不回退，**动画静默不播**：
+   行不再逐条递进、芯片不再弹出、加载标签不再流光，整块看起来是死的。
+
+   名字必须与组件里内联的字符串逐字一致，改名就等于再关一次。 */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 「文字从模糊里显影」——流式正文逐词入场用的就是它。这是本仓少见的 filter 动画
+   （设计基线是只动 transform/opacity），留着是因为它正是这套组件的手感来源。 */
+@keyframes stream-in {
+  from { opacity: 0; filter: blur(4px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* 配 `background-size: 200% 100%` 的渐变文字扫光：正在进行时的唯一动态信号。 */
+@keyframes shimmer-text {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 入场动画整体停掉，但**终态必须是可见的**——`both` 会把元素钉在 from 那一帧，
+     直接 `animation: none` 会让它们永远停在 opacity 0。 */
+  [style*="fade-up"],
+  [style*="fade-in"],
+  [style*="pop-in"],
+  [style*="stream-in"],
+  [style*="shimmer-text"] {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}

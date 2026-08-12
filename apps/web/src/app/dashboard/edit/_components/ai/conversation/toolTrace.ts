@@ -11,16 +11,19 @@ import type { ToolChipRow } from '@magic-resume/genui/beautiful';
  * 假装我们知道它在做什么。
  */
 
-/** 工具名 → 芯片图标键。`Icons` 只有 think / write / run / read 四个。 */
+/** 工具名 → 芯片图标键，见 `genui/beautiful/icons.tsx`。 */
 const TOOL_ICON: Record<string, string> = {
   read_resume: 'read',
   write_resume: 'write',
-  edit_file: 'write',
+  edit_file: 'edit',
   write_file: 'write',
   read_file: 'read',
-  analyze_resume: 'think',
-  evaluate_fit: 'think',
-  web_search: 'read',
+  analyze_resume: 'analyze',
+  evaluate_fit: 'analyze',
+  web_search: 'search',
+  ask_choice: 'ask',
+  request_form: 'ask',
+  push_ui: 'tool',
 };
 
 /** 工具名 → 动作词的 i18n key 后缀。表里没有的直接用工具名。 */
@@ -82,7 +85,11 @@ export function subjectOf(args: unknown): string | undefined {
   for (const key of ['file_path', 'path', 'query', 'section', 'target']) {
     const v = a[key];
     if (typeof v === 'string' && v.trim()) {
-      // 路径只留文件名：`/workspace/resume.json` 在芯片里显示成 `resume.json`。
+      // 技能文件取技能名而不是文件名：一屏的 `SKILL.md` 长得一模一样，对求职者也
+      // 没有任何信息量——他关心的是「在用哪个技能」。
+      const skill = v.match(/\/skills\/([^/]+)\//i);
+      if (skill) return skill[1];
+      // 其余路径只留文件名：`/workspace/resume.json` 在芯片里显示成 `resume.json`。
       return v.split('/').filter(Boolean).pop() ?? v;
     }
   }
