@@ -11,5 +11,8 @@
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  // _vendor 是 Beautiful UI 的未改动原件，只用于升级时和我们改过的版本做对比。
+  // 它们是自演示 demo（内置假数据、自己跑定时器），不该进构建也不该被引用。
+  "exclude": ["src/beautiful/_vendor/**"]
 }

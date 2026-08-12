@@ -135,6 +135,8 @@
   --surface-raised: oklch(0.205 0 0);      /* ≈ #171717 面板/卡片 */
   --surface-overlay: oklch(0.18 0 0 / 0.72);/* 浮层/磨砂 */
   --surface-paper: oklch(0.995 0 0);       /* 简历画布,恒定近白(不随主题) */
+  --surface-hover: oklch(1 0 0 / 0.06);    /* 交互态叠加,不是一个新的面 */
+  --surface-hover-2: oklch(1 0 0 / 0.10);  /* 更强一档 */
   --border-hairline: oklch(1 0 0 / 0.08);  /* 分隔/描边 */
   --border-strong: oklch(1 0 0 / 0.16);    /* 输入框/强边界 */
   --text-primary: oklch(0.93 0 0);         /* ≈ #ededed 正文 */
@@ -171,6 +173,8 @@
   --surface-raised: oklch(0.992 0.002 85); /* ≈ #FDFCFA 面板/卡片 */
   --surface-overlay: oklch(1 0 0 / 0.86);  /* 暖白 frost */
   --surface-paper: oklch(0.995 0 0);       /* 简历画布,恒定近白 */
+  --surface-hover: oklch(0.2 0.02 85 / 0.04);   /* 暖底上叠黑 */
+  --surface-hover-2: oklch(0.2 0.02 85 / 0.07);
   --border-hairline: oklch(0.90 0.004 85); /* ≈ #E4E0D9 */
   --border-strong: oklch(0.83 0.006 85);   /* ≈ #CFC9BF */
   --text-primary: oklch(0.27 0.01 85);     /* ≈ #2B2723 暖炭 */
@@ -247,6 +251,38 @@
 .font-jetbrains-mono { font-family: var(--font-jetbrains-mono); }
 .font-source-code-pro { font-family: var(--font-source-code-pro); }
 
+
+/* ── Beautiful UI 的原始 CSS 变量 ─────────────────────────────────────────
+   `@theme` 里的别名只生成**工具类**（`text-ink`、`bg-surface`…）。而那批组件在
+   **内联 style 里直接写 `var(--ink)` / `var(--line)`**（渐变、SVG stroke、动态高度
+   都得这么写），共 56 处——不定义这些同名原始变量，它们全部解析成空值：
+   LoadingState 的标签是一段 `bg-clip-text` 渐变，两端颜色都没了就等于隐形。
+
+   定义在 :root 与 .light 上，跟着主题走。 */
+:root,
+.dark {
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-3: var(--text-muted);
+  --surface: var(--surface-raised);
+  --inset: var(--surface-sunk);
+  --canvas: var(--surface-desk);
+  --field: var(--surface-sunk);
+  --hover: var(--surface-hover);
+  --hover-2: var(--surface-hover-2);
+  --line: var(--border-hairline);
+  --line-strong: var(--border-strong);
+  --accent: var(--fill-sky);
+  --accent-ink: var(--ink-sky);
+  --accent-tint: var(--tint-sky);
+  --green: var(--rev-add);
+  --red: var(--rev-del);
+  --orange: var(--warning);
+  --green-tint: color-mix(in oklch, var(--rev-add) 14%, transparent);
+  --red-tint: color-mix(in oklch, var(--rev-del) 14%, transparent);
+  --orange-tint: color-mix(in oklch, var(--warning) 14%, transparent);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -272,6 +308,51 @@
   --color-glow-sky: var(--glow-sky);
   --color-rev-add: var(--rev-add);
   --color-rev-del: var(--rev-del);
+
+  /* ── Beautiful UI 令牌别名（specs/genui-beautiful-ui §3）──────────────
+     那套组件用的是另一套语义名（ink / surface / inset / line / accent），
+     33 个令牌、334 处引用。别名一层就让它们全部显示正确，而不是去改那 334
+     处 class —— 它们出新版可以整段替换，而且映射错了改一行就能回退。
+
+     指向的都是既有的主题变量，所以浅色主题自动跟着走。
+
+     `surface` 刻意映射到 raised 而不是 paper：paper 是简历画布，**恒定近白、
+     不随主题**，映射过去会让深色下每一张卡都白成一片。 */
+  --color-ink: var(--text-primary);
+  --color-ink-2: var(--text-secondary);
+  --color-ink-3: var(--text-muted);
+  --color-surface: var(--surface-raised);
+  --color-inset: var(--surface-sunk);
+  --color-canvas: var(--surface-desk);
+  --color-field: var(--surface-sunk);
+  --color-hover: var(--surface-hover);
+  --color-hover-2: var(--surface-hover-2);
+  --color-line: var(--border-hairline);
+  --color-line-strong: var(--border-strong);
+  /* accent 以填充为主（bg-accent），文字另有 accent-ink —— 浅色下它走深档保 AA。 */
+  --color-accent: var(--fill-sky);
+  --color-accent-ink: var(--ink-sky);
+  --color-accent-tint: var(--tint-sky);
+
+  /* 圆角三档。之前那次扫描只统计颜色令牌，把这些漏了——`rounded-card` 不生效，
+     卡片就没有圆角；`rounded-control` 不生效，所有小控件都是直角。 */
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --radius-chip: 999px;
+
+  /* 状态色：他们用 green/red/orange 三支，我们已有对应语义变量。 */
+  --color-green: var(--rev-add);
+  --color-red: var(--rev-del);
+  --color-orange: var(--warning);
+  --color-green-tint: color-mix(in oklch, var(--rev-add) 14%, transparent);
+  --color-red-tint: color-mix(in oklch, var(--rev-del) 14%, transparent);
+  --color-orange-tint: color-mix(in oklch, var(--warning) 14%, transparent);
+
+  /* 四档阴影：我们原本只有 --elev-*，这里给出它们要的名字。 */
+  --shadow-hairline: 0 0 0 1px var(--border-hairline);
+  --shadow-btn: var(--elev-1);
+  --shadow-card: var(--elev-2);
+  --shadow-raised: var(--elev-3);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1975,4 +2056,36 @@ button {
   0% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(-6%, 3%, 0) scale(1.12); }
   100% { transform: translate3d(4%, -2%, 0) scale(1.04); }
+}
+
+/* ── Beautiful UI 的组件级类（specs/genui-beautiful-ui）────────────────────
+   这些不是颜色令牌，是承载**内边距与表格结构**的类。第一次接入时把它们当噪音
+   过滤掉了，结果是卡片没有内边距——CodeBlock 的标题文字直接贴在容器边上。 */
+@layer components {
+  .primitive-card-pad { padding: 0.75rem 0.875rem; }
+  .primitive-card-bar { padding: 0.5rem 0.875rem; }
+  .primitive-card-footer { padding: 0.625rem 0.875rem; }
+  .primitive-table-cell { padding: 0.5rem 0.75rem; text-align: left; }
+
+  .source-avatar { object-fit: cover; }
+
+  /* 表格族（RecordsTable / FilterTable，目前只入库未接线）。 */
+  .records-shell { border: 1px solid var(--border-hairline); border-radius: var(--radius-card); overflow: hidden; }
+  .records-scroll { overflow-x: auto; }
+  .records-table { width: 100%; border-collapse: collapse; }
+  .records-cell { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-hairline); white-space: nowrap; }
+  .records-sticky-cell { position: sticky; left: 0; background: var(--surface-raised); z-index: 1; }
+  .records-muted { color: var(--text-muted); }
+  .records-strength-dot { width: 0.375rem; height: 0.375rem; border-radius: 999px; }
+  .records-strength-col { width: 6rem; }
+  .records-company-col { min-width: 11rem; }
+  .records-category-col { min-width: 8rem; }
+  .records-last-col { min-width: 7rem; }
+  .records-link-col { width: 3rem; }
+  .records-checkbox { width: 0.875rem; height: 0.875rem; border: 1.5px solid var(--border-strong); border-radius: 3px; }
+  .records-checkbox-dash { width: 0.5rem; height: 1.5px; background: var(--text-secondary); }
+  .records-tag { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem; border-radius: 999px; background: var(--surface-sunk); }
+  .records-tag-dot { width: 0.375rem; height: 0.375rem; border-radius: 999px; }
+  .records-header-button { display: inline-flex; align-items: center; gap: 0.25rem; }
+  .records-header-icon { opacity: 0.5; }
 }
