@@ -21,6 +21,8 @@ import { PolarisGlyph } from '../PolarisMark';
 import { WidgetHost } from '@magic-resume/genui';
 import { WIDGETS } from '../widgets/registry';
 import type { ApprovalRequest, ChatMessage, SkillId } from '../types';
+import { Icon, ToolChips } from '@magic-resume/genui/beautiful';
+import { toToolChipRows } from './toolTrace';
 import TasksCard, {
   PLAN_DWELL_MS,
   isPlanFulfilled,
@@ -55,7 +57,29 @@ function BreathGlyph({ size = 11, className }: { size?: number; className?: stri
  * shows nothing between send and first token — the gap the user reported. Sits at the
  * tail of the thread; hands off to the streaming bubble once text starts.
  */
-function ThinkingIndicator({ activity }: { activity: AgentActivity | null }) {
+/** 已等待的秒数，取自 Beautiful UI 的 LoadingState（等宽数字，避免逐秒抖动）。 */
+function Elapsed({ startedAt }: { startedAt?: number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 500);
+    return () => clearInterval(t);
+  }, []);
+  if (!startedAt) return null;
+  const s = Math.floor((Date.now() - startedAt) / 1000);
+  return (
+    <span className="font-mono text-[11px] tabular-nums text-neutral-500">
+      {s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`}
+    </span>
+  );
+}
+
+function ThinkingIndicator({
+  activity,
+  startedAt,
+}: {
+  activity: AgentActivity | null;
+  startedAt?: number;
+}) {
   const { t } = useTranslation();
   const reduce = useReducedMotion() ?? false;
   const state = activity ?? 'thinking';
@@ -73,12 +97,50 @@ function ThinkingIndicator({ activity }: { activity: AgentActivity | null }) {
       // 不写 transition 就吃 framer-motion 默认的 spring，跟全局那条 180ms 缓动
       // 对不上——而这正是「思考中 → 开始落笔」的交接点，最不该是另一种手感。
       transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
-      className="flex items-center gap-2 text-neutral-200"
+      className="flex items-center gap-2.5 text-neutral-200"
     >
-      {/* 形态 + 文案都随真实活动走：读取简历和汇总评分不再长一个样。 */}
+      {/* 形态随真实活动走：读取简历和汇总评分不再长一个样。
+          **不换成 Beautiful UI 的点阵**——那颗球是品牌锚点（.impeccable.md），且它
+          还额外承载「在做什么」；点阵只表示「在忙」。 */}
       <ActivityOrb activity={state} />
-      <span className="ai-narrate text-xs font-medium">{t(activityLabelKey(state))}</span>
+      <span
+        className="bg-clip-text text-xs font-medium text-transparent"
+        style={{
+          backgroundImage:
+            'linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer-text 1.4s linear infinite',
+        }}
+      >
+        {t(activityLabelKey(state))}
+      </span>
+      {/* 耗时是纯增量：此前一整轮都没有任何「已经等了多久」的信息，长任务里那正是
+          用户最想知道的一件事。 */}
+      <Elapsed startedAt={startedAt} />
     </motion.div>
+  );
+}
+
+/**
+ * 这一轮动过哪些工具。
+ *
+ * 此前除 `read_resume` 外的工具调用在界面上**完全不可见**——只改了那颗 orb 的形态，
+ * 跑完就没了；用户回头看不出「它到底做了什么」。这张卡把一轮里的调用收成一组，
+ * 可展开、可回看。
+ */
+function ToolTrace({ message }: { message: ChatMessage }) {
+  const { t } = useTranslation();
+  const calls = message.toolCalls ?? [];
+  if (calls.length === 0) return null;
+  const running = message.status === 'running';
+  return (
+    <div className="w-full max-w-lg">
+      <ToolChips
+        rows={toToolChipRows(calls, t)}
+        working={running}
+        title={t('aiLab.tools.count', { count: calls.length })}
+      />
+    </div>
   );
 }
 
@@ -417,6 +479,9 @@ function Bubble({
               <span className={cn('text-[11px] font-medium', skill.accent)}>{skill.name}</span>
             </span>
           )}
+          {message.attachment && (
+            <Icon name="attach" size={12} className="mr-1.5 inline-block align-[-1px] text-neutral-400" />
+          )}
           {message.quote && (
             <div className="mb-2 flex items-start gap-2 rounded-lg bg-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
               <CornerUpLeft size={12} className="mt-0.5 shrink-0 text-sky-400/80" />
@@ -459,7 +524,46 @@ function Bubble({
         {message.streamed && message.status === 'running' && (
           <span className="ai-breath inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px]" />
         )}
+        {/* 取自 Beautiful UI 的 StreamingText：一段回复写完之后该能被拿走。
+            此前只能手动框选——而模型给的建议、改写后的段落，用户十有八九是要复制的。
+            只在写完后出现：流式途中出现等于让人去点一个还在长的东西。 */}
+        {message.status === 'done' && (message.content ?? '').trim() && (
+          <MessageActions text={message.content ?? ''} />
+        )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * 一条助手回复写完之后的操作行。
+ *
+ * 形态取自 Beautiful UI 的 StreamingText——但**只保留复制**：重试要重发这一轮（会
+ * 二次计费且可能覆盖已接受的改动），赞踩要有反馈通道，两者都还没有。做一个点了没反应
+ * 的按钮，比没有这个按钮更糟。
+ */
+function MessageActions({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-1.5 flex items-center gap-0.5">
+      <button
+        type="button"
+        aria-label={t('aiLab.chat.copy')}
+        onClick={() => {
+          void navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          });
+        }}
+        className={cn(
+          'flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] transition-colors',
+          copied ? 'text-emerald-400' : 'text-neutral-500 hover:bg-white/[0.06] hover:text-neutral-300',
+        )}
+      >
+        {copied ? <Check size={12} /> : <Icon name="copy" size={12} />}
+        {copied ? t('aiLab.chat.copied') : t('aiLab.chat.copy')}
+      </button>
     </div>
   );
 }
@@ -482,6 +586,13 @@ type ChatThreadProps = {
 export { isPlanFulfilled, isRetirablePlan };
 
 export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, activity }: ChatThreadProps) {
+  // 这一轮从什么时候开始等的。`thinking` 由 false → true 的那一刻记一次，之后整轮不变
+  // ——每次重渲都取 Date.now() 的话，计时永远显示 0。
+  const [thinkingSince, setThinkingSince] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    setThinkingSince(thinking ? Date.now() : undefined);
+  }, [thinking]);
+
   const endRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
@@ -565,6 +676,8 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
               <ActivityLine message={m} />
             ) : m.role === 'approval' ? (
               <ApprovalCard message={m} onApproval={onApproval} />
+            ) : m.role === 'tools' ? (
+              <ToolTrace message={m} />
             ) : m.role === 'plan' ? (
               <TasksCard
                 message={m}
@@ -591,7 +704,9 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
         })}
         </AnimatePresence>
         <AnimatePresence>
-          {thinking && <ThinkingIndicator activity={activity ?? null} />}
+          {thinking && (
+            <ThinkingIndicator activity={activity ?? null} startedAt={thinkingSince} />
+          )}
         </AnimatePresence>
         <div ref={endRef} />
       </div>

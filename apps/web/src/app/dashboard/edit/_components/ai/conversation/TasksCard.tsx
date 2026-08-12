@@ -5,6 +5,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { ChatMessage, PlanTodo, SkillId, TodoSegment } from '../types';
+import { Icon } from '@magic-resume/genui/beautiful';
 import ActivityOrb from './ActivityOrb';
 import type { AgentActivity } from './agentActivity';
 import { useSpringHeight } from './useSpringHeight';
@@ -199,7 +200,7 @@ function TaskRow({
       <span className="grid h-5 w-5 shrink-0 place-items-center">
         {isDone ? (
           <span className="grid h-[18px] w-[18px] place-items-center rounded-full bg-sky-500 motion-safe:animate-in motion-safe:zoom-in-75 motion-safe:duration-300">
-            <Check size={11} className="text-white" strokeWidth={3} />
+            <Check size={11} className="text-[#fff]" strokeWidth={3} />
           </span>
         ) : (
           <ActivityOrb activity={rowActivity} />
@@ -217,13 +218,25 @@ function TaskRow({
                   : 'border-sky-400/40 bg-sky-400/10'
               )}
             >
+              {/* 芯片图标由后端给的 `kind` 决定（read/write/analyze/search/ask/tool）。
+                  一律手写 SVG：emoji 的字形随系统字体变，在 12.5px 的芯片里会比正文
+                  大一圈还对不齐，颜色也不受主题控制。 */}
+              <Icon
+                name={seg.kind}
+                size={12}
+                className={cn('shrink-0', isDone ? 'text-neutral-500' : 'text-sky-300')}
+              />
               <span
                 className={cn(
                   'truncate text-[12.5px]',
                   isDone ? 'text-neutral-400 line-through' : 'text-sky-100'
                 )}
               >
-                <span className={cn(!isDone && 'text-white')}>{seg.verb}</span>
+                {/* **不能用 text-white**：这个仓把 Tailwind 的 white 整体翻成了暖墨
+                    （globals.css `--color-white: oklch(0.270 0.010 85)`，为浅色主题服务），
+                    且 `.dark` 里没有覆盖——深色子树里用它也是暗的，动词会直接看不见。
+                    用语义令牌，它跟着子树的主题走。 */}
+                <span className={cn(!isDone && 'text-ink')}>{seg.verb}</span>
                 {seg.rest ? ` ${seg.rest}` : ''}
               </span>
             </span>

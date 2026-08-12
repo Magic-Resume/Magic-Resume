@@ -1768,7 +1768,9 @@
       },
       "tasks": "任务",
       "completed": "已完成",
-      "elapsed": "{{seconds}}s"
+      "elapsed": "{{seconds}}s",
+      "copy": "复制",
+      "copied": "已复制"
     },
     "composer": {
       "skills": "技能",
@@ -1908,6 +1910,19 @@
       "failed": "这份 PDF 我没读出来",
       "warningsTitle": "有几处我拿不准",
       "warningsBody": "这份 PDF 里下面这些地方我读得不确定，落到草稿里之前你先看一眼。"
+    },
+    "tools": {
+      "count": "{{count}} 次工具调用",
+      "read": "读取",
+      "write": "写入",
+      "edit": "修改",
+      "analyze": "分析",
+      "evaluate": "评估",
+      "search": "搜索",
+      "summary": {
+        "sections": "读到 {{count}} 个模块",
+        "results": "{{count}} 条结果"
+      }
     }
   },
   "report": {

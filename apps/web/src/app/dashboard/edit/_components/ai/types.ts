@@ -33,7 +33,7 @@ export interface AiSkill {
   doneSummary: string;
 }
 
-export type ChatRole = 'user' | 'assistant' | 'exec' | 'log' | 'approval' | 'activity' | 'plan' | 'widget';
+export type ChatRole = 'user' | 'assistant' | 'exec' | 'log' | 'approval' | 'activity' | 'plan' | 'widget' | 'tools';
 
 /**
  * 一条 todo 的可渲染片段。
@@ -121,6 +121,13 @@ export interface ChatMessage {
   subagentName?: string;
   /** present when role === 'plan' — 本轮开始的时刻，卡片据此走秒。 */
   startedAt?: number;
+  /**
+   * present when role === 'tools' —— 这一轮调用过的工具。
+   *
+   * 此前除 `read_resume` 外的工具调用**在界面上完全不可见**：只改了那颗 orb 的形态，
+   * 跑完就没了。这条消息把一轮里动过的工具收成一组，用户至少能回头看「它到底做了什么」。
+   */
+  toolCalls?: { toolCallId: string; toolName: string; subject?: string; done?: boolean }[];
   /** present when role === 'widget' — a GenUI interactive card (form / decision) */
   widget?: WidgetInstance;
   /**
@@ -129,6 +136,8 @@ export interface ChatMessage {
    * not match, so each card remembers which slot it answers.
    */
   interruptSlot?: { requestId: string; index: number };
+  /** 这条用户消息是一个附件（`content` 就是文件名）。渲染层据此画回形针图标。 */
+  attachment?: boolean;
   /** present when a user message quotes a canvas snippet (「询问 Polaris」bridge) */
   quote?: { label: string; text: string };
 }

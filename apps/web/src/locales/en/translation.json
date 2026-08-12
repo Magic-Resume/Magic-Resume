@@ -1768,7 +1768,9 @@
       },
       "tasks": "Tasks",
       "completed": "Completed",
-      "elapsed": "{{seconds}}s"
+      "elapsed": "{{seconds}}s",
+      "copy": "Copy",
+      "copied": "Copied"
     },
     "composer": {
       "skills": "Skills",
@@ -1908,6 +1910,19 @@
       "failed": "I couldn't read that PDF",
       "warningsTitle": "A few things I wasn't sure about",
       "warningsBody": "These parts of the PDF I read with low confidence — worth a look before you apply the draft."
+    },
+    "tools": {
+      "count": "{{count}} tool calls",
+      "read": "Read",
+      "write": "Write",
+      "edit": "Edit",
+      "analyze": "Analyze",
+      "evaluate": "Evaluate",
+      "search": "Search",
+      "summary": {
+        "sections": "Read {{count}} sections",
+        "results": "{{count}} results"
+      }
     }
   },
   "report": {

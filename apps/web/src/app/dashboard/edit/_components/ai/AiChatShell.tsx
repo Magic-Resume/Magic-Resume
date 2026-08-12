@@ -20,6 +20,7 @@ import PolarisPerch from './conversation/PolarisPerch';
 import { setFlightOrigin } from './conversation/polarisFlight';
 import { AGENT_MODES, type AgentMode } from './conversation/modes';
 import { activityForTool, type AgentActivity } from './conversation/agentActivity';
+import { subjectOf, type ToolCallSummary } from './conversation/toolTrace';
 import WelcomeSuggestions from './conversation/WelcomeSuggestions';
 import ArtifactCanvas from './canvas/ArtifactCanvas';
 import { PolarisAvatar, LabMark } from './PolarisMark';
@@ -315,6 +316,8 @@ export default function AiChatShell({
   const activeSubagentRef = useRef<string | null>(null);
   // 子代理自己的清单卡——与 planCardRef 分开，否则中途起子代理会让主卡永远停在"工作中"。
   const subagentPlanCardRef = useRef<string | null>(null);
+  /** 本轮的工具追踪卡。一轮一张，跨工具累加。 */
+  const toolTraceRef = useRef<string | null>(null);
   // read_resume 审批卡横跨两条流，记住 id 才能就地更新同一张卡的页脚而不是另起一行。
   const readApprovalRef = useRef<string | null>(null);
 
@@ -637,9 +640,35 @@ export default function AiChatShell({
             // 在想」和「还没开始」在界面上没有区别。
             setActivity((prev) => (prev === 'writing' ? prev : 'thinking'));
           } else if (ev.type === 'tool_started') {
-            const toolName = (ev.payload as { toolName?: string } | undefined)?.toolName;
+            const payload = ev.payload as
+              | { toolName?: string; toolCallId?: string; args?: unknown }
+              | undefined;
+            const toolName = payload?.toolName;
             // 认全部工具。写死只认 read_resume 是此前「看不出 agent 在干什么」的直接原因。
             setActivity(activityForTool(toolName));
+            // 把这一轮动过的工具收成一张卡。此前除 read_resume 外全部不可见——跑完就没了，
+            // 用户回头看不出它到底做了什么。
+            if (toolName) {
+              const call = {
+                toolCallId: payload?.toolCallId ?? nanoid(),
+                toolName,
+                subject: subjectOf(payload?.args),
+              };
+              const traceId = toolTraceRef.current;
+              if (traceId) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === traceId
+                      ? { ...m, toolCalls: [...(m.toolCalls ?? []), call], status: 'running' }
+                      : m,
+                  ),
+                );
+              } else {
+                const id = nanoid();
+                toolTraceRef.current = id;
+                addMessage({ id, role: 'tools', content: '', toolCalls: [call], status: 'running' });
+              }
+            }
             if (toolName === 'read_resume') {
               // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
               if (readApprovalRef.current) {
@@ -651,12 +680,51 @@ export default function AiChatShell({
           } else if (ev.type === 'tool_completed') {
             // 工具收工但流还在跑：回到「思考中」，而不是停在上一个工具的形态上。
             setActivity((prev) => (prev === 'writing' || prev === 'awaiting' ? prev : 'thinking'));
-          } else if (ev.type === 'tool_result' && (ev.payload as { toolName?: string } | undefined)?.toolName === 'read_resume') {
-            if (readApprovalRef.current) {
-              setApprovalReadState(readApprovalRef.current, 'read'); // → 已读取简历
-              readApprovalRef.current = null;
-            } else {
-              markReadActivityDone();
+            const doneId = (ev.payload as { toolCallId?: string } | undefined)?.toolCallId;
+            const traceId = toolTraceRef.current;
+            if (traceId) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === traceId
+                    ? {
+                        ...m,
+                        toolCalls: (m.toolCalls ?? []).map((c) =>
+                          !doneId || c.toolCallId === doneId ? { ...c, done: true } : c,
+                        ),
+                      }
+                    : m,
+                ),
+              );
+            }
+          } else if (ev.type === 'tool_result') {
+            // 摘要（「读到 4 个模块」）挂回对应的那次调用，芯片展开后才有东西可看。
+            const p = ev.payload as
+              | { toolCallId?: string; toolName?: string; summary?: ToolCallSummary }
+              | undefined;
+            const traceId = toolTraceRef.current;
+            if (traceId && p?.summary && p.toolCallId) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === traceId
+                    ? {
+                        ...m,
+                        toolCalls: (m.toolCalls ?? []).map((c) =>
+                          c.toolCallId === p.toolCallId
+                            ? { ...c, summary: p.summary }
+                            : c,
+                        ),
+                      }
+                    : m,
+                ),
+              );
+            }
+            if (p?.toolName === 'read_resume') {
+              if (readApprovalRef.current) {
+                setApprovalReadState(readApprovalRef.current, 'read'); // → 已读取简历
+                readApprovalRef.current = null;
+              } else {
+                markReadActivityDone();
+              }
             }
           } else if (ev.type === 'plan_update') {
             // 有子代理在跑就路由到它的卡，否则走主卡——两者不能撞在一起。
@@ -1058,6 +1126,8 @@ export default function AiChatShell({
       const config = await resolveRunConfig(pending);
       if (!config) return;
       planCardRef.current = null; // a fresh review todolist for this run
+      // 同理：新一轮要新开一张工具追踪卡，否则这一轮的工具会追加进上一轮那张。
+      toolTraceRef.current = null;
       skillBatchRunRef.current = null; // not a whole-resume skill batch run
       await consumeStream(
         (signal) =>
@@ -1273,7 +1343,9 @@ export default function AiChatShell({
   const handleAttachPdf = useCallback(
     (file: File) => {
       setStarted(true);
-      addMessage({ id: nanoid(), role: 'user', content: `📄 ${file.name}` });
+      // 文件名带一个附件标记而不是把 emoji 拼进正文：emoji 的字形由系统字体决定，
+      // 三个平台三种画风三种基线，而且颜色不受主题控制。渲染层画 SVG。
+      addMessage({ id: nanoid(), role: 'user', content: file.name, attachment: true });
       const activityId = nanoid();
       addMessage({
         id: activityId,
