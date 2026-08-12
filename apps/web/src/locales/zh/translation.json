@@ -33,7 +33,7 @@
     "resend": "重新发送",
     "passwordHint": "至少 8 位",
     "forgot": {
-      "hint": "输入邮箱,我们给你发一个重置码。",
+      "hint": "输入邮箱,我们给你发一个重置码",
       "send": "发送重置码",
       "reset": "重置并登录"
     },
@@ -55,13 +55,13 @@
   },
   "comingSoon": {
     "title": "好东西,马上就来",
-    "subtitle": "Magic Resume 正在内测。我们正为你的 AI 简历工作台做最后打磨,公开上线近在眼前。",
+    "subtitle": "Magic Resume 正在内测。我们正为你的 AI 简历工作台做最后打磨,公开上线近在眼前",
     "launched": "已上线",
     "countdownLabel": "距离公开上线",
     "enterCta": "进入 Magic Resume",
     "reserveCta": "预约体验",
-    "reserveNote": "内测名额有限,预约后我们第一时间通知你。",
-    "noDate": "距离公开上线只差最后一步,敬请期待。",
+    "reserveNote": "内测名额有限,预约后我们第一时间通知你",
+    "noDate": "距离公开上线只差最后一步,敬请期待",
     "signOut": "退出登录",
     "days": "天",
     "hours": "时",
@@ -162,15 +162,15 @@
         "mcp": "MCP"
       },
       "general": {
-        "description": "偏好设置保持克制，只保留会影响日常创作的选项。",
+        "description": "偏好设置保持克制，只保留会影响日常创作的选项",
         "appearance": "外观",
-        "appearanceDescription": "默认跟随系统外观。也可固定为深色（长时段编辑更护眼）或浅色。",
+        "appearanceDescription": "默认跟随系统外观。也可固定为深色（长时段编辑更护眼）或浅色",
         "appearanceDark": "深色",
         "appearanceLight": "浅色",
         "appearanceSystem": "跟随系统",
         "comingSoon": "即将推出",
         "language": "语言",
-        "languageDescription": "切换界面语言，不影响简历内容本身。"
+        "languageDescription": "切换界面语言，不影响简历内容本身"
       }
     },
     "billing": {
@@ -178,18 +178,18 @@
       "freePlan": "免费版",
       "renewsOn": "{{date}} 续期",
       "endsOn": "已取消，{{date}} 到期",
-      "paymentFailed": "扣款失败——请更新支付方式，宽限期结束后订阅会终止。",
+      "paymentFailed": "扣款失败——请更新支付方式，宽限期结束后订阅会终止",
       "manageCta": "管理套餐",
       "upgradeCta": "升级",
       "ordersTitle": "付款记录",
-      "noOrders": "还没有付款记录。",
+      "noOrders": "还没有付款记录",
       "unknownItem": "—",
       "colDate": "时间",
       "colItem": "项目",
       "colAmount": "金额",
       "colChannel": "支付方式",
       "colStatus": "状态",
-      "loadFailed": "账单信息加载失败。",
+      "loadFailed": "账单信息加载失败",
       "retry": "重试",
       "refundHint": "需要退款？先看看",
       "refundPolicy": "退款政策",
@@ -213,15 +213,15 @@
       "copied": "已复制",
       "savePoster": "保存邀请海报",
       "posterAlt": "Magic Resume 邀请海报",
-      "posterError": "海报生成失败，请重试。",
-      "rule": "奖励在对方完成首次 AI 对话后自动到账，双方同时生效。注册即得会被批量刷号，所以我们等一次真实使用。",
+      "posterError": "海报生成失败，请重试",
+      "rule": "奖励在对方完成首次 AI 对话后自动到账，双方同时生效。注册即得会被批量刷号，所以我们等一次真实使用",
       "stats": {
         "invited": "已邀请",
         "rewarded": "已到账",
         "pending": "待完成"
       },
       "headerAction": "邀请好友",
-      "emptyHint": "把海报或链接发给正在找工作的朋友——你们都会多一份 AI 额度，他也少走点弯路。",
+      "emptyHint": "把海报或链接发给正在找工作的朋友——你们都会多一份 AI 额度，他也少走点弯路",
       "remaining": "本月还可获得 {{count}} 次奖励"
     },
     "security": {
@@ -237,33 +237,33 @@
         "current": "当前密码",
         "new": "新密码",
         "confirm": "确认新密码",
-        "mismatch": "两次输入的新密码不一致。",
-        "signOutNotice": "修改后，你在其它设备上的登录会被退出。"
+        "mismatch": "两次输入的新密码不一致",
+        "signOutNotice": "修改后，你在其它设备上的登录会被退出"
       },
       "totp": {
         "label": "两步验证",
         "enable": "开启",
         "disable": "关闭",
-        "scanHint": "用 Google Authenticator、1Password 等验证器扫描二维码，或手动输入下方密钥。",
+        "scanHint": "用 Google Authenticator、1Password 等验证器扫描二维码，或手动输入下方密钥",
         "manualKey": "手动输入密钥",
         "enterCode": "输入验证器上的 6 位数字",
         "verify": "验证并开启",
-        "codesWarning": "请立即保存这些备用码。它们只显示这一次——手机丢失时，这是你唯一的登录方式。",
+        "codesWarning": "请立即保存这些备用码。它们只显示这一次——手机丢失时，这是你唯一的登录方式",
         "copyAll": "复制全部",
         "copied": "已复制",
         "download": "下载为文件",
         "confirmSaved": "我已保存好这些备用码",
-        "disableWarning": "关闭后，登录将只需要密码，安全性会下降。已有的备用码同时失效。",
+        "disableWarning": "关闭后，登录将只需要密码，安全性会下降。已有的备用码同时失效",
         "confirmDisable": "确认关闭"
       },
       "errors": {
-        "passwordIncorrect": "当前密码不正确。",
-        "passwordPwned": "这个密码曾在数据泄露中出现过，请换一个。",
-        "passwordTooShort": "密码太短了，请设置更长的密码。",
-        "passwordWeak": "密码强度不够，建议混合大小写字母、数字与符号。",
-        "codeIncorrect": "验证码不正确，请检查验证器上当前显示的数字。",
-        "codeExpired": "验证码已过期，请输入验证器上最新的数字。",
-        "unknown": "操作失败，请稍后重试。"
+        "passwordIncorrect": "当前密码不正确",
+        "passwordPwned": "这个密码曾在数据泄露中出现过，请换一个",
+        "passwordTooShort": "密码太短了，请设置更长的密码",
+        "passwordWeak": "密码强度不够，建议混合大小写字母、数字与符号",
+        "codeIncorrect": "验证码不正确，请检查验证器上当前显示的数字",
+        "codeExpired": "验证码已过期，请输入验证器上最新的数字",
+        "unknown": "操作失败，请稍后重试"
       }
     }
   },
@@ -272,7 +272,7 @@
     "unread": "{{count}} 条未读",
     "empty": {
       "title": "暂无通知",
-      "description": "当有人评论或回复您的简历时，通知将显示在这里。"
+      "description": "当有人评论或回复您的简历时，通知将显示在这里"
     },
     "type": {
       "comment": "评论了",
@@ -289,14 +289,14 @@
     "title": "设置",
     "llm": {
       "title": "模型配置",
-      "description": "选择服务商、粘贴你自己的 API Key 即可启用 AI。密钥只保存在你的浏览器本地，不会上传。",
+      "description": "选择服务商、粘贴你自己的 API Key 即可启用 AI。密钥只保存在你的浏览器本地，不会上传",
       "providerLabel": "API 提供商",
       "region": {
         "global": "国际",
         "china": "国内",
         "custom": "其它"
       },
-      "baseUrlNeedsEdit": "把地址里的 {WorkspaceId} 换成你自己的工作区 ID 才能连通。",
+      "baseUrlNeedsEdit": "把地址里的 {WorkspaceId} 换成你自己的工作区 ID 才能连通",
       "providerPlaceholder": "选择服务商",
       "apiKeyLabel": "API 密钥",
       "getKeyLink": "获取 API Key",
@@ -318,29 +318,29 @@
       "imageBadge": "图像",
       "textOnlyBadge": "纯文本",
       "testErrors": {
-        "upstream": "服务商上游暂不可用，请稍后重试或检查服务状态。",
-        "auth": "API Key 无效或没有权限，请检查密钥是否正确。",
-        "quota": "账户额度不足，请检查余额或配额。",
-        "rateLimit": "请求过于频繁，请稍后重试。",
-        "notFound": "接口或模型不存在，请检查 Base URL 与模型名称。",
-        "server": "服务商返回服务器错误，请稍后重试。",
-        "timeout": "连接超时，请检查网络或稍后重试。"
+        "upstream": "服务商上游暂不可用，请稍后重试或检查服务状态",
+        "auth": "API Key 无效或没有权限，请检查密钥是否正确",
+        "quota": "账户额度不足，请检查余额或配额",
+        "rateLimit": "请求过于频繁，请稍后重试",
+        "notFound": "接口或模型不存在，请检查 Base URL 与模型名称",
+        "server": "服务商返回服务器错误，请稍后重试",
+        "timeout": "连接超时，请检查网络或稍后重试"
       },
       "showKey": "显示密钥",
       "hideKey": "隐藏密钥"
     },
     "cloudSync": {
       "title": "云端同步",
-      "description": "在不同设备间同步您的简历数据。您的数据将安全地存储在云端。",
+      "description": "在不同设备间同步您的简历数据。您的数据将安全地存储在云端",
       "toggleLabel": "启用云端同步",
       "enabled": "已开启",
       "disabled": "未开启",
-      "statusOn": "当前设备的简历改动会同步到云端，便于跨设备继续编辑。",
-      "statusOff": "简历数据仅保存在当前浏览器，开启前会先确认数据上传说明。",
+      "statusOn": "当前设备的简历改动会同步到云端，便于跨设备继续编辑",
+      "statusOff": "简历数据仅保存在当前浏览器，开启前会先确认数据上传说明",
       "disclaimer": {
         "title": "云端同步免责声明",
         "description": "在开启云端同步前，请阅读并同意以下条款：",
-        "content": "开启云端同步后，您的简历数据（包括个人信息、工作经历等）将被上传到我们的服务器。这将允许您在任何设备上访问您的简历。我们使用行业标准加密技术保护您的数据。但请知悉，这意味着您的数据将不再仅存储在您的本地设备上。",
+        "content": "开启云端同步后，您的简历数据（包括个人信息、工作经历等）将被上传到我们的服务器。这将允许您在任何设备上访问您的简历。我们使用行业标准加密技术保护您的数据。但请知悉，这意味着您的数据将不再仅存储在您的本地设备上",
         "agree": "我已阅读并同意",
         "cancel": "取消"
       }
@@ -348,38 +348,38 @@
     "mcp": {
       "title": "MCP 接入",
       "accessTitle": "AI 编程工具接入",
-      "description": "创建个人访问令牌，把 Magic Resume 连接到 Claude Code、Codex 或其他兼容 MCP 的 AI 工具。完整令牌只显示一次。",
+      "description": "创建个人访问令牌，把 Magic Resume 连接到 Claude Code、Codex 或其他兼容 MCP 的 AI 工具。完整令牌只显示一次",
       "refresh": "刷新",
       "tokenNamePlaceholder": "令牌名称",
       "defaultResumePlaceholder": "默认简历",
       "enable": "开启 MCP",
       "tokenCreatedTitle": "个人访问令牌已创建",
-      "tokenCreatedDescription": "请现在复制此令牌。出于安全考虑，Magic Resume 不会再次显示完整令牌。",
+      "tokenCreatedDescription": "请现在复制此令牌。出于安全考虑，Magic Resume 不会再次显示完整令牌",
       "copyToken": "复制令牌",
       "commandTitle": "MCP 接入命令",
       "copyCommand": "复制命令",
-      "commandEmpty": "创建令牌后会生成 Claude Code / Codex 接入命令。",
+      "commandEmpty": "创建令牌后会生成 Claude Code / Codex 接入命令",
       "activeTokens": "个人访问令牌",
-      "emptyTokens": "暂无 MCP 令牌。",
+      "emptyTokens": "暂无 MCP 令牌",
       "active": "启用中",
       "revoked": "已撤销",
       "neverUsed": "从未使用",
       "lastUsed": "上次使用 {{date}}",
       "revoke": "撤销令牌",
       "notifications": {
-        "loadFailed": "加载 MCP 接入信息失败。",
-        "created": "MCP 已开启。",
-        "createFailed": "创建 MCP 令牌失败。",
-        "revoked": "MCP 令牌已撤销。",
-        "revokeFailed": "撤销 MCP 令牌失败。",
-        "copied": "已复制。",
-        "signInRequired": "请先登录再开启 MCP 接入。"
+        "loadFailed": "加载 MCP 接入信息失败",
+        "created": "MCP 已开启",
+        "createFailed": "创建 MCP 令牌失败",
+        "revoked": "MCP 令牌已撤销",
+        "revokeFailed": "撤销 MCP 令牌失败",
+        "copied": "已复制",
+        "signInRequired": "请先登录再开启 MCP 接入"
       }
     },
     "notifications": {
       "unsavedChanges": "未保存的更改",
       "settingsSaved": "设置已保存！",
-      "changesReset": "更改已重置。"
+      "changesReset": "更改已重置"
     },
     "buttons": {
       "reset": "重置",
@@ -405,13 +405,13 @@
         "interview": "模拟面试"
       },
       "title": "AI 实验室",
-      "subtitle": "分析和优化您的简历以匹配目标工作要求，或通过 lighthouse 风格报告获取专业建议。",
-      "description": "分析和优化您的简历以匹配目标工作要求，或获取专业的Lighthouse式分析报告。",
+      "subtitle": "分析和优化您的简历以匹配目标工作要求，或通过 lighthouse 风格报告获取专业建议",
+      "description": "分析和优化您的简历以匹配目标工作要求，或获取专业的Lighthouse式分析报告",
       "optimizeTab": {
         "jdLabel": "目标职位描述 (JD)",
         "jdPlaceholder": "在此粘贴目标职位的 JD，AI 将根据其对简历进行针对性优化...",
         "outputTitle": "优化结果",
-        "emptyState": "在此粘贴职位描述并点击开始优化，AI 将为您生成针对性的简历优化建议。",
+        "emptyState": "在此粘贴职位描述并点击开始优化，AI 将为您生成针对性的简历优化建议",
         "optimizedCount": "优化完成，共处理 {{count}} 个章节",
         "resultsReady": "优化结果已准备就绪",
         "applyHint": "点击应用将更新您的简历",
@@ -444,7 +444,7 @@
           "minimize": "最小化",
           "progress": {
             "title": "智能优化进行中",
-            "description": "AI 智能体正在后台重构您的简历内容。",
+            "description": "AI 智能体正在后台重构您的简历内容",
             "showButton": "显示"
           },
           "processing": "实时处理流",
@@ -458,7 +458,7 @@
             "analyzing": "> 智能体 {{id}} 正在分析数据...",
             "system": "系统:",
             "validating": "运行语义验证中...",
-            "success": "> 操作成功。数据已缓冲。",
+            "success": "> 操作成功。数据已缓冲",
             "waiting": "> 等待触发信号...",
             "standby": "待机",
             "process_locus": "进程::思维核心",
@@ -483,7 +483,7 @@
             "title": "输入预处理器",
             "personality": "输入预处理器",
             "in_progress": "正在准备您的简历和职位描述...",
-            "completed": "输入数据已就绪。"
+            "completed": "输入数据已就绪"
           },
           "parallel_analyzer": {
             "title": "并行分析",
@@ -498,79 +498,79 @@
             "title": "合并分析报告",
             "personality": "合并器",
             "in_progress": "正在生成综合分析报告...",
-            "completed": "分析报告已生成。"
+            "completed": "分析报告已生成"
           },
           "jd_analyzer": {
             "title": "岗位特征提取器",
             "personality": "岗位特征提取器",
             "in_progress": "正在分析职位描述...",
-            "completed": "职位描述分析完成。"
+            "completed": "职位描述分析完成"
           },
           "resume_analyzer": {
             "title": "简历特征提取器",
             "personality": "简历特征提取器",
             "in_progress": "正在全方位评估简历优势与不足...",
-            "completed": "简历评估完成。"
+            "completed": "简历评估完成"
           },
           "resume_web_search": {
             "title": "简历市场检索",
             "personality": "简历市场检索",
             "in_progress": "正在调研同类候选人市场情况...",
-            "completed": "市场调研完成。"
+            "completed": "市场调研完成"
           },
           "jd_web_search": {
             "title": "岗位市场检索",
             "personality": "岗位市场检索",
             "in_progress": "正在分析该职位的市场招聘趋势...",
-            "completed": "趋势分析完成。"
+            "completed": "趋势分析完成"
           },
           "company_interview_search": {
             "title": "面试情报采集器",
             "personality": "面试情报采集器",
             "in_progress": "正在搜集公司面试题与内部情报...",
-            "completed": "情报搜集完成。"
+            "completed": "情报搜集完成"
           },
           "research_combiner": {
             "title": "多源聚合器",
             "personality": "多源聚合器",
             "in_progress": "正在综合所有研究情报...",
-            "completed": "战略制定完成。"
+            "completed": "战略制定完成"
           },
           "strategic_analyzer": {
             "title": "优化策略引擎",
             "personality": "优化策略引擎",
             "in_progress": "正在对比简历与职位的战略差距...",
-            "completed": "差异分析完成。"
+            "completed": "差异分析完成"
           },
           "prepare_research": {
             "title": "准备研究",
             "personality": "研究规划师",
             "in_progress": "正在根据职位描述准备网络研究...",
-            "completed": "研究计划已就绪。"
+            "completed": "研究计划已就绪"
           },
           "query_writer": {
             "title": "生成搜索查询",
             "personality": "查询生成",
             "in_progress": "正在生成智能搜索查询...",
-            "completed": "搜索查询已生成。"
+            "completed": "搜索查询已生成"
           },
           "web_searcher": {
             "title": "执行网络研究",
             "personality": "深度爬虫",
             "in_progress": "正在网络上搜索关键信息...",
-            "completed": "网络研究完成。"
+            "completed": "网络研究完成"
           },
           "reflection": {
             "title": "反思搜索结果",
             "personality": "批评与修正",
             "in_progress": "正在分析搜索结果并识别信息差距...",
-            "completed": "反思完成，规划下一步。"
+            "completed": "反思完成，规划下一步"
           },
           "final_answer": {
             "title": "综合研究发现",
             "personality": "最终输出",
             "in_progress": "正在将研究发现整合成摘要...",
-            "completed": "研究摘要完成。"
+            "completed": "研究摘要完成"
           },
           "rewriter": {
             "title": "简历改写与增强",
@@ -581,7 +581,7 @@
             "title": "准备重写任务",
             "personality": "策略规划师",
             "in_progress": "正在准备按章节重写...",
-            "completed": "已切换到分步优化模式。"
+            "completed": "已切换到分步优化模式"
           },
           "rewrite_section": {
             "title": "分段重写器",
@@ -593,39 +593,39 @@
             "title": "优化编排器",
             "personality": "智能编排",
             "in_progress": "正在编排各个章节的并行优化...",
-            "completed": "所有章节并行优化完成。"
+            "completed": "所有章节并行优化完成"
           },
           "route_next_rewrite": {
             "title": "重写规划器",
             "personality": "任务路由",
             "in_progress": "正在规划下一个优化章节...",
-            "completed": "规划完成。"
+            "completed": "规划完成"
           },
           "combine_sections": {
             "title": "内容组装器",
             "personality": "内容组装器",
             "in_progress": "正在将优化后的章节重新组装...",
-            "completed": "简历组装完成。"
+            "completed": "简历组装完成"
           },
           "rewriting_section": {
             "in_progress": "正在优化 {{section}}...",
-            "completed": "{{section}} 已优化完毕。"
+            "completed": "{{section}} 已优化完毕"
           },
           "analyzing_category": {
             "in_progress": "正在分析 {{category}}...",
-            "completed": "{{category}} 分析完毕。"
+            "completed": "{{category}} 分析完毕"
           },
           "company_analysis": {
             "title": "公司知识图谱",
             "personality": "公司知识图谱",
             "in_progress": "正在分析目标公司的文化和技术栈...",
-            "completed": "公司背景调查完成。"
+            "completed": "公司背景调查完成"
           },
           "adversarial_critique": {
             "title": "对抗评估器",
             "personality": "对抗评估器",
             "in_progress": "AI 招聘官正在评估您的简历...",
-            "completed": "招聘官评估完成。"
+            "completed": "招聘官评估完成"
           },
           "microEvents": {
             "thinking": "正在构思优化策略...",
@@ -665,7 +665,7 @@
         },
         "placeholder": {
           "title": "获取专业分析",
-          "description": "我们的 AI 将对您的简历进行详细分析，提供关于影响力、清晰度和关键词优化等方面的分数和可操作反馈。"
+          "description": "我们的 AI 将对您的简历进行详细分析，提供关于影响力、清晰度和关键词优化等方面的分数和可操作反馈"
         }
       },
       "createTab": {
@@ -675,14 +675,14 @@
         "initialMessage": "你好！我是 ResuMate，你的个人简历构建助手。首先，请告诉我你的目标工作或行业是什么？",
         "applyButton": "应用并保存简历",
         "defaultReply": "抱歉，我现在遇到一点麻烦。你能换个说法吗？",
-        "errorReply": "我似乎遇到了一个问题。请尝试重新发送您的消息。",
+        "errorReply": "我似乎遇到了一个问题。请尝试重新发送您的消息",
         "retryNotification": "请求失败，正在重试...",
-        "retryFailed": "多次重试后请求失败，请稍后再试。"
+        "retryFailed": "多次重试后请求失败，请稍后再试"
       },
       "translateTab": {
         "inputTitle": "翻译配置",
-        "inputDescription": "请选择目标语言，并可选填写自定义提示词。",
-        "resumeSourceHint": "将直接使用当前简历内容进行翻译。",
+        "inputDescription": "请选择目标语言，并可选填写自定义提示词",
+        "resumeSourceHint": "将直接使用当前简历内容进行翻译",
         "targetLanguage": {
           "label": "目标语言",
           "placeholder": "请选择目标语言",
@@ -708,10 +708,10 @@
         "translateButton": "一键翻译",
         "translateButtonLoading": "翻译中...",
         "outputTitle": "翻译结果",
-        "outputDescription": "右侧展示生成的简历 JSON，并支持预览渲染。",
+        "outputDescription": "右侧展示生成的简历 JSON，并支持预览渲染",
         "translatedTextPlaceholder": "翻译文本将显示在这里...",
-        "emptyJsonState": "翻译完成后会在这里显示生成的 JSON。",
-        "invalidPreviewData": "当前 JSON 结构不足以渲染简历预览。",
+        "emptyJsonState": "翻译完成后会在这里显示生成的 JSON",
+        "invalidPreviewData": "当前 JSON 结构不足以渲染简历预览",
         "viewModes": {
           "json": "JSON",
           "preview": "预览"
@@ -725,24 +725,24 @@
         "notifications": {
           "success": "翻译完成",
           "failed": "翻译失败: {{message}}",
-          "targetLanguageRequired": "请先选择目标语言。",
-          "noResultToApply": "暂无可应用的翻译结果。",
-          "applySuccess": "已应用翻译后的简历。"
+          "targetLanguageRequired": "请先选择目标语言",
+          "noResultToApply": "暂无可应用的翻译结果",
+          "applySuccess": "已应用翻译后的简历"
         }
       },
       "notifications": {
-        "apiKeyMissing": "未找到 API 密钥。请在设置页面中设置。",
-        "jdMissing": "请提供职位描述。",
+        "apiKeyMissing": "未找到 API 密钥。请在设置页面中设置",
+        "jdMissing": "请提供职位描述",
         "optimizationComplete": "AI 优化完成！",
         "optimizationFailed": "优化失败：{{error}}",
         "analysisComplete": "分析报告已生成！",
         "analysisFailed": "分析失败：{{error}}",
-        "unknownError": "发生未知错误。",
+        "unknownError": "发生未知错误",
         "creationFailed": "简历创建失败：{{error}}"
       },
       "optimizePlaceholder": {
         "title": "准备好提升您的简历了吗？",
-        "description": "粘贴职位描述并点击\"开始优化\"，让 AI 为您的梦想工作量身定制简历。"
+        "description": "粘贴职位描述并点击\"开始优化\"，让 AI 为您的梦想工作量身定制简历"
       },
       "interviewTab": {
         "back": "返回",
@@ -815,7 +815,7 @@
     },
     "share": {
       "title": "发布在线简历",
-      "subtitle": "生成专属链接，让您的简历在线可访问。",
+      "subtitle": "生成专属链接，让您的简历在线可访问",
       "publicAccess": "公开访问",
       "publicAccessDesc": "任何拥有链接的人都可以查看",
       "privateAccessDesc": "仅自己可见",
@@ -853,9 +853,9 @@
         }
       },
       "imaging": "正在生成图片…",
-      "imageSuccess": "图片导出成功。",
-      "imageError": "图片导出失败，请重试。",
-      "jsonSuccess": "JSON 导出成功。"
+      "imageSuccess": "图片导出成功",
+      "imageError": "图片导出失败，请重试",
+      "jsonSuccess": "JSON 导出成功"
     }
   },
   "sharedPage": {
@@ -895,11 +895,11 @@
       "redirectingPre": "",
       "redirectingPost": " 秒后返回首页...",
       "returnNow": "立即返回",
-      "failedToLoad": "加载简历失败，请检查网络或链接。"
+      "failedToLoad": "加载简历失败，请检查网络或链接"
     },
     "notifications": {
-      "resumeNotFound": "此简历不存在或尚未公开。",
-      "syncing": "简历正在同步到云端，请稍候。",
+      "resumeNotFound": "此简历不存在或尚未公开",
+      "syncing": "简历正在同步到云端，请稍候",
       "loginToComment": "请登录后发表评论",
       "commentAdded": "评论已添加",
       "commentSaveFailed": "保存评论失败",
@@ -921,8 +921,8 @@
     "feedback": "反馈",
     "exportPDF": "导出 PDF",
     "exportingPDF": "正在本地生成 PDF...",
-    "exportPDFSuccess": "PDF 导出成功。",
-    "exportPDFError": "PDF 导出失败，请重试。",
+    "exportPDFSuccess": "PDF 导出成功",
+    "exportPDFError": "PDF 导出失败，请重试",
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "resetZoom": "重置缩放",
@@ -932,9 +932,9 @@
   },
   "feedback": {
     "title": "反馈",
-    "description": "帮助我们改进 Magic Resume。欢迎分享想法或反馈问题。",
+    "description": "帮助我们改进 Magic Resume。欢迎分享想法或反馈问题",
     "thankYou": "感谢反馈！",
-    "received": "我们已收到你的反馈。",
+    "received": "我们已收到你的反馈",
     "label": "你的反馈",
     "placeholder": "告诉我们你喜欢的地方或可以改进的地方...",
     "submit": "提交反馈",
@@ -943,8 +943,8 @@
     "readyToSubmit": "准备提交",
     "typeFeedback": "请输入您的反馈",
     "error": {
-      "tooManyRequests": "请求过于频繁。请稍后再试。",
-      "generic": "提交反馈失败。请稍后重试。"
+      "tooManyRequests": "请求过于频繁。请稍后再试",
+      "generic": "提交反馈失败。请稍后重试"
     }
   },
   "sections": {
@@ -973,11 +973,11 @@
     },
     "notifications": {
       "requiredFields": "请填写以下必填字段：{{fields}}",
-      "sectionUpdated": "{{label}} 部分已成功更新。",
-      "sectionAdded": "{{label}} 部分已成功添加。",
-      "itemRemoved": "项目已成功移除。",
-      "itemCopied": "项目已成功复制。",
-      "visibilityToggled": "项目可见性 {{status}}。"
+      "sectionUpdated": "{{label}} 部分已成功更新",
+      "sectionAdded": "{{label}} 部分已成功添加",
+      "itemRemoved": "项目已成功移除",
+      "itemCopied": "项目已成功复制",
+      "visibilityToggled": "项目可见性 {{status}}"
     }
   },
   "basicForm": {
@@ -1050,7 +1050,7 @@
     },
     "errors": {
       "resumeNotFound": "简历未找到",
-      "resumeNotFoundDescription": "ID为 {{id}} 的简历不存在，可能已被删除或ID错误。",
+      "resumeNotFoundDescription": "ID为 {{id}} 的简历不存在，可能已被删除或ID错误",
       "goBack": "返回"
     }
   },
@@ -1071,7 +1071,7 @@
   },
   "templateStore": {
     "title": "模板商店",
-    "subtitle": "挑一个起点,你的内容会自动保留。",
+    "subtitle": "挑一个起点,你的内容会自动保留",
     "search": "搜索模板",
     "empty": "没有匹配的模板"
   },
@@ -1163,7 +1163,7 @@
   },
   "newResumeDialog": {
     "title": "新建简历",
-    "description": "请输入新简历的名称。",
+    "description": "请输入新简历的名称",
     "placeholder": "简历名称",
     "cancel": "取消",
     "create": "创建"
@@ -1205,7 +1205,7 @@
     },
     "empty": {
       "title": "还没有简历",
-      "description": "从模板创建第一份,或导入现有的 JSON / PDF。"
+      "description": "从模板创建第一份,或导入现有的 JSON / PDF"
     }
   },
   "sidebar": {
@@ -1255,7 +1255,7 @@
   },
   "importDialog": {
     "title": "导入简历",
-    "description": "在下方选择或拖放 JSON / PDF 文件以创建新简历。",
+    "description": "在下方选择或拖放 JSON / PDF 文件以创建新简历",
     "typeLabel": "类型",
     "typePlaceholder": "选择文件类型...",
     "dropzone": {
@@ -1264,15 +1264,15 @@
       "jsonOnly": "（仅限 .json 文件）"
     },
     "errors": {
-      "fileReadAborted": "文件读取已中止。",
-      "fileReadFailed": "文件读取失败。",
-      "invalidFormat": "无效的简历格式。",
-      "parseFailed": "解析文件失败。",
-      "unsupportedFormat": "请上传 PDF 或 JSON 文件。",
+      "fileReadAborted": "文件读取已中止",
+      "fileReadFailed": "文件读取失败",
+      "invalidFormat": "无效的简历格式",
+      "parseFailed": "解析文件失败",
+      "unsupportedFormat": "请上传 PDF 或 JSON 文件",
       "noApiKey": "使用 PDF 导入需要先完成大模型配置（API Key、Base URL、模型、Max Tokens），请前往",
       "noApiKeyLink": "设置",
-      "noApiKeySuffix": "完成配置后再试。",
-      "modelNoVision": "当前模型「{{model}}」不支持读取图片。请在设置里换一个支持视觉的模型，或改上传 PDF / Word 版简历。"
+      "noApiKeySuffix": "完成配置后再试",
+      "modelNoVision": "当前模型「{{model}}」不支持读取图片。请在设置里换一个支持视觉的模型，或改上传 PDF / Word 版简历"
     },
     "success": "简历导入成功！",
     "cancel": "取消",
@@ -1306,9 +1306,9 @@
     }
   },
   "agentErrors": {
-    "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置。",
-    "insufficient_quota": "账户额度不足，请先充值或完善自定义大模型配置后再试。",
-    "model_unavailable": "当前配置的模型不可用，请到设置里检查模型名称与 Base URL。"
+    "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置",
+    "insufficient_quota": "账户额度不足，请先充值或完善自定义大模型配置后再试",
+    "model_unavailable": "当前配置的模型不可用，请到设置里检查模型名称与 Base URL"
   },
   "dynamicForm": {
     "fields": {
@@ -1457,9 +1457,9 @@
       "remove": "移除链接"
     },
     "notifications": {
-      "polishingInProgress": "AI 已经在润色中，请等待完成。",
+      "polishingInProgress": "AI 已经在润色中，请等待完成",
       "polishFailed": "润色文本失败: {{message}}",
-      "translationInProgress": "翻译进行中，请稍候。",
+      "translationInProgress": "翻译进行中，请稍候",
       "translateSuccess": "翻译完成",
       "translateFailed": "翻译失败: {{message}}",
       "changesAccepted": "AI优化已应用",
@@ -1474,8 +1474,8 @@
   "export": {
     "notifications": {
       "success": "简历导出成功！",
-      "error": "导出简历失败。",
-      "imageError": "加载用于导出的图片失败。",
+      "error": "导出简历失败",
+      "imageError": "加载用于导出的图片失败",
       "elementNotFound": "找不到简历元素",
       "generating": "正在生成PDF...",
       "unknownError": "未知错误",
@@ -1484,17 +1484,17 @@
   },
   "store": {
     "notifications": {
-      "resumeCreated": "简历 \"{{name}}\" 已创建。",
-      "resumeNotFound": "未找到要复制的简历。",
-      "resumeDuplicated": "简历 \"{{name}}\" 已成功复制。",
-      "resumeDeleted": "简历 \"{{name}}\" 已删除。",
+      "resumeCreated": "简历 \"{{name}}\" 已创建",
+      "resumeNotFound": "未找到要复制的简历",
+      "resumeDuplicated": "简历 \"{{name}}\" 已成功复制",
+      "resumeDeleted": "简历 \"{{name}}\" 已删除",
       "resumeSaved": "简历已保存！",
-      "createCloudFailed": "在云端创建失败。改为在本地创建。",
-      "importCloudFailed": "导入简历到云端失败。改为在本地导入。",
-      "resumeDuplicatedLocally": "简历 \"{{name}}\" 已在本地复制。",
+      "createCloudFailed": "在云端创建失败。改为在本地创建",
+      "importCloudFailed": "导入简历到云端失败。改为在本地导入",
+      "resumeDuplicatedLocally": "简历 \"{{name}}\" 已在本地复制",
       "renameSuccess": "重命名成功",
       "renameCloudFailed": "本地重命名成功，但同步到云端失败",
-      "deleteCloudFailed": "从云端删除失败，但已在本地删除。",
+      "deleteCloudFailed": "从云端删除失败，但已在本地删除",
       "versionDeleted": "版本已删除",
       "versionDeleteFailed": "删除版本失败",
       "resumeSavedCloud": "简历已保存到云端！",
@@ -1505,7 +1505,7 @@
       "resumePublished": "简历已发布！",
       "resumeUnpublished": "简历已取消发布",
       "sharingUpdateFailed": "更新分享设置失败",
-      "cloudSyncFailed": "云端同步失败。请检查您的网络连接。",
+      "cloudSyncFailed": "云端同步失败。请检查您的网络连接",
       "resumeUpToDate": "云端已是最新，无需保存",
       "syncConflictResolved": "检测到其它设备的修改：已备份为历史版本，当前内容已覆盖云端",
       "duplicatingInCloud": "正在云端复制...",
@@ -1517,7 +1517,7 @@
     }
   },
   "pdfPreview": {
-    "generateFailed": "PDF 预览生成失败，请稍后重试；导出按钮会显示更具体的错误。"
+    "generateFailed": "PDF 预览生成失败，请稍后重试；导出按钮会显示更具体的错误"
   },
   "common": {
     "loading": "加载中...",
@@ -1534,11 +1534,11 @@
     "notifications": {
       "copySuccess": "JSON数据已复制到剪贴板",
       "copyFailed": "复制失败，请重试",
-      "draftGenerated": "简历草稿已生成！现在您可以点击右上角的预览按钮查看。",
+      "draftGenerated": "简历草稿已生成！现在您可以点击右上角的预览按钮查看",
       "dataApplied": "简历数据已应用到预览中！",
       "resumeApplied": "简历已应用！",
       "generatingDraft": "好的，我将根据我们的对话为您生成一份简历草稿...",
-      "generationError": "抱歉，生成简历时遇到问题，请稍后再试。",
+      "generationError": "抱歉，生成简历时遇到问题，请稍后再试",
       "generatingResume": "正在生成简历中..."
     },
     "ui": {
@@ -1552,9 +1552,9 @@
     },
     "confirmDeleteVersion": "确定要删除此历史记录吗？",
     "confirmDeleteResume": "确定要删除这份简历吗？",
-    "deleteDescription": "此操作无法撤销。这将从云端和所有本地设备上永久删除该内容。",
-    "deleteDescriptionCloud": "此操作无法撤销。这将从云端和所有本地设备上永久删除该内容。",
-    "deleteDescriptionLocal": "此操作无法撤销。这将从您的设备上永久删除该内容。",
+    "deleteDescription": "此操作无法撤销。这将从云端和所有本地设备上永久删除该内容",
+    "deleteDescriptionCloud": "此操作无法撤销。这将从云端和所有本地设备上永久删除该内容",
+    "deleteDescriptionLocal": "此操作无法撤销。这将从您的设备上永久删除该内容",
     "delete": "删除",
     "done": "完成",
     "cancel": "取消",
@@ -1585,19 +1585,19 @@
   "billing": {
     "return": {
       "waitingTitle": "正在确认支付结果",
-      "waitingDetail": "支付结果正在回传，通常几秒内完成，请不要关闭本页。",
+      "waitingDetail": "支付结果正在回传，通常几秒内完成，请不要关闭本页",
       "paidTitle": "支付成功",
-      "paidDetail": "权益已生效，回工作台即可继续使用。",
+      "paidDetail": "权益已生效，回工作台即可继续使用",
       "alreadyPaidTitle": "这笔订单已支付",
-      "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额。",
+      "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额",
       "failedTitle": "支付未成功",
-      "failedDetail": "这笔订单已被支付渠道判为失败，款项未扣。你可以返回后重新下单。",
+      "failedDetail": "这笔订单已被支付渠道判为失败，款项未扣。你可以返回后重新下单",
       "refundedTitle": "订单已退款",
-      "refundedDetail": "这笔订单已完成退款，款项将按支付渠道的时效退回原路。",
+      "refundedDetail": "这笔订单已完成退款，款项将按支付渠道的时效退回原路",
       "timeoutTitle": "暂未收到到账通知",
-      "timeoutDetail": "如果你已完成付款，款项不会丢失——支付渠道会在数小时内重试通知。稍后回到工作台查看余额即可。",
+      "timeoutDetail": "如果你已完成付款，款项不会丢失——支付渠道会在数小时内重试通知。稍后回到工作台查看余额即可",
       "errorTitle": "无法确认订单",
-      "missingOrder": "链接里没有订单号，无法查询支付结果。",
+      "missingOrder": "链接里没有订单号，无法查询支付结果",
       "backToDashboard": "返回工作台"
     },
     "checkout": {
@@ -1619,18 +1619,18 @@
       "privacyLabel": "隐私政策",
       "secure": "支付在支付渠道自己的页面完成，我们不接触你的付款信息",
       "loading": "正在载入订单",
-      "missingPlan": "链接里没有套餐信息，无法结账。",
-      "planNotFound": "找不到这个套餐，它可能已经下架。",
-      "noMethod": "当前地区暂时没有可用的支付方式。",
-      "notSoldHere": "这个套餐在当前地区不出售。",
-      "notBuyable": "这个套餐当前无法购买。",
-      "loadFailed": "载入套餐失败，请稍后重试。"
+      "missingPlan": "链接里没有套餐信息，无法结账",
+      "planNotFound": "找不到这个套餐，它可能已经下架",
+      "noMethod": "当前地区暂时没有可用的支付方式",
+      "notSoldHere": "这个套餐在当前地区不出售",
+      "notBuyable": "这个套餐当前无法购买",
+      "loadFailed": "载入套餐失败，请稍后重试"
     }
   },
   "aiLab": {
     "configGate": {
       "title": "账户额度不足",
-      "description": "AI 已暂停。你可以充值/订阅恢复内部额度，或配置自定义模型继续使用。密钥只保存在你的浏览器本地。",
+      "description": "AI 已暂停。你可以充值/订阅恢复内部额度，或配置自定义模型继续使用。密钥只保存在你的浏览器本地",
       "later": "稍后",
       "saveAndContinue": "保存并继续"
     },
@@ -1638,8 +1638,8 @@
       "ready": "已根据对话生成简历草稿",
       "apply": "应用到简历",
       "discard": "不用这份",
-      "applied": "已把草稿应用到当前简历。",
-      "discarded": "这份先放着。哪儿不对劲？说一声我重来一版。"
+      "applied": "已把草稿应用到当前简历",
+      "discarded": "这份先放着。哪儿不对劲？说一声我重来一版"
     },
     "run": {
       "stop": "停止生成"
@@ -1655,13 +1655,13 @@
     },
     "closeConfirm": {
       "title": "关闭 AI 面板？",
-      "description": "当前这次生成会被停止，已经产出的内容保留在对话里。下次打开还能接着聊。",
+      "description": "当前这次生成会被停止，已经产出的内容保留在对话里。下次打开还能接着聊",
       "confirm": "停止并关闭"
     },
     "reset": {
       "title": "开启新对话？",
-      "descriptionRunning": "当前生成会被停止，并清空这份简历的 AI 对话记录、分析结果和画布状态。此操作无法撤销。",
-      "descriptionIdle": "将清空这份简历的 AI 对话记录、分析结果和画布状态，并开启一个新的会话。此操作无法撤销。",
+      "descriptionRunning": "当前生成会被停止，并清空这份简历的 AI 对话记录、分析结果和画布状态。此操作无法撤销",
+      "descriptionIdle": "将清空这份简历的 AI 对话记录、分析结果和画布状态，并开启一个新的会话。此操作无法撤销",
       "confirm": "开启新对话"
     },
     "reasoning": {
@@ -1681,18 +1681,18 @@
     },
     "intent": {
       "create": "我想从零创建一份简历，带我开始",
-      "optimize": "帮我针对目标岗位优化我的简历。",
-      "translate": "把我的简历翻译成目标语言。",
+      "optimize": "帮我针对目标岗位优化我的简历",
+      "translate": "把我的简历翻译成目标语言",
       "analyze": "分析这份简历的竞争力",
       "interview": "模拟面试",
       "fit": "评估我的简历和这个岗位的匹配度"
     },
     "error": {
-      "serviceUnavailable": "呀，我这边卡住了——歇一小会儿再试一次。"
+      "serviceUnavailable": "呀，我这边卡住了——歇一小会儿再试一次"
     },
     "artifact": {
-      "emptyAnalysis": "还没有分析结果——喊我做一次体检就有啦。",
-      "summary": "三位虚拟面试官（同行 / 用人主管 / HRBP）综合评估。",
+      "emptyAnalysis": "还没有分析结果——喊我做一次体检就有啦",
+      "summary": "三位虚拟面试官（同行 / 用人主管 / HRBP）综合评估",
       "strengths": "亮点",
       "improvements": "待改进",
       "exportReport": "导出报告",
@@ -1712,7 +1712,7 @@
         "needsWork": "竞争力有待提升"
       },
       "match": {
-        "empty": "还没有匹配结果。把目标 JD 贴给我，我来看看这份简历离岗位还差多远。",
+        "empty": "还没有匹配结果。把目标 JD 贴给我，我来看看这份简历离岗位还差多远",
         "dims": {
           "technical": "技术匹配",
           "experience": "经验匹配",
@@ -1732,9 +1732,9 @@
         "missing": "缺失关键词",
         "gaps": "补强建议",
         "useKeyword": "把「{{keyword}}」补进简历",
-        "useKeywordPrompt": "我确实有「{{keyword}}」相关的经历，帮我把它自然地补进简历——没有的话直接告诉我，别编。",
+        "useKeywordPrompt": "我确实有「{{keyword}}」相关的经历，帮我把它自然地补进简历——没有的话直接告诉我，别编",
         "closeGaps": "针对这些差距优化",
-        "closeGapsPrompt": "按刚才那份匹配报告里的缺口和建议，帮我优化简历。只用我已有的事实，缺的地方问我。"
+        "closeGapsPrompt": "按刚才那份匹配报告里的缺口和建议，帮我优化简历。只用我已有的事实，缺的地方问我"
       },
       "close": "关闭",
       "categories": "分类得分",
@@ -1756,7 +1756,7 @@
       "taskList": "任务清单",
       "working": "工作中",
       "backToChange": "回到这处改动",
-      "interruptExpired": "这张卡片来自一场已经结束的对话，我接不上了。重新说一次，我们从这里继续。",
+      "interruptExpired": "这张卡片来自一场已经结束的对话，我接不上了。重新说一次，我们从这里继续",
       "approval": {
         "defaultMessage": "想读取你的简历来给建议",
         "allow": "允许",
@@ -1824,7 +1824,7 @@
     },
     "pro": {
       "regionLabel": "升级提示",
-      "title": "升级到 Pro。",
+      "title": "升级到 Pro",
       "benefits": "查看 Pro 权益",
       "cta": "升级",
       "dismiss": "关闭升级提示"
@@ -1870,7 +1870,7 @@
       },
       "verification": {
         "title": "这几处我没找到出处",
-        "body": "下面这些名字是改动里新出现的，你原来的简历和这次对话里都没提过。不是说它们错，但发出去之前你自己确认一下。"
+        "body": "下面这些名字是改动里新出现的，你原来的简历和这次对话里都没提过。不是说它们错，但发出去之前你自己确认一下"
       },
       "research": {
         "title": "岗位研究",
@@ -1903,7 +1903,7 @@
       "microphone": "麦克风",
       "end": "结束面试",
       "comingSoonBadge": "还没上线",
-      "comingSoon": "语音模拟面试还在打磨中。它会用你的简历和目标岗位出题、边听边追问，做完给你一份可复盘的纪要——现在还差最后一段路，先不上假的给你。"
+      "comingSoon": "语音模拟面试还在打磨中。它会用你的简历和目标岗位出题、边听边追问，做完给你一份可复盘的纪要——现在还差最后一段路，先不上假的给你"
     },
     "living": {
       "askPolarisDetail": "询问 Polaris · 说说怎么改",
@@ -1928,7 +1928,7 @@
       "parsed": "读完了，草稿在右边",
       "failed": "这份 PDF 我没读出来",
       "warningsTitle": "有几处我拿不准",
-      "warningsBody": "这份 PDF 里下面这些地方我读得不确定，落到草稿里之前你先看一眼。"
+      "warningsBody": "这份 PDF 里下面这些地方我读得不确定，落到草稿里之前你先看一眼"
     },
     "tools": {
       "count": "{{count}} 次工具调用",
@@ -1988,7 +1988,7 @@
   },
   "errorPage": {
     "title": "出了点问题！",
-    "description": "抱歉，发生了意外错误。您可以尝试刷新页面或返回首页。",
+    "description": "抱歉，发生了意外错误。您可以尝试刷新页面或返回首页",
     "buttons": {
       "tryAgain": "重试",
       "backHome": "返回首页"
@@ -1996,7 +1996,7 @@
   },
   "notFoundPage": {
     "title": "页面未找到",
-    "description": "抱歉，我们找不到您要查找的页面。它可能已被移动或删除。",
+    "description": "抱歉，我们找不到您要查找的页面。它可能已被移动或删除",
     "buttons": {
       "backHome": "返回首页",
       "goBack": "返回上一页"
@@ -2025,14 +2025,14 @@
   "dashboardPage": {
     "cloudSyncBanner": {
       "title": "云端同步功能现已上线！",
-      "description": "开启后可多端同步并自动备份所有简历版本，数据安全无忧。目前您处于本地存储模式。",
+      "description": "开启后可多端同步并自动备份所有简历版本，数据安全无忧。目前您处于本地存储模式",
       "button": "前往设置开启"
     }
   },
   "hero": {
     "title": "使用 AI 打造您的简历",
-    "subtitle": "专业的模板、AI 驱动的写作和实时预览。",
-    "macbookTitle": "这台苹果电脑是用 Tailwindcss 做的。<br />真的，没开玩笑。"
+    "subtitle": "专业的模板、AI 驱动的写作和实时预览",
+    "macbookTitle": "这台苹果电脑是用 Tailwindcss 做的。<br />真的，没开玩笑"
   },
   "persona": {
     "peer": {
@@ -2073,27 +2073,27 @@
     "createTitle": "添加自定义模块",
     "renameTitle": "重命名模块",
     "rename": "重命名",
-    "hint": "模块标题会原样显示在简历上。",
+    "hint": "模块标题会原样显示在简历上",
     "placeholder": "例如：个人优势、获奖经历",
     "iconLabel": "图标（可选）",
     "deleteTitle": "删除模块",
-    "deleteHint": "「{{name}}」及其中的条目会一并删除，此操作无法撤销。"
+    "deleteHint": "「{{name}}」及其中的条目会一并删除，此操作无法撤销"
   },
   "errors": {
-    "unauthenticated": "登录已过期，请重新登录后继续。",
-    "forbidden": "这个账号没有权限做这件事。",
-    "plan_required": "当前套餐还用不了这个能力，升级后即可继续。",
-    "not_found": "没找到这个内容，它可能已经被删除了。",
-    "invalid_input": "填写的内容有问题，请检查后重试。",
-    "conflict": "刚才有另一处改动，请刷新后重试。",
-    "session_invalid": "这段对话已经失效了，开一段新的继续。",
-    "quota_exceeded": "本{{period}}额度已用完，{{resetAt}}恢复；也可以升级套餐或用自己的模型 Key。",
-    "rate_limited": "请求太密集了，{{retryAfter}}后再试。",
-    "content_rejected": "这份内容没能通过审核，换个说法或换份文件再试。",
-    "upstream_unavailable": "服务暂时不可用，稍后再试一次。",
-    "misconfigured": "这个功能暂时不可用，我们已经收到告警。",
-    "internal_error": "出了点问题，我们已经收到告警。",
-    "unknown": "出了点问题，请稍后重试。",
+    "unauthenticated": "登录已过期，请重新登录后继续",
+    "forbidden": "这个账号没有权限做这件事",
+    "plan_required": "当前套餐还用不了这个能力，升级后即可继续",
+    "not_found": "没找到这个内容，它可能已经被删除了",
+    "invalid_input": "填写的内容有问题，请检查后重试",
+    "conflict": "刚才有另一处改动，请刷新后重试",
+    "session_invalid": "这段对话已经失效了，开一段新的继续",
+    "quota_exceeded": "本{{period}}额度已用完，{{resetAt}}恢复；也可以升级套餐或用自己的模型 Key",
+    "rate_limited": "请求太密集了，{{retryAfter}}后再试",
+    "content_rejected": "这份内容没能通过审核，换个说法或换份文件再试",
+    "upstream_unavailable": "服务暂时不可用，稍后再试一次",
+    "misconfigured": "这个功能暂时不可用，我们已经收到告警",
+    "internal_error": "出了点问题，我们已经收到告警",
+    "unknown": "出了点问题，请稍后重试",
     "period": {
       "daily": "日",
       "weekly": "周",

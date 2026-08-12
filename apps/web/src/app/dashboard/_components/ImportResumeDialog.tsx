@@ -415,7 +415,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                         >
                           {t('importDialog.errors.noApiKeyLink', { defaultValue: '设置' })}
                         </button>
-                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试。' })}
+                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试' })}
                       </span>
                     </div>
                   </motion.div>

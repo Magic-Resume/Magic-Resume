@@ -522,7 +522,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
           onClose={() => setDeletingSection(null)}
           title={t('customSection.deleteTitle', { defaultValue: '删除模块' })}
           description={t('customSection.deleteHint', {
-            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销。',
+            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销',
             name: deletingSection?.label ?? '',
           })}
           confirmText={t('common.delete', { defaultValue: '删除' })}

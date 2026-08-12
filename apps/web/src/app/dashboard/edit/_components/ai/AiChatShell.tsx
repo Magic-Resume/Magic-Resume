@@ -1144,7 +1144,7 @@ export default function AiChatShell({
       setIsAiJobRunning(false);
       setAwaitingReply(false);
       if (access.reason === 'entitlement_unavailable') {
-        toast.error('账户额度检查失败，请稍后重试。');
+        toast.error('账户额度检查失败，请稍后重试');
         return null;
       }
       pendingRunRef.current = pending;

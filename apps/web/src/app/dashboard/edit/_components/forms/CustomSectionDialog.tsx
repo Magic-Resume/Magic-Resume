@@ -62,7 +62,7 @@ export default function CustomSectionDialog({
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="mt-1 text-[12px] text-neutral-500">
             {t('customSection.hint', {
-              defaultValue: '模块标题会原样显示在简历上。',
+              defaultValue: '模块标题会原样显示在简历上',
             })}
           </DialogPrimitive.Description>
 
