@@ -1765,7 +1765,10 @@
         "read": "Resume read",
         "reading": "Reading resume...",
         "allowed": "Read allowed"
-      }
+      },
+      "tasks": "Tasks",
+      "completed": "Completed",
+      "elapsed": "{{seconds}}s"
     },
     "composer": {
       "skills": "Skills",
