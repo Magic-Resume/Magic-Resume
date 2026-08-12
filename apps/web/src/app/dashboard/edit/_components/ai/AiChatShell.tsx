@@ -1329,36 +1329,32 @@ export default function AiChatShell({
     [answerInterrupt, setMessages]
   );
 
+  /**
+   * 用户说的话，原样交给 agent。
+   *
+   * 这里**曾经**有六条关键词路由（`/优化|jd|岗位/` → 优化技能、`/分析/` → 体检、
+   * `/面试|模拟/` → 直接弹浮层……）。删掉的理由不是它们不准，是这件事根本不该在这一层做：
+   *
+   * - 判定在前端、用关键词，且**优先于模型**——模型连原话都看不见。「给我两三个优化方向」
+   *   被 `/优化/` 劫进一条要 JD 的流程，而用户压根没提岗位。
+   * - 单字规则误伤成片：`/翻/` 吃掉「翻来覆去改了好几遍」，`/日/` 吃掉「6 月 30 日离职」。
+   * - `/分析/` 那条连 `text` 都不传，用户说了什么直接丢掉。
+   * - 靠调整 if 顺序抢救语义（`匹配` 必须排在 `优化` 前面，否则被 `/岗位/` 吞掉），
+   *   已经说明这套判定站不住。
+   *
+   * 技能选择交给 agent：`engine/skills/` 全部挂载，`AGENTS.md` 教它怎么挑，`ask_choice`
+   * 让它在拿不准时问一句。想显式指定的仍走 `/` 菜单（`runSkillWithText`）。
+   */
   const handleSend = useCallback(
     (text: string) => {
       setStarted(true);
       // 在乐观插入之前先构造发给后端的历史。
       const history = toBackendHistory(messagesRef.current).concat([{ role: 'user', content: text }]);
       addMessage({ id: nanoid(), role: 'user', content: text });
-      if (chatMode === 'create') {
-        void runChat(history, 'create');
-      } else if (/匹配|合不合适|适不适合|够不够格|match/i.test(text)) {
-        // 必须排在 optimize 前面：optimize 的 /岗位/ 会把「这个岗位我匹配吗」整个吞掉，
-        // 这也是 evaluate_fit 此前实际上够不着的原因。
-        void runFit(text);
-      } else if (/优化|jd|岗位/i.test(text)) {
-        void runContentSkill('optimize', text); // conversational; AI asks for JD via a FormCard
-      } else if (/翻|英文|english|日|韩/i.test(text)) {
-        void runContentSkill('translate', text);
-      } else if (/分析|体检|评分|竞争力/.test(text)) {
-        void runAnalyze();
-      } else if (/面试|模拟/.test(text)) {
-        setOverlayOpen(true);
-      } else if (/创建|从零|搭建|新建|从头|新简历/.test(text)) {
-        setChatMode('create');
-        setCanvas(CLOSED_CANVAS);
-        setLivingOpen(true);
-        void runChat(history, 'create');
-      } else {
-        void runChat(history, 'general');
-      }
+      // `create` 是显式模式（由 `/` 菜单的创建技能置位），不是关键词猜出来的——留着。
+      void runChat(history, chatMode === 'create' ? 'create' : 'general');
     },
-    [chatMode, addMessage, runContentSkill, runAnalyze, runChat, runFit, setCanvas, setChatMode, setLivingOpen, setStarted]
+    [chatMode, addMessage, runChat, setStarted]
   );
 
   /**

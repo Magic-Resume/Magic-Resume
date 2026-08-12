@@ -47,21 +47,9 @@ export function actionsForTarget(target: EditableTarget): QuickAction[] {
   return [...BULLET_ACTIONS, ...SUMMARY_ACTIONS];
 }
 
-/** Keyword routing for free-text instructions → a concrete action. */
-const FREE_ROUTES: { test: RegExp; action: QuickActionId }[] = [
-  { test: /量化|数字|数据|指标|百分|%/, action: 'quantify' },
-  { test: /精简|简洁|压缩|删减|啰嗦|冗余/, action: 'concise' },
-  { test: /短|缩短|一行|太长/, action: 'shorten' },
-  { test: /动词|有力|主动|改成主导|换词/, action: 'verb' },
-  { test: /证据|佐证|例子|案例|证明/, action: 'evidence' },
-  { test: /语气|口吻|温度|积极|稳重/, action: 'tone' },
-  { test: /重写|换个说法|重新写|改写整段/, action: 'rewrite' },
-];
-
-export function routeFreeText(text: string): QuickActionId | null {
-  for (const r of FREE_ROUTES) if (r.test.test(text)) return r.action;
-  return null;
-}
+// 这里原本还有一张 `FREE_ROUTES` 关键词表（量化/精简/缩短…）和 `routeFreeText`，
+// 把用户的自由输入猜成一个固定动作。全仓没有任何调用点——但它和 `handleSend` 里那六条
+// 路由是同一类东西：在前端用关键词替模型决定用户想干什么。一并删掉，免得下次有人接上去。
 
 // Selection-driven actions
 
