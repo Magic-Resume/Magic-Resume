@@ -22,6 +22,54 @@ import EVENTS from '../__fixtures__/real-agent-events.json';
 
 type AgentEvent = { type: string; payload?: Record<string, unknown> };
 
+/**
+ * 把一段正文按 chunk 喂进真实的 `ChatThread`，看逐词显影。
+ *
+ * 走的是生产组件本身，不是 Beautiful UI 那个自演示的 StreamingText——要验的正是
+ * 「markdown 增量渲染 + 只有新 token 显影」这件事成不成立。
+ */
+function StreamingProbe({ text }: { text: string }) {
+  const [n, setN] = useState(0);
+  const [runId, setRunId] = useState(0);
+  useEffect(() => {
+    if (n >= text.length) return;
+    // 一次 4 个字符，接近真实 chunk 的粒度。
+    const timer = setTimeout(() => setN((v) => Math.min(text.length, v + 4)), 40);
+    return () => clearTimeout(timer);
+  }, [n, text.length]);
+
+  const done = n >= text.length;
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          setN(0);
+          setRunId((v) => v + 1);
+        }}
+        className="mb-3 rounded-lg border border-hairline px-2.5 py-1 text-[12px] text-secondary"
+      >
+        重放{/* i18n-ignore：仅开发验收页 */}
+      </button>
+      <ChatThread
+        key={runId}
+        messages={[
+          {
+            id: 'stream',
+            role: 'assistant',
+            status: done ? 'done' : 'running',
+            streamed: true,
+            content: text.slice(0, n),
+          },
+        ]}
+        onToggleCanvas={() => undefined}
+        openCanvasSkillId={null}
+        activity="writing"
+      />
+    </div>
+  );
+}
+
 export default function RealDataHarness() {
   const { t } = useTranslation();
   const [ready, setReady] = useState(false);
@@ -111,6 +159,13 @@ export default function RealDataHarness() {
               activity="writing"
             />
           )}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-hairline p-4">
+          <div className="mb-3 font-mono text-[11px] uppercase tracking-wider text-muted">
+            流式逐词显影（真的走 ChatThread，不是 demo 组件）{/* i18n-ignore：仅开发验收页 */}
+          </div>
+          {ready && <StreamingProbe text={messages[3].content ?? ''} />}
         </div>
       </div>
     </div>

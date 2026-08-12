@@ -47,19 +47,69 @@ function CodeRenderer({ className, children }: { className?: string; children?: 
   );
 }
 
+/* ── 逐词显影（取自 Beautiful UI 的 StreamingText）──────────────────────────
+   原版把一段**写死的纯文本**切成词，一个词一个 span 挂 `stream-in`（从 blur 4px 显影）。
+   我们的正文是 markdown、每来一个 chunk 整段重渲染，照搬会让全段每次重新闪一遍。
+
+   靠 React 的协调解决：token 按下标定键，已挂载的 span 在后续渲染里**不会重新挂载**，
+   CSS 动画因此不会重播；只有新追加的 token 是新节点，于是只有它们显影。这正是要的效果，
+   而且不需要记录「上次渲染到哪个字」。 */
+
+/** 中日韩没有词间空格。按空格切，一整段中文会是**一个** token——那就等于没有效果。 */
+const CJK = '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}';
+const TOKEN_RE = new RegExp(`[${CJK}]|[^\\s${CJK}]+|\\s+`, 'gu');
+
+/** 不写 `both`：跑完让元素回到自然样式。留 forwards 等于给每个 span 永久挂一个
+ *  filter，几百个 filter 就是几百个层叠上下文。 */
+const STREAM_IN = 'stream-in 420ms cubic-bezier(0.22,0.61,0.25,1)';
+
+function tokenize(text: string): string[] {
+  const out: string[] = [];
+  for (const [token] of text.matchAll(TOKEN_RE)) {
+    // 空白并进上一个 token：它不需要单独显影，独立成节点只会让节点数翻倍。
+    if (/^\s+$/.test(token) && out.length) out[out.length - 1] += token;
+    else out.push(token);
+  }
+  return out;
+}
+
+const StreamingCtx = React.createContext(false);
+
+/**
+ * 文本子节点 → 逐个 token 的 span。非文本子节点原样透传——它们由自己的渲染器处理，
+ * 在那里同样会包一层，所以 `**加粗**` 里的字一样会显影。
+ */
+function Words({ children }: { children?: React.ReactNode }) {
+  const streaming = React.useContext(StreamingCtx);
+  if (!streaming) return <>{children}</>;
+  return (
+    <>
+      {React.Children.map(children, (child, ci) =>
+        typeof child === 'string'
+          ? tokenize(child).map((token, i) => (
+              <span key={`${ci}:${i}`} style={{ animation: STREAM_IN }}>
+                {token}
+              </span>
+            ))
+          : child,
+      )}
+    </>
+  );
+}
+
 const COMPONENTS: Components = {
-  p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0 leading-relaxed">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
+  p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0 leading-relaxed"><Words>{children}</Words></p>,
+  strong: ({ children }) => <strong className="font-semibold text-white"><Words>{children}</Words></strong>,
+  em: ({ children }) => <em className="italic"><Words>{children}</Words></em>,
   ul: ({ children }) => <ul className="my-2 list-disc pl-5 space-y-1">{children}</ul>,
   ol: ({ children }) => <ol className="my-2 list-decimal pl-5 space-y-1">{children}</ol>,
-  li: ({ children }) => <li className="leading-relaxed marker:text-neutral-500">{children}</li>,
-  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-base font-semibold text-white">{children}</h1>,
-  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-[15px] font-semibold text-white">{children}</h2>,
-  h3: ({ children }) => <h3 className="mt-2.5 mb-1 text-sm font-semibold text-white">{children}</h3>,
+  li: ({ children }) => <li className="leading-relaxed marker:text-neutral-500"><Words>{children}</Words></li>,
+  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-base font-semibold text-white"><Words>{children}</Words></h1>,
+  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-[15px] font-semibold text-white"><Words>{children}</Words></h2>,
+  h3: ({ children }) => <h3 className="mt-2.5 mb-1 text-sm font-semibold text-white"><Words>{children}</Words></h3>,
   a: ({ children, href }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-400 underline underline-offset-2 hover:text-sky-300">
-      {children}
+      <Words>{children}</Words>
     </a>
   ),
   code: CodeRenderer,
@@ -76,14 +126,20 @@ const COMPONENTS: Components = {
     </div>
   ),
   thead: ({ children }) => <thead className="text-left text-neutral-400">{children}</thead>,
-  th: ({ children }) => <th className="border border-neutral-800 px-2.5 py-1.5 font-medium">{children}</th>,
-  td: ({ children }) => <td className="border border-neutral-800 px-2.5 py-1.5 align-top">{children}</td>,
+  th: ({ children }) => <th className="border border-neutral-800 px-2.5 py-1.5 font-medium"><Words>{children}</Words></th>,
+  td: ({ children }) => <td className="border border-neutral-800 px-2.5 py-1.5 align-top"><Words>{children}</Words></td>,
 };
 
-export default function Markdown({ children }: { children: string }) {
+/**
+ * `streaming` 只在这一轮**正在写**的时候为真。写完就换回纯文本节点：
+ * 一段读完的回复从历史里恢复时不该把整篇重播一遍，几百个 span 也没有留着的理由。
+ */
+export default function Markdown({ children, streaming = false }: { children: string; streaming?: boolean }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
-      {children}
-    </ReactMarkdown>
+    <StreamingCtx.Provider value={streaming}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+        {children}
+      </ReactMarkdown>
+    </StreamingCtx.Provider>
   );
 }

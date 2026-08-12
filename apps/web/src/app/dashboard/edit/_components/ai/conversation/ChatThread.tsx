@@ -520,7 +520,9 @@ function Bubble({
         {/* 一种渲染方式、一种手感。这里原来给非流式的助手台词加了 JS 定时器的伪打字
             （24ms/字），跟真流式并存就是两种节奏；而 brief §3 明确要删掉这类假动效
             ——它模拟的是并没有在发生的工作。光标同理挂回全局心跳。 */}
-        <Markdown>{message.content ?? ''}</Markdown>
+        <Markdown streaming={message.streamed && message.status === 'running'}>
+          {message.content ?? ''}
+        </Markdown>
         {message.streamed && message.status === 'running' && (
           <span className="ai-breath inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px]" />
         )}
