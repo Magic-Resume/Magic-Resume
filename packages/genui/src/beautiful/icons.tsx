@@ -24,7 +24,8 @@ export type IconKey =
   | 'run'
   | 'translate'
   | 'attach'
-  | 'copy';
+  | 'copy'
+  | 'retry';
 
 const PATHS: Record<IconKey, React.ReactNode> = {
   /** 文档 —— 读取简历 / 读文件 */
@@ -80,6 +81,8 @@ const PATHS: Record<IconKey, React.ReactNode> = {
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </>
   ),
+  /** 转一圈的箭头 —— 重新生成（与 Beautiful UI 操作行里的那枚同形） */
+  retry: <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />,
   /** 回形针 —— 附件 */
   attach: (
     <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.18l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.59l8.49-8.48" />

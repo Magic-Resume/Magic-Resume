@@ -1770,7 +1770,8 @@
       "completed": "Completed",
       "elapsed": "{{seconds}}s",
       "copy": "Copy",
-      "copied": "Copied"
+      "copied": "Copied",
+      "regenerate": "Retry"
     },
     "composer": {
       "skills": "Skills",

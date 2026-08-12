@@ -1334,6 +1334,35 @@ export default function AiChatShell({
   );
 
   /**
+   * 重答最后一轮。
+   *
+   * 最后一条用户消息之后的东西全是这一轮的产物——答案、工具追踪、任务卡。重答要把它们
+   * **换掉**而不是在下面再堆一份：两份答案并排，用户没法判断哪份是"现在的"，而右侧画布
+   * 也只认最后一次运行。
+   */
+  const handleRegenerate = useCallback(() => {
+    const msgs = messagesRef.current;
+    let idx = -1;
+    for (let i = msgs.length - 1; i >= 0; i -= 1) {
+      if (msgs[i].role === 'user') {
+        idx = i;
+        break;
+      }
+    }
+    if (idx < 0) return;
+    const text = msgs[idx].content ?? '';
+    if (!text.trim()) return;
+
+    // 连同那条用户消息一起截掉——`handleSend` 会把它重新加回去。
+    const truncated = msgs.slice(0, idx);
+    setMessages(truncated);
+    // `messagesRef` 是在渲染里赋值的，这一拍还是旧值，而 `handleSend` 同步读它拼历史。
+    // 提前对齐；下次渲染会再赋一次同样的值，不会漂移。
+    messagesRef.current = truncated;
+    handleSend(text);
+  }, [handleSend, setMessages]);
+
+  /**
    * 对话里直接投一份旧简历 PDF。
    *
    * 结果**不**像导入弹窗那样直接建一条新简历——那条路是盲的、不可逆的。这里落到
@@ -1956,6 +1985,7 @@ export default function AiChatShell({
                   onWidgetAction={handleWidgetAction}
                   thinking={awaitingReply}
                   activity={activity}
+                  onRegenerate={handleRegenerate}
                   openCanvasSkillId={
                     canvas.open ? canvas.skillId : livingOpen ? livingSkillId : null
                   }

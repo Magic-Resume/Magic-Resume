@@ -464,8 +464,11 @@ function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
 
 function Bubble({
   message,
+  onRegenerate,
 }: {
   message: ChatMessage;
+  /** 只有最后一条助手回复拿得到，见 `MessageActions`。 */
+  onRegenerate?: () => void;
 }) {
   if (message.role === 'user') {
     const skill = message.skillId ? SKILLS[message.skillId] : null;
@@ -499,7 +502,9 @@ function Bubble({
     );
   }
   return (
-    <div className="flex items-start">
+    // `group/msg` 命名而不是裸 `group`：这棵树里已经有别的 group（技能卡、工具行），
+    // 裸 group 会让最近的那个祖先赢，操作行于是跟着无关的元素亮起来。
+    <div className="group/msg flex items-start">
       {/* 限宽。用户气泡是 max-w-[80%] 右对齐，助手正文原本 flex-1 吃满整列——
           一边缩着一边顶到边，读起来就是失衡，长句还会一路铺到用户气泡那一侧下方。
           给助手一个略宽于用户的上限：它是长文，但不该无边界。 */}
@@ -529,7 +534,7 @@ function Bubble({
             此前只能手动框选——而模型给的建议、改写后的段落，用户十有八九是要复制的。
             只在写完后出现：流式途中出现等于让人去点一个还在长的东西。 */}
         {message.status === 'done' && (message.content ?? '').trim() && (
-          <MessageActions text={message.content ?? ''} />
+          <MessageActions text={message.content ?? ''} onRegenerate={onRegenerate} />
         )}
       </div>
     </div>
@@ -543,11 +548,18 @@ function Bubble({
  * 二次计费且可能覆盖已接受的改动），赞踩要有反馈通道，两者都还没有。做一个点了没反应
  * 的按钮，比没有这个按钮更糟。
  */
-function MessageActions({ text }: { text: string }) {
+function MessageActions({ text, onRegenerate }: { text: string; onRegenerate?: () => void }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   return (
-    <div className="mt-1.5 flex items-center gap-0.5">
+    // 静息时透明但**仍占位**：改成 hidden 会让整条消息在鼠标划过时高度跳一下，比一直
+    // 显示还吵。`focus-within` 是给键盘的——只挂 hover 等于把这两个动作从键盘上删掉。
+    <div
+      className={cn(
+        'mt-1.5 flex items-center gap-0.5 opacity-0 transition-opacity duration-150',
+        'group-hover/msg:opacity-100 focus-within:opacity-100',
+      )}
+    >
       <button
         type="button"
         aria-label={t('aiLab.chat.copy')}
@@ -565,6 +577,19 @@ function MessageActions({ text }: { text: string }) {
         {copied ? <Check size={12} /> : <Icon name="copy" size={12} />}
         {copied ? t('aiLab.chat.copied') : t('aiLab.chat.copy')}
       </button>
+      {/* 只挂在最后一条回复上。给历史里任何一条都配重答，等于允许把对话改成一棵树，
+          而这个界面只画得出一条线。 */}
+      {onRegenerate && (
+        <button
+          type="button"
+          aria-label={t('aiLab.chat.regenerate')}
+          onClick={onRegenerate}
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-300"
+        >
+          <Icon name="retry" size={12} />
+          {t('aiLab.chat.regenerate')}
+        </button>
+      )}
     </div>
   );
 }
@@ -582,11 +607,24 @@ type ChatThreadProps = {
   thinking?: boolean;
   /** agent 此刻在干什么（由 SSE 事件推导）——驱动 orb 形态与旁白文案 */
   activity?: AgentActivity | null;
+  /** 重答最后一轮。不给就不渲染那个按钮。 */
+  onRegenerate?: () => void;
 };
 
 export { isPlanFulfilled, isRetirablePlan };
 
-export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, activity }: ChatThreadProps) {
+export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, activity, onRegenerate }: ChatThreadProps) {
+  // 只有最后一条写完的助手回复能重答。这一轮还在跑的时候不给——重答会把它顶掉，
+  // 而用户此刻看到的正是它在写。
+  const regenerableId = (() => {
+    if (!onRegenerate || thinking) return null;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const m = messages[i];
+      if (m.role === 'assistant') return m.status === 'done' ? m.id : null;
+      if (m.role === 'user') return null;
+    }
+    return null;
+  })();
   // 这一轮从什么时候开始等的。`thinking` 由 false → true 的那一刻记一次，之后整轮不变
   // ——每次重渲都取 Date.now() 的话，计时永远显示 0。
   const [thinkingSince, setThinkingSince] = useState<number | undefined>(undefined);
@@ -698,7 +736,10 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
                 </div>
               ) : null
             ) : (
-              <Bubble message={m} />
+              <Bubble
+                message={m}
+                onRegenerate={m.id === regenerableId ? onRegenerate : undefined}
+              />
             )}
           </motion.div>
           );

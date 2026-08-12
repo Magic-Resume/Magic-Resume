@@ -157,6 +157,7 @@ export default function RealDataHarness() {
               onToggleCanvas={() => undefined}
               openCanvasSkillId={null}
               activity="writing"
+              onRegenerate={() => undefined}
             />
           )}
         </div>
