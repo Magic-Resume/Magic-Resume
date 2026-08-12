@@ -627,10 +627,12 @@ export default function AiChatShell({
                 // 而我们此刻正站在它的 for await 里。等这条流自然收尾再动手。
                 window.setTimeout(() => {
                   autoRejected.forEach((slot) =>
+                    // 这句是**发给模型**的，不是界面文案：写死中文等于对英文会话里的模型
+                    // 说中文。工具层与提示词层通篇英文，跟着它走。
                     answerInterruptRef.current?.(slot, {
                       type: 'reject',
                       message:
-                        '用户当前处于「问答」模式，不允许读取简历。请在不查看简历的前提下回答；如果这个问题必须看过简历，直说需要切换模式。',
+                        'The user is in "Ask" mode, which does not allow reading the resume. Answer without looking at it; if the question genuinely requires the resume, say so and ask them to switch modes.',
                     })
                   );
                 }, 0);
@@ -692,7 +694,7 @@ export default function AiChatShell({
               if (readApprovalRef.current) {
                 setApprovalReadState(readApprovalRef.current, 'reading');
               } else {
-                addMessage({ id: nanoid(), role: 'activity', content: '正在读取你的简历…', status: 'running' });
+                addMessage({ id: nanoid(), role: 'activity', content: t('aiLab.chat.readingResume'), status: 'running' });
               }
             }
           } else if (ev.type === 'tool_completed') {
@@ -831,7 +833,7 @@ export default function AiChatShell({
             addMessage({
               id: nanoid(),
               role: 'log',
-              content: '这轮没能改动简历，画布保持原样 · 可以再说一次试试',
+              content: t('aiLab.chat.writeFailed'),
               tone: 'warn',
             });
             appLifecycle.aiWriteFailed({
@@ -1527,7 +1529,11 @@ export default function AiChatShell({
                   },
                 }
               : // 取消一张采集卡是「跳过这一步」，不是终止整个流程——措辞要让模型接着往下走。
-                { type: 'reject', message: '用户跳过了这一步，继续下一步。' };
+                // 同样是发给模型的，用英文（见上面「问答」模式那条的理由）。
+                {
+                  type: 'reject',
+                  message: 'The user skipped this step. Continue with the next one.',
+                };
           answerInterrupt(message?.interruptSlot, decision);
         }
       }

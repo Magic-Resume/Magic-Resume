@@ -1775,7 +1775,9 @@
       "elapsed": "{{seconds}}s",
       "copy": "复制",
       "copied": "已复制",
-      "regenerate": "重新生成"
+      "regenerate": "重新生成",
+      "readingResume": "正在读取你的简历…",
+      "writeFailed": "这轮没能改动简历，画布保持原样 · 可以再说一次试试"
     },
     "composer": {
       "skills": "技能",
@@ -1939,6 +1941,19 @@
       "summary": {
         "sections": "读到 {{count}} 个模块",
         "results": "{{count}} 条结果"
+      }
+    },
+    "canvas": {
+      "action": {
+        "quantify": "量化",
+        "concise": "精简",
+        "verb": "换个动词",
+        "evidence": "补证据",
+        "rewrite": "重写",
+        "tone": "调整语气",
+        "shorten": "缩短",
+        "polish": "优化这段",
+        "translate": "翻译"
       }
     }
   },

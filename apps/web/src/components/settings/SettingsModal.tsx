@@ -204,7 +204,9 @@ export function SettingsModal() {
                           onChange={(code) => setPreferredLanguage(code)}
                           options={[
                             { value: "en", label: "English" },
-                            { value: "zh", label: "中文" },
+                            // 语言名用它自己的语言写，这是语言选择器的通例——把「中文」
+                            // 翻成 "Chinese" 反而让找不到中文的人更找不到。
+                            { value: "zh", label: "中文" }, // i18n-ignore
                           ]}
                         />
                       </SettingRow>

@@ -78,7 +78,7 @@ export default function ActionPopover({ target, anchorRect, onRun, onClose }: Ac
             onClick={() => onRun(a.id)}
             className="text-xs text-neutral-200 bg-neutral-800 hover:bg-neutral-700 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer active:scale-95"
           >
-            {a.label}
+            {t(a.label, { defaultValue: a.label })}
           </button>
         ))}
       </div>

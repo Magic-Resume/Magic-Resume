@@ -1775,7 +1775,9 @@
       "elapsed": "{{seconds}}s",
       "copy": "Copy",
       "copied": "Copied",
-      "regenerate": "Retry"
+      "regenerate": "Retry",
+      "readingResume": "Reading your resume…",
+      "writeFailed": "This turn didn't change the resume — the canvas is unchanged. Try saying it again."
     },
     "composer": {
       "skills": "Skills",
@@ -1939,6 +1941,19 @@
       "summary": {
         "sections": "Read {{count}} sections",
         "results": "{{count}} results"
+      }
+    },
+    "canvas": {
+      "action": {
+        "quantify": "Quantify",
+        "concise": "Tighten",
+        "verb": "Stronger verb",
+        "evidence": "Add evidence",
+        "rewrite": "Rewrite",
+        "tone": "Adjust tone",
+        "shorten": "Shorten",
+        "polish": "Polish this",
+        "translate": "Translate"
       }
     }
   },

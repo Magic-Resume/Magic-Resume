@@ -78,7 +78,7 @@ export default function SelectionActionBar({ rect, onRun, onClose }: SelectionAc
             onClick={() => (a.id === 'translate' ? setPickingLang(true) : onRun(a.id))}
             className="text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer active:scale-95"
           >
-            {a.label}
+            {t(a.label, { defaultValue: a.label })}
           </button>
         ))
       )}

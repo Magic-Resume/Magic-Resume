@@ -25,17 +25,17 @@ export interface QuickAction {
 
 /** Quick actions for an experience / project bullet. */
 export const BULLET_ACTIONS: QuickAction[] = [
-  { id: 'quantify', label: '量化' },
-  { id: 'concise', label: '精简' },
-  { id: 'verb', label: '换个动词' },
-  { id: 'evidence', label: '补证据' },
+  { id: 'quantify', label: 'aiLab.canvas.action.quantify' },
+  { id: 'concise', label: 'aiLab.canvas.action.concise' },
+  { id: 'verb', label: 'aiLab.canvas.action.verb' },
+  { id: 'evidence', label: 'aiLab.canvas.action.evidence' },
 ];
 
 /** Quick actions for a summary-style block. */
 export const SUMMARY_ACTIONS: QuickAction[] = [
-  { id: 'rewrite', label: '重写' },
-  { id: 'tone', label: '调整语气' },
-  { id: 'shorten', label: '缩短' },
+  { id: 'rewrite', label: 'aiLab.canvas.action.rewrite' },
+  { id: 'tone', label: 'aiLab.canvas.action.tone' },
+  { id: 'shorten', label: 'aiLab.canvas.action.shorten' },
 ];
 
 export function actionsForTarget(target: EditableTarget): QuickAction[] {
@@ -61,9 +61,9 @@ export interface SelectionAction {
 }
 
 export const SELECTION_ACTIONS: SelectionAction[] = [
-  { id: 'polish', label: '优化这段' },
-  { id: 'shorten', label: '缩短' },
-  { id: 'translate', label: '翻译' },
+  { id: 'polish', label: 'aiLab.canvas.action.polish' },
+  { id: 'shorten', label: 'aiLab.canvas.action.shorten' },
+  { id: 'translate', label: 'aiLab.canvas.action.translate' },
 ];
 
 export type ActionKind = QuickActionId | SelectionActionId | 'free';
