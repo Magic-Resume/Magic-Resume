@@ -1,13 +1,19 @@
-import type { LucideIcon } from 'lucide-react';
-import type { WidgetInstance } from '@magic-resume/genui/contract';
-import type { AgentActivity } from './conversation/agentActivity';
+import type { LucideIcon } from "lucide-react";
+import type { WidgetInstance } from "@magic-resume/genui/contract";
+import type { AgentActivity } from "./conversation/agentActivity";
 
-export type SkillId = 'create' | 'optimize' | 'analyze' | 'fit' | 'translate' | 'interview';
+export type SkillId =
+  | "create"
+  | "optimize"
+  | "analyze"
+  | "fit"
+  | "translate"
+  | "interview";
 
-export type CanvasView = 'preview' | 'json' | 'score' | 'match';
+export type CanvasView = "preview" | "json" | "score" | "match";
 
 /** 技能的作用范围。`whole-resume` 是整篇模式，`element`/`selection` 是 living canvas 驱动的就地调用。 */
-export type SkillScope = 'whole-resume' | 'element' | 'selection';
+export type SkillScope = "whole-resume" | "element" | "selection";
 
 /** 每项 AI 能力的唯一真源：对话外壳、技能 chip、斜杠菜单都读它。加能力 = 加一条。 */
 export interface AiSkill {
@@ -20,7 +26,7 @@ export interface AiSkill {
   /** raw hex for inline dots / non-class usage */
   accentHex: string;
   /** inline = renders in the thread; immersive = takes over with an overlay */
-  surface: 'inline' | 'immersive';
+  surface: "inline" | "immersive";
   /** create is a pure conversation, no artifact */
   isChat?: boolean;
   /** which canvas views this skill produces; omitted = no canvas artifact */
@@ -33,7 +39,16 @@ export interface AiSkill {
   doneSummary: string;
 }
 
-export type ChatRole = 'user' | 'assistant' | 'exec' | 'log' | 'approval' | 'activity' | 'plan' | 'widget' | 'tools';
+export type ChatRole =
+  | "user"
+  | "assistant"
+  | "exec"
+  | "log"
+  | "approval"
+  | "activity"
+  | "plan"
+  | "widget"
+  | "tools";
 
 /**
  * 一条 todo 的可渲染片段。
@@ -43,20 +58,20 @@ export type ChatRole = 'user' | 'assistant' | 'exec' | 'log' | 'approval' | 'act
  * 没有标记就是单独一段 text，这是默认路径而非异常路径。
  */
 export type TodoSegment =
-  | { type: 'text'; text: string }
+  | { type: "text"; text: string }
   | {
-      type: 'chip';
+      type: "chip";
       /** 芯片里加重的那个动词。 */
       verb: string;
       /** 动词之后的部分，可为空。 */
       rest: string;
-      kind: 'read' | 'write' | 'analyze' | 'search' | 'ask' | 'tool';
+      kind: "read" | "write" | "analyze" | "search" | "ask" | "tool";
     };
 
 /** A single checklist item in a `plan` message — the live analyze todolist. */
 export interface PlanTodo {
   content: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: "pending" | "in_progress" | "completed";
   /** 芯片与纯文本混排。缺席时按 `content` 渲染成一段纯文本。 */
   segments?: TodoSegment[];
   /**
@@ -66,6 +81,22 @@ export interface PlanTodo {
    * 里那条「不演一个并没有发生的状态」因此仍然成立：现在有真实来源了。
    */
   activity?: AgentActivity;
+}
+
+/** 搜索或内部知识检索给本轮回答带回的可追溯来源。 */
+export interface CitationSource {
+  id: string;
+  kind: "external" | "internal";
+  visibility: "visible" | "hidden";
+  /** 外部来源在本轮回答里的稳定 [n] 编号。 */
+  citationId?: number;
+  title: string;
+  url?: string;
+  snippet?: string;
+  publishedDate?: string;
+  sourceName?: string;
+  /** 搜索服务返回的网站图标；缺失时渲染层回退到站点 /favicon.ico。 */
+  faviconUrl?: string;
 }
 
 /**
@@ -81,13 +112,13 @@ export interface ApprovalRequest {
   /** resource class being requested, e.g. 'resume' (drives the read narration). */
   scope: string;
   /** `expired`: restored from an old transcript — the paused run is long gone. */
-  status: 'pending' | 'approved' | 'denied' | 'expired';
+  status: "pending" | "approved" | "denied" | "expired";
   /**
    * For a read_resume approval: how far the read has progressed once approved.
    * Lets the card show 已允许读取 → 正在读取简历… → 已读取简历 in one place instead of
    * spawning a separate activity line.
    */
-  readState?: 'reading' | 'read';
+  readState?: "reading" | "read";
   /**
    * 这一页对应中断里的第几个动作。
    *
@@ -106,7 +137,7 @@ export interface ChatMessage {
   content?: string;
   /** present when role === 'exec' */
   skillId?: SkillId;
-  status?: 'running' | 'done';
+  status?: "running" | "done";
   /** present when role === 'log' — anchors the entry back to a canvas change */
   resumePath?: string;
   /**
@@ -118,7 +149,7 @@ export interface ChatMessage {
    * 三档而不是两档，是因为「这几处不在画布上就地显示」既不是成功也不是失败——
    * 混进琥珀会被读成报错，而那正是它第一版引起的误解。颜色要能替代阅读。
    */
-  tone?: 'ok' | 'info' | 'warn';
+  tone?: "ok" | "info" | "warn";
   /** live-streamed assistant text — render raw (no typewriter re-animation) */
   streamed?: boolean;
   /** 这一轮的思考过程（若模型回传）。与 content 分开存：它是过程，不是产物。 */
@@ -137,12 +168,20 @@ export interface ChatMessage {
   /** present when role === 'plan' — 本轮开始的时刻，卡片据此走秒。 */
   startedAt?: number;
   /**
-   * present when role === 'tools' —— 这一轮调用过的工具。
+   * present on an assistant message（旧的持久化消息可能仍是 role === 'tools'）—— 这一轮调用过的工具。
    *
    * 此前除 `read_resume` 外的工具调用**在界面上完全不可见**：只改了那颗 orb 的形态，
-   * 跑完就没了。这条消息把一轮里动过的工具收成一组，用户至少能回头看「它到底做了什么」。
+   * 跑完就没了。把一轮里动过的工具收成一组，用户至少能回头看「它到底做了什么」。
    */
-  toolCalls?: { toolCallId: string; toolName: string; subject?: string; done?: boolean }[];
+  toolCalls?: {
+    toolCallId: string;
+    toolName: string;
+    subject?: string;
+    done?: boolean;
+    summary?: { kind?: string; count?: number; name?: string };
+  }[];
+  /** 本轮回答使用的来源；内部来源会被持久化但当前不渲染。 */
+  sources?: CitationSource[];
   /** present when role === 'widget' — a GenUI interactive card (form / decision) */
   widget?: WidgetInstance;
   /**
@@ -157,7 +196,7 @@ export interface ChatMessage {
   quote?: { label: string; text: string };
 }
 
-export type CanvasStatus = 'idle' | 'streaming' | 'ready' | 'applied';
+export type CanvasStatus = "idle" | "streaming" | "ready" | "applied";
 
 export interface CanvasState {
   open: boolean;

@@ -94,7 +94,7 @@ function ModeGlyph({ mode }: { mode: AgentMode }) {
   );
 }
 
-export default function Composer({
+function Composer({
   onRunSkill,
   onSend,
   quotedContext,
@@ -585,3 +585,5 @@ export default function Composer({
     </div>
   );
 }
+
+export default React.memo(Composer);

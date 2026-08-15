@@ -17,6 +17,8 @@ type DetailLine = { text: string; tone?: "add" };
 export type ToolChipDetail = { text: string; tone?: "add" };
 
 export interface ToolChipRow {
+  /** Stable identity for repeated actions such as two consecutive reads. */
+  id?: string;
   /** 图标键，见本文件的 `Icons`。认不出就不画图标。 */
   icon: string;
   /** 动作词，如「读取」。 */
@@ -47,15 +49,17 @@ export interface ToolChipsProps {
  * 和"跑完没有"）。这里换成 props：行由真实的工具事件驱动，跑没跑完由 `working` 说了算。
  */
 export default function ToolChips({ rows, diffs = [], working = false, title }: ToolChipsProps) {
-  const [open, setOpen] = useState(true);
+  // 运行时主动把过程露出来，结束后收成一行。用户手动点过以后尊重他的选择。
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null);
   const [openRows, setOpenRows] = useState<Set<string>>(new Set());
+  const open = manualOpen ?? working;
   const step = rows.length + (working ? 0 : 1);
   const total = rows.length + 1;
 
-  const toggleRow = (label: string) =>
+  const toggleRow = (id: string) =>
     setOpenRows((current) => {
       const next = new Set(current);
-      next.has(label) ? next.delete(label) : next.add(label);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
 
@@ -65,7 +69,7 @@ export default function ToolChips({ rows, diffs = [], working = false, title }: 
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => setManualOpen((current) => !(current ?? working))}
         className="-mx-1.5 flex w-fit items-center gap-1.5 rounded-control px-1.5 py-1 text-[12.5px] text-ink-2 transition-colors duration-100 hover:bg-hover-2"
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200" style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>
@@ -80,40 +84,50 @@ export default function ToolChips({ rows, diffs = [], working = false, title }: 
             row hover pills room inside this overflow-hidden clip box */}
         <div className="-mx-1 overflow-hidden px-1.5 pb-1">
         <div className="mt-1.5 flex flex-col gap-1">
-          {rows.slice(0, step).map((row) => {
-            const rowOpen = openRows.has(row.label);
-            return (
-            <div key={row.label} style={{ animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }}>
-              <button
-                type="button"
-                aria-expanded={rowOpen}
-                onClick={() => toggleRow(row.label)}
-                className="group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2"
-              >
-                <span className="relative flex size-4 shrink-0 items-center justify-center text-ink-3">
+          {rows.slice(0, step).map((row, index) => {
+            const rowId = row.id ?? `${row.label}:${row.chip}:${index}`;
+            const expandable = Boolean(row.detail?.length);
+            const rowOpen = expandable && openRows.has(rowId);
+            const content = (
+              <>
+                <span className="flex size-4 shrink-0 items-center justify-center text-ink-3">
                   <Icon name={row.icon} />
-                  <svg
-                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-                    className={`absolute transition-[opacity,transform] duration-150 group-hover/row:opacity-100 ${rowOpen ? "opacity-100" : "opacity-0"}`}
-                    style={{ transform: rowOpen ? "rotate(0deg)" : "rotate(-90deg)" }}
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
                 </span>
-                <span className="shrink-0 text-[12.5px] font-medium text-ink">{row.label}</span>
-                {/* 原版是 `flex-1`：芯片撑满整行。他们的示例里装的是长文件路径，撑满看着刚好；
-                    我们装的是 `resume.json` 这种短词，撑满就成了一个几乎全空的框——再叠上
-                    描边和输入框底色，它读起来像个禁用的输入框，不像标签。改成裹住内容，
-                    长路径仍靠 max-w-full + truncate 收住。 */}
+                <span className="shrink-0 text-[12.5px] font-medium text-ink-2">{row.label}</span>
                 {row.chip ? <span
-                  className={`inline-flex h-5.5 min-w-0 max-w-full cursor-pointer items-center truncate rounded-chip bg-hover-2 px-1.5
-                    text-[11.5px] text-[#43464c] shadow-hairline transition-colors duration-100 hover:bg-line-strong
-                    dark:bg-hover-2 dark:text-ink-2 dark:shadow-none dark:hover:bg-hover
+                  className={`inline-flex h-5.5 min-w-0 max-w-full items-center truncate rounded-chip bg-hover-2 px-1.5
+                    text-[11.5px] text-[#43464c] shadow-hairline dark:bg-hover-2 dark:text-ink-2 dark:shadow-none
                     ${row.mono ? "font-mono" : ""}`}
                 >
                   {row.chip}
                 </span> : null}
-              </button>
+                {expandable ? (
+                  <svg
+                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                    className="ml-0.5 shrink-0 text-ink-3 transition-transform duration-200"
+                    style={{ transform: rowOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                ) : null}
+              </>
+            );
+            return (
+            <div key={rowId} style={{ animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }}>
+              {expandable ? (
+                <button
+                  type="button"
+                  aria-expanded={rowOpen}
+                  onClick={() => toggleRow(rowId)}
+                  className="-mx-1 flex h-7 max-w-full items-center gap-2 rounded-control px-1 text-left transition-colors duration-100 hover:bg-hover-2"
+                >
+                  {content}
+                </button>
+              ) : (
+                <div className="flex h-7 max-w-full items-center gap-2 text-left">
+                  {content}
+                </div>
+              )}
 
               {/* expanded detail */}
               <div

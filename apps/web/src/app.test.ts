@@ -1,4 +1,10 @@
 import assert from 'node:assert/strict';
+import { createElement } from 'react';
+import type { ComponentType } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { FilterTable } from '@magic-resume/genui/beautiful';
+import type { FilterTableProps } from '@magic-resume/genui/beautiful';
+import { WidgetHost } from '@magic-resume/genui';
 import zhCopy from '@/locales/zh/translation.json';
 import enCopy from '@/locales/en/translation.json';
 import {
@@ -11,19 +17,37 @@ import { appErrorCopy } from '@/lib/errors/message';
 import { presentAppError } from '@/lib/errors/present';
 import { APP_ERROR_CODES, opensBillingGate } from '@/lib/errors/types';
 import { projectUpstreamError } from '@/app/api/chat-agent/errorProjection';
-import {
+import TasksCard, {
+  formatElapsedDuration,
   isPlanFulfilled,
   isRetirablePlan,
   segmentsOf,
 } from '@/app/dashboard/edit/_components/ai/conversation/TasksCard';
+import { normalizeMarkdownSource } from '@/app/dashboard/edit/_components/ai/conversation/markdownSource';
+import Markdown from '@/app/dashboard/edit/_components/ai/conversation/Markdown';
+import {
+  citationSourcesFromWebSearchToolResult,
+  linkCitationMarkers,
+  mergeCitationSources,
+  normalizeCitationSources,
+  siteFaviconUrl,
+  visibleCitationSources,
+} from '@/app/dashboard/edit/_components/ai/conversation/citationSources';
 import {
   planInterrupt,
   openDecisions,
   fillDecision,
 } from '@/app/dashboard/edit/_components/ai/lib/interruptPlan';
 import {
+  createStreamingTextBuffer,
+  STREAM_RENDER_INTERVAL_MS,
+} from '@/app/dashboard/edit/_components/ai/lib/streamingBuffer';
+import {
+  FORM_DEFS,
   WIDGETS,
   askChoiceKind,
+  normalizeApplicationTrackerProps,
+  normalizeResearchWidgetProps,
 } from '@/app/dashboard/edit/_components/ai/widgets/registry';
 import type {
   ChatMessage,
@@ -38,6 +62,7 @@ import {
   type EditResultLike,
 } from '@/app/dashboard/edit/_components/ai/lib/changeModel';
 import { diffResumeToChanges } from '@/app/dashboard/edit/_components/ai/lib/diffResume';
+import { analysisImprovementActions } from '@/app/dashboard/edit/_components/ai/lib/analysisIssues';
 import {
   partitionByAnchor,
   toPendingView,
@@ -109,7 +134,9 @@ class MemoryDb {
   }
 }
 
-const baseSession = (overrides: Partial<AiSessionSnapshot> = {}): Partial<AiSessionSnapshot> => ({
+const baseSession = (
+  overrides: Partial<AiSessionSnapshot> = {},
+): Partial<AiSessionSnapshot> => ({
   started: true,
   sessionId: 'session-a',
   sessionUsed: true,
@@ -163,8 +190,18 @@ const resume: Resume = {
   },
   sections: {
     experience: [
-      { id: 'google', visible: true, company: 'Google', summary: beforeSummary },
-      { id: 'bytedance', visible: true, company: 'ByteDance', summary: '<p>Unchanged</p>' },
+      {
+        id: 'google',
+        visible: true,
+        company: 'Google',
+        summary: beforeSummary,
+      },
+      {
+        id: 'bytedance',
+        visible: true,
+        company: 'ByteDance',
+        summary: '<p>Unchanged</p>',
+      },
     ],
   },
   sectionOrder: [{ key: 'experience', label: 'Experience' }],
@@ -241,8 +278,15 @@ async function testAiSessionStore() {
       persistDelayMs: 0,
     });
 
-    await store.getState().patchSession('resume-a', baseSession({ sessionId: 'session-a' }));
-    await store.getState().patchSession('resume-b', baseSession({ sessionId: 'session-b', messages: [] }));
+    await store
+      .getState()
+      .patchSession('resume-a', baseSession({ sessionId: 'session-a' }));
+    await store
+      .getState()
+      .patchSession(
+        'resume-b',
+        baseSession({ sessionId: 'session-b', messages: [] }),
+      );
     await store.getState().flushSession('resume-a');
     await store.getState().flushSession('resume-b');
 
@@ -336,35 +380,44 @@ function testImportResumeValidation() {
   assert.deepEqual(normalized.sections.education, []);
   // A custom section survives with its content. The id is reissued — imported
   // ids are whatever the source said, and the app mints its own with nanoid.
-  const customItems = normalized.sections.customSection as { id: string; title: string }[];
+  const customItems = normalized.sections.customSection as {
+    id: string;
+    title: string;
+  }[];
   assert.equal(customItems.length, 1);
   assert.equal(customItems[0].title, 'Notes');
   assert.match(customItems[0].id, /^[A-Za-z0-9_-]{21}$/);
-  assert.deepEqual(normalized.sectionOrder.map(({ key }) => key), [
-    'basics',
-    'experience',
-    'projects',
-    'education',
-    'skills',
-    'languages',
-    'certificates',
-    'customSection',
-  ]);
+  assert.deepEqual(
+    normalized.sectionOrder.map(({ key }) => key),
+    [
+      'basics',
+      'experience',
+      'projects',
+      'education',
+      'skills',
+      'languages',
+      'certificates',
+      'customSection',
+    ],
+  );
 
   const repairedEmptyOrder = validateAndNormalizeImportedResume({
     info: {},
     sections: {},
     sectionOrder: [],
   });
-  assert.deepEqual(repairedEmptyOrder.sectionOrder.map(({ key }) => key), [
-    'basics',
-    'projects',
-    'education',
-    'skills',
-    'languages',
-    'certificates',
-    'experience',
-  ]);
+  assert.deepEqual(
+    repairedEmptyOrder.sectionOrder.map(({ key }) => key),
+    [
+      'basics',
+      'projects',
+      'education',
+      'skills',
+      'languages',
+      'certificates',
+      'experience',
+    ],
+  );
 
   const message = formatResumeImportValidationError(
     new ZodError([
@@ -376,15 +429,27 @@ function testImportResumeValidation() {
     ]),
   );
 
-  assert.equal(message, 'Invalid resume format: sectionOrder: Array must contain at least 1 element(s)');
+  assert.equal(
+    message,
+    'Invalid resume format: sectionOrder: Array must contain at least 1 element(s)',
+  );
 }
 
 function testUtilityFunctions() {
   const first = ['summary', 'experience'];
   assert.equal(shallowEqualArray(first, first), true);
-  assert.equal(shallowEqualArray(['summary', 'experience'], ['summary', 'experience']), true);
-  assert.equal(shallowEqualArray(['summary'], ['summary', 'experience']), false);
-  assert.equal(shallowEqualArray(['experience', 'summary'], ['summary', 'experience']), false);
+  assert.equal(
+    shallowEqualArray(['summary', 'experience'], ['summary', 'experience']),
+    true,
+  );
+  assert.equal(
+    shallowEqualArray(['summary'], ['summary', 'experience']),
+    false,
+  );
+  assert.equal(
+    shallowEqualArray(['experience', 'summary'], ['summary', 'experience']),
+    false,
+  );
 
   assert.deepEqual(hexToRgb('#38bdf8'), { r: 56, g: 189, b: 248 });
   assert.deepEqual(hexToRgb('#abc'), { r: 170, g: 187, b: 204 });
@@ -401,20 +466,35 @@ function testUtilityFunctions() {
   assert.equal(parseCssPixelValue('auto'), 0);
   assert.equal(parseCssPixelValue(''), 0);
 
-  const t = (key: string) => (key === 'sharedPage.comments.justNow' ? 'Just now translated' : key);
+  const t = (key: string) =>
+    key === 'sharedPage.comments.justNow' ? 'Just now translated' : key;
   assert.equal(formatCommentDate('', t), 'Just now translated');
   assert.equal(formatCommentDate('Just now', t), 'Just now translated');
   assert.equal(formatCommentDate('not-a-date', t), 'not-a-date');
-  assert.equal(formatShortDateTime(new Date('2026-07-03T08:09:00Z'), 'en-US', 'UTC'), 'Jul 3, 08:09 AM');
+  assert.equal(
+    formatShortDateTime(new Date('2026-07-03T08:09:00Z'), 'en-US', 'UTC'),
+    'Jul 3, 08:09 AM',
+  );
   assert.equal(formatCompactDateTime(undefined), '');
-  assert.equal(formatCompactDateTime(Date.UTC(2026, 6, 3, 8, 9), 'zh-CN', 'UTC'), '7/3 08:09');
-  assert.deepEqual(getCountdownTimeLeft((2 * 86400 + 3 * 3600 + 4 * 60 + 5) * 1000, 0), {
-    days: 2,
-    hours: 3,
-    minutes: 4,
-    seconds: 5,
+  assert.equal(
+    formatCompactDateTime(Date.UTC(2026, 6, 3, 8, 9), 'zh-CN', 'UTC'),
+    '7/3 08:09',
+  );
+  assert.deepEqual(
+    getCountdownTimeLeft((2 * 86400 + 3 * 3600 + 4 * 60 + 5) * 1000, 0),
+    {
+      days: 2,
+      hours: 3,
+      minutes: 4,
+      seconds: 5,
+    },
+  );
+  assert.deepEqual(getCountdownTimeLeft(1000, 5000), {
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
   });
-  assert.deepEqual(getCountdownTimeLeft(1000, 5000), { days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   assert.equal(getFileSizeBucket(0), 'small');
   assert.equal(getFileSizeBucket(512 * 1024 - 1), 'small');
@@ -422,9 +502,15 @@ function testUtilityFunctions() {
   assert.equal(getFileSizeBucket(2 * 1024 * 1024 - 1), 'medium');
   assert.equal(getFileSizeBucket(2 * 1024 * 1024), 'large');
 
-  assert.equal(generateShortHash('version-123'), generateShortHash('version-123'));
+  assert.equal(
+    generateShortHash('version-123'),
+    generateShortHash('version-123'),
+  );
   assert.match(generateShortHash('version-123'), /^[0-9a-f]{7}$/);
-  assert.notEqual(generateShortHash('version-123'), generateShortHash('completely-different-version'));
+  assert.notEqual(
+    generateShortHash('version-123'),
+    generateShortHash('completely-different-version'),
+  );
 
   assert.equal(getInitials('Ada Lovelace', null), 'AL');
   assert.equal(getInitials('  Grace   Hopper  ', null), 'GH');
@@ -435,21 +521,35 @@ function testUtilityFunctions() {
 
 function testMcpAccessHelpers() {
   assert.equal(getMcpApiUrl('https://example.com'), 'https://example.com/api');
-  assert.equal(getMcpApiUrl('https://example.com/api/'), 'https://example.com/api');
+  assert.equal(
+    getMcpApiUrl('https://example.com/api/'),
+    'https://example.com/api',
+  );
   assert.equal(shellQuote("abc'def"), "'abc'\\''def'");
   assert.deepEqual(normalizeCloudResumes([{ id: '1', name: 'Resume A' }]), [
     { id: '1', title: 'Resume A' },
   ]);
-  assert.deepEqual(normalizeCloudResumes({ data: { data: [{ id: '2', title: 'Resume B' }] } }), [
-    { id: '2', title: 'Resume B' },
-  ]);
+  assert.deepEqual(
+    normalizeCloudResumes({ data: { data: [{ id: '2', title: 'Resume B' }] } }),
+    [{ id: '2', title: 'Resume B' }],
+  );
   assert.deepEqual(normalizeCloudResumes([{ title: 'missing id' }]), []);
-  assert.equal(getApiErrorMessage({ isAxiosError: true, response: { data: { message: 'Nope' } } }), 'Nope');
+  assert.equal(
+    getApiErrorMessage({
+      isAxiosError: true,
+      response: { data: { message: 'Nope' } },
+    }),
+    'Nope',
+  );
   assert.equal(getApiErrorMessage(new Error('plain')), null);
 }
 
 function testAiLib() {
-  const preview = buildSelectionPreview(beforeSummary, rewrittenSummary, oldSentence);
+  const preview = buildSelectionPreview(
+    beforeSummary,
+    rewrittenSummary,
+    oldSentence,
+  );
   assert.deepEqual(preview, {
     previewBefore: oldSentence,
     previewAfter: rewrittenSentence,
@@ -469,9 +569,16 @@ function testAiLib() {
     rationale: 'More active wording.',
   };
 
-  const change = buildSelectionChange(target, beforeSummary, oldSentence, 'free', result, {
-    freeText: 'Make it stronger',
-  });
+  const change = buildSelectionChange(
+    target,
+    beforeSummary,
+    oldSentence,
+    'free',
+    result,
+    {
+      freeText: 'Make it stronger',
+    },
+  );
 
   assert.equal(change.before, beforeSummary);
   assert.equal(change.after, rewrittenSummary);
@@ -481,19 +588,45 @@ function testAiLib() {
 
   const current: Section = {
     experience: [
-      { id: 'google', visible: true, company: 'Google', summary: beforeSummary },
-      { id: 'bytedance', visible: true, company: 'ByteDance', summary: '<p>Unchanged</p>' },
+      {
+        id: 'google',
+        visible: true,
+        company: 'Google',
+        summary: beforeSummary,
+      },
+      {
+        id: 'bytedance',
+        visible: true,
+        company: 'ByteDance',
+        summary: '<p>Unchanged</p>',
+      },
     ],
   };
 
   const proposed: Section = {
     experience: [
-      { id: 'google', visible: true, company: 'Google', summary: rewrittenSummary },
-      { id: 'bytedance', visible: true, company: 'ByteDance', summary: '<p>Unchanged</p>' },
+      {
+        id: 'google',
+        visible: true,
+        company: 'Google',
+        summary: rewrittenSummary,
+      },
+      {
+        id: 'bytedance',
+        visible: true,
+        company: 'ByteDance',
+        summary: '<p>Unchanged</p>',
+      },
     ],
   };
 
-  const changes = diffResumeToChanges(current, proposed, 'optimize', undefined, targetSelection);
+  const changes = diffResumeToChanges(
+    current,
+    proposed,
+    'optimize',
+    undefined,
+    targetSelection,
+  );
 
   assert.equal(changes.length, 1);
   assert.equal(pathOf(changes[0].target), targetSelection.path);
@@ -514,14 +647,23 @@ function testAiLib() {
     resolved.resume.sections.experience[0].summary,
     beforeSummary.replace(oldSentence, optimizedSentence),
   );
-  assert.equal(resolved.resume.sections.experience[1].summary, '<p>Unchanged</p>');
+  assert.equal(
+    resolved.resume.sections.experience[1].summary,
+    '<p>Unchanged</p>',
+  );
   assert.deepEqual(resolved.targetedSelection, targetSelection);
 
-  const fallback = resolveResumePatchEvent(resume, { oldString: oldSentence, newString: optimizedSentence });
+  const fallback = resolveResumePatchEvent(resume, {
+    oldString: oldSentence,
+    newString: optimizedSentence,
+  });
   assert.ok(fallback);
   assert.deepEqual(fallback.targetedSelection, targetSelection);
 
-  const untouched = resolveResumePatchEvent(resume, { oldString: 'missing', newString: 'replacement' });
+  const untouched = resolveResumePatchEvent(resume, {
+    oldString: 'missing',
+    newString: 'replacement',
+  });
   assert.equal(untouched, null);
 
   const chatPatchBatch = resolveResumePatchBatch(resume, {
@@ -530,7 +672,10 @@ function testAiLib() {
   });
   assert.ok(chatPatchBatch);
   assert.equal(chatPatchBatch.kind, 'optimize');
-  assert.equal(chatPatchBatch.proposedSections.experience[0].summary, beforeSummary.replace(oldSentence, optimizedSentence));
+  assert.equal(
+    chatPatchBatch.proposedSections.experience[0].summary,
+    beforeSummary.replace(oldSentence, optimizedSentence),
+  );
   assert.deepEqual(chatPatchBatch.targetedSelection, targetSelection);
 
   const translatePatchBatch = resolveResumePatchBatch(
@@ -581,7 +726,12 @@ function testResumeMigrations() {
       skills: [
         { id: 'a', visible: true, description: '<p>正文</p>' },
         { id: 'b', visible: true, summary: '<p>已有</p>', description: '次要' },
-        { id: 'c', visible: true, summary: '   ', description: '<p>空白也算空</p>' },
+        {
+          id: 'c',
+          visible: true,
+          summary: '   ',
+          description: '<p>空白也算空</p>',
+        },
       ],
     },
   } as never);
@@ -617,15 +767,30 @@ function testCustomSections() {
   // label is an i18n key (`sections.skills`), so renaming one would swap a
   // translated string for a literal and break every other language; deleting one
   // would remove a form the editor expects to exist.
-  for (const builtin of ['basics', 'experience', 'education', 'projects', 'skills', 'languages', 'certificates']) {
-    assert.equal(isCustomSection(builtin), false, `${builtin} must be protected`);
+  for (const builtin of [
+    'basics',
+    'experience',
+    'education',
+    'projects',
+    'skills',
+    'languages',
+    'certificates',
+  ]) {
+    assert.equal(
+      isCustomSection(builtin),
+      false,
+      `${builtin} must be protected`,
+    );
   }
   assert.equal(isCustomSection('personalStrengths'), true);
   assert.equal(isCustomSection('个人优势'), true);
 
   // Keys are derived from the title for readable JSON, but never trusted to be
   // unique or even expressible in ascii.
-  assert.equal(customSectionKey('Personal Highlights', []), 'personal-highlights');
+  assert.equal(
+    customSectionKey('Personal Highlights', []),
+    'personal-highlights',
+  );
   assert.equal(customSectionKey('  Awards!  ', []), 'awards');
   // A Chinese title slugs to nothing — it still needs a key.
   assert.equal(customSectionKey('个人优势', []), 'section');
@@ -644,7 +809,10 @@ function testCustomSections() {
   );
   // …and the built-ins are still all present, so no form disappears.
   for (const builtin of ['basics', 'skills', 'experience']) {
-    assert.ok(order.some((s) => s.key === builtin), `${builtin} missing from order`);
+    assert.ok(
+      order.some((s) => s.key === builtin),
+      `${builtin} missing from order`,
+    );
   }
 }
 
@@ -662,7 +830,9 @@ function testAiFailuresAreVisible() {
   // ① agent 重建了 id：每一条改动都在 diff 阶段被跳过，结果是一个空数组。空结果此前
   //    是终点沉默，现在至少能说出「有几条对不上」。
   const renumbered: Section = {
-    experience: [{ id: 'regenerated-99', visible: true, summary: '<p>New</p>' }],
+    experience: [
+      { id: 'regenerated-99', visible: true, summary: '<p>New</p>' },
+    ],
   };
   const diagnostics = { unmatchedItems: 0 };
   const changes = diffResumeToChanges(
@@ -671,7 +841,7 @@ function testAiFailuresAreVisible() {
     'optimize',
     undefined,
     undefined,
-    diagnostics
+    diagnostics,
   );
   assert.equal(changes.length, 0);
   assert.equal(diagnostics.unmatchedItems, 1);
@@ -682,8 +852,15 @@ function testAiFailuresAreVisible() {
   };
   const clean = { unmatchedItems: 0 };
   assert.equal(
-    diffResumeToChanges(current, matched, 'optimize', undefined, undefined, clean).length,
-    1
+    diffResumeToChanges(
+      current,
+      matched,
+      'optimize',
+      undefined,
+      undefined,
+      clean,
+    ).length,
+    1,
   );
   assert.equal(clean.unmatchedItems, 0);
 
@@ -712,7 +889,7 @@ function testAiFailuresAreVisible() {
   assert.equal(hit.applied, true);
   assert.equal(
     (hit.sections.experience as Array<Record<string, unknown>>)[0].summary,
-    '<p>New</p>'
+    '<p>New</p>',
   );
 }
 
@@ -768,7 +945,7 @@ function testCanvasReachability() {
   const rendered = new Set(['sections.experience[exp-1].summary']);
   const { renderable, orphaned } = partitionByAnchor(
     [mk('summary'), mk('company'), mk('newField', true)],
-    (path) => rendered.has(path)
+    (path) => rendered.has(path),
   );
 
   assert.equal(renderable.length, 2); // summary 有锚点；新增条目由插槽接住
@@ -801,12 +978,18 @@ function testDiffFieldCoverage() {
   const changes = diffResumeToChanges(current, renamed, 'optimize');
   assert.equal(changes.length, 1);
   assert.equal(changes[0].target.fieldKey, 'company');
+  assert.equal(changes[0].target.label, '工作经历 · 第 1 条 · 公司');
   // 纯文本字段按值判成 text，不是一律当富文本。
   assert.equal(changes[0].target.kind, 'text');
 
   // 富文本仍判为 html。
   const rewritten: Section = {
-    experience: [{ ...current.experience[0], summary: '<p>负责管理后台，支撑 12 条业务线。</p>' }],
+    experience: [
+      {
+        ...current.experience[0],
+        summary: '<p>负责管理后台，支撑 12 条业务线。</p>',
+      },
+    ],
   };
   const rich = diffResumeToChanges(current, rewritten, 'optimize');
   assert.equal(rich.length, 1);
@@ -816,15 +999,204 @@ function testDiffFieldCoverage() {
   const restructured: Section = {
     experience: [{ ...current.experience[0], visible: false }],
   };
-  assert.equal(diffResumeToChanges(current, restructured, 'optimize').length, 0);
+  assert.equal(
+    diffResumeToChanges(current, restructured, 'optimize').length,
+    0,
+  );
 
   // 一次改多个字段就是多张卡，每张各自可接受/丢弃。
   const multi: Section = {
     experience: [
-      { ...current.experience[0], company: '星河科技（北京）', position: '高级前端工程师' },
+      {
+        ...current.experience[0],
+        company: '星河科技（北京）',
+        position: '高级前端工程师',
+      },
     ],
   };
-  assert.equal(diffResumeToChanges(current, multi, 'optimize').length, 2);
+  const multiChanges = diffResumeToChanges(
+    current,
+    multi,
+    'optimize',
+    undefined,
+    undefined,
+    undefined,
+    new Map([
+      ['experience/exp-1/company', '补全公司所在地'],
+      ['experience/exp-1/position', '职位对齐目标岗位'],
+    ]),
+  );
+  assert.equal(multiChanges.length, 2);
+  assert.equal(
+    multiChanges.find((change) => change.target.fieldKey === 'company')
+      ?.rationale,
+    '补全公司所在地',
+  );
+  assert.equal(
+    multiChanges.find((change) => change.target.fieldKey === 'position')
+      ?.rationale,
+    '职位对齐目标岗位',
+  );
+  assert.deepEqual(
+    multiChanges.map((change) => change.target.label),
+    ['工作经历 · 第 1 条 · 公司', '工作经历 · 第 1 条 · 职位'],
+  );
+}
+
+function testCitationSources() {
+  const sources = normalizeCitationSources([
+    {
+      id: 'external:2',
+      kind: 'external',
+      visibility: 'visible',
+      citationId: 2,
+      title: '公开岗位',
+      url: 'https://jobs.example.com/role',
+      faviconUrl: 'https://jobs.example.com/assets/icon.png',
+    },
+    {
+      id: 'internal:k1',
+      kind: 'internal',
+      visibility: 'hidden',
+      title: '内部面经',
+      url: 'https://internal.example.com/k1',
+    },
+    {
+      id: 'external:bad',
+      kind: 'external',
+      visibility: 'visible',
+      citationId: 9,
+      title: '不安全来源',
+      url: 'javascript:alert(1)',
+    },
+  ]);
+
+  assert.equal(sources.length, 2, '非法协议必须在 SSE 边界丢弃');
+  assert.equal(
+    visibleCitationSources(sources).length,
+    1,
+    '内部来源当前不在 C 端显示',
+  );
+  assert.equal(
+    sources[0]?.faviconUrl,
+    'https://jobs.example.com/assets/icon.png',
+  );
+  assert.equal(
+    siteFaviconUrl('https://jobs.example.com/role'),
+    'https://jobs.example.com/favicon.ico',
+  );
+  assert.equal(
+    siteFaviconUrl('https://jobs.example.com/role', 'javascript:alert(1)'),
+    'https://jobs.example.com/favicon.ico',
+  );
+  assert.equal(
+    linkCitationMarkers('公开要求 [2]，未知 [9]。', sources),
+    '公开要求 [2](#citation-2)，未知 [9](#citation-missing-9)。',
+  );
+  assert.equal(
+    linkCitationMarkers(
+      '已有 [2](https://elsewhere.example) 和 `代码 [2]`\n```ts\nconst x = "[2]"\n```',
+      sources,
+    ),
+    '已有 [2](https://elsewhere.example) 和 `代码 [2]`\n```ts\nconst x = "[2]"\n```',
+  );
+  const groupedSources = normalizeCitationSources([
+    ...sources,
+    {
+      id: 'external:3',
+      kind: 'external',
+      visibility: 'visible',
+      citationId: 3,
+      title: '同站另一岗位',
+      url: 'https://jobs.example.com/another-role',
+    },
+    {
+      id: 'external:4',
+      kind: 'external',
+      visibility: 'visible',
+      citationId: 4,
+      title: '另一招聘站',
+      url: 'https://campus.example.net/jobs',
+    },
+  ]);
+  assert.equal(
+    linkCitationMarkers('同站 [2][3]，跨站 [2][4][3]。', groupedSources),
+    '同站 [2,3](#citations-2-3)，跨站 [2](#citation-2)[4](#citation-4)[3](#citation-3)。',
+  );
+  assert.equal(
+    mergeCitationSources(sources, [
+      { ...sources[0], title: '更新后的标题' },
+    ]).filter((source) => source.id === 'external:2').length,
+    1,
+  );
+
+  const recovered = citationSourcesFromWebSearchToolResult({
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          status: 'ok',
+          results: [
+            {
+              citationId: 6,
+              title: '校招官网',
+              url: 'https://campus.example.com/jobs',
+              snippet: '公开要求',
+            },
+          ],
+        }),
+      },
+    ],
+  });
+  assert.equal(recovered[0]?.citationId, 6);
+
+  const citationMarkup = renderToStaticMarkup(
+    createElement(
+      Markdown as ComponentType<{
+        sources?: typeof sources;
+        children?: string;
+      }>,
+      { sources },
+      '公开要求 [2]。',
+    ),
+  );
+  assert.match(citationMarkup, /data-citation-id="2"/);
+  assert.match(citationMarkup, /jobs\.example\.com/);
+  assert.doesNotMatch(citationMarkup, />2<\//);
+  assert.doesNotMatch(citationMarkup, /\[2\]/);
+
+  const groupedCitationMarkup = renderToStaticMarkup(
+    createElement(
+      Markdown as ComponentType<{
+        sources?: typeof groupedSources;
+        children?: string;
+      }>,
+      { sources: groupedSources },
+      '同站来源 [2][3]。',
+    ),
+  );
+  assert.match(groupedCitationMarkup, /data-citation-group="2,3"/);
+  assert.match(groupedCitationMarkup, /data-citation-id="2"/);
+  assert.match(groupedCitationMarkup, /data-citation-id="3"/);
+  assert.match(groupedCitationMarkup, />2 个来源<\/span>/);
+  assert.doesNotMatch(groupedCitationMarkup, />[23]<\//);
+  assert.doesNotMatch(groupedCitationMarkup, /\[2\]\[3\]/);
+
+  const missingCitationMarkup = renderToStaticMarkup(
+    createElement(
+      Markdown as ComponentType<{
+        sources?: typeof sources;
+        children?: string;
+      }>,
+      { sources },
+      '多来源 [2][9][14]。',
+    ),
+  );
+  assert.match(missingCitationMarkup, /data-citation-id="2"/);
+  assert.match(missingCitationMarkup, /data-citation-missing="9,14"/);
+  assert.match(missingCitationMarkup, />来源暂不可用<\/span>/);
+  assert.doesNotMatch(missingCitationMarkup, />9,14<\//);
+  assert.doesNotMatch(missingCitationMarkup, /\[(?:2|9|14)\]/);
 }
 
 function testAfterAuthUrl() {
@@ -842,26 +1214,51 @@ function testAfterAuthUrl() {
 
   // Same-origin paths only: a freshly signed-in session must not be bounced
   // off the site by a crafted link.
-  assert.equal(afterAuthUrl('redirect_url=https%3A%2F%2Fevil.example'), '/dashboard');
+  assert.equal(
+    afterAuthUrl('redirect_url=https%3A%2F%2Fevil.example'),
+    '/dashboard',
+  );
   assert.equal(afterAuthUrl('redirect_url=%2F%2Fevil.example'), '/dashboard');
   assert.equal(afterAuthUrl('redirect_url=%2F%5Cevil.example'), '/dashboard');
-  assert.equal(afterAuthUrl('redirect_url=javascript%3Aalert(1)'), '/dashboard');
+  assert.equal(
+    afterAuthUrl('redirect_url=javascript%3Aalert(1)'),
+    '/dashboard',
+  );
 
   // The URL parser strips tab/LF/CR before resolving, so a prefix check on
   // '//' is not enough — these resolved to https://evil.example.
-  assert.equal(afterAuthUrl('redirect_url=%2F%09%2F%2Fevil.example'), '/dashboard');
-  assert.equal(afterAuthUrl('redirect_url=%2F%0A%2F%2Fevil.example'), '/dashboard');
-  assert.equal(afterAuthUrl('redirect_url=%2F%0D%2F%2Fevil.example'), '/dashboard');
+  assert.equal(
+    afterAuthUrl('redirect_url=%2F%09%2F%2Fevil.example'),
+    '/dashboard',
+  );
+  assert.equal(
+    afterAuthUrl('redirect_url=%2F%0A%2F%2Fevil.example'),
+    '/dashboard',
+  );
+  assert.equal(
+    afterAuthUrl('redirect_url=%2F%0D%2F%2Fevil.example'),
+    '/dashboard',
+  );
 }
 
 function testSectionOwnership() {
   // `profiles` ships in defaultResume and templates render it, so offering
   // delete on it destroyed data that normalize cannot bring back.
   for (const builtin of [
-    'basics', 'experience', 'education', 'projects',
-    'skills', 'languages', 'certificates', 'profiles',
+    'basics',
+    'experience',
+    'education',
+    'projects',
+    'skills',
+    'languages',
+    'certificates',
+    'profiles',
   ]) {
-    assert.equal(isCustomSection(builtin), false, `${builtin} must not be deletable`);
+    assert.equal(
+      isCustomSection(builtin),
+      false,
+      `${builtin} must not be deletable`,
+    );
   }
   assert.equal(isCustomSection('personalStrengths'), true);
 
@@ -874,27 +1271,30 @@ function testSectionOwnership() {
     [{ key: 'personalStrengths', label: '个人优势', icon: 'trophy' }],
     { personalStrengths: [] },
   );
-  assert.equal(withIcon.find((s) => s.key === 'personalStrengths')?.icon, 'trophy');
+  assert.equal(
+    withIcon.find((s) => s.key === 'personalStrengths')?.icon,
+    'trophy',
+  );
 }
 
 function testSectionOrderCoercion() {
   // A model told the legacy contract writes bare strings. Nothing validated it,
   // so `.map(s => s.key)` gave undefined for every entry and the whole draft
   // rendered blank — correct-looking JSON, no error anywhere.
-  assert.deepEqual(
-    coerceSectionOrder(['experience', 'projects']),
-    [
-      { key: 'experience', label: 'sections.experience' },
-      { key: 'projects', label: 'sections.projects' },
-    ],
-  );
+  assert.deepEqual(coerceSectionOrder(['experience', 'projects']), [
+    { key: 'experience', label: 'sections.experience' },
+    { key: 'projects', label: 'sections.projects' },
+  ]);
 
   // Already-correct input passes through untouched, icon and all.
   const proper = [{ key: 'skills', label: '专业技能', icon: 'wrench' }];
   assert.deepEqual(coerceSectionOrder(proper), proper);
 
   // Junk is dropped rather than turned into keyless entries.
-  assert.deepEqual(coerceSectionOrder(['', '  ', null, 42, {}, { key: '' }]), []);
+  assert.deepEqual(
+    coerceSectionOrder(['', '  ', null, 42, {}, { key: '' }]),
+    [],
+  );
   assert.deepEqual(coerceSectionOrder(undefined), []);
   assert.deepEqual(coerceSectionOrder('experience'), []);
 
@@ -910,8 +1310,14 @@ function testSectionOrderCoercion() {
   );
   const keys = normalized.map((s) => s.key);
   assert.equal(keys[0], 'basics');
-  assert.ok(keys.indexOf('projects') < keys.indexOf('experience'), 'model order lost');
-  assert.ok(keys.includes('skills'), 'built-in section missing after normalize');
+  assert.ok(
+    keys.indexOf('projects') < keys.indexOf('experience'),
+    'model order lost',
+  );
+  assert.ok(
+    keys.includes('skills'),
+    'built-in section missing after normalize',
+  );
 }
 
 /**
@@ -922,14 +1328,16 @@ function testSectionOrderCoercion() {
  */
 function testErrorCopyCoverage() {
   for (const code of [...APP_ERROR_CODES, 'unknown']) {
-    for (const [lang, dict] of [['zh', zhCopy], ['en', enCopy]] as const) {
+    for (const [lang, dict] of [
+      ['zh', zhCopy],
+      ['en', enCopy],
+    ] as const) {
       const copy = (dict.errors as Record<string, unknown>)[code];
-      assert.equal(
-        typeof copy,
-        'string',
-        `${lang} 缺少 errors.${code} 的文案`,
+      assert.equal(typeof copy, 'string', `${lang} 缺少 errors.${code} 的文案`);
+      assert.ok(
+        (copy as string).trim().length > 0,
+        `${lang} errors.${code} 是空串`,
       );
-      assert.ok((copy as string).trim().length > 0, `${lang} errors.${code} 是空串`);
     }
   }
 
@@ -978,8 +1386,14 @@ function testErrorNormalize() {
   assert.equal(legacyCode.subCode, 'quota_exhausted');
 
   // 畸形体：不能因此再抛一个错。
-  assert.equal(fromErrorBody(500, undefined, 'bff').errorCode, 'internal_error');
-  assert.equal(fromErrorBody(500, 'not json', 'bff').errorCode, 'internal_error');
+  assert.equal(
+    fromErrorBody(500, undefined, 'bff').errorCode,
+    'internal_error',
+  );
+  assert.equal(
+    fromErrorBody(500, 'not json', 'bff').errorCode,
+    'internal_error',
+  );
   assert.equal(fromErrorBody(undefined, {}, 'local').errorCode, 'unknown');
 
   // 老 BFF 那句 "Backend request failed with status 429" 绝不能当文案渲染。
@@ -992,8 +1406,11 @@ function testErrorNormalize() {
 
   // message 只是机器码时同样不算文案。
   assert.equal(
-    fromErrorBody(429, { code: 'quota_exhausted', message: 'quota_exhausted' }, 'bff')
-      .publicMessage,
+    fromErrorBody(
+      429,
+      { code: 'quota_exhausted', message: 'quota_exhausted' },
+      'bff',
+    ).publicMessage,
     undefined,
   );
 
@@ -1003,14 +1420,18 @@ function testErrorNormalize() {
   assert.equal(network.retryable, true);
 
   // 用户点了停止：不是故障，静默丢弃。
-  const aborted = fromThrown(Object.assign(new Error('x'), { name: 'AbortError' }));
+  const aborted = fromThrown(
+    Object.assign(new Error('x'), { name: 'AbortError' }),
+  );
   assert.equal(isAborted(aborted), true);
   assert.equal(presentAppError(aborted), null);
 
   // SSE 帧：payload.errorCode 优先，老的 error 字段仍认。
   assert.equal(
-    fromSseEvent({ error: 'quota_exceeded', payload: { code: 'quota_exceeded' } })
-      .errorCode,
+    fromSseEvent({
+      error: 'quota_exceeded',
+      payload: { code: 'quota_exceeded' },
+    }).errorCode,
     'quota_exceeded',
   );
   assert.equal(
@@ -1050,7 +1471,10 @@ function testErrorCopy() {
   );
   // 屏幕上永远不会只剩一句外语：标题一定是本地语言。
   assert.equal(copy.title, zhCopy.errors.content_rejected);
-  assert.equal(copy.detail, 'This PDF looks like a scan — we could not read any text.');
+  assert.equal(
+    copy.detail,
+    'This PDF looks like a scan — we could not read any text.',
+  );
 
   // 认不出的码退到通用兜底，而不是把标识符渲染出来。
   const unknown = appErrorCopy(
@@ -1105,7 +1529,11 @@ function testBffErrorProjection() {
   });
 
   // 走完整条链：投影出来的东西，normalize 必须还能读回同一个码。
-  const roundTrip = fromErrorBody(429, projectUpstreamError(429, upstream), 'bff');
+  const roundTrip = fromErrorBody(
+    429,
+    projectUpstreamError(429, upstream),
+    'bff',
+  );
   assert.equal(roundTrip.errorCode, 'quota_exceeded');
   assert.notEqual(roundTrip.errorCode, 'rate_limited');
   assert.equal(roundTrip.params?.period, 'daily');
@@ -1119,37 +1547,111 @@ function testBffErrorProjection() {
  * 「看起来只是换个文件」的改动，所以把行为钉死在这里。
  */
 function testTasksCard() {
-  const plan = (todos: PlanTodo[], extra: Partial<ChatMessage> = {}): ChatMessage =>
+  const plan = (
+    todos: PlanTodo[],
+    extra: Partial<ChatMessage> = {},
+  ): ChatMessage =>
     ({ id: 'p', role: 'plan', content: '', todos, ...extra }) as ChatMessage;
 
   // 一条未完成就不算跑完；空清单也不算——否则卡片刚建好、一条 todo 都还没到时
   // 就会被判成"完成"，然后立刻退场。
   assert.equal(isPlanFulfilled(plan([])), false);
   assert.equal(
-    isPlanFulfilled(plan([{ content: 'a', status: 'completed' }, { content: 'b', status: 'pending' }])),
+    isPlanFulfilled(
+      plan([
+        { content: 'a', status: 'completed' },
+        { content: 'b', status: 'pending' },
+      ]),
+    ),
     false,
   );
-  assert.equal(isPlanFulfilled(plan([{ content: 'a', status: 'completed' }])), true);
+  assert.equal(
+    isPlanFulfilled(plan([{ content: 'a', status: 'completed' }])),
+    true,
+  );
 
   // 子代理清单没有右侧产物，不能退场——退了就"起过一个子代理"这件事无迹可寻。
   const doneTodos: PlanTodo[] = [{ content: 'a', status: 'completed' }];
   assert.equal(isRetirablePlan(plan(doneTodos)), true);
-  assert.equal(isRetirablePlan(plan(doneTodos, { subagentName: 'translator' })), false);
-  assert.equal(isRetirablePlan(plan([{ content: 'a', status: 'pending' }])), false);
+  assert.equal(
+    isRetirablePlan(plan(doneTodos, { subagentName: 'translator' })),
+    false,
+  );
+  assert.equal(
+    isRetirablePlan(plan([{ content: 'a', status: 'pending' }])),
+    false,
+  );
+
+  // 普通计划完成后只留摘要；只有明确绑定画布产物的计划才显示“查看”。
+  const ordinaryRetired = renderToStaticMarkup(
+    createElement(TasksCard, {
+      message: plan(doneTodos, { content: '任务清单' }),
+      retired: true,
+      onToggleCanvas: () => undefined,
+      isCanvasOpen: false,
+    }),
+  );
+  assert.match(ordinaryRetired, /任务清单/);
+  assert.doesNotMatch(ordinaryRetired, />查看</);
+
+  const analysisRetired = renderToStaticMarkup(
+    createElement(TasksCard, {
+      message: plan(doneTodos, {
+        content: '简历分析',
+        skillId: 'analyze',
+      }),
+      retired: true,
+      onToggleCanvas: () => undefined,
+      isCanvasOpen: false,
+    }),
+  );
+  assert.match(analysisRetired, />查看</);
 
   // 片段降级：后端没发 segments（老后端、或模型没写标记）时，整条 content 当一段纯文本。
   assert.deepEqual(segmentsOf({ content: '把摘要改短', status: 'pending' }), [
     { type: 'text', text: '把摘要改短' },
   ]);
-  assert.deepEqual(segmentsOf({ content: 'x', status: 'pending', segments: [] }), [
-    { type: 'text', text: 'x' },
-  ]);
+  assert.deepEqual(
+    segmentsOf({ content: 'x', status: 'pending', segments: [] }),
+    [{ type: 'text', text: 'x' }],
+  );
   // 有 segments 就用它，content 只是给不认 segments 的消费者看的。
   const segs: TodoSegment[] = [
     { type: 'chip', verb: '读取', rest: '简历', kind: 'read' },
     { type: 'text', text: '再决定' },
   ];
-  assert.deepEqual(segmentsOf({ content: '读取 简历 再决定', status: 'pending', segments: segs }), segs);
+  assert.deepEqual(
+    segmentsOf({
+      content: '读取 简历 再决定',
+      status: 'pending',
+      segments: segs,
+    }),
+    segs,
+  );
+
+  const zhUnits = { hour: '小时', minute: '分', second: '秒', separator: '' };
+  assert.equal(formatElapsedDuration(0, zhUnits), '0秒');
+  assert.equal(formatElapsedDuration(59, zhUnits), '59秒');
+  assert.equal(formatElapsedDuration(60, zhUnits), '1分0秒');
+  assert.equal(formatElapsedDuration(3599, zhUnits), '59分59秒');
+  assert.equal(formatElapsedDuration(3600, zhUnits), '1小时0分0秒');
+  assert.equal(formatElapsedDuration(56_950, zhUnits), '15小时49分10秒');
+}
+
+function testMarkdownSource() {
+  // 流式 chunk 只到列表标记时不画空圆点；有正文的列表项必须原样保留。
+  assert.equal(
+    normalizeMarkdownSource(
+      '结论\n- \n*\n+\n1.\n2)\n- **\n- __\n- ~~\n- `\n- [ ]',
+    ),
+    '结论',
+  );
+  assert.equal(
+    normalizeMarkdownSource('结论\n- 第一项\n  - 子项\n\n- 第二项'),
+    '结论\n- 第一项\n  - 子项\n\n- 第二项',
+  );
+  // 尾部空行会让流式光标掉到新的一行，也一并收掉。
+  assert.equal(normalizeMarkdownSource('最后一句\n\n  '), '最后一句');
 }
 
 /**
@@ -1198,7 +1700,10 @@ function testInterruptPlan() {
     opts,
   );
   assert.equal(mixed.gates.length, 2, '两个闸门 → 一张卡两页');
-  assert.deepEqual(mixed.gates.map((g) => g.slotIndex), [0, 2]);
+  assert.deepEqual(
+    mixed.gates.map((g) => g.slotIndex),
+    [0, 2],
+  );
   assert.equal(mixed.gates[0].question, '想读你的简历');
   assert.equal(mixed.widgets.length, 1);
 
@@ -1212,7 +1717,11 @@ function testInterruptPlan() {
   assert.equal(routed.widgets[0].kind, 'ask_choice_recommended');
   assert.equal(routed.widgets[0].toolName, 'ask_choice');
   // 没表态就不该被路由走，否则存量的一排 chips 全变成推荐卡。
-  const plain = planInterrupt('req-4', [{ name: 'ask_choice', args: { message: '先改哪段？' } }], opts);
+  const plain = planInterrupt(
+    'req-4',
+    [{ name: 'ask_choice', args: { message: '先改哪段？' } }],
+    opts,
+  );
   assert.equal(plain.widgets[0].kind, 'ask_choice');
 
   // ④ 续跑闸门：少一个裁决就不许发。漏发必然 400，而多发一次会重复计费。
@@ -1235,9 +1744,191 @@ function testInterruptPlan() {
   assert.equal(oob.slots.length, 2, '越界不许改变槽位数——它就是裁决数');
 
   // ⑥ 同一个槽答两次是覆盖，不是追加——否则重复点击会把数量撑过动作数。
-  const twice = fillDecision(fillDecision(openDecisions<string>(1), 0, 'approve').slots, 0, 'reject');
+  const twice = fillDecision(
+    fillDecision(openDecisions<string>(1), 0, 'approve').slots,
+    0,
+    'reject',
+  );
   assert.deepEqual(twice.slots, ['reject']);
   assert.equal(twice.ready, true);
+}
+
+function testAnalysisImprovementActions() {
+  assert.ok(
+    FORM_DEFS.analysis_evidence,
+    '后端允许的分析证据表单必须在前端注册',
+  );
+  const persona = {
+    persona: 'peer_developer' as const,
+    score: 80,
+    categories_scores: {},
+    strengths: [],
+    weaknesses: ['量化口径不完整'],
+    suggestions: ['补充周期和基线'],
+  };
+  const legacy = analysisImprovementActions({
+    overall_score: 80,
+    category_averages: {},
+    peer_analysis: persona,
+    leader_analysis: { ...persona, persona: 'tech_lead' },
+    hrbp_analysis: { ...persona, persona: 'hrbp' },
+  });
+  assert.equal(legacy.length, 1, '旧报告仍应生成可执行整改动作');
+  assert.equal(legacy[0].problem, '量化口径不完整');
+
+  const structured = analysisImprovementActions({
+    overall_score: 80,
+    category_averages: {},
+    peer_analysis: persona,
+    leader_analysis: { ...persona, persona: 'tech_lead' },
+    hrbp_analysis: { ...persona, persona: 'hrbp' },
+    improvement_actions: [
+      {
+        id: 'issue-1',
+        problem: '量化口径不完整',
+        suggestion: '补充周期和基线',
+        evidence: [
+          {
+            sectionKey: 'experience',
+            itemId: 'exp-1',
+            fieldKey: 'description',
+            path: 'sections.experience[exp-1].description',
+            quote: '好评率提升至 92%',
+          },
+        ],
+        missingEvidence: ['统计周期'],
+      },
+    ],
+  });
+  assert.equal(structured[0].evidence[0].itemId, 'exp-1');
+  assert.deepEqual(structured[0].missingEvidence, ['统计周期']);
+}
+
+function testAgentCapabilityWidgets() {
+  for (const kind of [
+    'company_research',
+    'interview_prep',
+    'application_tracker',
+  ]) {
+    assert.ok(WIDGETS[kind], `${kind} 必须在 C 端注册，不能退化成 unsupported`);
+  }
+
+  const company = normalizeResearchWidgetProps(
+    {
+      title: 'Acme · 前端工程师',
+      groups: {
+        business_context: [
+          {
+            text: '公开招聘页面仍在更新',
+            url: 'https://jobs.example.com/frontend',
+            sourceName: 'Acme Careers',
+            date: '2026-08-14',
+          },
+        ],
+        risks_unknowns: [
+          { text: '不安全来源必须丢 URL', url: 'javascript:alert(1)' },
+        ],
+      },
+    },
+    'company',
+  );
+  assert.equal(company?.groups[0].items[0].domain, 'jobs.example.com');
+  assert.equal(company?.groups[1].items[0].url, undefined);
+
+  const interview = normalizeResearchWidgetProps(
+    {
+      groups: [
+        {
+          key: 'likely_questions',
+          title: '公开题型',
+          items: ['讲讲一次性能优化'],
+        },
+      ],
+    },
+    'interview',
+  );
+  assert.equal(interview?.groups[0].actionable, true);
+
+  const tracker = normalizeApplicationTrackerProps({
+    applications: [
+      {
+        id: 'app-1',
+        company: 'Acme',
+        role: 'Frontend Engineer',
+        status: 'interview',
+        sourceUrl: 'https://jobs.example.com/frontend',
+        updatedAt: '2026-08-14T10:00:00.000Z',
+      },
+      { company: 'Bad', role: 'Unknown', status: 'NOT_A_STATUS' },
+    ],
+  });
+  assert.equal(tracker?.applications.length, 1);
+  assert.equal(tracker?.applications[0].status, 'INTERVIEW');
+
+  const emptyTracker = normalizeApplicationTrackerProps({ applications: [] });
+  assert.deepEqual(emptyTracker, { applications: [] });
+  const emptyTrackerMarkup = renderToStaticMarkup(
+    createElement(WidgetHost, {
+      registry: WIDGETS,
+      instance: {
+        widgetId: 'job-application-tracker',
+        kind: 'application_tracker',
+        props: { applications: [] },
+        status: 'pending',
+      },
+      onAction: () => undefined,
+    }),
+  );
+  assert.match(emptyTrackerMarkup, /还没有投递记录/);
+  assert.doesNotMatch(emptyTrackerMarkup, /无法渲染的卡片/);
+
+  const filterMarkup = renderToStaticMarkup(
+    createElement(FilterTable as ComponentType<FilterTableProps>, {
+      filters: [
+        { key: 'all', label: '全部', count: 1 },
+        { key: 'INTERVIEW', label: '面试中', count: 1 },
+      ],
+      columns: [],
+      rows: [],
+      pills: {},
+    }),
+  );
+  assert.match(filterMarkup, /面试中/);
+  assert.doesNotMatch(filterMarkup, /To do/);
+}
+
+function testStreamingTextBuffer() {
+  let scheduled: (() => void) | null = null;
+  let scheduledDelay = 0;
+  let cancelled = 0;
+  const frames: { content: string; reasoning: string }[] = [];
+  const buffer = createStreamingTextBuffer({
+    onFrame: (snapshot) => frames.push(snapshot),
+    schedule: (callback, delayMs) => {
+      scheduled = callback;
+      scheduledDelay = delayMs;
+      return {} as ReturnType<typeof setTimeout>;
+    },
+    cancel: () => {
+      cancelled += 1;
+    },
+  });
+
+  for (let index = 0; index < 120; index += 1) buffer.appendContent('字');
+  buffer.appendReasoning('正在整理');
+  assert.equal(frames.length, 0, 'provider token 不应逐个触发 React 帧');
+  assert.equal(scheduledDelay, STREAM_RENDER_INTERVAL_MS);
+  assert.ok(scheduled, '首个 token 应安排一个合并帧');
+  (scheduled as () => void)();
+  assert.equal(frames.length, 1, '同一时间窗内的 token 只发布一次');
+  assert.equal(frames[0].content.length, 120);
+  assert.equal(frames[0].reasoning, '正在整理');
+
+  buffer.appendContent('。');
+  const final = buffer.flush();
+  assert.equal(cancelled, 1, '完成时应取消尚未执行的计时器');
+  assert.equal(frames.length, 2, 'flush 应立即发布最后一个未显示帧');
+  assert.equal(final.content, `${'字'.repeat(120)}。`);
 }
 
 async function main() {
@@ -1249,6 +1940,7 @@ async function main() {
   testAiFailuresAreVisible();
   testCanvasReachability();
   testDiffFieldCoverage();
+  testCitationSources();
   testAfterAuthUrl();
   testImportedItemIds();
   testResumeMigrations();
@@ -1260,7 +1952,11 @@ async function main() {
   testErrorCopy();
   testBffErrorProjection();
   testTasksCard();
+  testMarkdownSource();
   testInterruptPlan();
+  testAnalysisImprovementActions();
+  testAgentCapabilityWidgets();
+  testStreamingTextBuffer();
 }
 
 main().catch((error) => {

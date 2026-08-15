@@ -17,7 +17,7 @@ export default function FabricationNotice({ instance }: WidgetProps) {
   const { t } = useTranslation();
   const props = instance.props as { items?: string[]; title?: string; body?: string };
   const items = Array.isArray(props.items) ? props.items : [];
-  if (!items.length) return null;
+  if (!items.length && !props.body) return null;
 
   return (
     <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-raised px-4 py-3.5">
@@ -32,16 +32,18 @@ export default function FabricationNotice({ instance }: WidgetProps) {
       <WidgetItem className="mt-2 text-xs leading-relaxed text-secondary">
         {props.body || t('aiLab.widgets.verification.body')}
       </WidgetItem>
-      <WidgetItem className="mt-2.5 flex flex-wrap gap-1.5">
-        {items.map((item) => (
-          <span
-            key={item}
-            className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300"
-          >
-            {item}
-          </span>
-        ))}
-      </WidgetItem>
+      {items.length ? (
+        <WidgetItem className="mt-2.5 flex flex-wrap gap-1.5">
+          {items.map((item) => (
+            <span
+              key={item}
+              className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300"
+            >
+              {item}
+            </span>
+          ))}
+        </WidgetItem>
+      ) : null}
     </WidgetShell>
   );
 }

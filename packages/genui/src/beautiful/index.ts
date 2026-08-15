@@ -21,9 +21,18 @@ export { default as ToolChips } from './ToolChips';
 export type { ThinkingRow, ThinkingStateProps } from './ThinkingState';
 export type { CodeBlockProps } from './CodeBlock';
 export type { LoadingStateProps } from './LoadingState';
-export type { ToolChipRow, ToolChipDetail, ToolChipDiff, ToolChipsProps } from './ToolChips';
+export type {
+  ToolChipRow,
+  ToolChipDetail,
+  ToolChipDiff,
+  ToolChipsProps,
+} from './ToolChips';
 export type { TaskRowItem, TaskRowDetail } from './TaskRows';
-export type { ApprovalQuestion, ApprovalLabels, ApprovalCardProps } from './ApprovalCard';
+export type {
+  ApprovalQuestion,
+  ApprovalLabels,
+  ApprovalCardProps,
+} from './ApprovalCard';
 export type {
   RecommendationOption,
   RecommendationLabels,
@@ -31,3 +40,10 @@ export type {
   RecommendationCardProps,
 } from './RecommendationCard';
 export type { ContextChunk } from './ContextCards';
+export type {
+  FilterTableColumn,
+  FilterTableFilter,
+  FilterTablePill,
+  FilterTableProps,
+  FilterTableRow,
+} from './FilterTable';

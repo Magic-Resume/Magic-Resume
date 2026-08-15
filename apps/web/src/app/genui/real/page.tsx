@@ -199,7 +199,6 @@ export default function RealDataHarness() {
 
   const messages: ChatMessage[] = [
     { id: 'u1', role: 'user', content: '帮我针对这个岗位优化一下简历' },
-    { id: 't1', role: 'tools', content: '', toolCalls: calls, status: 'done' },
     {
       id: 'p1',
       role: 'plan',
@@ -214,6 +213,7 @@ export default function RealDataHarness() {
       role: 'assistant',
       status: 'done',
       streamed: true,
+      toolCalls: calls,
       content:
         '已经读过你的简历了。工作经历第 2 段只写了职责、没有结果，我按岗位要求补了量化。\n\n```ts\nconst gaps = findGaps(resume.sections.experience);\nreturn gaps.map(toSuggestion);\n```\n\n要我继续对齐其余几段吗？',
     },
@@ -269,7 +269,11 @@ export default function RealDataHarness() {
           <div className="mb-3 font-mono text-[11px] uppercase tracking-wider text-muted">
             流式逐词显影（真的走 ChatThread，不是 demo 组件）{/* i18n-ignore：仅开发验收页 */}
           </div>
-          {ready && <StreamingProbe text={messages[3].content ?? ''} />}
+          {ready && (
+            <StreamingProbe
+              text={messages.find((message) => message.role === 'assistant')?.content ?? ''}
+            />
+          )}
         </div>
 
         <div className="mt-6 rounded-xl border border-hairline p-4">

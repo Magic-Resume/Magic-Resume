@@ -2118,6 +2118,13 @@ button {
   to { opacity: 1; filter: blur(0); }
 }
 
+/* 增量 Markdown 会在语法边界重建节点。保留 4px 模糊质感，但不从全透明开始；即使
+   新列表项刚出现，正文也仍有可见轮廓，不会只剩浏览器原生的圆点 marker。 */
+@keyframes markdown-stream-in {
+  from { opacity: 0.62; filter: blur(4px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
 /* 配 `background-size: 200% 100%` 的渐变文字扫光：正在进行时的唯一动态信号。 */
 @keyframes shimmer-text {
   from { background-position: 200% 0; }
@@ -2131,6 +2138,7 @@ button {
   [style*="fade-in"],
   [style*="pop-in"],
   [style*="stream-in"],
+  [style*="markdown-stream-in"],
   [style*="shimmer-text"] {
     animation: none !important;
     opacity: 1 !important;

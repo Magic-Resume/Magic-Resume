@@ -39,7 +39,7 @@ type Flight = { dx: number; dy: number; scale: number };
  * 落地那一下起伏是**角色动作**，不是 UI 缓动——`.impeccable.md` 里「不弹跳、不
  * elastic」约束的是面板与卡片，而小蓝宠的人格设定里明写着「会蹦跳」。
  */
-export default function PolarisPerch() {
+function PolarisPerch() {
   const reduce = useReducedMotion() ?? false;
   const petRef = useRef<HTMLDivElement>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
@@ -109,3 +109,5 @@ export default function PolarisPerch() {
     </div>
   );
 }
+
+export default React.memo(PolarisPerch);

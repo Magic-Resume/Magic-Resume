@@ -2,6 +2,7 @@ import { WEB_AGENT_ROUTES } from '@/lib/api/routes';
 import { fromResponse } from '@/lib/errors/normalize';
 import type { AppError } from '@/lib/errors/types';
 import type { AgentLlmConfig, AgentSseEvent } from './types';
+import type { AnalysisImprovementAction } from '@/types/agent/multi-persona';
 
 /**
  * AI Lab 唯一的服务客户端。调用都经 Next.js route handler，所以这里用相对 `/api/...`
@@ -46,13 +47,15 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
   // 解析失败此前是完全无声的：一帧被中间层折行、或 JSON 里混进未转义换行，整条简历改动
   // 就这么消失，连一句日志都没有。数出来并在流末喊一声——不改行为，只是让它不再无迹可寻。
   let malformed = 0;
+  let lastStreamSequence = 0;
   const parse = (raw: string): AgentSseEvent | null => {
     const line = raw.trim();
     if (!line.startsWith('data:')) return null;
     const json = line.slice(5).trim();
     if (!json) return null;
+    let event: AgentSseEvent;
     try {
-      return JSON.parse(json) as AgentSseEvent;
+      event = JSON.parse(json) as AgentSseEvent;
     } catch {
       malformed += 1;
       if (malformed === 1) {
@@ -60,6 +63,33 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
       }
       return null;
     }
+    // Missing protocolVersion is the supported v0 compatibility path. A v1
+    // stream must be gap-free; otherwise accepting its final snapshot could
+    // reconcile against a patch we never received.
+    if (event.protocolVersion !== undefined && event.protocolVersion !== 1) {
+      throw new AgentRequestError({
+        errorCode: 'upstream_unavailable',
+        subCode: 'sse_protocol_unsupported',
+        retryable: true,
+        source: 'sse',
+        cause: event.protocolVersion,
+      });
+    }
+    if (event.protocolVersion === 1) {
+      const received = event.streamSequence;
+      const expected = lastStreamSequence + 1;
+      if (!Number.isInteger(received) || received !== expected) {
+        throw new AgentRequestError({
+          errorCode: 'upstream_unavailable',
+          subCode: 'sse_sequence_gap',
+          retryable: true,
+          source: 'sse',
+          cause: { expected, received },
+        });
+      }
+      lastStreamSequence = received;
+    }
+    return event;
   };
 
   while (true) {
@@ -124,6 +154,8 @@ export interface ChatStreamParams {
    * pushing a full resume snapshot into every chat turn.
    */
   resumeId?: string;
+  request_type?: 'fix_analysis_weakness';
+  context?: { analysisIssue?: AnalysisImprovementAction };
   /**
    * User-provided model config for this AI request.
    */
@@ -176,6 +208,7 @@ export interface ApproveToolParams {
   resumeId?: string;
   /** 续跑沿用同一档位，否则批准之后那半程回到无约束状态。 */
   agentMode?: 'cocreate' | 'plan' | 'ask';
+  request_type?: 'fix_analysis_weakness';
   config?: AgentLlmConfig;
   signal?: AbortSignal;
 }

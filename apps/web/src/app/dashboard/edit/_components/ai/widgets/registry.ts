@@ -3,6 +3,16 @@ import TemplateGalleryCard from './TemplateGalleryCard';
 import FabricationNotice from './FabricationNotice';
 import JobResearchCard from './JobResearchCard';
 import RecommendationChoiceCard from './RecommendationChoiceCard';
+import ResearchBriefCard from './ResearchBriefCard';
+import ApplicationTrackerCard, {
+  APPLICATION_STATUSES,
+  type ApplicationStatus,
+} from './ApplicationTrackerCard';
+import type {
+  ResearchBriefGroup,
+  ResearchBriefItem,
+  ResearchBriefVariant,
+} from './ResearchBriefCard';
 import type { RecommendationOption } from '@magic-resume/genui/beautiful';
 import type {
   WidgetFormField,
@@ -65,7 +75,11 @@ function sanitizeRichOptions(raw: unknown): RecommendationOption[] {
       typeof source.confidence === 'string' && CONFIDENCE.has(source.confidence)
         ? (source.confidence as RecommendationOption['confidence'])
         : undefined;
-    out.push({ label, ...(why ? { why } : {}), ...(confidence ? { confidence } : {}) });
+    out.push({
+      label,
+      ...(why ? { why } : {}),
+      ...(confidence ? { confidence } : {}),
+    });
     if (out.length >= MAX_MODEL_OPTIONS) break;
   }
   return out;
@@ -85,7 +99,8 @@ function hasRecommendation(
   options: RecommendationOption[],
   recommended: unknown,
 ): boolean {
-  if (typeof recommended === 'number' && Number.isInteger(recommended)) return true;
+  if (typeof recommended === 'number' && Number.isInteger(recommended))
+    return true;
   return options.some((o) => o.why !== undefined || o.confidence !== undefined);
 }
 
@@ -101,6 +116,251 @@ const RESEARCH_GROUPS = [
   { key: 'recruiter_questions', accent: '#22d3ee', actionable: true },
   { key: 'preparation_plan', accent: '#38bdf8' },
 ] as const;
+
+interface ResearchGroupDefinition {
+  key: string;
+  accent: string;
+  actionable?: boolean;
+}
+
+const COMPANY_RESEARCH_GROUPS = [
+  { key: 'business_context', accent: '#38bdf8' },
+  { key: 'hiring_signals', accent: '#22d3ee' },
+  { key: 'role_implications', accent: '#34d399' },
+  { key: 'compensation_leads', accent: '#a78bfa' },
+  { key: 'risks_unknowns', accent: '#fbbf24' },
+  { key: 'questions_to_verify', accent: '#38bdf8', actionable: true },
+] as const;
+
+const INTERVIEW_RESEARCH_GROUPS = [
+  { key: 'focus_areas', accent: '#38bdf8' },
+  { key: 'likely_questions', accent: '#a78bfa', actionable: true },
+  { key: 'candidate_evidence', accent: '#34d399' },
+  { key: 'practice_priorities', accent: '#fbbf24', actionable: true },
+  { key: 'follow_up_questions', accent: '#22d3ee', actionable: true },
+] as const;
+
+const MAX_RESEARCH_GROUPS = 8;
+const MAX_RESEARCH_ITEMS = 10;
+const MAX_RESEARCH_TEXT = 800;
+const APPLICATION_STATUS_SET = new Set<string>(APPLICATION_STATUSES);
+
+function cleanString(value: unknown, max: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const cleaned = value.trim().slice(0, max);
+  return cleaned || undefined;
+}
+
+function safeHttpUrl(value: unknown): string | undefined {
+  const raw = cleanString(value, 2048);
+  if (!raw) return undefined;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? parsed.toString()
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function domainOf(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizeResearchItem(raw: unknown): ResearchBriefItem | null {
+  if (typeof raw === 'string') {
+    const text = cleanString(raw, MAX_RESEARCH_TEXT);
+    return text ? { text } : null;
+  }
+  if (!isRecord(raw)) return null;
+
+  const text = cleanString(
+    raw.text ??
+      raw.content ??
+      raw.claim ??
+      raw.label ??
+      raw.title ??
+      raw.finding,
+    MAX_RESEARCH_TEXT,
+  );
+  if (!text) return null;
+
+  const source = isRecord(raw.source)
+    ? raw.source
+    : Array.isArray(raw.sources) && isRecord(raw.sources[0])
+      ? raw.sources[0]
+      : undefined;
+  const url = safeHttpUrl(
+    raw.url ?? raw.sourceUrl ?? raw.href ?? source?.url ?? source?.href,
+  );
+  const sourceName = cleanString(
+    raw.sourceName ?? raw.publisher ?? source?.name ?? source?.title,
+    100,
+  );
+  const date = cleanString(
+    raw.date ??
+      raw.publishedDate ??
+      raw.publishedAt ??
+      source?.date ??
+      source?.publishedDate,
+    40,
+  );
+  return {
+    text,
+    ...(url ? { url, domain: domainOf(url) } : {}),
+    ...(sourceName ? { sourceName } : {}),
+    ...(date ? { date } : {}),
+  };
+}
+
+function normalizeResearchItems(raw: unknown): ResearchBriefItem[] {
+  if (!Array.isArray(raw)) return [];
+  const items: ResearchBriefItem[] = [];
+  for (const value of raw) {
+    const item = normalizeResearchItem(value);
+    if (item) items.push(item);
+    if (items.length >= MAX_RESEARCH_ITEMS) break;
+  }
+  return items;
+}
+
+function groupKey(value: unknown, fallback: string): string {
+  const key = cleanString(value, 48)
+    ?.replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLowerCase();
+  return key && /^[a-z][a-z0-9_-]*$/i.test(key) ? key : fallback;
+}
+
+export function normalizeResearchWidgetProps(
+  props: Record<string, unknown>,
+  variant: ResearchBriefVariant,
+): {
+  variant: ResearchBriefVariant;
+  title: string;
+  groups: ResearchBriefGroup[];
+} | null {
+  const definitions: readonly ResearchGroupDefinition[] =
+    variant === 'company' ? COMPANY_RESEARCH_GROUPS : INTERVIEW_RESEARCH_GROUPS;
+  const byKey = new Map<string, ResearchGroupDefinition>(
+    definitions.map((definition) => [definition.key, definition]),
+  );
+  // The original skill only said "compact groups" and old conversations may
+  // therefore have emitted those arrays directly on props. Keep that legacy
+  // shape renderable while the stricter skill contract rolls forward.
+  const rawGroups = props.groups ?? props.sections ?? props.findings ?? props;
+  const groups: ResearchBriefGroup[] = [];
+
+  const append = (raw: unknown, index: number, suggestedKey?: string) => {
+    const record = isRecord(raw) ? raw : undefined;
+    const key = groupKey(
+      record?.key ?? record?.id ?? record?.type ?? suggestedKey,
+      definitions[index]?.key ?? `group_${index + 1}`,
+    );
+    const definition = byKey.get(key) ?? definitions[index];
+    const items = normalizeResearchItems(
+      Array.isArray(raw)
+        ? raw
+        : (record?.items ??
+            record?.entries ??
+            record?.findings ??
+            record?.questions),
+    );
+    if (!items.length) return;
+    groups.push({
+      key,
+      title: cleanString(record?.title ?? record?.label, 80),
+      accent: definition?.accent ?? '#38bdf8',
+      actionable:
+        record?.actionable === true || definition?.actionable === true,
+      items,
+    });
+  };
+
+  if (Array.isArray(rawGroups)) {
+    rawGroups
+      .slice(0, MAX_RESEARCH_GROUPS)
+      .forEach((group, index) => append(group, index));
+  } else if (isRecord(rawGroups)) {
+    const orderedKeys = [
+      ...definitions
+        .map((definition) => definition.key)
+        .filter((key) => key in rawGroups),
+      ...Object.keys(rawGroups).filter(
+        (key) => !definitions.some((definition) => definition.key === key),
+      ),
+    ].slice(0, MAX_RESEARCH_GROUPS);
+    orderedKeys.forEach((key, index) => append(rawGroups[key], index, key));
+  }
+
+  if (!groups.length) return null;
+  const title =
+    cleanString(
+      props.title ??
+        props.companyName ??
+        props.company ??
+        props.jobTitle ??
+        props.role,
+      120,
+    ) ?? '';
+  return { variant, title, groups };
+}
+
+function normalizeDate(value: unknown): string | undefined {
+  const raw = cleanString(value, 64);
+  if (!raw) return undefined;
+  return Number.isNaN(new Date(raw).getTime()) ? undefined : raw;
+}
+
+export function normalizeApplicationTrackerProps(
+  props: Record<string, unknown>,
+): { applications: Array<Record<string, unknown>> } | null {
+  if (!Array.isArray(props.applications)) return null;
+  const applications: Array<Record<string, unknown>> = [];
+  for (const [index, raw] of props.applications.entries()) {
+    if (!isRecord(raw)) continue;
+    const statusRaw = cleanString(raw.status, 24)?.toUpperCase();
+    if (!statusRaw || !APPLICATION_STATUS_SET.has(statusRaw)) continue;
+    const company = cleanString(raw.company, 120) ?? '';
+    const role = cleanString(raw.role ?? raw.jobTitle ?? raw.title, 120) ?? '';
+    if (!company && !role) continue;
+    const status = statusRaw as ApplicationStatus;
+    const sourceUrl = safeHttpUrl(raw.sourceUrl ?? raw.url);
+    const id = cleanString(raw.id, 120) ?? `application_${index + 1}`;
+    applications.push({
+      id,
+      company,
+      role,
+      status,
+      ...(sourceUrl ? { sourceUrl } : {}),
+      ...(cleanString(raw.location, 120)
+        ? { location: cleanString(raw.location, 120) }
+        : {}),
+      ...(normalizeDate(raw.appliedAt)
+        ? { appliedAt: normalizeDate(raw.appliedAt) }
+        : {}),
+      ...(normalizeDate(raw.nextActionAt)
+        ? { nextActionAt: normalizeDate(raw.nextActionAt) }
+        : {}),
+      ...(normalizeDate(raw.updatedAt)
+        ? { updatedAt: normalizeDate(raw.updatedAt) }
+        : {}),
+    });
+    if (applications.length >= 50) break;
+  }
+  // `list` on a new account legitimately returns an empty board. Treating an
+  // empty array as malformed makes WidgetHost fall back to “unsupported card”
+  // precisely when the tracker should show its empty state. Invalid non-empty
+  // rows are still rejected below so corrupt payloads do not masquerade as an
+  // intentionally empty board.
+  if (props.applications.length > 0 && applications.length === 0) return null;
+  return { applications };
+}
 
 /**
  * The form layouts the agent can ask for by `formKind`. Fields live here rather
@@ -119,9 +379,28 @@ export const FORM_DEFS: Record<
   job_info: {
     title: '目标岗位信息',
     fields: [
-      { id: 'jd', label: '目标 JD', kind: 'textarea', placeholder: '粘贴目标职位描述，AI 将据此定向优化…' },
-      { id: 'company', label: '公司', kind: 'search', source: 'companies', optional: true, placeholder: '例如 字节跳动' },
-      { id: 'title', label: '岗位', kind: 'search', source: 'roles', optional: true, placeholder: '例如 高级产品经理' },
+      {
+        id: 'jd',
+        label: '目标 JD',
+        kind: 'textarea',
+        placeholder: '粘贴目标职位描述，AI 将据此定向优化…',
+      },
+      {
+        id: 'company',
+        label: '公司',
+        kind: 'search',
+        source: 'companies',
+        optional: true,
+        placeholder: '例如 字节跳动',
+      },
+      {
+        id: 'title',
+        label: '岗位',
+        kind: 'search',
+        source: 'roles',
+        optional: true,
+        placeholder: '例如 高级产品经理',
+      },
     ],
   },
   target_language: {
@@ -132,6 +411,19 @@ export const FORM_DEFS: Record<
         label: '翻译成',
         kind: 'select',
         options: opts('English', '日本語', '한국어', 'Français'),
+      },
+    ],
+  },
+  analysis_evidence: {
+    title: '补充可验证信息',
+    skippable: true,
+    fields: [
+      {
+        id: 'evidence',
+        label: '真实背景与口径',
+        kind: 'textarea',
+        placeholder:
+          '例如统计周期、样本量、对比基线、数据来源，或你实际负责的范围…',
       },
     ],
   },
@@ -150,8 +442,18 @@ export const FORM_DEFS: Record<
         allowCustom: true,
         placeholder: '直接写你的目标岗位',
         options: opts(
-          '前端开发', '后端开发', '移动端', '算法/AI', '数据分析', '测试',
-          '运维/SRE', '产品经理', '运营', 'UI/UX 设计', '市场', '人力/行政',
+          '前端开发',
+          '后端开发',
+          '移动端',
+          '算法/AI',
+          '数据分析',
+          '测试',
+          '运维/SRE',
+          '产品经理',
+          '运营',
+          'UI/UX 设计',
+          '市场',
+          '人力/行政',
         ),
       },
       {
@@ -160,7 +462,16 @@ export const FORM_DEFS: Record<
         kind: 'chips',
         allowCustom: true,
         optional: true,
-        options: opts('互联网', 'AI', '电商', '金融', '游戏', '硬件/制造', '教育', '医疗'),
+        options: opts(
+          '互联网',
+          'AI',
+          '电商',
+          '金融',
+          '游戏',
+          '硬件/制造',
+          '教育',
+          '医疗',
+        ),
       },
       {
         id: 'seniority',
@@ -180,8 +491,15 @@ export const FORM_DEFS: Record<
         kind: 'multi-chips',
         allowCustom: true,
         options: opts(
-          '教育经历', '实习经历', '全职工作', '项目经历',
-          '竞赛获奖', '开源贡献', '论文/专利', '证书', '社团/组织',
+          '教育经历',
+          '实习经历',
+          '全职工作',
+          '项目经历',
+          '竞赛获奖',
+          '开源贡献',
+          '论文/专利',
+          '证书',
+          '社团/组织',
         ),
       },
     ],
@@ -191,9 +509,27 @@ export const FORM_DEFS: Record<
     title: '教育经历',
     skippable: true,
     fields: [
-      { id: 'school', label: '学校', kind: 'search', source: 'schools', placeholder: '搜索或直接输入' },
-      { id: 'degree', label: '学历', kind: 'chips', options: opts('大专', '本科', '硕士', '博士') },
-      { id: 'major', label: '专业', kind: 'search', source: 'majors', optional: true, placeholder: '搜索或直接输入' },
+      {
+        id: 'school',
+        label: '学校',
+        kind: 'search',
+        source: 'schools',
+        placeholder: '搜索或直接输入',
+      },
+      {
+        id: 'degree',
+        label: '学历',
+        kind: 'chips',
+        options: opts('大专', '本科', '硕士', '博士'),
+      },
+      {
+        id: 'major',
+        label: '专业',
+        kind: 'search',
+        source: 'majors',
+        optional: true,
+        placeholder: '搜索或直接输入',
+      },
       { id: 'date', label: '起止时间', kind: 'month-range', optional: true },
     ],
   },
@@ -202,8 +538,20 @@ export const FORM_DEFS: Record<
     title: '工作/实习经历',
     skippable: true,
     fields: [
-      { id: 'company', label: '公司', kind: 'search', source: 'companies', placeholder: '搜索或直接输入' },
-      { id: 'position', label: '岗位', kind: 'search', source: 'roles', placeholder: '搜索或直接输入' },
+      {
+        id: 'company',
+        label: '公司',
+        kind: 'search',
+        source: 'companies',
+        placeholder: '搜索或直接输入',
+      },
+      {
+        id: 'position',
+        label: '岗位',
+        kind: 'search',
+        source: 'roles',
+        placeholder: '搜索或直接输入',
+      },
       { id: 'date', label: '起止时间', kind: 'month-range', optional: true },
       {
         id: 'highlight',
@@ -219,8 +567,19 @@ export const FORM_DEFS: Record<
     title: '项目经历',
     skippable: true,
     fields: [
-      { id: 'name', label: '项目名称', kind: 'text', placeholder: '例如 内部数据看板' },
-      { id: 'role', label: '你的角色', kind: 'text', optional: true, placeholder: '例如 主力开发' },
+      {
+        id: 'name',
+        label: '项目名称',
+        kind: 'text',
+        placeholder: '例如 内部数据看板',
+      },
+      {
+        id: 'role',
+        label: '你的角色',
+        kind: 'text',
+        optional: true,
+        placeholder: '例如 主力开发',
+      },
       {
         id: 'stack',
         label: '用到的技术',
@@ -309,7 +668,9 @@ export const WIDGETS: WidgetRegistry = {
     interaction: 'client',
     normalize: (props) => {
       const items = Array.isArray(props.items)
-        ? props.items.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
+        ? props.items.filter(
+            (x): x is string => typeof x === 'string' && Boolean(x.trim()),
+          )
         : [];
       if (!items.length) return null;
       return {
@@ -360,11 +721,30 @@ export const WIDGETS: WidgetRegistry = {
     },
   },
 
+  company_research: {
+    component: ResearchBriefCard,
+    interaction: 'message',
+    normalize: (props) => normalizeResearchWidgetProps(props, 'company'),
+  },
+
+  interview_prep: {
+    component: ResearchBriefCard,
+    interaction: 'message',
+    normalize: (props) => normalizeResearchWidgetProps(props, 'interview'),
+  },
+
+  application_tracker: {
+    component: ApplicationTrackerCard,
+    interaction: 'client',
+    normalize: normalizeApplicationTrackerProps,
+  },
+
   ask_choice: {
     component: ChoiceCard,
     interaction: 'resume',
     normalize: (props) => {
-      const message = typeof props.message === 'string' ? props.message.trim() : '';
+      const message =
+        typeof props.message === 'string' ? props.message.trim() : '';
       const options = sanitizeOptions(props.options);
       // Both are the whole card — a question with no answers, or answers with
       // no question, is not something to render half of.
@@ -383,12 +763,16 @@ export const WIDGETS: WidgetRegistry = {
     component: RecommendationChoiceCard,
     interaction: 'resume',
     normalize: (props) => {
-      const message = typeof props.message === 'string' ? props.message.trim() : '';
+      const message =
+        typeof props.message === 'string' ? props.message.trim() : '';
       const options = sanitizeRichOptions(props.options);
       if (!message || options.length < 2) return null;
       const raw = props.recommended;
       const recommended =
-        typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw < options.length
+        typeof raw === 'number' &&
+        Number.isInteger(raw) &&
+        raw >= 0 &&
+        raw < options.length
           ? raw
           : 0;
       return { message, options, recommended };
@@ -397,7 +781,9 @@ export const WIDGETS: WidgetRegistry = {
 };
 
 /** 中断分发用：这一次 `ask_choice` 该走推荐卡还是普通选择卡。 */
-export function askChoiceKind(args: Record<string, unknown> | undefined): string {
+export function askChoiceKind(
+  args: Record<string, unknown> | undefined,
+): string {
   const options = sanitizeRichOptions(args?.options);
   return hasRecommendation(options, args?.recommended)
     ? 'ask_choice_recommended'

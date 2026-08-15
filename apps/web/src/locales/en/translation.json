@@ -1772,12 +1772,24 @@
       },
       "tasks": "Tasks",
       "completed": "Completed",
-      "elapsed": "{{seconds}}s",
+      "elapsedUnits": {
+        "hour": "h",
+        "minute": "m",
+        "second": "s",
+        "separator": " "
+      },
       "copy": "Copy",
       "copied": "Copied",
       "regenerate": "Retry",
       "readingResume": "Reading your resume…",
-      "writeFailed": "This turn didn't change the resume — the canvas is unchanged. Try saying it again."
+      "writeFailed": "This turn didn't change the resume — the canvas is unchanged. Try saying it again.",
+      "syncFailed": "The edit preview arrived, but final resume reconciliation failed. This run was not marked successful; please retry."
+    },
+    "sources": {
+      "count": "{{count}} sources",
+      "toggle": "Show or hide {{count}} external sources",
+      "missing": "Source {{id}} is not available yet",
+      "unavailable": "Source unavailable"
     },
     "composer": {
       "skills": "Skills",
@@ -1870,10 +1882,13 @@
       },
       "verification": {
         "title": "Couldn't source these",
-        "body": "These names are new in the rewrite — they weren't in your resume or anywhere in this conversation. Not necessarily wrong, but worth a look before you send it."
+        "body": "These names are new in the rewrite — they weren't in your resume or anywhere in this conversation. Not necessarily wrong, but worth a look before you send it.",
+        "degradedTitle": "This edit was not fact-checked",
+        "degradedBody": "No usable original-resume baseline was available. Read or reopen the resume before asking AI to edit it again."
       },
       "research": {
         "title": "Job research",
+        "sourceBadge": "WEB",
         "followUp": "{{item}} — walk me through this one. What should I do?",
         "groups": {
           "must_have_skills": "Must-haves",
@@ -1882,6 +1897,53 @@
           "evidence_to_add": "Evidence to add (tap one)",
           "recruiter_questions": "Ask the recruiter (tap one)",
           "preparation_plan": "Prep plan"
+        }
+      },
+      "companyResearch": {
+        "title": "Company research",
+        "groups": {
+          "business_context": "Business context",
+          "hiring_signals": "Hiring signals",
+          "role_implications": "Role implications",
+          "compensation_leads": "Compensation leads",
+          "risks_unknowns": "Risks and unknowns",
+          "questions_to_verify": "Questions to verify (tap one)"
+        }
+      },
+      "interviewResearch": {
+        "title": "Interview preparation",
+        "groups": {
+          "focus_areas": "Focus areas",
+          "likely_questions": "Likely questions (tap to practise)",
+          "candidate_evidence": "Candidate evidence",
+          "practice_priorities": "Practice priorities (tap one)",
+          "follow_up_questions": "Follow-up questions (tap to practise)"
+        }
+      },
+      "applicationTracker": {
+        "title": "Application tracker",
+        "emptyTitle": "No applications yet",
+        "emptyDescription": "Tell me the company and role, and I'll add the first one here.",
+        "source": "Source",
+        "ariaLabel": "Applications filterable by status",
+        "filters": {
+          "all": "All"
+        },
+        "columns": {
+          "role": "Role",
+          "date": "Date",
+          "status": "Status",
+          "source": "Link"
+        },
+        "status": {
+          "SAVED": "Saved",
+          "APPLIED": "Applied",
+          "SCREENING": "Screening",
+          "INTERVIEW": "Interview",
+          "OFFER": "Offer",
+          "ACCEPTED": "Accepted",
+          "REJECTED": "Rejected",
+          "WITHDRAWN": "Withdrawn"
         }
       },
       "recommendation": {

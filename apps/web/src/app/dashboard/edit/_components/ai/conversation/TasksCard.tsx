@@ -30,7 +30,7 @@ export function isPlanFulfilled(message: ChatMessage): boolean {
   return todos.length > 0 && todos.every((t) => t.status === 'completed');
 }
 
-/** 技能清单（有 skillId、结果落在右侧画布）才退场；子代理清单没有产物，不能退场。 */
+/** 主任务清单完成后退场；是否能点进画布由明确的 skillId 单独决定。 */
 export function isRetirablePlan(message: ChatMessage): boolean {
   return message.role === 'plan' && !message.subagentName && isPlanFulfilled(message);
 }
@@ -43,7 +43,7 @@ export default function TasksCard({
   activity,
 }: {
   message: ChatMessage;
-  /** 已过完停留期：技能清单收成一行可点的指针，不再是卡。 */
+  /** 已过完停留期：主任务清单收成一行摘要，不再是卡。 */
   retired?: boolean;
   onToggleCanvas: (id: SkillId) => void;
   isCanvasOpen: boolean;
@@ -66,20 +66,41 @@ export default function TasksCard({
   }, [settle, total, done, finished]);
 
   const elapsed = useElapsedSeconds(message.startedAt, finished);
+  const elapsedLabel = elapsed === null
+    ? null
+    : formatElapsedDuration(elapsed, {
+        hour: t('aiLab.chat.elapsedUnits.hour'),
+        minute: t('aiLab.chat.elapsedUnits.minute'),
+        second: t('aiLab.chat.elapsedUnits.second'),
+        separator: t('aiLab.chat.elapsedUnits.separator'),
+      });
 
-  // 技能清单跑完并过了停留期 → 收成一行可点的指针。
-  //
-  // 它必须留下点什么：右侧那份报告没有别的入口了——实时画布会把它顶掉。时间线上留一条
-  // 指针既不是卡也不是新控件，位置还正好在这次运行发生的地方。
+  // 主任务清单跑完并过了停留期 → 收成一行摘要。有明确 skillId 才说明右侧确实存在
+  // 一份可回看的画布产物，此时摘要才是按钮；普通聊天、搜索和投递追踪只显示完成记录。
   if (retired) {
+    const summary = (
+      <>
+        <Check size={11} className="shrink-0 text-neutral-600" />
+        <span className="truncate">{message.content || t('aiLab.chat.taskList')}</span>
+      </>
+    );
+    const canvasSkillId = message.skillId;
+
+    if (!canvasSkillId) {
+      return (
+        <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+          {summary}
+        </div>
+      );
+    }
+
     return (
       <button
         type="button"
-        onClick={() => onToggleCanvas(message.skillId ?? 'analyze')}
+        onClick={() => onToggleCanvas(canvasSkillId)}
         className="group flex cursor-pointer items-center gap-2 text-[11px] text-neutral-500 transition-colors hover:text-neutral-300"
       >
-        <Check size={11} className="shrink-0 text-neutral-600" />
-        <span className="truncate">{message.content || t('aiLab.chat.taskList')}</span>
+        {summary}
         <span className="shrink-0 text-sky-400/70 transition-colors group-hover:text-sky-300">
           {isCanvasOpen ? t('aiLab.chat.collapse') : t('aiLab.chat.view')}
         </span>
@@ -149,7 +170,7 @@ export default function TasksCard({
             <span className="flex-1" />
             {elapsed !== null && (
               <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-0.5 text-[11.5px] tabular-nums text-neutral-300">
-                {t('aiLab.chat.elapsed', { seconds: elapsed })}
+                {elapsedLabel}
               </span>
             )}
             {finished ? (
@@ -167,7 +188,12 @@ export default function TasksCard({
               行是成串到达的，transition 每次从零速度重启，看起来一顿一顿。 */}
           <div ref={clipRef} className="overflow-hidden" style={{ willChange: 'height' }}>
             {/* 只能用 padding 不能用 margin：测量不含 margin，留 margin 就会被裁掉。 */}
-            <ul ref={contentRef} className="flex list-none flex-col gap-2 pb-0.5 pt-2">
+            {/* 三列共用同一张网格：状态 / 任务胶囊 / 补充说明。第二列由本组最长的
+                胶囊决定（最多 16rem），所以胶囊右边界和说明列不会逐行漂移。 */}
+            <ul
+              ref={contentRef}
+              className="grid list-none grid-cols-[1.25rem_fit-content(16rem)_minmax(0,1fr)] gap-x-2.5 gap-y-2 pb-0.5 pt-2"
+            >
               {todos.map((todo, i) => (
                 <TaskRow
                   key={`${todo.content}-${i}`}
@@ -194,9 +220,15 @@ function TaskRow({
   // agent 声明的优先；它没说才用「这一轮整体在干什么」兜底。
   const rowActivity = todo.activity ?? fallbackActivity ?? 'working';
   const segments = segmentsOf(todo);
+  const [primary, ...secondary] = segments;
 
   return (
-    <li className={cn('flex items-start gap-2.5 transition-opacity duration-500', isDone && 'opacity-45')}>
+    <li
+      className={cn(
+        'col-span-3 grid grid-cols-subgrid items-center transition-opacity duration-500',
+        isDone && 'opacity-45'
+      )}
+    >
       <span className="grid h-5 w-5 shrink-0 place-items-center">
         {isDone ? (
           <span className="grid h-[18px] w-[18px] place-items-center rounded-full bg-sky-500 motion-safe:animate-in motion-safe:zoom-in-75 motion-safe:duration-300">
@@ -206,48 +238,68 @@ function TaskRow({
           <ActivityOrb activity={rowActivity} />
         )}
       </span>
+      <span className="min-w-0 pt-px text-[13px] text-neutral-200">
+        {primary ? <TaskSegmentView segment={primary} isDone={isDone} stretch /> : null}
+      </span>
       <span className="flex min-w-0 flex-wrap items-center gap-1.5 pt-px text-[13px] text-neutral-200">
-        {segments.map((seg, i) =>
-          seg.type === 'chip' ? (
-            <span
-              key={i}
-              className={cn(
-                'inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-2.5 transition-colors duration-500',
-                isDone
-                  ? 'border-transparent bg-white/[0.07]'
-                  : 'border-sky-400/40 bg-sky-400/10'
-              )}
-            >
-              {/* 芯片图标由后端给的 `kind` 决定（read/write/analyze/search/ask/tool）。
-                  一律手写 SVG：emoji 的字形随系统字体变，在 12.5px 的芯片里会比正文
-                  大一圈还对不齐，颜色也不受主题控制。 */}
-              <Icon
-                name={seg.kind}
-                size={12}
-                className={cn('shrink-0', isDone ? 'text-neutral-500' : 'text-sky-300')}
-              />
-              <span
-                className={cn(
-                  'truncate text-[12.5px]',
-                  isDone ? 'text-neutral-400 line-through' : 'text-sky-100'
-                )}
-              >
-                {/* **不能用 text-white**：这个仓把 Tailwind 的 white 整体翻成了暖墨
-                    （globals.css `--color-white: oklch(0.270 0.010 85)`，为浅色主题服务），
-                    且 `.dark` 里没有覆盖——深色子树里用它也是暗的，动词会直接看不见。
-                    用语义令牌，它跟着子树的主题走。 */}
-                <span className={cn(!isDone && 'text-ink')}>{seg.verb}</span>
-                {seg.rest ? ` ${seg.rest}` : ''}
-              </span>
-            </span>
-          ) : (
-            <span key={i} className={cn('text-neutral-400', isDone && 'line-through')}>
-              {seg.text}
-            </span>
-          )
-        )}
+        {secondary.map((segment, index) => (
+          <TaskSegmentView key={index} segment={segment} isDone={isDone} />
+        ))}
       </span>
     </li>
+  );
+}
+
+function TaskSegmentView({
+  segment,
+  isDone,
+  stretch = false,
+}: {
+  segment: TodoSegment;
+  isDone: boolean;
+  /** 主任务胶囊撑满共享的第二列，使所有右边界落在同一条线上。 */
+  stretch?: boolean;
+}) {
+  if (segment.type === 'text') {
+    return (
+      <span className={cn('text-neutral-400', isDone && 'line-through')}>
+        {segment.text}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={cn(
+        'inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-2.5 transition-colors duration-500',
+        stretch && 'w-full',
+        isDone
+          ? 'border-transparent bg-white/[0.07]'
+          : 'border-sky-400/40 bg-sky-400/10'
+      )}
+    >
+      {/* 芯片图标由后端给的 `kind` 决定（read/write/analyze/search/ask/tool）。
+          一律手写 SVG：emoji 的字形随系统字体变，在 12.5px 的芯片里会比正文
+          大一圈还对不齐，颜色也不受主题控制。 */}
+      <Icon
+        name={segment.kind}
+        size={12}
+        className={cn('shrink-0', isDone ? 'text-neutral-500' : 'text-sky-300')}
+      />
+      <span
+        className={cn(
+          'truncate text-[12.5px]',
+          isDone ? 'text-neutral-400 line-through' : 'text-sky-100'
+        )}
+      >
+        {/* **不能用 text-white**：这个仓把 Tailwind 的 white 整体翻成了暖墨
+            （globals.css `--color-white: oklch(0.270 0.010 85)`，为浅色主题服务），
+            且 `.dark` 里没有覆盖——深色子树里用它也是暗的，动词会直接看不见。
+            用语义令牌，它跟着子树的主题走。 */}
+        <span className={cn(!isDone && 'text-ink')}>{segment.verb}</span>
+        {segment.rest ? ` ${segment.rest}` : ''}
+      </span>
+    </span>
   );
 }
 
@@ -267,6 +319,35 @@ export function segmentsOf(todo: PlanTodo): TodoSegment[] {
 /** `子代理` / `general-purpose` 是占位名，不值得占标题里的位置。 */
 function namedSubagent(name: string): string {
   return name === '子代理' || name === 'general-purpose' ? '' : name;
+}
+
+export interface ElapsedUnitLabels {
+  hour: string;
+  minute: string;
+  second: string;
+  separator: string;
+}
+
+/** 把累计秒数进位为可读时长；长任务不能把 56950 秒原样甩给用户。 */
+export function formatElapsedDuration(totalSeconds: number, units: ElapsedUnitLabels): string {
+  const safeSeconds = Number.isFinite(totalSeconds)
+    ? Math.max(0, Math.floor(totalSeconds))
+    : 0;
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  if (hours > 0) {
+    return [
+      `${hours}${units.hour}`,
+      `${minutes}${units.minute}`,
+      `${seconds}${units.second}`,
+    ].join(units.separator);
+  }
+  if (minutes > 0) {
+    return [`${minutes}${units.minute}`, `${seconds}${units.second}`].join(units.separator);
+  }
+  return `${seconds}${units.second}`;
 }
 
 /**

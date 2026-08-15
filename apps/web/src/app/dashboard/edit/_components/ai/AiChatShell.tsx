@@ -1,57 +1,105 @@
-'use client';
+"use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, SquarePen, X, PencilRuler, Check, KeyRound, Gauge } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
-import { nanoid } from 'nanoid';
-import { toast } from 'sonner';
-import { InfoType, Resume, Section } from '@/types/frontend/resume';
-import { SKILLS } from './skills/registry';
-import { GenUIProvider } from '@magic-resume/genui';
-import { WIDGETS, askChoiceKind } from './widgets/registry';
-import { AI_WIDGET_SOURCES } from './widgets/sources';
-import type { WidgetActionResult, WidgetEnvelope, WidgetKind } from '@magic-resume/genui/contract';
-import type { CanvasState, ChatMessage, PlanTodo, SkillId } from './types';
-import ChatThread from './conversation/ChatThread';
-import Composer from './conversation/Composer';
-import PolarisPerch from './conversation/PolarisPerch';
-import { setFlightOrigin } from './conversation/polarisFlight';
-import { AGENT_MODES, type AgentMode } from './conversation/modes';
-import { activityForTool, type AgentActivity } from './conversation/agentActivity';
-import { subjectOf, type ToolCallSummary } from './conversation/toolTrace';
-import { planInterrupt, openDecisions, fillDecision } from './lib/interruptPlan';
-import WelcomeSuggestions from './conversation/WelcomeSuggestions';
-import ArtifactCanvas from './canvas/ArtifactCanvas';
-import { PolarisAvatar, LabMark } from './PolarisMark';
-import InterviewOverlay from './interview/InterviewOverlay';
-import LivingCanvas, { type BatchRequest, type FocusRequest } from './canvas/living/LivingCanvas';
-import { type BatchKind, type TargetedSelectionDiff } from './lib/diffResume';
-import type { MultiPersonaResumeAnalysis } from '@/types/agent/multi-persona';
-import type { FitReport } from '@/types/agent/fit-report';
-import { streamChat, approveTool, endSessionThread, streamPdfParse, AgentRequestError, type HitlDecision } from './lib/services/agentClient';
-import { fromSseEvent } from '@/lib/errors/normalize';
-import { errorText } from '@/lib/errors/present';
-import type { AgentLlmConfig, AgentSseEvent } from './lib/services/types';
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FileText,
+  SquarePen,
+  X,
+  PencilRuler,
+  Check,
+  KeyRound,
+  Gauge,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
+import { nanoid } from "nanoid";
+import { toast } from "sonner";
+import { InfoType, Resume, Section } from "@/types/frontend/resume";
+import { SKILLS } from "./skills/registry";
+import { GenUIProvider } from "@magic-resume/genui";
+import { WIDGETS, askChoiceKind } from "./widgets/registry";
+import { AI_WIDGET_SOURCES } from "./widgets/sources";
+import type {
+  WidgetActionResult,
+  WidgetEnvelope,
+  WidgetKind,
+} from "@magic-resume/genui/contract";
+import type { CanvasState, ChatMessage, PlanTodo, SkillId } from "./types";
+import ChatThread from "./conversation/ChatThread";
+import Composer from "./conversation/Composer";
+import PolarisPerch from "./conversation/PolarisPerch";
+import { setFlightOrigin } from "./conversation/polarisFlight";
+import { AGENT_MODES, type AgentMode } from "./conversation/modes";
+import {
+  activityForTool,
+  type AgentActivity,
+} from "./conversation/agentActivity";
+import { subjectOf, type ToolCallSummary } from "./conversation/toolTrace";
+import {
+  citationSourcesFromWebSearchToolResult,
+  mergeCitationSources,
+  normalizeCitationSources,
+} from "./conversation/citationSources";
+import {
+  planInterrupt,
+  openDecisions,
+  fillDecision,
+} from "./lib/interruptPlan";
+import {
+  createStreamingTextBuffer,
+  type StreamingTextSnapshot,
+} from "./lib/streamingBuffer";
+import WelcomeSuggestions from "./conversation/WelcomeSuggestions";
+import ArtifactCanvas from "./canvas/ArtifactCanvas";
+import { PolarisAvatar, LabMark } from "./PolarisMark";
+import InterviewOverlay from "./interview/InterviewOverlay";
+import LivingCanvas, {
+  type BatchRequest,
+  type FocusRequest,
+} from "./canvas/living/LivingCanvas";
+import { type BatchKind, type TargetedSelectionDiff } from "./lib/diffResume";
+import type {
+  AnalysisImprovementAction,
+  MultiPersonaResumeAnalysis,
+} from "@/types/agent/multi-persona";
+import type { FitReport } from "@/types/agent/fit-report";
+import {
+  streamChat,
+  approveTool,
+  endSessionThread,
+  streamPdfParse,
+  AgentRequestError,
+  type HitlDecision,
+} from "./lib/services/agentClient";
+import { fromSseEvent } from "@/lib/errors/normalize";
+import { errorText } from "@/lib/errors/present";
+import type { AgentLlmConfig, AgentSseEvent } from "./lib/services/types";
 import {
   invalidateAiEntitlement,
   isQuotaOrCustomConfigError,
   resolveAiAccessConfig,
-} from './lib/services/aiAccess';
-import { resolveResumePatchBatch } from './lib/resumePatch';
-import { coerceSectionOrder } from '@/lib/utils/resumeSectionOrder';
-import { useResumeDraftStore } from '@/store/useResumeDraftStore';
-import { useSettingStore } from '@/store/useSettingStore';
-import { diffResumeToChanges } from './lib/diffResume';
-import { appLifecycle } from '@/lib/extensions/app-lifecycle';
-import type { AiChangesDroppedPayload } from '@/lib/extensions/app-lifecycle';
-import { useAiSessionStore } from '@/store/useAiSessionStore';
-import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import i18nInstance from '@/i18n';
-import { useEntitlement } from '@/lib/extensions/billing-client';
-import { isCloudMode } from '@/lib/config/app';
+} from "./lib/services/aiAccess";
+import { resolveResumePatchBatch } from "./lib/resumePatch";
+import { coerceSectionOrder } from "@/lib/utils/resumeSectionOrder";
+import { useResumeDraftStore } from "@/store/useResumeDraftStore";
+import { useSettingStore } from "@/store/useSettingStore";
+import { diffResumeToChanges } from "./lib/diffResume";
+import { appLifecycle } from "@/lib/extensions/app-lifecycle";
+import type { AiChangesDroppedPayload } from "@/lib/extensions/app-lifecycle";
+import { useAiSessionStore } from "@/store/useAiSessionStore";
+import { ModelConfigFields } from "@/components/llm/ModelConfigFields";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import i18nInstance from "@/i18n";
+import { useEntitlement } from "@/lib/extensions/billing-client";
+import { isCloudMode } from "@/lib/config/app";
 
 type AiChatShellProps = {
   resumeData: Resume;
@@ -63,48 +111,68 @@ type AiChatShellProps = {
   setIsAiJobRunning: (running: boolean) => void;
 };
 
-const CLOSED_CANVAS: CanvasState = { open: false, skillId: null, view: 'preview', status: 'idle' };
+const CLOSED_CANVAS: CanvasState = {
+  open: false,
+  skillId: null,
+  view: "preview",
+  status: "idle",
+};
 
 /** 上报技能开始。所有技能都从同一个函数进来，所以起始只在这一处宣告。 */
 function reportSkillStarted(id: SkillId) {
-  if (id === 'optimize') appLifecycle.aiOptimizationStarted();
-  else if (id === 'analyze') appLifecycle.aiAnalysisStarted();
-  else if (id === 'create') appLifecycle.aiCreateStarted();
-  else if (id === 'interview') appLifecycle.aiInterviewStarted();
+  if (id === "optimize") appLifecycle.aiOptimizationStarted();
+  else if (id === "analyze") appLifecycle.aiAnalysisStarted();
+  else if (id === "create") appLifecycle.aiCreateStarted();
+  else if (id === "interview") appLifecycle.aiInterviewStarted();
 }
 
 /** 上报技能失败。只带粗粒度原因，绝不带上游报错——它可能把用户简历原样回显出来。 */
-function reportSkillFailed(id: SkillId | null, reason: 'quota' | 'unknown') {
-  if (id === 'optimize') appLifecycle.aiOptimizationFailed({ reason });
-  else if (id === 'analyze') appLifecycle.aiAnalysisFailed({ reason });
+function reportSkillFailed(id: SkillId | null, reason: "quota" | "unknown") {
+  if (id === "optimize") appLifecycle.aiOptimizationFailed({ reason });
+  else if (id === "analyze") appLifecycle.aiAnalysisFailed({ reason });
 }
 /** Localized at call time — module-level, so it reads the i18n instance directly. */
-const aiServiceErrorMessage = () => i18nInstance.t('aiLab.error.serviceUnavailable');
+const aiServiceErrorMessage = () =>
+  i18nInstance.t("aiLab.error.serviceUnavailable");
 
 /** 内容技能无文字启动时的默认意图。这是**可见**的用户轮次（后端会跟随其语言），所以随 UI 语言走。 */
 const SKILL_INTENT: Partial<Record<SkillId, () => string>> = {
-  optimize: () => i18nInstance.t('aiLab.intent.optimize'),
-  translate: () => i18nInstance.t('aiLab.intent.translate'),
-  fit: () => i18nInstance.t('aiLab.intent.fit'),
+  optimize: () => i18nInstance.t("aiLab.intent.optimize"),
+  translate: () => i18nInstance.t("aiLab.intent.translate"),
+  fit: () => i18nInstance.t("aiLab.intent.fit"),
 };
 
 /** 等用户补上 LLM key 才执行的动作，闸门满足后重放。 */
 type PendingRun =
-  | { kind: 'analyze' }
-  | { kind: 'content'; skill: BatchKind; message: string }
-  | { kind: 'chat'; history: { role: 'user' | 'assistant'; content: string }[]; mode: 'create' | 'general' };
+  | { kind: "analyze" }
+  | { kind: "content"; skill: BatchKind; message: string }
+  | { kind: "analysis-fix"; issue: AnalysisImprovementAction }
+  | {
+      kind: "chat";
+      history: { role: "user" | "assistant"; content: string }[];
+      mode: "create" | "general";
+    };
+
+type StreamingMessageOverlay = StreamingTextSnapshot & { id: string };
+type ActiveStreamCommit = (options?: {
+  clearOverlay?: boolean;
+  content?: string;
+}) => void;
 
 /** Map the visible thread into chat history (user/assistant text only). */
 function toBackendHistory(
-  msgs: ChatMessage[]
-): { role: 'user' | 'assistant'; content: string }[] {
+  msgs: ChatMessage[],
+): { role: "user" | "assistant"; content: string }[] {
   return msgs
-    .filter((m) => (m.role === 'user' || m.role === 'assistant') && !!m.content)
-    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content as string }));
+    .filter((m) => (m.role === "user" || m.role === "assistant") && !!m.content)
+    .map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content as string,
+    }));
 }
 
 function resolveState<T>(next: React.SetStateAction<T>, prev: T): T {
-  return typeof next === 'function' ? (next as (value: T) => T)(prev) : next;
+  return typeof next === "function" ? (next as (value: T) => T)(prev) : next;
 }
 
 export default function AiChatShell({
@@ -125,10 +193,29 @@ export default function AiChatShell({
   const flushAiSession = useAiSessionStore((s) => s.flushSession);
   const started = aiSession?.started ?? false;
   // useMemo：`?? []` 每次渲染都产出新数组，会让依赖 messages 的 effect 每帧重跑。
-  const messages = useMemo(() => aiSession?.messages ?? [], [aiSession?.messages]);
+  const messages = useMemo(
+    () => aiSession?.messages ?? [],
+    [aiSession?.messages],
+  );
+  // 正在输出的正文不进入持久化会话。它以 40ms 的可见帧覆盖到当前气泡上，结束时才
+  // 一次性提交；这样 provider 的 token 频率不会变成 Zustand/IndexedDB 的更新频率。
+  const [streamingMessage, setStreamingMessage] =
+    useState<StreamingMessageOverlay | null>(null);
+  const displayMessages = useMemo(() => {
+    if (!streamingMessage) return messages;
+    return messages.map((message) =>
+      message.id === streamingMessage.id
+        ? {
+            ...message,
+            content: streamingMessage.content,
+            reasoning: streamingMessage.reasoning || message.reasoning,
+          }
+        : message,
+    );
+  }, [messages, streamingMessage]);
   const canvas = aiSession?.canvas ?? CLOSED_CANVAS;
-  const chatMode = aiSession?.chatMode ?? 'idle';
-  const agentMode: AgentMode = aiSession?.agentMode ?? 'cocreate';
+  const chatMode = aiSession?.chatMode ?? "idle";
+  const agentMode: AgentMode = aiSession?.agentMode ?? "cocreate";
   const livingOpen = aiSession?.livingOpen ?? false;
   const livingSkillId = aiSession?.livingSkillId ?? null;
   const analysis = aiSession?.analysis ?? null;
@@ -143,9 +230,12 @@ export default function AiChatShell({
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   // 经「询问 Polaris」抬进输入框的画布片段。
-  const [quoted, setQuoted] = useState<
-    { path: string; label: string; text: string; selectionText?: string } | null
-  >(null);
+  const [quoted, setQuoted] = useState<{
+    path: string;
+    label: string;
+    text: string;
+    selectionText?: string;
+  } | null>(null);
   const [batchRequest, setBatchRequest] = useState<BatchRequest | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const batchNonce = useRef(0);
@@ -159,9 +249,15 @@ export default function AiChatShell({
   const focusNonce = useRef(0);
   // 整篇技能运行期间置位，让它的 resume_update 走 living canvas 而不是聊天草稿条。
   // 要挺过 read_resume 的审批暂停，新运行开始时重置。
-  const skillBatchRunRef = useRef<
-    { kind: BatchKind; lang?: string; targetedSelection?: TargetedSelectionDiff } | null
-  >(null);
+  const skillBatchRunRef = useRef<{
+    kind: BatchKind;
+    lang?: string;
+    targetedSelection?: TargetedSelectionDiff;
+  } | null>(null);
+  // 任务清单完成后是否有一份右侧画布产物可回看。它与 skillBatchRunRef 分开：
+  // analyze 产出评分画布但不是简历批量改写；普通聊天可能也有 plan_update，却没有画布。
+  // ref 要跨过 HITL 续流保留，不能只从续流时的 `PendingRun(kind: chat)` 反推。
+  const planCanvasSkillRef = useRef<SkillId | null>(null);
   const [awaitingReply, setAwaitingReply] = useState(false);
   const [draftReady, setDraftReady] = useState<Resume | null>(null);
   // 暂停中的那次中断。裁决按动作下标归位，全部到齐才续跑——后端要求裁决数与动作数相等。
@@ -172,43 +268,44 @@ export default function AiChatShell({
   // consumeStream 需要在「问答」模式下替用户拒掉读简历的请求，但 answerInterrupt
   // 反过来依赖 consumeStream。用 ref 打破这个环——赋值在 answerInterrupt 定义之后。
   const answerInterruptRef = useRef<
-    ((slot: ChatMessage['interruptSlot'], decision: HitlDecision) => void) | null
+    | ((slot: ChatMessage["interruptSlot"], decision: HitlDecision) => void)
+    | null
   >(null);
   const getCurrentAiSession = useCallback(
     () => useAiSessionStore.getState().ensureSession(resumeId),
-    [resumeId]
+    [resumeId],
   );
   const setStarted = useCallback(
     (next: React.SetStateAction<boolean>) => {
       const prev = getCurrentAiSession().started;
       patchAiSession(resumeId, { started: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setMessages = useCallback(
     (next: React.SetStateAction<ChatMessage[]>) => {
       const prev = getCurrentAiSession().messages;
       patchAiSession(resumeId, { messages: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setCanvas = useCallback(
     (next: React.SetStateAction<CanvasState>) => {
       const prev = getCurrentAiSession().canvas;
       patchAiSession(resumeId, { canvas: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setChatMode = useCallback(
-    (next: React.SetStateAction<'idle' | 'create'>) => {
+    (next: React.SetStateAction<"idle" | "create">) => {
       const prev = getCurrentAiSession().chatMode;
       patchAiSession(resumeId, { chatMode: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setAgentMode = useCallback(
     (next: AgentMode) => patchAiSession(resumeId, { agentMode: next }),
-    [patchAiSession, resumeId]
+    [patchAiSession, resumeId],
   );
   /**
    * 模式闸门。
@@ -227,42 +324,48 @@ export default function AiChatShell({
   // 提示的口子。
   /** 「问答」模式不发 resumeId——不读简历这件事从请求本身就成立,而不是靠模型自觉。 */
   const scopedResumeId = useCallback(
-    () => (AGENT_MODES[agentModeRef.current].allowsResumeRead ? resumeData.id : undefined),
-    [resumeData.id]
+    () =>
+      AGENT_MODES[agentModeRef.current].allowsResumeRead
+        ? resumeData.id
+        : undefined,
+    [resumeData.id],
   );
   const setLivingOpen = useCallback(
     (next: React.SetStateAction<boolean>) => {
       const prev = getCurrentAiSession().livingOpen;
       patchAiSession(resumeId, { livingOpen: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setLivingSkillId = useCallback(
     (next: React.SetStateAction<SkillId | null>) => {
       const prev = getCurrentAiSession().livingSkillId;
       patchAiSession(resumeId, { livingSkillId: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setAnalysis = useCallback(
     (next: React.SetStateAction<MultiPersonaResumeAnalysis | null>) => {
       const prev = getCurrentAiSession().analysis;
       patchAiSession(resumeId, { analysis: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   const setFitReport = useCallback(
     (next: React.SetStateAction<FitReport | null>) => {
       const prev = getCurrentAiSession().fitReport;
       patchAiSession(resumeId, { fitReport: resolveState(next, prev) });
     },
-    [getCurrentAiSession, patchAiSession, resumeId]
+    [getCurrentAiSession, patchAiSession, resumeId],
   );
   // 一次对话 = 一个 sessionId，随可见记录一起持久化：关闭只是收起，"新对话"才重置。
-  const sessionIdRef = useRef('');
+  const sessionIdRef = useRef("");
   // 在飞行的运行：controller 负责中止，generation 让被顶替的回调提前返回而非写进新会话。
   const controllerRef = useRef<AbortController | null>(null);
   const runGenRef = useRef(0);
+  // 新运行、重置或卸载发生在旧流的 finally 之前时，先把旧流的本地草稿落进会话，
+  // 避免 generation 抬高后旧回调被正确丢弃、但用户已经看到的半段正文也一起消失。
+  const activeStreamCommitRef = useRef<ActiveStreamCommit | null>(null);
   // 运行函数是共用的，失败时流里没有别的办法说明是哪个技能在跑。
   const activeSkillRef = useRef<SkillId | null>(null);
   const interviewStartedAtRef = useRef<number | null>(null);
@@ -299,16 +402,18 @@ export default function AiChatShell({
   // 卸载时中止在飞行的运行并失效回调；不删服务端会话——对话可恢复，"新对话"才显式清理。
   useEffect(
     () => () => {
+      activeStreamCommitRef.current?.({ clearOverlay: false });
       runGenRef.current += 1;
       controllerRef.current?.abort();
       setIsAiJobRunning(false);
     },
-    [setIsAiJobRunning]
+    [setIsAiJobRunning],
   );
   const setResumeDraft = useResumeDraftStore((s) => s.setResumeDraft);
   const { saveSettings, hasLlmConfig } = useSettingStore();
   const [configGateOpen, setConfigGateOpen] = useState(false);
   const pendingRunRef = useRef<PendingRun | null>(null);
+  const activeActionTypeRef = useRef<"fix_analysis_weakness" | null>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   // analyze 的实时清单卡：首个 plan_update 时创建，记住 id 让后续更新落到同一张卡。
@@ -317,14 +422,38 @@ export default function AiChatShell({
   const activeSubagentRef = useRef<string | null>(null);
   // 子代理自己的清单卡——与 planCardRef 分开，否则中途起子代理会让主卡永远停在"工作中"。
   const subagentPlanCardRef = useRef<string | null>(null);
-  /** 本轮的工具追踪卡。一轮一张，跨工具累加。 */
-  const toolTraceRef = useRef<string | null>(null);
   // read_resume 审批卡横跨两条流，记住 id 才能就地更新同一张卡的页脚而不是另起一行。
   const readApprovalRef = useRef<string | null>(null);
 
-  const addMessage = useCallback((msg: ChatMessage) => {
-    setMessages((prev) => [...prev, msg]);
-  }, [setMessages]);
+  const addMessage = useCallback(
+    (msg: ChatMessage) => {
+      setMessages((prev) => [...prev, msg]);
+    },
+    [setMessages],
+  );
+
+  // 系统日志可能由流事件和画布校验同时触发。相邻且完全相同的一条只保留一次，避免
+  // 生命周期重试或上游重复帧把同一句状态提示刷两遍。
+  const addLogMessage = useCallback(
+    (content: string, resumePath?: string, tone?: "ok" | "info" | "warn") => {
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (
+          last?.role === "log" &&
+          last.content === content &&
+          last.resumePath === resumePath &&
+          last.tone === tone
+        ) {
+          return prev;
+        }
+        return [
+          ...prev,
+          { id: nanoid(), role: "log", content, resumePath, tone },
+        ];
+      });
+    },
+    [setMessages],
+  );
 
   /**
    * 会话是从本地记录恢复的：任何还挂着 pending 的卡都属于一次早已结束的运行
@@ -339,20 +468,20 @@ export default function AiChatShell({
     staleSweptRef.current = true;
     const hasStale = messages.some(
       (m) =>
-        m.widget?.status === 'pending' ||
-        m.approvals?.some((a) => a.status === 'pending'),
+        m.widget?.status === "pending" ||
+        m.approvals?.some((a) => a.status === "pending"),
     );
     if (!hasStale) return;
     setMessages((prev) =>
       prev.map((m) => {
-        if (m.widget?.status === 'pending') {
-          return { ...m, widget: { ...m.widget, status: 'expired' as const } };
+        if (m.widget?.status === "pending") {
+          return { ...m, widget: { ...m.widget, status: "expired" as const } };
         }
-        if (m.approvals?.some((a) => a.status === 'pending')) {
+        if (m.approvals?.some((a) => a.status === "pending")) {
           return {
             ...m,
             approvals: m.approvals.map((a) =>
-              a.status === 'pending' ? { ...a, status: 'expired' as const } : a,
+              a.status === "pending" ? { ...a, status: "expired" as const } : a,
             ),
           };
         }
@@ -362,14 +491,15 @@ export default function AiChatShell({
   }, [messages, setMessages]);
 
   const addAssistant = useCallback(
-    (content: string) => addMessage({ id: nanoid(), role: 'assistant', content }),
-    [addMessage]
+    (content: string) =>
+      addMessage({ id: nanoid(), role: "assistant", content }),
+    [addMessage],
   );
 
   const logChange = useCallback(
-    (content: string, resumePath?: string, tone?: 'ok' | 'info') =>
-      addMessage({ id: nanoid(), role: 'log', content, resumePath, tone }),
-    [addMessage]
+    (content: string, resumePath?: string, tone?: "ok" | "info") =>
+      addLogMessage(content, resumePath, tone),
+    [addLogMessage],
   );
 
   /**
@@ -385,16 +515,16 @@ export default function AiChatShell({
   const warnDropped = useCallback(
     (
       content: string,
-      reason: AiChangesDroppedPayload['reason'],
-      extra?: { count?: number; detail?: unknown }
+      reason: AiChangesDroppedPayload["reason"],
+      extra?: { count?: number; detail?: unknown },
     ) => {
-      console.warn(`[ai] ${content}`, extra?.detail ?? '');
-      addMessage({ id: nanoid(), role: 'log', content, tone: 'warn' });
+      console.warn(`[ai] ${content}`, extra?.detail ?? "");
+      addLogMessage(content, undefined, "warn");
       // 同一个汇聚处既说给用户听、也报给我们自己：少了后半句，这类故障只能等人来报，
       // 而它恰恰是那种「用户觉得产品坏了但懒得说」的失败。
       appLifecycle.aiChangesDropped({ reason, count: extra?.count });
     },
-    [addMessage]
+    [addLogMessage],
   );
 
   /**
@@ -410,8 +540,13 @@ export default function AiChatShell({
             ...prev,
             {
               id: nanoid(),
-              role: 'widget',
-              widget: { widgetId, kind: envelope.kind, props: envelope.props ?? {}, status: 'pending' },
+              role: "widget",
+              widget: {
+                widgetId,
+                kind: envelope.kind,
+                props: envelope.props ?? {},
+                status: "pending",
+              },
             },
           ];
         }
@@ -424,37 +559,40 @@ export default function AiChatShell({
             kind: envelope.kind,
             props: envelope.merge
               ? { ...existing.props, ...(envelope.props ?? {}) }
-              : envelope.props ?? {},
+              : (envelope.props ?? {}),
           },
         };
         return next;
       });
     },
-    [setMessages]
+    [setMessages],
   );
 
   // 把最近一条进行中的工具活动置成完成态，免得它一直转圈。
-  const markActivityDone = useCallback((doneText: string) => {
-    setMessages((prev) => {
-      for (let i = prev.length - 1; i >= 0; i--) {
-        if (prev[i].role === 'activity' && prev[i].status === 'running') {
-          const next = prev.slice();
-          next[i] = { ...next[i], status: 'done', content: doneText };
-          return next;
+  const markActivityDone = useCallback(
+    (doneText: string) => {
+      setMessages((prev) => {
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if (prev[i].role === "activity" && prev[i].status === "running") {
+            const next = prev.slice();
+            next[i] = { ...next[i], status: "done", content: doneText };
+            return next;
+          }
         }
-      }
-      return prev;
-    });
-  }, [setMessages]);
+        return prev;
+      });
+    },
+    [setMessages],
+  );
 
   const markReadActivityDone = useCallback(
-    () => markActivityDone('已读取简历'),
-    [markActivityDone]
+    () => markActivityDone("已读取简历"),
+    [markActivityDone],
   );
 
   // 推进审批卡页脚的读取状态，让三段文案集中在一处。
   const setApprovalReadState = useCallback(
-    (msgId: string, readState: 'reading' | 'read') => {
+    (msgId: string, readState: "reading" | "read") => {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === msgId && m.approvals
@@ -462,22 +600,25 @@ export default function AiChatShell({
                 ...m,
                 // 只动读简历那一页：同一张卡上可能还有别的闸门，它们的状态与这次读取无关。
                 approvals: m.approvals.map((a) =>
-                  a.toolName === 'read_resume' ? { ...a, readState } : a
+                  a.toolName === "read_resume" ? { ...a, readState } : a,
                 ),
               }
-            : m
-        )
+            : m,
+        ),
       );
     },
-    [setMessages]
+    [setMessages],
   );
 
   // 点日志条目 → 重开画布并滚到对应位置。
-  const focusOnCanvas = useCallback((resumePath: string) => {
-    focusNonce.current += 1;
-    setLivingOpen(true);
-    setFocusRequest({ path: resumePath, nonce: focusNonce.current });
-  }, [setLivingOpen]);
+  const focusOnCanvas = useCallback(
+    (resumePath: string) => {
+      focusNonce.current += 1;
+      setLivingOpen(true);
+      setFocusRequest({ path: resumePath, nonce: focusNonce.current });
+    },
+    [setLivingOpen],
+  );
 
   const toggleLiving = useCallback(() => {
     setLivingOpen((open) => {
@@ -493,7 +634,7 @@ export default function AiChatShell({
   }, [setCanvas, setLivingOpen, setLivingSkillId, setStarted]);
 
   // 整篇简历类技能的结果落到 living canvas 上作为就地待定改动，而不是开 Diff 标签页。
-  const isBatchSkill = (id: SkillId) => id === 'optimize' || id === 'translate';
+  const isBatchSkill = (id: SkillId) => id === "optimize" || id === "translate";
 
   // 当前暂停的中断：每个动作一个待填裁决槽，填满才续跑。
   const openInterrupt = useCallback((requestId: string, count: number) => {
@@ -511,19 +652,40 @@ export default function AiChatShell({
       pendingOnQuota?: PendingRun,
     ) => {
       const aiId = nanoid();
-      // 本轮模型给的逐条改动理由（`explain_changes`）。按 `section/itemId` 配到评审卡上；
+      // 本轮模型给的逐字段改动理由（`explain_changes`）。按 `section/itemId/fieldKey` 配到评审卡上；
       // 它先于 `resume_update` 到达，所以攒在这一轮的作用域里。
       const changeNotes = new Map<string, string>();
-      // 气泡延迟到首个 chunk 才创建，好让 read_resume 活动行落在回复上方。
+      // 气泡延迟到首个可见事件（思考、工具或正文）才创建，避免空回复抢在进度前面。
       let bubbleCreated = false;
       const ensureBubble = () => {
         if (bubbleCreated) return;
-        addMessage({ id: aiId, role: 'assistant', content: '', status: 'running', streamed: true });
+        addMessage({
+          id: aiId,
+          role: "assistant",
+          content: "",
+          status: "running",
+          streamed: true,
+        });
         bubbleCreated = true;
         setAwaitingReply(false);
       };
+      const attachSources = (sources: ReturnType<typeof normalizeCitationSources>) => {
+        if (!sources.length) return;
+        ensureBubble();
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === aiId
+              ? {
+                  ...message,
+                  sources: mergeCitationSources(message.sources, sources),
+                }
+              : message,
+          ),
+        );
+      };
 
       // 顶替上一次运行：中止它并递增 generation，让它残留的回调提前返回。
+      activeStreamCommitRef.current?.();
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
@@ -533,11 +695,48 @@ export default function AiChatShell({
       setRunning(true);
       setIsAiJobRunning(true);
       setAwaitingReply(true);
-      setActivity('thinking');
+      setActivity("thinking");
 
-      let acc = '';
-      // 思考与正文分开累加：前者是过程，不进 content、不入库、不参与历史。
-      let reasoningAcc = '';
+      let bubbleCommitted = false;
+      const streamBuffer = createStreamingTextBuffer({
+        onFrame: (snapshot) => {
+          if (!isCurrent() || !bubbleCreated) return;
+          // Streaming paint is interruptible: typing, stop, approvals and canvas
+          // actions stay urgent if a long Markdown frame is still rendering.
+          startTransition(() => setStreamingMessage({ id: aiId, ...snapshot }));
+        },
+      });
+      const commitBubble: ActiveStreamCommit = ({
+        clearOverlay = true,
+        content,
+      } = {}) => {
+        if (bubbleCommitted) return;
+        bubbleCommitted = true;
+        streamBuffer.cancel();
+        if (activeStreamCommitRef.current === commitBubble) {
+          activeStreamCommitRef.current = null;
+        }
+        if (clearOverlay) {
+          setStreamingMessage((current) =>
+            current?.id === aiId ? null : current,
+          );
+        }
+        if (!bubbleCreated) return;
+        const snapshot = streamBuffer.snapshot();
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === aiId
+              ? {
+                  ...message,
+                  content: content ?? snapshot.content,
+                  reasoning: snapshot.reasoning || undefined,
+                  status: "done",
+                }
+              : message,
+          ),
+        );
+      };
+      activeStreamCommitRef.current = commitBubble;
       // 记住"因审批暂停"，否则收尾时会在审批卡后留下一个空气泡。
       let pausedForApproval = false;
       const patchHandledRunIds = new Set<string>();
@@ -547,38 +746,35 @@ export default function AiChatShell({
         for await (const ev of makeGen(controller.signal)) {
           // 已被更新的运行（或卸载）顶替，不要再碰状态。
           if (!isCurrent()) return;
-          if (ev.type === 'reasoning_chunk' && ev.content) {
+          if (ev.type === "reasoning_chunk" && ev.content) {
             // 思考先于正文到达：气泡此时还没建（它等首个正文 chunk），所以这里要
             // 自己把气泡拉起来，否则思考只能等正文出现才有地方放——而推理模型恰恰
             // 是「想很久、然后才开口」，那段最该被看见的等待就又变成一片空白。
             if (!activeSubagentRef.current) {
               ensureBubble();
-              reasoningAcc += ev.content;
-              const text = reasoningAcc;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === aiId ? { ...m, reasoning: text } : m)),
-              );
+              streamBuffer.appendReasoning(ev.content);
             }
-          } else if (ev.type === 'message_chunk' && ev.content) {
-            setActivity('writing');
+          } else if (ev.type === "message_chunk" && ev.content) {
+            setActivity("writing");
             // 子代理的原始 token 不进聊天：它的进度在自己的清单卡上，结果走 resume_update。
             if (!activeSubagentRef.current) {
               ensureBubble();
-              acc += ev.content;
-              setMessages((prev) => prev.map((m) => (m.id === aiId ? { ...m, content: acc } : m)));
+              streamBuffer.appendContent(ev.content);
             }
-          } else if (ev.type === 'tool_approval_request') {
+          } else if (ev.type === "tool_approval_request") {
             // 敏感工具（read_resume）前暂停，或用 GenUI 组件收集输入。流到此结束，由卡片驱动续流。
-            const p = ev.payload as {
-              requestId?: string;
-              toolName?: string;
-              reason?: string;
-              args?: Record<string, unknown>;
-              actions?: { name?: string; args?: Record<string, unknown> }[];
-            } | undefined;
+            const p = ev.payload as
+              | {
+                  requestId?: string;
+                  toolName?: string;
+                  reason?: string;
+                  args?: Record<string, unknown>;
+                  actions?: { name?: string; args?: Record<string, unknown> }[];
+                }
+              | undefined;
             if (p?.requestId) {
               pausedForApproval = true;
-              setActivity('awaiting');
+              setActivity("awaiting");
               setAwaitingReply(false); // the card replaces the thinking dots
               // 一次中断可能挂着多个动作。只渲染第一个会漏卡，而续跑要求裁决数与动作数
               // 相等（engine 的 assertValidDecisions），漏掉的那个必然 400。
@@ -593,35 +789,36 @@ export default function AiChatShell({
               const plan = planInterrupt(requestId, actions, {
                 hasWidget: (kind) => Boolean(WIDGETS[kind]),
                 resolveKind: (toolName, args) =>
-                  toolName === 'ask_choice' ? askChoiceKind(args) : toolName,
-                allowsResumeRead: AGENT_MODES[agentModeRef.current].allowsResumeRead,
+                  toolName === "ask_choice" ? askChoiceKind(args) : toolName,
+                allowsResumeRead:
+                  AGENT_MODES[agentModeRef.current].allowsResumeRead,
               });
               const autoRejected = plan.autoRejected;
               const gates = plan.gates;
               plan.widgets.forEach((w) => {
                 addMessage({
                   id: nanoid(),
-                  role: 'widget',
+                  role: "widget",
                   interruptSlot: w.slot,
                   widget: {
                     widgetId: `${requestId}#${w.slot.index}`,
                     kind: w.kind as WidgetKind,
                     toolName: w.toolName,
                     props: w.args,
-                    status: 'pending',
+                    status: "pending",
                   },
                 });
               });
               if (gates.length) {
                 const approvalId = nanoid();
                 // 读简历那一页的进度（正在读→已读取）要能找回这张卡。
-                if (gates.some((g) => g.toolName === 'read_resume')) {
+                if (gates.some((g) => g.toolName === "read_resume")) {
                   readApprovalRef.current = approvalId;
                 }
                 addMessage({
                   id: approvalId,
-                  role: 'approval',
-                  content: p.reason || '想读取你的简历来给建议',
+                  role: "approval",
+                  content: p.reason || "想读取你的简历来给建议",
                   approvals: gates,
                 });
               }
@@ -633,36 +830,56 @@ export default function AiChatShell({
                     // 这句是**发给模型**的，不是界面文案：写死中文等于对英文会话里的模型
                     // 说中文。工具层与提示词层通篇英文，跟着它走。
                     answerInterruptRef.current?.(slot, {
-                      type: 'reject',
+                      type: "reject",
                       message:
                         'The user is in "Ask" mode, which does not allow reading the resume. Answer without looking at it; if the question genuinely requires the resume, say so and ask them to switch modes.',
-                    })
+                    }),
                   );
                 }, 0);
               }
             }
-          } else if (ev.type === 'resume_verification') {
+          } else if (ev.type === "resume_verification") {
             // 反捏造闸门（确定性校验）的产出。后端一直在算，前端此前没有分支消费，
             // 校验结果跑完就丢了。走 widget 通道落成一张提示卡，不拦截改动。
-            const items = (ev.payload as { suspectedFabrications?: unknown } | undefined)
-              ?.suspectedFabrications;
+            const items = (
+              ev.payload as
+                | {
+                    suspectedFabrications?: unknown;
+                    status?: unknown;
+                    reason?: unknown;
+                  }
+                | undefined
+            )?.suspectedFabrications;
             if (Array.isArray(items) && items.length) {
-              upsertWidget(`verification:${ev.runId ?? 'run'}`, {
-                kind: 'fabrication_notice',
+              upsertWidget(`verification:${ev.runId ?? "run"}`, {
+                kind: "fabrication_notice",
                 props: { items },
               });
+            } else if (
+              (ev.payload as { status?: unknown } | undefined)?.status ===
+              "degraded"
+            ) {
+              upsertWidget(`verification:${ev.runId ?? "run"}`, {
+                kind: "fabrication_notice",
+                props: {
+                  title: t("aiLab.widgets.verification.degradedTitle"),
+                  body: t("aiLab.widgets.verification.degradedBody"),
+                },
+              });
             }
-          } else if (ev.type === 'ui_widget') {
+          } else if (ev.type === "ui_widget") {
             // 非阻塞卡：不占中断槽,流继续跑。同 widgetId 二次推送是更新同一张卡。
-            const envelope = (ev.payload ?? ev.data) as WidgetEnvelope | undefined;
+            const envelope = (ev.payload ?? ev.data) as
+              | WidgetEnvelope
+              | undefined;
             if (envelope?.kind) {
               upsertWidget(envelope.widgetId || nanoid(), envelope);
             }
-          } else if (ev.type === 'llm_started') {
+          } else if (ev.type === "llm_started") {
             // 模型开始生成、首字未到 = 思考中。之前这个事件整个被丢掉，于是「已经
             // 在想」和「还没开始」在界面上没有区别。
-            setActivity((prev) => (prev === 'writing' ? prev : 'thinking'));
-          } else if (ev.type === 'tool_started') {
+            setActivity((prev) => (prev === "writing" ? prev : "thinking"));
+          } else if (ev.type === "tool_started") {
             const payload = ev.payload as
               | { toolName?: string; toolCallId?: string; args?: unknown }
               | undefined;
@@ -672,63 +889,70 @@ export default function AiChatShell({
             // 把这一轮动过的工具收成一张卡。此前除 read_resume 外全部不可见——跑完就没了，
             // 用户回头看不出它到底做了什么。
             if (toolName) {
+              // 工具过程属于这一条助手回复。先确保气泡存在，再把调用挂上去；否则当模型先
+              // 写了半句再调用工具时，独立 tools 消息会被追加到答案下方，最终顺序倒置。
+              ensureBubble();
               const call = {
                 toolCallId: payload?.toolCallId ?? nanoid(),
                 toolName,
                 subject: subjectOf(payload?.args),
               };
-              const traceId = toolTraceRef.current;
-              if (traceId) {
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === traceId
-                      ? { ...m, toolCalls: [...(m.toolCalls ?? []), call], status: 'running' }
-                      : m,
-                  ),
-                );
-              } else {
-                const id = nanoid();
-                toolTraceRef.current = id;
-                addMessage({ id, role: 'tools', content: '', toolCalls: [call], status: 'running' });
-              }
-            }
-            if (toolName === 'read_resume') {
-              // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
-              if (readApprovalRef.current) {
-                setApprovalReadState(readApprovalRef.current, 'reading');
-              } else {
-                addMessage({ id: nanoid(), role: 'activity', content: t('aiLab.chat.readingResume'), status: 'running' });
-              }
-            }
-          } else if (ev.type === 'tool_completed') {
-            // 工具收工但流还在跑：回到「思考中」，而不是停在上一个工具的形态上。
-            setActivity((prev) => (prev === 'writing' || prev === 'awaiting' ? prev : 'thinking'));
-            const doneId = (ev.payload as { toolCallId?: string } | undefined)?.toolCallId;
-            const traceId = toolTraceRef.current;
-            if (traceId) {
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === traceId
-                    ? {
-                        ...m,
-                        toolCalls: (m.toolCalls ?? []).map((c) =>
-                          !doneId || c.toolCallId === doneId ? { ...c, done: true } : c,
-                        ),
-                      }
+                  m.id === aiId
+                    ? { ...m, toolCalls: [...(m.toolCalls ?? []), call] }
                     : m,
                 ),
               );
             }
-          } else if (ev.type === 'tool_result') {
+            if (toolName === "read_resume") {
+              // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
+              if (readApprovalRef.current) {
+                setApprovalReadState(readApprovalRef.current, "reading");
+              } else {
+                addMessage({
+                  id: nanoid(),
+                  role: "activity",
+                  content: t("aiLab.chat.readingResume"),
+                  status: "running",
+                });
+              }
+            }
+          } else if (ev.type === "tool_completed") {
+            // 工具收工但流还在跑：回到「思考中」，而不是停在上一个工具的形态上。
+            setActivity((prev) =>
+              prev === "writing" || prev === "awaiting" ? prev : "thinking",
+            );
+            const doneId = (ev.payload as { toolCallId?: string } | undefined)
+              ?.toolCallId;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiId
+                  ? {
+                      ...m,
+                      toolCalls: (m.toolCalls ?? []).map((c) =>
+                        !doneId || c.toolCallId === doneId
+                          ? { ...c, done: true }
+                          : c,
+                      ),
+                    }
+                  : m,
+              ),
+            );
+          } else if (ev.type === "tool_result") {
             // 摘要（「读到 4 个模块」）挂回对应的那次调用，芯片展开后才有东西可看。
             const p = ev.payload as
-              | { toolCallId?: string; toolName?: string; summary?: ToolCallSummary }
+              | {
+                  toolCallId?: string;
+                  toolName?: string;
+                  result?: unknown;
+                  summary?: ToolCallSummary;
+                }
               | undefined;
-            const traceId = toolTraceRef.current;
-            if (traceId && p?.summary && p.toolCallId) {
+            if (p?.summary && p.toolCallId) {
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === traceId
+                  m.id === aiId
                     ? {
                         ...m,
                         toolCalls: (m.toolCalls ?? []).map((c) =>
@@ -741,51 +965,69 @@ export default function AiChatShell({
                 ),
               );
             }
-            if (p?.toolName === 'read_resume') {
+            if (p?.toolName === "web_search") {
+              attachSources(citationSourcesFromWebSearchToolResult(p.result));
+            }
+            if (p?.toolName === "read_resume") {
               if (readApprovalRef.current) {
-                setApprovalReadState(readApprovalRef.current, 'read'); // → 已读取简历
+                setApprovalReadState(readApprovalRef.current, "read"); // → 已读取简历
                 readApprovalRef.current = null;
               } else {
                 markReadActivityDone();
               }
             }
-          } else if (ev.type === 'plan_update') {
+          } else if (ev.type === "source_update") {
+            const sources = normalizeCitationSources(
+              (ev.payload as { sources?: unknown } | undefined)?.sources,
+            );
+            // 来源属于最终回答，跟助手气泡一起持久化；内部来源也保留，但渲染层会隐藏。
+            attachSources(sources);
+          } else if (ev.type === "plan_update") {
             // 有子代理在跑就路由到它的卡，否则走主卡——两者不能撞在一起。
-            const payload = ev.payload as { todos?: PlanTodo[]; label?: string } | undefined;
+            const payload = ev.payload as
+              | { todos?: PlanTodo[]; label?: string }
+              | undefined;
             const todos = payload?.todos;
             if (Array.isArray(todos)) {
-              const allDone = todos.length > 0 && todos.every((t) => t.status === 'completed');
+              const allDone =
+                todos.length > 0 &&
+                todos.every((t) => t.status === "completed");
               const sub = activeSubagentRef.current;
               const ref = sub ? subagentPlanCardRef : planCardRef;
               if (ref.current) {
                 const planId = ref.current;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === planId ? { ...m, todos, status: allDone ? 'done' : 'running' } : m
-                  )
+                    m.id === planId
+                      ? { ...m, todos, status: allDone ? "done" : "running" }
+                      : m,
+                  ),
                 );
               } else {
                 const planId = nanoid();
                 ref.current = planId;
                 setAwaitingReply(false); // the todolist replaces the thinking dots
-                // 卡片上的画布开关要指向正确的画面：批量技能→living canvas，analyze→score canvas。
-                const canvasSkill: SkillId = skillBatchRunRef.current
-                  ? skillBatchRunRef.current.kind
-                  : 'analyze';
+                // 只有本轮明确会产出右侧画布时才挂 skillId。普通聊天/搜索/投递追踪也会
+                // 发 plan_update，把它们默认成 analyze 会凭空造出一个“查看”入口。
+                const canvasSkill = planCanvasSkillRef.current;
                 addMessage({
                   id: planId,
-                  role: 'plan',
-                  ...(sub ? { subagentName: sub } : { skillId: canvasSkill }),
-                  content: sub ? '' : payload?.label || '任务清单',
+                  role: "plan",
+                  ...(sub
+                    ? { subagentName: sub }
+                    : canvasSkill
+                      ? { skillId: canvasSkill }
+                      : {}),
+                  content: sub ? "" : payload?.label || "任务清单",
                   todos,
                   // 卡片自己走秒。以第一条 plan_update 为起点而不是 run_started：
                   // 用户看到的这张卡就是从这一刻开始的。
                   startedAt: Date.now(),
-                  status: allDone ? 'done' : 'running',
+                  status: allDone ? "done" : "running",
                 });
               }
             }
-          } else if (ev.type === 'subagent_started') {
+          } else if (ev.type === "subagent_started") {
             // 到 subagent_completed 为止都算它的工作：给它独立的清单卡，原始 token 不进主气泡。
             const payload = ev.payload as
               | { name?: string; args?: { description?: string } }
@@ -794,183 +1036,243 @@ export default function AiChatShell({
             const task = payload?.args?.description?.trim();
             // 优先用子代理的类型名；通用 worker 退回它领到的任务，免得卡片只写"子代理"。
             const name =
-              rawName && rawName !== '子代理' && rawName !== 'general-purpose'
+              rawName && rawName !== "子代理" && rawName !== "general-purpose"
                 ? rawName
                 : task
                   ? task.length > 36
                     ? `${task.slice(0, 36)}…`
                     : task
-                  : '子代理';
+                  : "子代理";
             activeSubagentRef.current = name;
-            setActivity('subagent');
+            setActivity("subagent");
             const planId = nanoid();
             subagentPlanCardRef.current = planId;
             setAwaitingReply(false);
             addMessage({
               id: planId,
-              role: 'plan',
+              role: "plan",
               subagentName: name,
-              content: '',
+              content: "",
               todos: [],
-              status: 'running',
+              status: "running",
             });
-          } else if (ev.type === 'subagent_completed') {
+          } else if (ev.type === "subagent_completed") {
             activeSubagentRef.current = null;
-            setActivity('thinking');
+            setActivity("thinking");
             if (subagentPlanCardRef.current) {
               const planId = subagentPlanCardRef.current;
               subagentPlanCardRef.current = null;
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === planId
-                    ? { ...m, status: 'done', todos: (m.todos ?? []).map((t) => ({ ...t, status: 'completed' })) }
-                    : m
-                )
+                    ? {
+                        ...m,
+                        status: "done",
+                        todos: (m.todos ?? []).map((t) => ({
+                          ...t,
+                          status: "completed",
+                        })),
+                      }
+                    : m,
+                ),
               );
             }
-          } else if (ev.type === 'resume_change_notes') {
-            const notes = (ev.payload as { notes?: { section?: string; itemId?: string; why?: string }[] } | undefined)?.notes;
+          } else if (ev.type === "resume_change_notes") {
+            const notes = (
+              ev.payload as
+                | {
+                    notes?: {
+                      section?: string;
+                      itemId?: string;
+                      fieldKey?: string;
+                      why?: string;
+                    }[];
+                  }
+                | undefined
+            )?.notes;
             for (const n of notes ?? []) {
-              if (n.section && n.itemId && n.why) changeNotes.set(`${n.section}/${n.itemId}`, n.why);
+              if (n.section && n.itemId && n.fieldKey && n.why) {
+                changeNotes.set(
+                  `${n.section}/${n.itemId}/${n.fieldKey}`,
+                  n.why,
+                );
+              }
             }
-          } else if (ev.type === 'resume_write_failed') {
+          } else if (ev.type === "resume_write_failed") {
             // 服务端断言：本轮试过改简历、一次都没成功。这条事件存在的全部意义，就是不让
             // 模型那句「我已经改好了」成为用户唯一能看到的信息。
             // 服务端已经断言过「一整轮没写成」，这是「没产出」不是「没送达」——单独一个事件。
-            console.warn('[ai] resume_write_failed', ev.payload);
+            console.warn("[ai] resume_write_failed", ev.payload);
             addMessage({
               id: nanoid(),
-              role: 'log',
-              content: t('aiLab.chat.writeFailed'),
-              tone: 'warn',
+              role: "log",
+              content: t("aiLab.chat.writeFailed"),
+              tone: "warn",
             });
             appLifecycle.aiWriteFailed({
-              attempts: (ev.payload as { attempts?: number } | undefined)?.attempts,
+              attempts: (ev.payload as { attempts?: number } | undefined)
+                ?.attempts,
             });
-          } else if (ev.type === 'resume_patch' || ev.type === 'resume_update') {
+          } else if (ev.type === "resume_sync_failed") {
+            console.warn("[ai] resume_sync_failed", ev.payload);
+            addMessage({
+              id: nanoid(),
+              role: "log",
+              content: t("aiLab.chat.syncFailed"),
+              tone: "warn",
+            });
+            appLifecycle.aiWriteFailed({
+              attempts: (ev.payload as { attempts?: number } | undefined)
+                ?.attempts,
+            });
+          } else if (
+            ev.type === "resume_patch" ||
+            ev.type === "resume_update"
+          ) {
             // 模式闸门（确定性，不靠提示词）：「规划 / 问答」两档不允许简历改动。
             // 模型偶尔仍会产出一份改写——这里丢掉它，用户的简历不会被碰。
             if (!AGENT_MODES[agentModeRef.current].allowsResumeEdits) {
               warnDropped(
-                '当前是只读模式，这次简历改动已丢弃 · 切换到「共创」再试',
-                'mode_readonly',
-                { detail: `mode=${agentModeRef.current} type=${ev.type}` }
+                "当前是只读模式，这次简历改动已丢弃 · 切换到「共创」再试",
+                "mode_readonly",
+                { detail: `mode=${agentModeRef.current} type=${ev.type}` },
               );
               continue;
             }
-            if (ev.type === 'resume_patch') {
-            const batch = skillBatchRunRef.current;
-            const resolved = resolveResumePatchBatch(resumeData, ev.data ?? ev.payload, batch);
-            if (resolved) {
-              if (ev.runId) patchHandledRunIds.add(ev.runId);
-              else patchHandledWithoutRunId = true;
-              batchNonce.current += 1;
-              setCanvas(CLOSED_CANVAS);
-              setLivingOpen(true);
-              setLivingSkillId(resolved.kind);
-              setBatchRequest({
-                kind: resolved.kind,
-                lang: resolved.lang,
-                proposedSections: resolved.proposedSections,
-                targetedSelection: resolved.targetedSelection,
-                nonce: batchNonce.current,
-                changeNotes,
-              });
-            } else {
-              warnDropped('收到一份读不懂的简历改动，已忽略', 'malformed', {
-                detail: ev.payload ?? ev.data,
-              });
-            }
-            } else {
-            const patchAlreadyHandled = ev.runId ? patchHandledRunIds.has(ev.runId) : patchHandledWithoutRunId;
-            // 同一轮里已经按 patch 铺过画布了。这条全量更新是它的另一种表述，不是新改动——
-            // 但它被吃掉这件事值得留个痕，否则「改动比预期少」无从查起。
-            if (patchAlreadyHandled) {
-              console.warn('[ai] dropping resume_update: this run already applied a patch');
-              continue;
-            }
-
-            const raw = (ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume) as
-              | Resume
-              | undefined;
-            // sectionOrder 可能是 `["experience", …]`：渲染侧直接读 `s.key` 会全拿到
-            // undefined，整份草稿渲染成空白且不报错。就地补形状，不补全区块。
-            const draft = raw
-              ? { ...raw, sectionOrder: coerceSectionOrder(raw.sectionOrder) }
-              : undefined;
-            // resume_update 必须带 keyed `sections`；畸形负载会让渲染器在 sections.<key> 上崩，宁可忽略并告警。
-            const sections =
-              draft && typeof draft === 'object' ? draft.sections : undefined;
-            if (draft && sections && typeof sections === 'object' && !Array.isArray(sections)) {
+            if (ev.type === "resume_patch") {
               const batch = skillBatchRunRef.current;
-              if (batch) {
-                // optimize/translate → 在 living canvas 上按字段铺开真实 diff。
+              const resolved = resolveResumePatchBatch(
+                resumeData,
+                ev.data ?? ev.payload,
+                batch,
+              );
+              if (resolved) {
+                if (ev.runId) patchHandledRunIds.add(ev.runId);
+                else patchHandledWithoutRunId = true;
                 batchNonce.current += 1;
                 setCanvas(CLOSED_CANVAS);
                 setLivingOpen(true);
-                setLivingSkillId(batch.kind);
+                setLivingSkillId(resolved.kind);
                 setBatchRequest({
-                  kind: batch.kind,
-                  lang: batch.lang,
-                  proposedSections: sections,
-                  targetedSelection: batch.targetedSelection,
+                  kind: resolved.kind,
+                  lang: resolved.lang,
+                  proposedSections: resolved.proposedSections,
+                  targetedSelection: resolved.targetedSelection,
                   nonce: batchNonce.current,
                   changeNotes,
                 });
-              } else if (activeSkillRef.current === 'create') {
-                // 引导创建：整份新简历没有 before 可 diff，草稿条才是它的正当用途。
-                setResumeDraft(draft);
-                setDraftReady(draft);
-                // 在这里上报而不是流结束时：一次运行可能跑完却从没产出草稿。
-                appLifecycle.aiCreateCompleted();
               } else {
-                // 普通对话也走画布评审，与技能路径一致。此前这里只在输入框上方挂一条窄草稿条，
-                // 右侧舞台宽度还停在 0%——用户视角同样是「说改了、画布没动」。
-                //
-                // 先算差异再决定界面：一句「帮我看看」引出的零改动不该把画布弹出来，
-                // 那会让轻量问答变吵。这是防噪的核心闸门。
-                const changed = diffResumeToChanges(
-                  resumeData.sections,
-                  sections,
-                  'optimize',
-                  undefined,
-                  undefined,
-                  undefined,
-                  changeNotes
+                warnDropped("收到一份读不懂的简历改动，已忽略", "malformed", {
+                  detail: ev.payload,
+                });
+              }
+            } else {
+              const patchAlreadyHandled = ev.runId
+                ? patchHandledRunIds.has(ev.runId)
+                : patchHandledWithoutRunId;
+              // 同一轮里已经按 patch 铺过画布了。这条全量更新是它的另一种表述，不是新改动——
+              // 但它被吃掉这件事值得留个痕，否则「改动比预期少」无从查起。
+              if (patchAlreadyHandled) {
+                console.warn(
+                  "[ai] reconciling preview patch with authoritative resume snapshot",
                 );
-                if (!changed.length) {
-                  warnDropped('这次没有产生可评审的改动', 'no_changes');
-                } else if (canvasDismissedForRun.current) {
-                  // 本轮用户主动关过画布：尊重它，别再弹回来。
-                  logChange(`有 ${changed.length} 处改动待评审 · 打开画布查看`);
-                } else {
+              }
+
+              const raw = (ev.data ??
+                (ev.payload as { resume?: unknown } | undefined)?.resume) as
+                | Resume
+                | undefined;
+              // sectionOrder 可能是 `["experience", …]`：渲染侧直接读 `s.key` 会全拿到
+              // undefined，整份草稿渲染成空白且不报错。就地补形状，不补全区块。
+              const draft = raw
+                ? { ...raw, sectionOrder: coerceSectionOrder(raw.sectionOrder) }
+                : undefined;
+              // resume_update 必须带 keyed `sections`；畸形负载会让渲染器在 sections.<key> 上崩，宁可忽略并告警。
+              const sections =
+                draft && typeof draft === "object" ? draft.sections : undefined;
+              if (
+                draft &&
+                sections &&
+                typeof sections === "object" &&
+                !Array.isArray(sections)
+              ) {
+                const batch = skillBatchRunRef.current;
+                if (batch) {
+                  // optimize/translate → 在 living canvas 上按字段铺开真实 diff。
                   batchNonce.current += 1;
                   setCanvas(CLOSED_CANVAS);
                   setLivingOpen(true);
-                  setLivingSkillId('optimize');
+                  setLivingSkillId(batch.kind);
                   setBatchRequest({
-                    kind: 'optimize',
+                    kind: batch.kind,
+                    lang: batch.lang,
                     proposedSections: sections,
+                    targetedSelection: batch.targetedSelection,
                     nonce: batchNonce.current,
                     changeNotes,
                   });
+                } else if (activeSkillRef.current === "create") {
+                  // 引导创建：整份新简历没有 before 可 diff，草稿条才是它的正当用途。
+                  setResumeDraft(draft);
+                  setDraftReady(draft);
+                  // 在这里上报而不是流结束时：一次运行可能跑完却从没产出草稿。
+                  appLifecycle.aiCreateCompleted();
+                } else {
+                  // 普通对话也走画布评审，与技能路径一致。此前这里只在输入框上方挂一条窄草稿条，
+                  // 右侧舞台宽度还停在 0%——用户视角同样是「说改了、画布没动」。
+                  //
+                  // 先算差异再决定界面：一句「帮我看看」引出的零改动不该把画布弹出来，
+                  // 那会让轻量问答变吵。这是防噪的核心闸门。
+                  const changed = diffResumeToChanges(
+                    resumeData.sections,
+                    sections,
+                    "optimize",
+                    undefined,
+                    undefined,
+                    undefined,
+                    changeNotes,
+                  );
+                  if (!changed.length) {
+                    warnDropped("这次没有产生可评审的改动", "no_changes");
+                  } else if (canvasDismissedForRun.current) {
+                    // 本轮用户主动关过画布：尊重它，别再弹回来。
+                    logChange(
+                      `有 ${changed.length} 处改动待评审 · 打开画布查看`,
+                    );
+                  } else {
+                    batchNonce.current += 1;
+                    setCanvas(CLOSED_CANVAS);
+                    setLivingOpen(true);
+                    setLivingSkillId("optimize");
+                    setBatchRequest({
+                      kind: "optimize",
+                      proposedSections: sections,
+                      nonce: batchNonce.current,
+                      changeNotes,
+                    });
+                  }
                 }
+              } else {
+                warnDropped("收到一份缺少区块结构的简历，已忽略", "malformed", {
+                  detail: draft,
+                });
               }
-            } else {
-              warnDropped('收到一份缺少区块结构的简历，已忽略', 'malformed', {
-                detail: draft,
-              });
             }
-            }
-          } else if (ev.type === 'resume_analysis') {
+          } else if (ev.type === "resume_analysis") {
             // analyze_resume 跑完，把多角色结果呈到 ScoreView 画布。
-            const result = (ev.data ?? (ev.payload as { data?: unknown } | undefined)?.data) as
+            const result = (ev.data ??
+              (ev.payload as { data?: unknown } | undefined)?.data) as
               | MultiPersonaResumeAnalysis
               | undefined;
-            if (result && typeof result === 'object') {
+            if (result && typeof result === "object") {
               setAnalysis(result);
               setLivingOpen(false);
-              setCanvas({ open: true, skillId: 'analyze', view: 'score', status: 'ready' });
+              setCanvas({
+                open: true,
+                skillId: "analyze",
+                view: "score",
+                status: "ready",
+              });
               // 真出了结果才算成功：只流不产出不是成功。
               appLifecycle.aiAnalysisSucceeded();
               // 收尾时把清单全置完成（防御：汇总步骤的 plan_update 可能晚于本事件）。
@@ -982,23 +1284,32 @@ export default function AiChatShell({
                     m.id === planId
                       ? {
                           ...m,
-                          status: 'done',
-                          todos: m.todos?.map((t) => ({ ...t, status: 'completed' })),
+                          status: "done",
+                          todos: m.todos?.map((t) => ({
+                            ...t,
+                            status: "completed",
+                          })),
                         }
-                      : m
-                  )
+                      : m,
+                  ),
                 );
               }
             }
-          } else if (ev.type === 'fit_report') {
+          } else if (ev.type === "fit_report") {
             // evaluate_fit 跑完，把简历 × JD 的匹配报告呈到 MatchView 画布。
-            const report = (ev.data ?? (ev.payload as { data?: unknown } | undefined)?.data) as
+            const report = (ev.data ??
+              (ev.payload as { data?: unknown } | undefined)?.data) as
               | FitReport
               | undefined;
-            if (report && typeof report === 'object') {
+            if (report && typeof report === "object") {
               setFitReport(report);
               setLivingOpen(false);
-              setCanvas({ open: true, skillId: 'fit', view: 'match', status: 'ready' });
+              setCanvas({
+                open: true,
+                skillId: "fit",
+                view: "match",
+                status: "ready",
+              });
               // 收尾时把清单全置完成（防御：汇总步骤的 plan_update 可能晚于本事件）。
               if (planCardRef.current) {
                 const planId = planCardRef.current;
@@ -1008,15 +1319,18 @@ export default function AiChatShell({
                     m.id === planId
                       ? {
                           ...m,
-                          status: 'done',
-                          todos: m.todos?.map((t) => ({ ...t, status: 'completed' })),
+                          status: "done",
+                          todos: m.todos?.map((t) => ({
+                            ...t,
+                            status: "completed",
+                          })),
                         }
-                      : m
-                  )
+                      : m,
+                  ),
                 );
               }
             }
-          } else if (ev.type === 'error') {
+          } else if (ev.type === "error") {
             // 归一化成 AppError 再抛：下游的额度闸门与文案都读码，不再从字符串里往回猜。
             // 老部署可能仍发原始上游报错，`fromSseEvent` 只取契约字段，原文进不来。
             throw new AgentRequestError(fromSseEvent(ev));
@@ -1024,9 +1338,10 @@ export default function AiChatShell({
         }
         if (pausedForApproval && !bubbleCreated) {
           // 一个字都没出就停在审批：卡片就是这一段的终点，续流等用户决定。
+          commitBubble();
         } else {
           ensureBubble();
-          setMessages((prev) => prev.map((m) => (m.id === aiId ? { ...m, status: 'done' } : m)));
+          commitBubble();
         }
       } catch (err) {
         // 被用户中止或被新运行顶替，不算失败。
@@ -1036,16 +1351,20 @@ export default function AiChatShell({
         // 过了中止判断才是真失败——放在上面会把每次取消都算成失败。
         reportSkillFailed(
           activeSkillRef.current,
-          isQuotaOrCustomConfigError(err) ? 'quota' : 'unknown',
+          isQuotaOrCustomConfigError(err) ? "quota" : "unknown",
         );
         if (isQuotaOrCustomConfigError(err)) {
-          const refreshedAccess = await resolveAiAccessConfig({ forceRefresh: true }).catch(() => null);
-          if (refreshedAccess?.ok && refreshedAccess.config.source === 'internal') {
+          const refreshedAccess = await resolveAiAccessConfig({
+            forceRefresh: true,
+          }).catch(() => null);
+          if (
+            refreshedAccess?.ok &&
+            refreshedAccess.config.source === "internal"
+          ) {
             const msg = aiServiceErrorMessage();
             ensureBubble();
-            setMessages((prev) =>
-              prev.map((m) => (m.id === aiId ? { ...m, content: acc || `（${msg}）`, status: 'done' } : m))
-            );
+            const partial = streamBuffer.snapshot().content;
+            commitBubble({ content: partial || `（${msg}）` });
             toast.error(msg);
             return;
           }
@@ -1055,24 +1374,24 @@ export default function AiChatShell({
           setConfigGateOpen(true);
           const msg = errorText(err, aiServiceErrorMessage());
           ensureBubble();
-          setMessages((prev) =>
-            prev.map((m) => (m.id === aiId ? { ...m, content: acc || `（${msg}）`, status: 'done' } : m))
-          );
+          const partial = streamBuffer.snapshot().content;
+          commitBubble({ content: partial || `（${msg}）` });
           toast.error(msg);
           return;
         }
         ensureBubble();
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === aiId
-              ? { ...m, content: acc || `（${errorText(err, aiServiceErrorMessage())}）`, status: 'done' }
-              : m
-          )
-        );
+        const partial = streamBuffer.snapshot().content;
+        commitBubble({
+          content: partial || `（${errorText(err, aiServiceErrorMessage())}）`,
+        });
         toast.error(aiServiceErrorMessage());
       } finally {
+        streamBuffer.cancel();
         // 只有当前运行能清理共享 UI 状态，被顶替的运行不许关掉新运行的转圈。
         if (isCurrent()) {
+          // 用户点停止会从上面的 AbortError 分支直接 return。把已经展示的局部正文固定下来，
+          // 否则本地 overlay 清掉后气泡会退回空白；完成函数是幂等的，正常/错误路径不会再写。
+          if (!bubbleCommitted) commitBubble();
           markReadActivityDone(); // resolve any read line still spinning
           // 主卡和子代理卡都要收尾，否则流中途结束/出错时它们会一直转圈。
           activeSubagentRef.current = null;
@@ -1085,13 +1404,15 @@ export default function AiChatShell({
                 m.id === planId
                   ? {
                       ...m,
-                      status: 'done',
+                      status: "done",
                       todos: m.todos?.map((t) =>
-                        t.status === 'in_progress' ? { ...t, status: 'pending' } : t
+                        t.status === "in_progress"
+                          ? { ...t, status: "pending" }
+                          : t,
                       ),
                     }
-                  : m
-              )
+                  : m,
+              ),
             );
           }
           setRunning(false);
@@ -1121,7 +1442,7 @@ export default function AiChatShell({
       setMessages,
       setResumeDraft,
       setIsAiJobRunning,
-    ]
+    ],
   );
 
   // AI 访问闸门：先走账户额度，退回 BYOK。
@@ -1143,8 +1464,8 @@ export default function AiChatShell({
       setRunning(false);
       setIsAiJobRunning(false);
       setAwaitingReply(false);
-      if (access.reason === 'entitlement_unavailable') {
-        toast.error('账户额度检查失败，请稍后重试');
+      if (access.reason === "entitlement_unavailable") {
+        toast.error("账户额度检查失败，请稍后重试");
         return null;
       }
       pendingRunRef.current = pending;
@@ -1156,31 +1477,28 @@ export default function AiChatShell({
   );
 
   // analyze：会话内运行，流出清单 + 最终分析结果；清单卡由 consumeStream 经 planCardRef 拥有。
-  const runAnalyze = useCallback(
-    async () => {
-      const pending: PendingRun = { kind: 'analyze' };
-      const config = await resolveRunConfig(pending);
-      if (!config) return;
-      planCardRef.current = null; // a fresh review todolist for this run
-      // 同理：新一轮要新开一张工具追踪卡，否则这一轮的工具会追加进上一轮那张。
-      toolTraceRef.current = null;
-      skillBatchRunRef.current = null; // not a whole-resume skill batch run
-      await consumeStream(
-        (signal) =>
-          streamChat({
-            messages: [{ role: 'user', content: SKILLS.analyze.buildIntent({}) }],
-            agentMode: agentModeRef.current,
-            mode: 'analyze',
-            // 不带 sessionId：analyze 是一次性变换，sessionId 留给 create/general 对话。
-            resumeId: scopedResumeId(),
-            config,
-            signal,
-          }),
-        pending,
-      );
-    },
-    [consumeStream, resolveRunConfig, scopedResumeId]
-  );
+  const runAnalyze = useCallback(async () => {
+    activeActionTypeRef.current = null;
+    const pending: PendingRun = { kind: "analyze" };
+    const config = await resolveRunConfig(pending);
+    if (!config) return;
+    planCardRef.current = null; // a fresh review todolist for this run
+    skillBatchRunRef.current = null; // not a whole-resume skill batch run
+    planCanvasSkillRef.current = "analyze";
+    await consumeStream(
+      (signal) =>
+        streamChat({
+          messages: [{ role: "user", content: SKILLS.analyze.buildIntent({}) }],
+          agentMode: agentModeRef.current,
+          mode: "analyze",
+          // 不带 sessionId：analyze 是一次性变换，sessionId 留给 create/general 对话。
+          resumeId: scopedResumeId(),
+          config,
+          signal,
+        }),
+      pending,
+    );
+  }, [consumeStream, resolveRunConfig, scopedResumeId]);
 
   /**
    * 岗位匹配（evaluate_fit）。刻意不走 runContentSkill：它产出的是一份报告而不是简历
@@ -1189,18 +1507,24 @@ export default function AiChatShell({
    */
   const runFit = useCallback(
     async (message: string) => {
-      const pending: PendingRun = { kind: 'chat', history: [{ role: 'user', content: message }], mode: 'general' };
+      activeActionTypeRef.current = null;
+      const pending: PendingRun = {
+        kind: "chat",
+        history: [{ role: "user", content: message }],
+        mode: "general",
+      };
       const config = await resolveRunConfig(pending);
       if (!config) return;
       planCardRef.current = null;
       skillBatchRunRef.current = null;
+      planCanvasSkillRef.current = null;
       markSessionUsed();
       await consumeStream(
         (signal) =>
           streamChat({
-            messages: [{ role: 'user', content: message }],
+            messages: [{ role: "user", content: message }],
             agentMode: agentModeRef.current,
-            mode: 'fit',
+            mode: "fit",
             sessionId: sessionIdRef.current,
             resumeId: scopedResumeId(),
             config,
@@ -1209,24 +1533,26 @@ export default function AiChatShell({
         pending,
       );
     },
-    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId]
+    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId],
   );
 
   // 整篇内容技能（optimize / translate）走会话式运行：不弹参数框，需要细节时在对话里用
   // FormCard 收集；最终整篇更新 diff 到 living canvas（skillBatchRunRef 要挺过表单中断）。
   const runContentSkill = useCallback(
     async (kind: BatchKind, message: string) => {
-      const pending: PendingRun = { kind: 'content', skill: kind, message };
+      activeActionTypeRef.current = null;
+      const pending: PendingRun = { kind: "content", skill: kind, message };
       const config = await resolveRunConfig(pending);
       if (!config) return;
       setCanvas(CLOSED_CANVAS);
       setLivingSkillId(kind);
       skillBatchRunRef.current = { kind };
+      planCanvasSkillRef.current = kind;
       markSessionUsed(); // multi-turn (ask → fill → optimize) needs the thread
       void consumeStream(
         (signal) =>
           streamChat({
-            messages: [{ role: 'user', content: message }],
+            messages: [{ role: "user", content: message }],
             agentMode: agentModeRef.current,
             mode: kind,
             sessionId: sessionIdRef.current,
@@ -1241,19 +1567,19 @@ export default function AiChatShell({
       consumeStream,
       resolveRunConfig,
       markSessionUsed,
-        scopedResumeId,
+      scopedResumeId,
       setCanvas,
       setLivingSkillId,
-    ]
+    ],
   );
 
   // 一张卡答完：裁决按下标归位，同一次中断的卡全答完才续跑。
   const answerInterrupt = useCallback(
-    (slot: ChatMessage['interruptSlot'], decision: HitlDecision) => {
+    (slot: ChatMessage["interruptSlot"], decision: HitlDecision) => {
       const pending = pendingInterruptRef.current;
       if (!slot || !pending || pending.requestId !== slot.requestId) {
         // 会话从本地记录恢复,后端线程早已被回收——续跑必失败,不如直说。
-        addAssistant(t('aiLab.chat.interruptExpired'));
+        addAssistant(t("aiLab.chat.interruptExpired"));
         return;
       }
       const filled = fillDecision(pending.decisions, slot.index, decision);
@@ -1267,9 +1593,9 @@ export default function AiChatShell({
       setAwaitingReply(true);
       void (async () => {
         const run: PendingRun = {
-          kind: 'chat',
+          kind: "chat",
           history: toBackendHistory(messagesRef.current),
-          mode: 'general',
+          mode: "general",
         };
         const config = await resolveRunConfig(run);
         if (!config) {
@@ -1284,6 +1610,9 @@ export default function AiChatShell({
               resumeId: scopedResumeId(),
               // 续跑也要带档位，否则批准之后那半程回到无约束状态。
               agentMode: agentModeRef.current,
+              ...(activeActionTypeRef.current
+                ? { request_type: activeActionTypeRef.current }
+                : {}),
               config,
               signal,
             }),
@@ -1291,18 +1620,23 @@ export default function AiChatShell({
         );
       })();
     },
-    [addAssistant, consumeStream, resolveRunConfig, t, scopedResumeId]
+    [addAssistant, consumeStream, resolveRunConfig, t, scopedResumeId],
   );
   answerInterruptRef.current = answerInterrupt;
 
   // 用户操作了 GenUI 卡片：标记已处理，并经 HITL 通道恢复暂停的运行。
   // create / general：流式对话，发送按 sessionId 划定的可见轮次历史。
   const runChat = useCallback(
-    async (history: { role: 'user' | 'assistant'; content: string }[], mode: 'create' | 'general') => {
-      const pending: PendingRun = { kind: 'chat', history, mode };
+    async (
+      history: { role: "user" | "assistant"; content: string }[],
+      mode: "create" | "general",
+    ) => {
+      activeActionTypeRef.current = null;
+      const pending: PendingRun = { kind: "chat", history, mode };
       const config = await resolveRunConfig(pending);
       if (!config) return;
       skillBatchRunRef.current = null; // not a whole-resume skill batch run
+      planCanvasSkillRef.current = null;
       markSessionUsed(); // server-side session now exists → reclaim on explicit new chat
       return consumeStream(
         (signal) =>
@@ -1319,7 +1653,7 @@ export default function AiChatShell({
         pending,
       );
     },
-    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId]
+    [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId],
   );
 
   // 审批卡上的**一页**答完了：裁决按该页自己的下标归位，全答完才续跑。
@@ -1331,20 +1665,24 @@ export default function AiChatShell({
             ? {
                 ...m,
                 approvals: m.approvals.map((a, i) =>
-                  i === pageIndex ? { ...a, status: approved ? 'approved' : 'denied' } : a
+                  i === pageIndex
+                    ? { ...a, status: approved ? "approved" : "denied" }
+                    : a,
                 ),
               }
-            : m
-        )
+            : m,
+        ),
       );
-      const page = messagesRef.current.find((m) => m.id === msgId)?.approvals?.[pageIndex];
+      const page = messagesRef.current.find((m) => m.id === msgId)?.approvals?.[
+        pageIndex
+      ];
       if (!page) return;
       answerInterrupt(
         { requestId: page.requestId, index: page.slotIndex },
-        { type: approved ? 'approve' : 'reject' }
+        { type: approved ? "approve" : "reject" },
       );
     },
-    [answerInterrupt, setMessages]
+    [answerInterrupt, setMessages],
   );
 
   /**
@@ -1367,12 +1705,14 @@ export default function AiChatShell({
     (text: string) => {
       setStarted(true);
       // 在乐观插入之前先构造发给后端的历史。
-      const history = toBackendHistory(messagesRef.current).concat([{ role: 'user', content: text }]);
-      addMessage({ id: nanoid(), role: 'user', content: text });
+      const history = toBackendHistory(messagesRef.current).concat([
+        { role: "user", content: text },
+      ]);
+      addMessage({ id: nanoid(), role: "user", content: text });
       // `create` 是显式模式（由 `/` 菜单的创建技能置位），不是关键词猜出来的——留着。
-      void runChat(history, chatMode === 'create' ? 'create' : 'general');
+      void runChat(history, chatMode === "create" ? "create" : "general");
     },
-    [chatMode, addMessage, runChat, setStarted]
+    [chatMode, addMessage, runChat, setStarted],
   );
 
   /**
@@ -1386,13 +1726,13 @@ export default function AiChatShell({
     const msgs = messagesRef.current;
     let idx = -1;
     for (let i = msgs.length - 1; i >= 0; i -= 1) {
-      if (msgs[i].role === 'user') {
+      if (msgs[i].role === "user") {
         idx = i;
         break;
       }
     }
     if (idx < 0) return;
-    const text = msgs[idx].content ?? '';
+    const text = msgs[idx].content ?? "";
     if (!text.trim()) return;
 
     // 连同那条用户消息一起截掉——`handleSend` 会把它重新加回去。
@@ -1416,44 +1756,62 @@ export default function AiChatShell({
       setStarted(true);
       // 文件名带一个附件标记而不是把 emoji 拼进正文：emoji 的字形由系统字体决定，
       // 三个平台三种画风三种基线，而且颜色不受主题控制。渲染层画 SVG。
-      addMessage({ id: nanoid(), role: 'user', content: file.name, attachment: true });
+      addMessage({
+        id: nanoid(),
+        role: "user",
+        content: file.name,
+        attachment: true,
+      });
       const activityId = nanoid();
       addMessage({
         id: activityId,
-        role: 'activity',
-        content: t('aiLab.attach.parsing'),
-        status: 'running',
+        role: "activity",
+        content: t("aiLab.attach.parsing"),
+        status: "running",
       });
 
       void (async () => {
         const form = new FormData();
-        form.append('file', file);
+        form.append("file", file);
         try {
           let parsed: unknown = null;
           let warnings: string[] = [];
           for await (const ev of streamPdfParse(form)) {
-            if (ev.type === 'resume_update') {
-              parsed = ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume ?? null;
-            } else if (ev.type === 'error' || ev.type === 'run_failed') {
+            if (ev.type === "resume_update") {
+              parsed =
+                ev.data ??
+                (ev.payload as { resume?: unknown } | undefined)?.resume ??
+                null;
+            } else if (ev.type === "error" || ev.type === "run_failed") {
               // 「这份 PDF 像是扫描件」这类针对具体文档的解释就在帧的 message 里，
               // 它进 detail 行；标题永远是本地化的码文案。
-              throw new Error(errorText(fromSseEvent(ev), t('aiLab.attach.failed')));
+              throw new Error(
+                errorText(fromSseEvent(ev), t("aiLab.attach.failed")),
+              );
             }
           }
           const record = (parsed ?? {}) as Record<string, unknown>;
           if (Array.isArray(record.parse_warnings)) {
             warnings = record.parse_warnings.filter(
-              (w): w is string => typeof w === 'string' && Boolean(w.trim()),
+              (w): w is string => typeof w === "string" && Boolean(w.trim()),
             );
           }
           const sections = record.sections;
-          if (!sections || typeof sections !== 'object' || Array.isArray(sections)) {
-            throw new Error(t('aiLab.attach.failed'));
+          if (
+            !sections ||
+            typeof sections !== "object" ||
+            Array.isArray(sections)
+          ) {
+            throw new Error(t("aiLab.attach.failed"));
           }
           setMessages((prev) =>
             prev.map((m) =>
               m.id === activityId
-                ? { ...m, content: t('aiLab.attach.parsed'), status: 'done' as const }
+                ? {
+                    ...m,
+                    content: t("aiLab.attach.parsed"),
+                    status: "done" as const,
+                  }
                 : m,
             ),
           );
@@ -1465,11 +1823,11 @@ export default function AiChatShell({
           setDraftReady(draft);
           if (warnings.length) {
             upsertWidget(`pdf-warnings:${activityId}`, {
-              kind: 'fabrication_notice',
+              kind: "fabrication_notice",
               props: {
                 items: warnings,
-                title: t('aiLab.attach.warningsTitle'),
-                body: t('aiLab.attach.warningsBody'),
+                title: t("aiLab.attach.warningsTitle"),
+                body: t("aiLab.attach.warningsBody"),
               },
             });
           }
@@ -1477,11 +1835,17 @@ export default function AiChatShell({
           setMessages((prev) =>
             prev.map((m) =>
               m.id === activityId
-                ? { ...m, content: t('aiLab.attach.failed'), status: 'done' as const }
+                ? {
+                    ...m,
+                    content: t("aiLab.attach.failed"),
+                    status: "done" as const,
+                  }
                 : m,
             ),
           );
-          toast.error(e instanceof Error ? e.message : t('aiLab.attach.failed'));
+          toast.error(
+            e instanceof Error ? e.message : t("aiLab.attach.failed"),
+          );
         }
       })();
     },
@@ -1492,11 +1856,12 @@ export default function AiChatShell({
   const handleWidgetAction = useCallback(
     (widgetId: string, result: WidgetActionResult) => {
       // JD 只经表单进入模型（没有文件上传）。只上报长度分桶，正文是用户的材料。
-      if (result.type === 'submit') {
+      if (result.type === "submit") {
         const jd = (result.values as Record<string, unknown> | undefined)?.jd;
-        if (typeof jd === 'string' && jd.trim()) {
+        if (typeof jd === "string" && jd.trim()) {
           appLifecycle.aiJdUploaded({
-            sizeBucket: jd.length < 500 ? 'small' : jd.length < 2000 ? 'medium' : 'large',
+            sizeBucket:
+              jd.length < 500 ? "small" : jd.length < 2000 ? "medium" : "large",
           });
         }
       }
@@ -1507,26 +1872,28 @@ export default function AiChatShell({
                 ...m,
                 widget: {
                   ...m.widget,
-                  status: result.type === 'submit' ? 'submitted' : 'cancelled',
+                  status: result.type === "submit" ? "submitted" : "cancelled",
                 },
               }
-            : m
-        )
+            : m,
+        ),
       );
 
-      const message = messagesRef.current.find((m) => m.widget?.widgetId === widgetId);
+      const message = messagesRef.current.find(
+        (m) => m.widget?.widgetId === widgetId,
+      );
       const w = message?.widget;
       // 结果去哪由注册表说了算：续跑暂停的运行 / 当成一条用户消息发出 / 卡片自己消化。
       switch (w ? WIDGETS[w.kind]?.interaction : undefined) {
-        case 'client':
+        case "client":
           // 就地生效的卡（挑模板之类），已经改过本地状态了，没有东西要回后端。
           return;
-        case 'message': {
-          if (result.type !== 'submit') return;
+        case "message": {
+          if (result.type !== "submit") return;
           const text = Object.values(result.values ?? {})
             .map((v) => v.trim())
             .filter(Boolean)
-            .join('\n');
+            .join("\n");
           if (text) handleSend(text);
           return;
         }
@@ -1534,27 +1901,28 @@ export default function AiChatShell({
           // 恢复暂停的 request_form：提交走 `edit` 把值注入工具参数，取消走 `reject`。
           // （langchain HITL 没有 `respond`，所以提交只能搭 `edit`。）
           const decision: HitlDecision =
-            result.type === 'submit'
+            result.type === "submit"
               ? {
-                  type: 'edit',
+                  type: "edit",
                   editedAction: {
                     // 报真实工具名：卡的 kind 可能是按参数路由出来的别名
                     // （ask_choice_recommended），拿它去续跑会指向一个不存在的工具。
-                    name: w?.toolName ?? w?.kind ?? 'request_form',
+                    name: w?.toolName ?? w?.kind ?? "request_form",
                     args: { ...(w?.props ?? {}), values: result.values ?? {} },
                   },
                 }
               : // 取消一张采集卡是「跳过这一步」，不是终止整个流程——措辞要让模型接着往下走。
                 // 同样是发给模型的，用英文（见上面「问答」模式那条的理由）。
                 {
-                  type: 'reject',
-                  message: 'The user skipped this step. Continue with the next one.',
+                  type: "reject",
+                  message:
+                    "The user skipped this step. Continue with the next one.",
                 };
           answerInterrupt(message?.interruptSlot, decision);
         }
       }
     },
-    [answerInterrupt, handleSend, setMessages]
+    [answerInterrupt, handleSend, setMessages],
   );
 
   // `/` 菜单选中的技能只是个 chip，不立即执行：用户补充文字后回车才到这里。
@@ -1569,39 +1937,41 @@ export default function AiChatShell({
       activeSkillRef.current = id;
       reportSkillStarted(id);
 
-      if (skill.surface === 'immersive') {
+      if (skill.surface === "immersive") {
         interviewStartedAtRef.current = Date.now();
         setOverlayOpen(true);
         return;
       }
 
       // 内容技能走会话式：有文字就作为本轮，没文字就发一句自然意图让 AI 用 FormCard 追问。
-      if (id === 'fit') {
+      if (id === "fit") {
         const msg = t || SKILL_INTENT.fit!();
-        addMessage({ id: nanoid(), role: 'user', content: msg, skillId: id });
+        addMessage({ id: nanoid(), role: "user", content: msg, skillId: id });
         void runFit(msg);
         return;
       }
 
-      if (id === 'translate' || id === 'optimize') {
+      if (id === "translate" || id === "optimize") {
         const msg = t || SKILL_INTENT[id]!();
-        addMessage({ id: nanoid(), role: 'user', content: msg, skillId: id });
+        addMessage({ id: nanoid(), role: "user", content: msg, skillId: id });
         void runContentSkill(id, msg);
         return;
       }
 
       const display = t || skill.buildIntent({});
       // Tag the turn with the skill so the bubble shows which skill ran.
-      addMessage({ id: nanoid(), role: 'user', content: display, skillId: id });
+      addMessage({ id: nanoid(), role: "user", content: display, skillId: id });
 
       if (skill.isChat) {
-        setChatMode('create');
+        setChatMode("create");
         // 创建流的舞台就是实时画布本身：草稿在同一张纸上长出来，落地后无缝接管。
         setCanvas(CLOSED_CANVAS);
         setLivingOpen(true);
         void runChat(
-          toBackendHistory(messagesRef.current).concat([{ role: 'user', content: display }]),
-          'create',
+          toBackendHistory(messagesRef.current).concat([
+            { role: "user", content: display },
+          ]),
+          "create",
         );
         return;
       }
@@ -1609,12 +1979,27 @@ export default function AiChatShell({
       // analyze 不吃自由输入：文字只作为本轮显示，跑的仍是标准分析。
       void runAnalyze();
     },
-    [addMessage, runChat, runContentSkill, runAnalyze, runFit, setCanvas, setChatMode, setLivingOpen, setStarted],
+    [
+      addMessage,
+      runChat,
+      runContentSkill,
+      runAnalyze,
+      runFit,
+      setCanvas,
+      setChatMode,
+      setLivingOpen,
+      setStarted,
+    ],
   );
 
   // 画布片段经「询问 Polaris」以引用形式抬进输入框。
   const onAskWithTarget = useCallback(
-    (ctx: { path: string; label: string; text: string; selectionText?: string }) => {
+    (ctx: {
+      path: string;
+      label: string;
+      text: string;
+      selectionText?: string;
+    }) => {
       setStarted(true);
       setLivingOpen(true);
       setQuoted({
@@ -1624,7 +2009,7 @@ export default function AiChatShell({
         selectionText: ctx.selectionText,
       });
     },
-    [setLivingOpen, setStarted]
+    [setLivingOpen, setStarted],
   );
 
   // 限定在片段上的会话式一轮：走主对话（模型可以反问），但标记为 batch，
@@ -1632,21 +2017,23 @@ export default function AiChatShell({
   // 技能——后者会读整篇简历并索要 JD，而 Polaris 只改这个片段。
   const runTargetedEdit = useCallback(
     async (message: string, targetedSelection?: TargetedSelectionDiff) => {
+      activeActionTypeRef.current = null;
       const pending: PendingRun = {
-        kind: 'chat',
-        history: [{ role: 'user', content: message }],
-        mode: 'general',
+        kind: "chat",
+        history: [{ role: "user", content: message }],
+        mode: "general",
       };
       const config = await resolveRunConfig(pending);
       if (!config) return;
-      skillBatchRunRef.current = { kind: 'optimize', targetedSelection }; // route resume_update → living canvas
+      skillBatchRunRef.current = { kind: "optimize", targetedSelection }; // route resume_update → living canvas
+      planCanvasSkillRef.current = "optimize";
       markSessionUsed();
       void consumeStream(
         (signal) =>
           streamChat({
-            messages: [{ role: 'user', content: message }],
+            messages: [{ role: "user", content: message }],
             agentMode: agentModeRef.current,
-            mode: 'general',
+            mode: "general",
             sessionId: sessionIdRef.current,
             resumeId: scopedResumeId(),
             config,
@@ -1658,6 +2045,50 @@ export default function AiChatShell({
     [consumeStream, resolveRunConfig, markSessionUsed, scopedResumeId],
   );
 
+  // 分析报告的整改动作必须保留结构化来源；只发「帮我改掉这条」会被模型当成文案润色。
+  const runAnalysisFix = useCallback(
+    async (issue: AnalysisImprovementAction) => {
+      activeActionTypeRef.current = "fix_analysis_weakness";
+      const pending: PendingRun = { kind: "analysis-fix", issue };
+      const config = await resolveRunConfig(pending);
+      if (!config) return;
+      skillBatchRunRef.current = { kind: "optimize" };
+      planCanvasSkillRef.current = "optimize";
+      markSessionUsed();
+      const display = t("aiLab.artifact.fixWeaknessPrompt", {
+        weakness: issue.problem,
+      });
+      void consumeStream(
+        (signal) =>
+          streamChat({
+            messages: [{ role: "user", content: display }],
+            agentMode: agentModeRef.current,
+            mode: "general",
+            request_type: "fix_analysis_weakness",
+            context: { analysisIssue: issue },
+            sessionId: sessionIdRef.current,
+            resumeId: scopedResumeId(),
+            config,
+            signal,
+          }),
+        pending,
+      );
+    },
+    [consumeStream, markSessionUsed, resolveRunConfig, scopedResumeId, t],
+  );
+
+  const handleFixAnalysisIssue = useCallback(
+    (issue: AnalysisImprovementAction) => {
+      const display = t("aiLab.artifact.fixWeaknessPrompt", {
+        weakness: issue.problem,
+      });
+      setStarted(true);
+      addMessage({ id: nanoid(), role: "user", content: display });
+      void runAnalysisFix(issue);
+    },
+    [addMessage, runAnalysisFix, setStarted, t],
+  );
+
   // 「询问 Polaris」发送：留一条带引用的旁白用户消息，再把指令作为会话轮次跑，改动回到画布上。
   const sendTargetedEdit = useCallback(
     (instruction: string) => {
@@ -1665,17 +2096,17 @@ export default function AiChatShell({
       const instr = instruction.trim();
       addMessage({
         id: nanoid(),
-        role: 'user',
-        content: instr || '优化这一段',
+        role: "user",
+        content: instr || "优化这一段",
         quote: { label: quoted.label, text: quoted.text },
       });
 
       const message = [
-        '请只改写简历中下面这一处选中的片段，其它内容保持不变。',
+        "请只改写简历中下面这一处选中的片段，其它内容保持不变。",
         `位置：${quoted.path}`,
         `选中片段：「${quoted.selectionText ?? quoted.text}」`,
-        instr ? `要求：${instr}` : '要求：优化这段表达，使其更专业、更有力。',
-      ].join('\n');
+        instr ? `要求：${instr}` : "要求：优化这段表达，使其更专业、更有力。",
+      ].join("\n");
       const targetedSelection = quoted.selectionText
         ? { path: quoted.path, selectionText: quoted.selectionText }
         : undefined;
@@ -1689,12 +2120,16 @@ export default function AiChatShell({
   const continuePendingRun = useCallback(() => {
     const pending = pendingRunRef.current;
     pendingRunRef.current = null;
+    activeActionTypeRef.current = null;
     setConfigGateOpen(false);
     if (!pending) return;
-    if (pending.kind === 'analyze') void runAnalyze();
-    else if (pending.kind === 'content') void runContentSkill(pending.skill, pending.message);
+    if (pending.kind === "analyze") void runAnalyze();
+    else if (pending.kind === "content")
+      void runContentSkill(pending.skill, pending.message);
+    else if (pending.kind === "analysis-fix")
+      void runAnalysisFix(pending.issue);
     else void runChat(pending.history, pending.mode);
-  }, [runAnalyze, runContentSkill, runChat]);
+  }, [runAnalysisFix, runAnalyze, runContentSkill, runChat]);
 
   // Gate "保存并继续": persist the key (survives reload) then resume the stashed run.
   const handleGateContinue = useCallback(async () => {
@@ -1721,18 +2156,24 @@ export default function AiChatShell({
           open: true,
           skillId: id,
           view: sk.canvas.defaultView,
-          status: prev.skillId === id ? prev.status : 'ready',
+          status: prev.skillId === id ? prev.status : "ready",
         };
       });
     },
-    [setCanvas, setLivingOpen]
+    [setCanvas, setLivingOpen],
   );
 
+  const closeArtifactCanvas = useCallback(() => {
+    setCanvas(CLOSED_CANVAS);
+  }, [setCanvas]);
+
   const resetSession = useCallback(() => {
+    activeStreamCommitRef.current?.();
     runGenRef.current += 1; // invalidate the in-flight run's lingering callbacks
     controllerRef.current?.abort(); // stop the old session's in-flight stream
     const oldSessionId = sessionIdRef.current;
-    if (sessionUsedRef.current && oldSessionId) void endSessionThread(oldSessionId); // reclaim old session
+    if (sessionUsedRef.current && oldSessionId)
+      void endSessionThread(oldSessionId); // reclaim old session
     const nextSession = resetAiSession(resumeId);
     sessionIdRef.current = nextSession.sessionId;
     sessionUsedRef.current = false;
@@ -1753,7 +2194,6 @@ export default function AiChatShell({
   const requestResetSession = useCallback(() => {
     setResetConfirmOpen(true);
   }, []);
-
 
   const stopRun = useCallback(() => {
     controllerRef.current?.abort();
@@ -1780,7 +2220,7 @@ export default function AiChatShell({
     if (!draftReady) return;
     onApplyFullResume(draftReady);
     setDraftReady(null);
-    addAssistant(t('aiLab.draft.applied'));
+    addAssistant(t("aiLab.draft.applied"));
   }, [draftReady, onApplyFullResume, addAssistant, t]);
 
   /**
@@ -1796,8 +2236,14 @@ export default function AiChatShell({
   const discardDraft = useCallback(() => {
     if (!draftReady) return;
     setDraftReady(null);
-    addAssistant(t('aiLab.draft.discarded'));
+    addAssistant(t("aiLab.draft.discarded"));
   }, [draftReady, addAssistant, t]);
+
+  const quotedContext = useMemo(
+    () => (quoted ? { label: quoted.label, text: quoted.text } : null),
+    [quoted],
+  );
+  const clearQuoted = useCallback(() => setQuoted(null), []);
 
   const composer = (
     <>
@@ -1809,9 +2255,11 @@ export default function AiChatShell({
                 <KeyRound size={16} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-white">{t('aiLab.configGate.title')}</p>
+                <p className="text-sm font-semibold text-white">
+                  {t("aiLab.configGate.title")}
+                </p>
                 <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
-                  {t('aiLab.configGate.description')}
+                  {t("aiLab.configGate.description")}
                 </p>
               </div>
               <button
@@ -1830,7 +2278,7 @@ export default function AiChatShell({
                 onClick={() => setConfigGateOpen(false)}
                 className="px-4 py-2 rounded-lg text-xs text-neutral-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
               >
-                {t('aiLab.configGate.later')}
+                {t("aiLab.configGate.later")}
               </button>
               <button
                 type="button"
@@ -1838,7 +2286,7 @@ export default function AiChatShell({
                 disabled={!hasLlmConfig()}
                 className="px-4 py-2 rounded-lg text-xs font-semibold bg-sky-500 text-[#fff] hover:bg-sky-400 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {t('aiLab.configGate.saveAndContinue')}
+                {t("aiLab.configGate.saveAndContinue")}
               </button>
             </div>
           </div>
@@ -1848,7 +2296,7 @@ export default function AiChatShell({
         <div className="px-4 pb-2">
           <div className="max-w-3xl mx-auto flex items-center gap-3 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-2.5 text-xs text-sky-200">
             <FileText size={14} className="text-sky-400 shrink-0" />
-            <span className="flex-1">{t('aiLab.draft.ready')}</span>
+            <span className="flex-1">{t("aiLab.draft.ready")}</span>
             {/* 两个动作归在右端。拒绝走 ghost、不用红色：这不是危险操作，是一个平等的
                 选项——简历一个字都不会被改。也不弹确认框（无损，且 modals are lazy）。 */}
             <div className="flex shrink-0 items-center gap-1">
@@ -1857,7 +2305,7 @@ export default function AiChatShell({
                 onClick={discardDraft}
                 className="rounded-lg px-3 py-1.5 text-sky-200/70 transition-colors hover:bg-sky-500/10 hover:text-sky-100 cursor-pointer"
               >
-                {t('aiLab.draft.discard')}
+                {t("aiLab.draft.discard")}
               </button>
               <button
                 type="button"
@@ -1865,7 +2313,7 @@ export default function AiChatShell({
                 className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-sky-100 transition-colors cursor-pointer"
               >
                 <Check size={12} />
-                {t('aiLab.draft.apply')}
+                {t("aiLab.draft.apply")}
               </button>
             </div>
           </div>
@@ -1874,9 +2322,9 @@ export default function AiChatShell({
       <Composer
         onRunSkill={runSkillWithText}
         onSend={handleSend}
-        quotedContext={quoted ? { label: quoted.label, text: quoted.text } : null}
+        quotedContext={quotedContext}
         onSendWithContext={sendTargetedEdit}
-        onClearQuoted={() => setQuoted(null)}
+        onClearQuoted={clearQuoted}
         disabled={running}
         running={running}
         onStop={stopRun}
@@ -1892,246 +2340,273 @@ export default function AiChatShell({
     // 搜索类卡片的候选数据从这里注入：字典留在 app（是我们的业务内容），
     // 组件库只知道「按名字要一份选项」。
     <GenUIProvider sources={AI_WIDGET_SOURCES}>
-    <div className="relative flex flex-col h-full">
-      <header className="flex items-center gap-3 px-5 py-3 shrink-0">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-sky-500/15 to-sky-500/[0.04] border border-sky-500/25 flex items-center justify-center text-sky-300">
-          <LabMark size={19} />
-        </div>
-        <span className="text-base font-semibold text-white tracking-tight">{t('aiLab.header.title')}</span>
-        <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400 border border-neutral-800 rounded-full px-2.5 py-1">
-          <FileText size={12} />
-          {resumeData.name || '未命名简历'}
-        </span>
-        <div className="ml-auto flex items-center gap-3 text-neutral-500">
-          <HeaderQuota />
-          <button
-            type="button"
-            onClick={toggleLiving}
-            aria-label={t('aiLab.header.liveCanvas')}
-            title={t('aiLab.header.liveCanvasTitle')}
+      <div className="relative flex flex-col h-full">
+        <header className="flex items-center gap-3 px-5 py-3 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-sky-500/15 to-sky-500/[0.04] border border-sky-500/25 flex items-center justify-center text-sky-300">
+            <LabMark size={19} />
+          </div>
+          <span className="text-base font-semibold text-white tracking-tight">
+            {t("aiLab.header.title")}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400 border border-neutral-800 rounded-full px-2.5 py-1">
+            <FileText size={12} />
+            {resumeData.name || "未命名简历"}
+          </span>
+          <div className="ml-auto flex items-center gap-3 text-neutral-500">
+            <HeaderQuota />
+            <button
+              type="button"
+              onClick={toggleLiving}
+              aria-label={t("aiLab.header.liveCanvas")}
+              title={t("aiLab.header.liveCanvasTitle")}
+              className={cn(
+                "inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer",
+                livingOpen
+                  ? "text-sky-300 border-sky-500/40 bg-sky-500/10"
+                  : "text-neutral-400 border-neutral-800 hover:text-white hover:border-neutral-700",
+              )}
+            >
+              <PencilRuler size={13} />
+              {t("aiLab.header.liveCanvas")}
+            </button>
+            <button
+              type="button"
+              onClick={requestResetSession}
+              aria-label={t("aiLab.header.newChat")}
+              title={t("aiLab.header.newChat")}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              <SquarePen size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="关闭"
+              className="hover:text-white transition-colors cursor-pointer active:scale-90"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </header>
+
+        <ConfirmDialog
+          isOpen={closeConfirmOpen}
+          onClose={() => setCloseConfirmOpen(false)}
+          onConfirm={() => {
+            setCloseConfirmOpen(false);
+            doClose();
+          }}
+          title={t("aiLab.closeConfirm.title")}
+          description={t("aiLab.closeConfirm.description")}
+          confirmText={t("aiLab.closeConfirm.confirm")}
+          cancelText={t("common.cancel")}
+          variant="danger"
+        />
+
+        <ConfirmDialog
+          isOpen={resetConfirmOpen}
+          onClose={() => setResetConfirmOpen(false)}
+          onConfirm={resetSession}
+          title={t("aiLab.reset.title")}
+          description={
+            running
+              ? t("aiLab.reset.descriptionRunning")
+              : t("aiLab.reset.descriptionIdle")
+          }
+          confirmText={t("aiLab.reset.confirm")}
+          cancelText={t("common.cancel")}
+          variant="danger"
+        />
+
+        <div className="flex-1 flex min-h-0">
+          <div
             className={cn(
-              'inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer',
-              livingOpen
-                ? 'text-sky-300 border-sky-500/40 bg-sky-500/10'
-                : 'text-neutral-400 border-neutral-800 hover:text-white hover:border-neutral-700'
+              "relative flex-1 flex flex-col min-w-0 overflow-hidden",
+              !started && "justify-center",
             )}
           >
-            <PencilRuler size={13} />
-            {t('aiLab.header.liveCanvas')}
-          </button>
-          <button
-            type="button"
-            onClick={requestResetSession}
-            aria-label={t('aiLab.header.newChat')}
-            title={t('aiLab.header.newChat')}
-            className="hover:text-white transition-colors cursor-pointer"
-          >
-            <SquarePen size={17} />
-          </button>
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="关闭"
-            className="hover:text-white transition-colors cursor-pointer active:scale-90"
-          >
-            <X size={20} />
-          </button>
-        </div>
-      </header>
-
-      <ConfirmDialog
-        isOpen={closeConfirmOpen}
-        onClose={() => setCloseConfirmOpen(false)}
-        onConfirm={() => {
-          setCloseConfirmOpen(false);
-          doClose();
-        }}
-        title={t('aiLab.closeConfirm.title')}
-        description={t('aiLab.closeConfirm.description')}
-        confirmText={t('aiLab.closeConfirm.confirm')}
-        cancelText={t('common.cancel')}
-        variant="danger"
-      />
-
-      <ConfirmDialog
-        isOpen={resetConfirmOpen}
-        onClose={() => setResetConfirmOpen(false)}
-        onConfirm={resetSession}
-        title={t('aiLab.reset.title')}
-        description={
-          running
-            ? t('aiLab.reset.descriptionRunning')
-            : t('aiLab.reset.descriptionIdle')
-        }
-        confirmText={t('aiLab.reset.confirm')}
-        cancelText={t('common.cancel')}
-        variant="danger"
-      />
-
-      <div className="flex-1 flex min-h-0">
-        <div className={cn('relative flex-1 flex flex-col min-w-0 overflow-hidden', !started && 'justify-center')}>
-          <AnimatePresence initial={false} mode="popLayout">
-            {!started ? (
-              <motion.div
-                key="greeting"
-                initial="hidden"
-                animate="show"
-                exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
-                variants={{
-                  hidden: {},
-                  show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
-                }}
-                className="flex flex-col items-center text-center px-4"
-              >
+            <AnimatePresence initial={false} mode="popLayout">
+              {!started ? (
                 <motion.div
+                  key="greeting"
+                  initial="hidden"
+                  animate="show"
+                  exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
                   variants={{
-                    hidden: { opacity: 0, y: 10, scale: 0.92 },
-                    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: 'easeOut' } },
+                    hidden: {},
+                    show: {
+                      transition: {
+                        staggerChildren: 0.08,
+                        delayChildren: 0.04,
+                      },
+                    },
                   }}
-                  className="mb-5"
+                  className="flex flex-col items-center text-center px-4"
                 >
-                  {/* 转场起点：发出第一句话后，这只宠会跳到输入框上方的工位去。
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 10, scale: 0.92 },
+                      show: {
+                        opacity: 1,
+                        y: 0,
+                        scale: 1,
+                        transition: { duration: 0.32, ease: "easeOut" },
+                      },
+                    }}
+                    className="mb-5"
+                  >
+                    {/* 转场起点：发出第一句话后，这只宠会跳到输入框上方的工位去。
                       它在卸载前把自己的位置留给工位（见 polarisFlight），工位挂载时
                       取走算位移——两端不在同一帧共存，只能这样交接。 */}
-                  <div
-                    ref={(el) => {
-                      if (!el) return;
-                      const box = el.getBoundingClientRect();
-                      setFlightOrigin({
-                        x: box.left + box.width / 2,
-                        y: box.top + box.height / 2,
-                        size: box.width,
-                      });
+                    <div
+                      ref={(el) => {
+                        if (!el) return;
+                        const box = el.getBoundingClientRect();
+                        setFlightOrigin({
+                          x: box.left + box.width / 2,
+                          y: box.top + box.height / 2,
+                          size: box.width,
+                        });
+                      }}
+                    >
+                      <PolarisAvatar />
+                    </div>
+                  </motion.div>
+                  <motion.h2
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      show: {
+                        opacity: 1,
+                        y: 0,
+                        transition: { duration: 0.3, ease: "easeOut" },
+                      },
                     }}
+                    className="text-2xl font-semibold text-white tracking-tight"
                   >
-                    <PolarisAvatar />
-                  </div>
+                    {t("aiLab.greeting.title")}
+                  </motion.h2>
                 </motion.div>
-                <motion.h2
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
-                  }}
-                  className="text-2xl font-semibold text-white tracking-tight"
+              ) : (
+                <motion.div
+                  key="thread"
+                  className="flex-1 min-h-0 flex"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.12 }}
                 >
-                  {t('aiLab.greeting.title')}
-                </motion.h2>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="thread"
-                className="flex-1 min-h-0 flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.12 }}
-              >
-                <ChatThread
-                  messages={messages}
-                  onToggleCanvas={toggleCanvas}
-                  onLogClick={focusOnCanvas}
-                  onApproval={handleApproval}
-                  onWidgetAction={handleWidgetAction}
-                  thinking={awaitingReply}
-                  activity={activity}
-                  onRegenerate={handleRegenerate}
-                  openCanvasSkillId={
-                    canvas.open ? canvas.skillId : livingOpen ? livingSkillId : null
-                  }
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <ChatThread
+                    messages={displayMessages}
+                    onToggleCanvas={toggleCanvas}
+                    onLogClick={focusOnCanvas}
+                    onApproval={handleApproval}
+                    onWidgetAction={handleWidgetAction}
+                    thinking={awaitingReply}
+                    activity={activity}
+                    onRegenerate={handleRegenerate}
+                    openCanvasSkillId={
+                      canvas.open
+                        ? canvas.skillId
+                        : livingOpen
+                          ? livingSkillId
+                          : null
+                    }
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {started && (
-            <PolarisPerch />
-          )}
+            {started && <PolarisPerch />}
 
-          <motion.div
-            layout="position"
-            transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-            className="relative"
-          >
-            {composer}
-          </motion.div>
+            <motion.div
+              layout="position"
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="relative"
+            >
+              {composer}
+            </motion.div>
 
-          <AnimatePresence mode="popLayout">
-            {!started && (
-              <motion.div
-                key="cards"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
-                transition={{ duration: 0.25, delay: 0.05 }}
-                className="mt-1"
-              >
-                <WelcomeSuggestions onPrompt={handleSend} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+            <AnimatePresence mode="popLayout">
+              {!started && (
+                <motion.div
+                  key="cards"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
+                  transition={{ duration: 0.25, delay: 0.05 }}
+                  className="mt-1"
+                >
+                  <WelcomeSuggestions onPrompt={handleSend} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-        {/* 右舞台只有一块。
+          {/* 右舞台只有一块。
             此前实时画布和报告画布是两个各自动画宽度的兄弟节点：切换时一个 58%→0、
             另一个 0→44% **同时**跑，而且分属 framer-motion 与 CSS transition 两套系统、
             曲线时长都不同。重叠期间两者宽度之和会超过 100%，中间的对话列被挤到 0 再
             弹回来——那就是「先开画布再开评分」时看到的闪烁。
             现在宽度只由这一层动一次（0 ↔ 58% ↔ 44%），里面的内容做交叉淡入。 */}
-        <motion.div
-          className="shrink-0 min-w-0 overflow-hidden"
-          initial={false}
-          animate={{ width: livingOpen ? '58%' : canvas.open ? '44%' : '0%' }}
-          transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {livingOpen ? (
-              <motion.div
-                key="living-canvas"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full"
-              >
-                <LivingCanvas
-                  resumeData={resumeData}
-                  templateId={templateId}
-                  onApplySections={onApplySections}
-                  onApplyInfo={onApplyInfo}
-                  onLog={logChange}
-                  onWarn={warnDropped}
-                  onAskWithTarget={onAskWithTarget}
-                  batchRequest={batchRequest}
-                  focusRequest={focusRequest}
-                  previewResume={draftReady}
-                  working={chatMode === 'create' && running && !draftReady}
-                />
-              </motion.div>
-            ) : canvas.open ? (
-              <motion.div
-                key="artifact-canvas"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full"
-              >
-                <ArtifactCanvas
-                  state={canvas}
-                  resumeData={resumeData}
-                  templateId={templateId}
-                  analysis={analysis}
-                  fitReport={fitReport}
-                  onDiscard={() => setCanvas(CLOSED_CANVAS)}
-                  onFollowUp={handleSend}
-                />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </motion.div>
-      </div>
+          <motion.div
+            className="shrink-0 min-w-0 overflow-hidden"
+            initial={false}
+            animate={{ width: livingOpen ? "58%" : canvas.open ? "44%" : "0%" }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {livingOpen ? (
+                <motion.div
+                  key="living-canvas"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full"
+                >
+                  <LivingCanvas
+                    resumeData={resumeData}
+                    templateId={templateId}
+                    onApplySections={onApplySections}
+                    onApplyInfo={onApplyInfo}
+                    onLog={logChange}
+                    onWarn={warnDropped}
+                    onAskWithTarget={onAskWithTarget}
+                    batchRequest={batchRequest}
+                    focusRequest={focusRequest}
+                    previewResume={draftReady}
+                    working={chatMode === "create" && running && !draftReady}
+                  />
+                </motion.div>
+              ) : canvas.open ? (
+                <motion.div
+                  key="artifact-canvas"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full"
+                >
+                  <ArtifactCanvas
+                    state={canvas}
+                    resumeData={resumeData}
+                    templateId={templateId}
+                    analysis={analysis}
+                    fitReport={fitReport}
+                    onDiscard={closeArtifactCanvas}
+                    onFollowUp={handleSend}
+                    onFixAnalysisIssue={handleFixAnalysisIssue}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </motion.div>
+        </div>
 
-      <InterviewOverlay open={overlayOpen} onBack={() => setOverlayOpen(false)} />
-    </div>
+        <InterviewOverlay
+          open={overlayOpen}
+          onBack={() => setOverlayOpen(false)}
+        />
+      </div>
     </GenUIProvider>
   );
 }
@@ -2144,11 +2619,16 @@ function HeaderQuota() {
   const { data, loading, error } = useEntitlement(open);
   if (!isCloudMode) return null;
 
-  const locale = i18n.language.startsWith('en') ? 'en-US' : 'zh-CN';
+  const locale = i18n.language.startsWith("en") ? "en-US" : "zh-CN";
   const fmtReset = (d?: string | null) =>
     d
-      ? new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(d))
-      : '';
+      ? new Intl.DateTimeFormat(locale, {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date(d))
+      : "";
   // 月度余量只以百分比下发（积分是内部计费单位，客户端拿不到原始余额）。null = 无限。
   const credit = data
     ? { percent: data.remainingPercent, resetAt: data.resetAt ?? null }
@@ -2159,27 +2639,30 @@ function HeaderQuota() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={t('aiLab.header.quotaTitle')}
-        title={t('aiLab.header.quotaTitle')}
+        aria-label={t("aiLab.header.quotaTitle")}
+        title={t("aiLab.header.quotaTitle")}
         className={cn(
-          'inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer',
+          "inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer",
           open
-            ? 'text-sky-300 border-sky-500/40 bg-sky-500/10'
-            : 'text-neutral-400 border-neutral-800 hover:text-white hover:border-neutral-700'
+            ? "text-sky-300 border-sky-500/40 bg-sky-500/10"
+            : "text-neutral-400 border-neutral-800 hover:text-white hover:border-neutral-700",
         )}
       >
         <Gauge size={13} />
-        {t('aiLab.header.quota')}
+        {t("aiLab.header.quota")}
       </button>
       <AnimatePresence>
         {open && (
           <React.Fragment key="quota-popover">
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setOpen(false)}
+            />
             <motion.div
               initial={{ opacity: 0, y: -4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="absolute right-0 top-full z-50 mt-2 w-60 rounded-xl border border-white/10 bg-neutral-900 p-3.5 shadow-2xl"
             >
               {!data && loading ? (
@@ -2188,32 +2671,47 @@ function HeaderQuota() {
                   <div className="h-4 animate-pulse rounded bg-white/[0.06]" />
                 </div>
               ) : !data ? (
-                <p className="text-xs text-neutral-500">{error || t('aiLab.header.quotaUnavailable')}</p>
+                <p className="text-xs text-neutral-500">
+                  {error || t("aiLab.header.quotaUnavailable")}
+                </p>
               ) : (
                 <>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-neutral-500">{t('account.subscription.currentPlan')}</span>
+                    <span className="text-[11px] text-neutral-500">
+                      {t("account.subscription.currentPlan")}
+                    </span>
                     <span className="inline-flex h-5 items-center rounded-md border border-sky-400/25 bg-sky-400/10 px-1.5 text-[11px] font-semibold text-sky-300">
-                      {data.currentPlan?.name ?? '—'}
+                      {data.currentPlan?.name ?? "—"}
                     </span>
                   </div>
                   {credit && (
                     <div className="mt-3">
                       <div className="flex items-center justify-between gap-3 text-[11px]">
-                        <span className="text-neutral-400">{t('account.subscription.monthly')}</span>
+                        <span className="text-neutral-400">
+                          {t("account.subscription.monthly")}
+                        </span>
                         <span className="tabular-nums text-neutral-300">
-                          {credit.percent === null ? t('account.subscription.unlimited') : `${credit.percent}%`}
+                          {credit.percent === null
+                            ? t("account.subscription.unlimited")
+                            : `${credit.percent}%`}
                         </span>
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                         <div
-                          className={cn('h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400', credit.percent === null && 'opacity-60')}
-                          style={{ width: `${credit.percent === null ? 100 : Math.max(0, Math.min(100, credit.percent))}%` }}
+                          className={cn(
+                            "h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400",
+                            credit.percent === null && "opacity-60",
+                          )}
+                          style={{
+                            width: `${credit.percent === null ? 100 : Math.max(0, Math.min(100, credit.percent))}%`,
+                          }}
                         />
                       </div>
                       {credit.resetAt && (
                         <div className="mt-1 text-[10px] text-neutral-600">
-                          {t('account.subscription.resetAt', { time: fmtReset(credit.resetAt) })}
+                          {t("account.subscription.resetAt", {
+                            time: fmtReset(credit.resetAt),
+                          })}
                         </div>
                       )}
                     </div>

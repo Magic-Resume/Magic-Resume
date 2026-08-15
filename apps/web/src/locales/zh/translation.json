@@ -1772,12 +1772,24 @@
       },
       "tasks": "任务",
       "completed": "已完成",
-      "elapsed": "{{seconds}}s",
+      "elapsedUnits": {
+        "hour": "小时",
+        "minute": "分",
+        "second": "秒",
+        "separator": ""
+      },
       "copy": "复制",
       "copied": "已复制",
       "regenerate": "重新生成",
       "readingResume": "正在读取你的简历…",
-      "writeFailed": "这轮没能改动简历，画布保持原样 · 可以再说一次试试"
+      "writeFailed": "这轮没能改动简历，画布保持原样 · 可以再说一次试试",
+      "syncFailed": "改动预览已收到，但最终简历对账失败；本次不会显示为成功，请重试"
+    },
+    "sources": {
+      "count": "{{count}} 个来源",
+      "toggle": "查看或收起 {{count}} 个外部来源",
+      "missing": "来源 {{id}} 暂未返回",
+      "unavailable": "来源暂不可用"
     },
     "composer": {
       "skills": "技能",
@@ -1870,10 +1882,13 @@
       },
       "verification": {
         "title": "这几处我没找到出处",
-        "body": "下面这些名字是改动里新出现的，你原来的简历和这次对话里都没提过。不是说它们错，但发出去之前你自己确认一下"
+        "body": "下面这些名字是改动里新出现的，你原来的简历和这次对话里都没提过。不是说它们错，但发出去之前你自己确认一下",
+        "degradedTitle": "这次改动未完成事实核验",
+        "degradedBody": "没有取得可用的原始简历基线。请先读取或重新打开简历，再让 AI 修改，避免把未经核实的信息写进去。"
       },
       "research": {
         "title": "岗位研究",
+        "sourceBadge": "网页",
         "followUp": "{{item}} —— 就这条展开说说，需要我怎么做？",
         "groups": {
           "must_have_skills": "硬性要求",
@@ -1882,6 +1897,53 @@
           "evidence_to_add": "该补的证据（点一条展开）",
           "recruiter_questions": "可以问 HR（点一条展开）",
           "preparation_plan": "准备计划"
+        }
+      },
+      "companyResearch": {
+        "title": "公司研究",
+        "groups": {
+          "business_context": "业务与近况",
+          "hiring_signals": "招聘信号",
+          "role_implications": "岗位影响",
+          "compensation_leads": "薪酬线索",
+          "risks_unknowns": "风险与未知",
+          "questions_to_verify": "待核实问题（点一条展开）"
+        }
+      },
+      "interviewResearch": {
+        "title": "面试准备",
+        "groups": {
+          "focus_areas": "重点能力",
+          "likely_questions": "可能的问题（点一条练习）",
+          "candidate_evidence": "可用的个人证据",
+          "practice_priorities": "练习优先级（点一条展开）",
+          "follow_up_questions": "追问准备（点一条练习）"
+        }
+      },
+      "applicationTracker": {
+        "title": "投递追踪",
+        "emptyTitle": "还没有投递记录",
+        "emptyDescription": "告诉我公司和岗位，我会把第一条加入面板。",
+        "source": "来源",
+        "ariaLabel": "可按状态筛选的投递列表",
+        "filters": {
+          "all": "全部"
+        },
+        "columns": {
+          "role": "岗位",
+          "date": "日期",
+          "status": "状态",
+          "source": "链接"
+        },
+        "status": {
+          "SAVED": "已收藏",
+          "APPLIED": "已投递",
+          "SCREENING": "筛选中",
+          "INTERVIEW": "面试中",
+          "OFFER": "已获 Offer",
+          "ACCEPTED": "已接受",
+          "REJECTED": "未通过",
+          "WITHDRAWN": "已撤回"
         }
       },
       "recommendation": {

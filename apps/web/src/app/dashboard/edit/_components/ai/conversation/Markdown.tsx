@@ -1,10 +1,20 @@
-'use client';
+"use client";
 
-import React from 'react';
-import ReactMarkdown, { type Components } from 'react-markdown';
-import { useTranslation } from 'react-i18next';
-import remarkGfm from 'remark-gfm';
-import { Beautiful } from '@magic-resume/genui';
+import React from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import { useTranslation } from "react-i18next";
+import remarkGfm from "remark-gfm";
+import { Beautiful } from "@magic-resume/genui";
+import { normalizeMarkdownSource } from "./markdownSource";
+import type { CitationSource } from "../types";
+import {
+  citationAnchor,
+  citationGroupAnchor,
+  linkCitationMarkers,
+  sourceDomain,
+  visibleCitationSources,
+} from "./citationSources";
+import SiteFavicon from "./SiteFavicon";
 
 /**
  * markdown 的语言短名 → 给人看的名字。
@@ -13,9 +23,20 @@ import { Beautiful } from '@magic-resume/genui';
  * 不猜——把 `xyz` 硬翻成 "XYZ Language" 只会造出一个不存在的东西。
  */
 const LANG_LABEL: Record<string, string> = {
-  ts: 'TypeScript', tsx: 'TypeScript', js: 'JavaScript', jsx: 'JavaScript',
-  py: 'Python', sh: 'Shell', bash: 'Shell', json: 'JSON', md: 'Markdown',
-  css: 'CSS', html: 'HTML', sql: 'SQL', yaml: 'YAML', yml: 'YAML',
+  ts: "TypeScript",
+  tsx: "TypeScript",
+  js: "JavaScript",
+  jsx: "JavaScript",
+  py: "Python",
+  sh: "Shell",
+  bash: "Shell",
+  json: "JSON",
+  md: "Markdown",
+  css: "CSS",
+  html: "HTML",
+  sql: "SQL",
+  yaml: "YAML",
+  yml: "YAML",
 };
 
 /**
@@ -29,13 +50,19 @@ const LANG_LABEL: Record<string, string> = {
  *
  * 提成组件是因为 `COMPONENTS` 是模块级常量、用不了 hook，而复制按钮的文案要走 i18n。
  */
-function CodeRenderer({ className, children }: { className?: string; children?: React.ReactNode }) {
+function CodeRenderer({
+  className,
+  children,
+}: {
+  className?: string;
+  children?: React.ReactNode;
+}) {
   const { t } = useTranslation();
-  const lang = /language-(\w+)/.exec(className ?? '')?.[1];
+  const lang = /language-(\w+)/.exec(className ?? "")?.[1];
   // 围栏还没闭合时，光标标记会被解析进代码块。它不可见，但会跟着「复制」进用户的剪贴板
   // ——粘出来是一个看不见的字符。这里剥掉。
-  const raw = String(children ?? '');
-  const code = raw.split(CARET).join('');
+  const raw = String(children ?? "");
+  const code = raw.split(CARET).join("");
   // 标记落进了这里 = 围栏还没闭合，写入头此刻就在代码块末尾。光标得跟过来，
   // 否则它会在整个代码块流式期间凭空消失。
   const writing = code !== raw;
@@ -52,8 +79,8 @@ function CodeRenderer({ className, children }: { className?: string; children?: 
       <Beautiful.CodeBlock
         code={code}
         lang={LANG_LABEL[lang] ?? lang}
-        copyLabel={t('aiLab.chat.copy')}
-        copiedLabel={t('aiLab.chat.copied')}
+        copyLabel={t("aiLab.chat.copy")}
+        copiedLabel={t("aiLab.chat.copied")}
       />
       {writing && <Caret />}
     </div>
@@ -69,7 +96,8 @@ function CodeRenderer({ className, children }: { className?: string; children?: 
    而且不需要记录「上次渲染到哪个字」。 */
 
 /** 中日韩没有词间空格。按空格切，一整段中文会是**一个** token——那就等于没有效果。 */
-const CJK = '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}';
+const CJK =
+  "\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}";
 
 /**
  * 光标的位置标记（U+2063 隐形分隔符）。
@@ -79,13 +107,21 @@ const CJK = '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=H
  * CSS 的 `:last-child::after` 又表达不了「最深的那个末节点」——把标记混进 markdown 源码，
  * 解析器会把它并进最后一段的最后一个文本节点，位置于是天然正确。
  */
-const CARET = '⁣';
+const CARET = "⁣";
 
-const TOKEN_RE = new RegExp(`${CARET}|[${CJK}]|[^\\s${CJK}${CARET}]+|\\s+`, 'gu');
+// CJK keeps the soft blur feel, but animates short phrases instead of allocating
+// one filtered DOM node per character. Eight characters is still visually local
+// while cutting a long Chinese answer's animated node count by roughly 8x.
+const TOKEN_RE = new RegExp(
+  `${CARET}|[${CJK}]{1,8}|[^\\s${CJK}${CARET}]+|\\s+`,
+  "gu",
+);
+const STREAMING_SPAN_LIMIT = 72;
+const STREAMING_SPAN_TTL_MS = 420;
+const REMARK_PLUGINS = [remarkGfm];
 
-/** 不写 `both`：跑完让元素回到自然样式。留 forwards 等于给每个 span 永久挂一个
- *  filter，几百个 filter 就是几百个层叠上下文。 */
-const STREAM_IN = 'stream-in 420ms cubic-bezier(0.22,0.61,0.25,1)';
+/** Markdown 专用的可读显影：保留 blur，但起点不全透明。 */
+const STREAM_IN = "markdown-stream-in 360ms cubic-bezier(0.22,0.61,0.25,1)";
 
 function tokenize(text: string): string[] {
   const out: string[] = [];
@@ -107,28 +143,54 @@ function Caret() {
   );
 }
 
-const StreamingCtx = React.createContext(false);
+type TokenPass = {
+  streaming: boolean;
+  previous: ReadonlyMap<string, number>;
+  next: Map<string, number>;
+  occurrences: Map<string, number>;
+  now: number;
+  animated: number;
+};
+
+const StreamingCtx = React.createContext<TokenPass | null>(null);
 
 /**
  * 文本子节点 → 逐个 token 的 span。非文本子节点原样透传——它们由自己的渲染器处理，
  * 在那里同样会包一层，所以 `**加粗**` 里的字一样会显影。
  */
 function Words({ children }: { children?: React.ReactNode }) {
-  const streaming = React.useContext(StreamingCtx);
-  if (!streaming) return <>{children}</>;
+  const pass = React.useContext(StreamingCtx);
+  if (!pass?.streaming) return <>{children}</>;
   return (
     <>
       {React.Children.map(children, (child, ci) =>
-        typeof child === 'string'
-          ? tokenize(child).map((token, i) =>
-              token === CARET ? (
-                <Caret key={`${ci}:${i}`} />
-              ) : (
-                <span key={`${ci}:${i}`} style={{ animation: STREAM_IN }}>
+        typeof child === "string"
+          ? tokenize(child).map((token, i) => {
+              if (token === CARET) return <Caret key={`${ci}:${i}`} />;
+
+              // Markdown 在列表、强调符等边界上会重建祖先节点。React key 无法跨祖先重建
+              // 保住动画状态，所以按「token 内容 + 全文第几次出现」在消息级记录已显影项。
+              // 旧 token 即使被重新挂载也直接显示，只有真正追加的 token 才从 blur 进入。
+              const occurrence = pass.occurrences.get(token) ?? 0;
+              pass.occurrences.set(token, occurrence + 1);
+              const tokenId = `${token}\u0000${occurrence}`;
+              const firstSeen = pass.previous.get(tokenId) ?? pass.now;
+              pass.next.set(tokenId, firstSeen);
+              const isNew = !pass.previous.has(tokenId);
+              const keepAnimatedNode =
+                pass.now - firstSeen < STREAMING_SPAN_TTL_MS &&
+                pass.animated < STREAMING_SPAN_LIMIT;
+              if (!keepAnimatedNode) return token;
+              pass.animated += 1;
+              return (
+                <span
+                  key={`${ci}:${i}`}
+                  style={isNew ? { animation: STREAM_IN } : undefined}
+                >
                   {token}
                 </span>
-              ),
-            )
+              );
+            })
           : child,
       )}
     </>
@@ -136,26 +198,55 @@ function Words({ children }: { children?: React.ReactNode }) {
 }
 
 const COMPONENTS: Components = {
-  p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0 leading-relaxed"><Words>{children}</Words></p>,
-  strong: ({ children }) => <strong className="font-semibold text-white"><Words>{children}</Words></strong>,
-  em: ({ children }) => <em className="italic"><Words>{children}</Words></em>,
-  ul: ({ children }) => <ul className="my-2 list-disc pl-5 space-y-1">{children}</ul>,
-  ol: ({ children }) => <ol className="my-2 list-decimal pl-5 space-y-1">{children}</ol>,
-  li: ({ children }) => <li className="leading-relaxed marker:text-neutral-500"><Words>{children}</Words></li>,
-  h1: ({ children }) => <h1 className="mt-3 mb-1.5 text-base font-semibold text-white"><Words>{children}</Words></h1>,
-  h2: ({ children }) => <h2 className="mt-3 mb-1.5 text-[15px] font-semibold text-white"><Words>{children}</Words></h2>,
-  h3: ({ children }) => <h3 className="mt-2.5 mb-1 text-sm font-semibold text-white"><Words>{children}</Words></h3>,
-  a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-400 underline underline-offset-2 hover:text-sky-300">
+  p: ({ children }) => (
+    <p className="my-2 first:mt-0 last:mb-0 leading-relaxed">
       <Words>{children}</Words>
-    </a>
+    </p>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold text-white">
+      <Words>{children}</Words>
+    </strong>
+  ),
+  em: ({ children }) => (
+    <em className="italic">
+      <Words>{children}</Words>
+    </em>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-2 list-disc pl-5 space-y-1">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-2 list-decimal pl-5 space-y-1">{children}</ol>
+  ),
+  li: ({ children }) => (
+    <li className="leading-relaxed marker:text-neutral-500">
+      <Words>{children}</Words>
+    </li>
+  ),
+  h1: ({ children }) => (
+    <h1 className="mt-3 mb-1.5 text-base font-semibold text-white">
+      <Words>{children}</Words>
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mt-3 mb-1.5 text-[15px] font-semibold text-white">
+      <Words>{children}</Words>
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mt-2.5 mb-1 text-sm font-semibold text-white">
+      <Words>{children}</Words>
+    </h3>
   ),
   code: CodeRenderer,
   // CodeBlock 自带外壳，`pre` 只做透传——再包一层 `<pre>` 会把它的圆角和标题栏套进
   // 一个等宽块里。
   pre: ({ children }) => <>{children}</>,
   blockquote: ({ children }) => (
-    <blockquote className="my-2 border-l-2 border-neutral-700 pl-3 text-neutral-400">{children}</blockquote>
+    <blockquote className="my-2 border-l-2 border-neutral-700 pl-3 text-neutral-400">
+      {children}
+    </blockquote>
   ),
   hr: () => <hr className="my-3 border-neutral-800" />,
   table: ({ children }) => (
@@ -163,20 +254,175 @@ const COMPONENTS: Components = {
       <table className="w-full border-collapse text-[13px]">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="text-left text-neutral-400">{children}</thead>,
-  th: ({ children }) => <th className="border border-neutral-800 px-2.5 py-1.5 font-medium"><Words>{children}</Words></th>,
-  td: ({ children }) => <td className="border border-neutral-800 px-2.5 py-1.5 align-top"><Words>{children}</Words></td>,
+  thead: ({ children }) => (
+    <thead className="text-left text-neutral-400">{children}</thead>
+  ),
+  th: ({ children }) => (
+    <th className="border border-neutral-800 px-2.5 py-1.5 font-medium">
+      <Words>{children}</Words>
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="border border-neutral-800 px-2.5 py-1.5 align-top">
+      <Words>{children}</Words>
+    </td>
+  ),
 };
+
+function LinkRenderer({
+  children,
+  href,
+  sources,
+}: {
+  children?: React.ReactNode;
+  href?: string;
+  sources: CitationSource[];
+}) {
+  const { t } = useTranslation();
+  const label = React.Children.toArray(children).join("").trim();
+  const citationIds = /^\d+(?:,\d+)*$/.test(label)
+    ? label.split(",").map(Number)
+    : [];
+  const isCitation =
+    citationIds.length === 1
+      ? href === citationAnchor(citationIds[0]) ||
+        href === citationAnchor(citationIds[0], false)
+      : citationIds.length > 1 &&
+        (href === citationGroupAnchor(citationIds) ||
+          href === citationGroupAnchor(citationIds, false));
+  // Match the stable citation id rather than the Markdown parser's `href`.
+  // URL parsers are allowed to normalize trailing slashes and escaping; strict
+  // string equality made a valid citation silently fall back to a plain [n].
+  const visibleSources = visibleCitationSources(sources);
+  const citations = isCitation
+    ? citationIds.flatMap((citationId) => {
+        const source = visibleSources.find(
+          (candidate) => candidate.citationId === citationId,
+        );
+        return source ? [source] : [];
+      })
+    : [];
+  const citation = citations[0];
+  if (citation?.url && citations.length > 1) {
+    return (
+      <span
+        data-citation-group={citationIds.join(",")}
+        className="mx-0.5 inline-flex h-6 items-center gap-2 rounded-[7px] border border-line bg-inset px-1.5 align-[-1px] text-[11.5px] leading-none text-ink-2 shadow-hairline"
+      >
+        <span className="flex -space-x-1">
+          {citations.slice(0, 3).map((source) => (
+            <a
+              key={source.id}
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={source.title}
+              aria-label={source.title}
+              data-citation-id={source.citationId}
+              className="rounded-full transition-transform duration-150 hover:-translate-y-px active:scale-[0.96]"
+            >
+              <SiteFavicon
+                source={source}
+                className="size-[18px] rounded-full border border-raised"
+                iconSize={9}
+              />
+            </a>
+          ))}
+        </span>
+        <span>{t("aiLab.sources.count", { count: citations.length })}</span>
+      </span>
+    );
+  }
+  if (citation?.url) {
+    const domain = sourceDomain(citation.url);
+    return (
+      <a
+        href={citation.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={citation.title}
+        aria-label={`${citation.title} · ${domain}`}
+        data-citation-id={citation.citationId}
+        className="mx-0.5 inline-flex h-6 max-w-[14rem] items-center gap-1.5 rounded-[7px] border border-line bg-inset px-1.5 align-[-1px] text-[11.5px] leading-none text-ink-2 no-underline shadow-hairline transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.98]"
+      >
+        <SiteFavicon source={citation} />
+        <span className="truncate">{domain}</span>
+      </a>
+    );
+  }
+  if (isCitation) {
+    const missingIds = citationIds.join(",");
+    const missingLabel = t("aiLab.sources.missing", { id: missingIds });
+    return (
+      <span
+        title={missingLabel}
+        aria-label={missingLabel}
+        data-citation-missing={missingIds}
+        className="mx-0.5 inline-flex h-6 items-center gap-1.5 rounded-[7px] border border-line bg-inset px-1.5 align-[-1px] text-[11px] leading-none text-ink-3"
+      >
+        <SiteFavicon source={{}} />
+        <span>{t("aiLab.sources.unavailable")}</span>
+      </span>
+    );
+  }
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sky-400 underline underline-offset-2 hover:text-sky-300"
+    >
+      <Words>{children}</Words>
+    </a>
+  );
+}
 
 /**
  * `streaming` 只在这一轮**正在写**的时候为真。写完就换回纯文本节点：
  * 一段读完的回复从历史里恢复时不该把整篇重播一遍，几百个 span 也没有留着的理由。
  */
-export default function Markdown({ children, streaming = false }: { children: string; streaming?: boolean }) {
+export default function Markdown({
+  children,
+  streaming = false,
+  sources = [],
+}: {
+  children: string;
+  streaming?: boolean;
+  sources?: CitationSource[];
+}) {
+  const source = linkCitationMarkers(
+    normalizeMarkdownSource(children),
+    sources,
+  );
+  const components = React.useMemo<Components>(
+    () => ({
+      ...COMPONENTS,
+      a: ({ children: linkChildren, href }) => (
+        <LinkRenderer href={href} sources={sources}>
+          {linkChildren}
+        </LinkRenderer>
+      ),
+    }),
+    [sources],
+  );
+  const visibleTokens = React.useRef<Map<string, number>>(new Map());
+  // 每次渲染独立计数；effect 只在这一帧提交后才替换 previous，兼容 Strict Mode 双渲染。
+  const pass: TokenPass = {
+    streaming,
+    previous: visibleTokens.current,
+    next: new Map(),
+    occurrences: new Map(),
+    now: Date.now(),
+    animated: 0,
+  };
+  React.useEffect(() => {
+    visibleTokens.current = pass.next;
+  });
+
   return (
-    <StreamingCtx.Provider value={streaming}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
-        {streaming ? children + CARET : children}
+    <StreamingCtx.Provider value={pass}>
+      <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={components}>
+        {streaming ? source + CARET : source}
       </ReactMarkdown>
     </StreamingCtx.Provider>
   );

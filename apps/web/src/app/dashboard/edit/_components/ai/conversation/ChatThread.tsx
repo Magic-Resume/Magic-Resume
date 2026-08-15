@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
+import React, { memo, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
   Check,
@@ -11,32 +11,44 @@ import {
   Eye,
   EyeOff,
   CornerUpLeft,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { SKILLS } from '../skills/registry';
-import Markdown from './Markdown';
-import { PolarisGlyph } from '../PolarisMark';
-import { WidgetHost } from '@magic-resume/genui';
-import { WIDGETS } from '../widgets/registry';
-import type { ApprovalRequest, ChatMessage, SkillId } from '../types';
+  ExternalLink,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SKILLS } from "../skills/registry";
+import Markdown from "./Markdown";
+import { PolarisGlyph } from "../PolarisMark";
+import { WidgetHost } from "@magic-resume/genui";
+import { WIDGETS } from "../widgets/registry";
+import type {
+  ApprovalRequest,
+  ChatMessage,
+  CitationSource,
+  SkillId,
+} from "../types";
 import {
   Icon,
   ToolChips,
   ApprovalCard as ApprovalPager,
   type ApprovalQuestion,
-} from '@magic-resume/genui/beautiful';
-import { toToolChipRows } from './toolTrace';
+} from "@magic-resume/genui/beautiful";
+import { toToolChipRows } from "./toolTrace";
 import TasksCard, {
   PLAN_DWELL_MS,
   isPlanFulfilled,
   isRetirablePlan,
-} from './TasksCard';
-import type { WidgetActionResult } from '@magic-resume/genui/contract';
-import ActivityOrb from './ActivityOrb';
-import { activityLabelKey, type AgentActivity } from './agentActivity';
+} from "./TasksCard";
+import type { WidgetActionResult } from "@magic-resume/genui/contract";
+import ActivityOrb from "./ActivityOrb";
+import { activityLabelKey, type AgentActivity } from "./agentActivity";
+import { sourceDomain, visibleCitationSources } from "./citationSources";
+import SiteFavicon from "./SiteFavicon";
 
 /** 审批卡上的一页答完了。一次中断可以带多个动作，所以要带页号。 */
-type ApprovalDecision = (msgId: string, pageIndex: number, approved: boolean) => void;
+type ApprovalDecision = (
+  msgId: string,
+  pageIndex: number,
+  approved: boolean,
+) => void;
 
 /**
  * 思维链 → 可读的行。
@@ -50,14 +62,14 @@ type ApprovalDecision = (msgId: string, pageIndex: number, approved: boolean) =>
  */
 function reasoningLines(text: string): { text: string; strong: boolean }[] {
   return text
-    .split('\n')
+    .split("\n")
     .map((raw) => raw.trim())
     .filter(Boolean)
     .map((line) => {
       const bold = /^\*\*(.+?)\*\*$/.exec(line);
       return bold
         ? { text: bold[1], strong: true }
-        : { text: line.replace(/\*\*(.+?)\*\*/g, '$1'), strong: false };
+        : { text: line.replace(/\*\*(.+?)\*\*/g, "$1"), strong: false };
     });
 }
 
@@ -70,9 +82,18 @@ function reasoningLines(text: string): { text: string; strong: boolean }[] {
  * 「呼吸叙述」的最小单元（docs/specs/ai-working-motion）：一枚随全局心跳呼吸的
  * 北极星，替换线程里所有 spinner —— 系统只有一个心跳，不是一堆各转各的零件。
  */
-function BreathGlyph({ size = 11, className }: { size?: number; className?: string }) {
+function BreathGlyph({
+  size = 11,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   return (
-    <span className={cn('ai-breath inline-flex shrink-0', className)} aria-hidden="true">
+    <span
+      className={cn("ai-breath inline-flex shrink-0", className)}
+      aria-hidden="true"
+    >
       <PolarisGlyph size={size} />
     </span>
   );
@@ -109,7 +130,7 @@ function ThinkingIndicator({
 }) {
   const { t } = useTranslation();
   const reduce = useReducedMotion() ?? false;
-  const state = activity ?? 'thinking';
+  const state = activity ?? "thinking";
   return (
     <motion.div
       initial={{ opacity: 0, y: reduce ? 0 : 6 }}
@@ -134,9 +155,9 @@ function ThinkingIndicator({
         className="bg-clip-text text-xs font-medium text-transparent"
         style={{
           backgroundImage:
-            'linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer-text 1.4s linear infinite',
+            "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+          backgroundSize: "200% 100%",
+          animation: "shimmer-text 1.4s linear infinite",
         }}
       >
         {t(activityLabelKey(state))}
@@ -159,13 +180,16 @@ function ToolTrace({ message }: { message: ChatMessage }) {
   const { t } = useTranslation();
   const calls = message.toolCalls ?? [];
   if (calls.length === 0) return null;
-  const running = message.status === 'running';
+  // 工具是否还在跑由每次调用自己决定，不能借用整条助手回复的状态：工具完成后模型
+  // 往往还要继续写答案，那段时间不该让追踪列表一直保持展开。
+  const running =
+    message.status === "running" && calls.some((call) => !call.done);
   return (
     <div className="w-full max-w-lg">
       <ToolChips
         rows={toToolChipRows(calls, t)}
         working={running}
-        title={t('aiLab.tools.count', { count: calls.length })}
+        title={t("aiLab.tools.count", { count: calls.length })}
       />
     </div>
   );
@@ -177,7 +201,7 @@ function ToolTrace({ message }: { message: ChatMessage }) {
  * running, subtle check when finished.
  */
 function ActivityLine({ message }: { message: ChatMessage }) {
-  const running = message.status === 'running';
+  const running = message.status === "running";
   return (
     <div className="flex items-center gap-2 text-[11px] text-neutral-500">
       {running ? (
@@ -185,7 +209,9 @@ function ActivityLine({ message }: { message: ChatMessage }) {
       ) : (
         <Check size={11} className="shrink-0 text-neutral-600" />
       )}
-      <span className={cn('truncate', running && 'ai-narrate')}>{message.content}</span>
+      <span className={cn("truncate", running && "ai-narrate")}>
+        {message.content}
+      </span>
     </div>
   );
 }
@@ -203,7 +229,7 @@ function ExecCard({
   const skill = message.skillId ? SKILLS[message.skillId] : null;
   if (!skill) return null;
   const Icon = skill.icon;
-  const running = message.status === 'running';
+  const running = message.status === "running";
   const clickable = !running && !!skill.canvas;
 
   const body = (
@@ -221,18 +247,23 @@ function ExecCard({
         ) : (
           <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
             <Check size={12} />
-            {t('aiLab.chat.done')}
+            {t("aiLab.chat.done")}
           </span>
         )}
       </div>
       <div className="mt-2.5 flex items-center justify-between gap-3">
-        <span className={cn('text-xs text-neutral-500 truncate', running && 'ai-narrate')}>
-          {running ? t('aiLab.chat.running') : skill.doneSummary}
+        <span
+          className={cn(
+            "text-xs text-neutral-500 truncate",
+            running && "ai-narrate",
+          )}
+        >
+          {running ? t("aiLab.chat.running") : skill.doneSummary}
         </span>
         {clickable && (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sky-400 bg-sky-500/10 group-hover:bg-sky-500/20 rounded-full px-2.5 py-1 shrink-0 transition-colors">
             {isCanvasOpen ? <EyeOff size={12} /> : <Eye size={12} />}
-            {isCanvasOpen ? t('aiLab.chat.collapse') : t('aiLab.chat.view')}
+            {isCanvasOpen ? t("aiLab.chat.collapse") : t("aiLab.chat.view")}
           </span>
         )}
       </div>
@@ -250,12 +281,13 @@ function ExecCard({
           {body}
         </button>
       ) : (
-        <div className="min-w-[260px] max-w-sm rounded-2xl bg-neutral-900 px-4 py-3.5">{body}</div>
+        <div className="min-w-[260px] max-w-sm rounded-2xl bg-neutral-900 px-4 py-3.5">
+          {body}
+        </div>
       )}
     </div>
   );
 }
-
 
 /**
  * Human-in-the-loop approval prompt. The assistant asks before a sensitive action;
@@ -281,22 +313,22 @@ function ApprovalCard({
   const pages = message.approvals;
   if (!pages?.length) return null;
 
-  const allow = t('aiLab.chat.approval.allow');
-  const deny = t('aiLab.chat.approval.deny');
+  const allow = t("aiLab.chat.approval.allow");
+  const deny = t("aiLab.chat.approval.deny");
 
   /** 已答的那一页显示什么。读简历还有「正在读 / 已读取」两级进度。 */
   const answeredOf = (a: ApprovalRequest): string | undefined => {
-    if (a.status === 'pending') return undefined;
-    if (a.status === 'expired') return t('aiLab.widgets.form.expired');
-    if (a.status === 'denied') return t('aiLab.chat.approval.denied');
-    if (a.readState === 'read') return t('aiLab.chat.approval.read');
-    if (a.readState === 'reading') return t('aiLab.chat.approval.reading');
-    return t('aiLab.chat.approval.allowed');
+    if (a.status === "pending") return undefined;
+    if (a.status === "expired") return t("aiLab.widgets.form.expired");
+    if (a.status === "denied") return t("aiLab.chat.approval.denied");
+    if (a.readState === "read") return t("aiLab.chat.approval.read");
+    if (a.readState === "reading") return t("aiLab.chat.approval.reading");
+    return t("aiLab.chat.approval.allowed");
   };
 
   const questions: ApprovalQuestion[] = pages.map((a) => ({
-    q: a.question || message.content || t('aiLab.chat.approval.defaultMessage'),
-    type: 'radio',
+    q: a.question || message.content || t("aiLab.chat.approval.defaultMessage"),
+    type: "radio",
     options: [allow, deny],
     answered: answeredOf(a),
   }));
@@ -306,14 +338,14 @@ function ApprovalCard({
       <ApprovalPager
         questions={questions}
         // 会话从本地记录恢复时后端线程早已回收，续跑必失败——那时整张卡只能读不能点。
-        disabled={pages.every((a) => a.status === 'expired')}
+        disabled={pages.every((a) => a.status === "expired")}
         labels={{
-          previous: t('aiLab.chat.approval.previous'),
-          next: t('aiLab.chat.approval.next'),
-          send: t('aiLab.chat.approval.send'),
-          goTo: t('aiLab.chat.approval.goTo'),
-          freeText: '',
-          freeTextAria: '',
+          previous: t("aiLab.chat.approval.previous"),
+          next: t("aiLab.chat.approval.next"),
+          send: t("aiLab.chat.approval.send"),
+          goTo: t("aiLab.chat.approval.goTo"),
+          freeText: "",
+          freeTextAria: "",
         }}
         onAnswer={(pageIndex, answer) =>
           onApproval?.(message.id, pageIndex, answer[0] === allow)
@@ -334,11 +366,15 @@ function LogLine({
   const clickable = !!message.resumePath && !!onLogClick;
   // 颜色替代阅读：扫一眼就知道这行是「成了 / 只是说明 / 没成」，不必读完文字。
   // 三档都留在同一行的体量里——不抢戏，只是让人看得见。
-  const tone = message.tone ?? 'ok';
+  const tone = message.tone ?? "ok";
   const toneStyle = {
-    ok: { text: 'text-neutral-500', icon: 'text-emerald-500/80', Icon: Check },
-    info: { text: 'text-sky-400/85', icon: 'text-sky-400/70', Icon: Info },
-    warn: { text: 'text-amber-500/90', icon: 'text-amber-500/80', Icon: AlertCircle },
+    ok: { text: "text-neutral-500", icon: "text-emerald-500/80", Icon: Check },
+    info: { text: "text-sky-400/85", icon: "text-sky-400/70", Icon: Info },
+    warn: {
+      text: "text-amber-500/90",
+      icon: "text-amber-500/80",
+      Icon: AlertCircle,
+    },
   }[tone];
   const { Icon } = toneStyle;
   const className = `flex items-center gap-2 text-[11px] ${toneStyle.text}`;
@@ -353,7 +389,7 @@ function LogLine({
     <button
       type="button"
       onClick={() => onLogClick!(message.resumePath!)}
-      title={t('aiLab.chat.backToChange')}
+      title={t("aiLab.chat.backToChange")}
       className={`${className} hover:text-neutral-300 transition-colors cursor-pointer w-full text-left`}
     >
       {body}
@@ -418,8 +454,10 @@ function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
         onClick={() => setPinned(!open)}
         aria-expanded={open}
         className={cn(
-          'group inline-flex items-center gap-2 text-xs font-medium transition-colors duration-200 cursor-pointer',
-          running ? 'text-neutral-200' : 'text-neutral-500 hover:text-neutral-300',
+          "group inline-flex items-center gap-2 text-xs font-medium transition-colors duration-200 cursor-pointer",
+          running
+            ? "text-neutral-200"
+            : "text-neutral-500 hover:text-neutral-300",
         )}
       >
         <span className="grid size-5 shrink-0 place-items-center">
@@ -448,20 +486,22 @@ function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
               >
                 <ChevronDown
                   size={12}
-                  className={cn('transition-transform', open && 'rotate-180')}
+                  className={cn("transition-transform", open && "rotate-180")}
                 />
               </motion.span>
             )}
           </AnimatePresence>
         </span>
-        <span className={cn(running && 'ai-narrate')}>
-          {running ? t(activityLabelKey('thinking')) : t('aiLab.reasoning.done')}
+        <span className={cn(running && "ai-narrate")}>
+          {running
+            ? t(activityLabelKey("thinking"))
+            : t("aiLab.reasoning.done")}
         </span>
       </button>
       {/* 0fr → 1fr 收放：不动 height，交给 grid 自己算 */}
       <div
         className="grid transition-[grid-template-rows] duration-300 ease-out"
-        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
           {/* 封顶 + 自己滚。思维链可以很长，任其铺开会把结论顶出视野——而结论才是
@@ -471,13 +511,124 @@ function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
             className="mt-1.5 max-h-[200px] overflow-y-auto border-l border-white/[0.07] pl-3 text-[12px] leading-relaxed text-neutral-500"
           >
             {reasoningLines(text).map((line, i) => (
-              <p key={i} className={cn('my-1 first:mt-0 last:mb-0', line.strong && 'font-medium text-neutral-400')}>
+              <p
+                key={i}
+                className={cn(
+                  "my-1 first:mt-0 last:mb-0",
+                  line.strong && "font-medium text-neutral-400",
+                )}
+              >
                 {line.text}
               </p>
             ))}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** 回答使用的外部网页来源。内部知识来源已进消息模型，但目前按产品决定不渲染。 */
+function SourcesBlock({
+  sources = [],
+  children,
+}: {
+  sources?: CitationSource[];
+  children?: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const visible = visibleCitationSources(sources);
+  if (!visible.length && !children) return null;
+
+  return (
+    <div className="mt-1.5">
+      <div className="flex min-h-7 flex-wrap items-center gap-1">
+        {children}
+        {visible.length ? (
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+            aria-label={t("aiLab.sources.toggle", { count: visible.length })}
+            className="inline-flex h-7 items-center gap-2 rounded-[7px] px-2 text-[12px] text-ink-2 transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.98]"
+          >
+            <span className="flex -space-x-1" aria-hidden="true">
+              {visible.slice(0, 3).map((source) => (
+                <SiteFavicon
+                  key={source.id}
+                  source={source}
+                  className="size-[18px] rounded-full border border-raised"
+                  iconSize={9}
+                />
+              ))}
+            </span>
+            <span>{t("aiLab.sources.count", { count: visible.length })}</span>
+            <ChevronDown
+              size={11}
+              className={cn(
+                "transition-transform duration-200",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+        ) : null}
+      </div>
+
+      {visible.length ? (
+        <div
+          className="grid transition-[grid-template-rows,opacity] duration-200"
+          style={{
+            gridTemplateRows: open ? "1fr" : "0fr",
+            opacity: open ? 1 : 0,
+          }}
+        >
+          <div className="overflow-hidden">
+            {/*
+              每条来源固定为 44px；250px = 5 行 + 4 个间距 + 内边距 + 边框。
+              因而前五条完整可见，第六条起只在来源面板内滚动。
+            */}
+            <div className="mt-1.5 grid max-h-[250px] auto-rows-[44px] gap-1 overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-line bg-inset p-1.5 shadow-hairline">
+              {visible.map((source) => {
+                const domain = source.url ? sourceDomain(source.url) : "";
+                return (
+                  <a
+                    key={source.id}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/source flex h-11 min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-hover"
+                  >
+                    <SiteFavicon
+                      source={source}
+                      className="size-5 rounded-md border border-line"
+                      iconSize={10}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11.5px] text-ink-2 group-hover/source:text-ink">
+                        {source.title}
+                      </span>
+                      <span className="block truncate text-[10px] text-ink-3">
+                        {domain}
+                        {source.publishedDate
+                          ? ` · ${source.publishedDate}`
+                          : ""}
+                      </span>
+                    </span>
+                    <span className="font-mono text-[10px] tabular-nums text-ink-3">
+                      {source.citationId}
+                    </span>
+                    <ExternalLink
+                      size={11}
+                      className="shrink-0 text-ink-3 group-hover/source:text-accent-ink"
+                    />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -490,7 +641,7 @@ function Bubble({
   /** 只有最后一条助手回复拿得到，见 `MessageActions`。 */
   onRegenerate?: () => void;
 }) {
-  if (message.role === 'user') {
+  if (message.role === "user") {
     const skill = message.skillId ? SKILLS[message.skillId] : null;
     const SkillIcon = skill?.icon;
     return (
@@ -499,17 +650,28 @@ function Bubble({
           {skill && (
             <span className="inline-flex items-center gap-1 align-middle mr-2 rounded-md bg-neutral-700/70 px-1.5 py-0.5">
               {SkillIcon && <SkillIcon size={11} className={skill.accent} />}
-              <span className={cn('text-[11px] font-medium', skill.accent)}>{skill.name}</span>
+              <span className={cn("text-[11px] font-medium", skill.accent)}>
+                {skill.name}
+              </span>
             </span>
           )}
           {message.attachment && (
-            <Icon name="attach" size={12} className="mr-1.5 inline-block align-[-1px] text-neutral-400" />
+            <Icon
+              name="attach"
+              size={12}
+              className="mr-1.5 inline-block align-[-1px] text-neutral-400"
+            />
           )}
           {message.quote && (
             <div className="mb-2 flex items-start gap-2 rounded-lg bg-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
-              <CornerUpLeft size={12} className="mt-0.5 shrink-0 text-sky-400/80" />
+              <CornerUpLeft
+                size={12}
+                className="mt-0.5 shrink-0 text-sky-400/80"
+              />
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-medium text-neutral-500">{message.quote.label}</div>
+                <div className="text-[10px] font-medium text-neutral-500">
+                  {message.quote.label}
+                </div>
                 <div className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug text-neutral-300">
                   {message.quote.text}
                 </div>
@@ -532,30 +694,43 @@ function Bubble({
           而这一行必须和它接替的尾部指示器落在同一条基线上。 */}
       <div
         className={cn(
-          'min-w-0 max-w-[88%] text-sm text-neutral-200 leading-relaxed',
-          !message.reasoning && 'pt-1',
+          "min-w-0 max-w-[88%] text-sm text-neutral-200 leading-relaxed",
+          !message.reasoning && "pt-1",
         )}
       >
         {message.reasoning && (
           <ReasoningBlock
             text={message.reasoning}
-            running={message.status === 'running' && !message.content}
+            running={message.status === "running" && !message.content}
           />
         )}
+        {/* 工具是得出答案的过程，属于这条助手消息而不是时间线里的下一条消息。
+            放在正文前，最终答案写完后它会收成一行低层级摘要。 */}
+        {message.toolCalls?.length ? (
+          <div className={cn((message.content ?? "").trim() && "mb-2")}>
+            <ToolTrace message={message} />
+          </div>
+        ) : null}
         {/* 一种渲染方式、一种手感。这里原来给非流式的助手台词加了 JS 定时器的伪打字
             （24ms/字），跟真流式并存就是两种节奏；而 brief §3 明确要删掉这类假动效
             ——它模拟的是并没有在发生的工作。光标同理挂回全局心跳。 */}
         {/* 光标由 Markdown 自己发：放在这里它是块级 `<p>` 的兄弟节点，会掉到段落下面
             单独占一行，而它该跟在最后一个字后面。 */}
-        <Markdown streaming={message.streamed && message.status === 'running'}>
-          {message.content ?? ''}
+        <Markdown
+          streaming={message.streamed && message.status === "running"}
+          sources={message.sources}
+        >
+          {message.content ?? ""}
         </Markdown>
-        {/* 取自 Beautiful UI 的 StreamingText：一段回复写完之后该能被拿走。
-            此前只能手动框选——而模型给的建议、改写后的段落，用户十有八九是要复制的。
-            只在写完后出现：流式途中出现等于让人去点一个还在长的东西。 */}
-        {message.status === 'done' && (message.content ?? '').trim() && (
-          <MessageActions text={message.content ?? ''} onRegenerate={onRegenerate} />
-        )}
+        <SourcesBlock sources={message.sources}>
+          {/* 取自 Beautiful UI 的 StreamingText：操作与来源共用一条低层级工具栏。 */}
+          {message.status === "done" && (message.content ?? "").trim() ? (
+            <MessageActions
+              text={message.content ?? ""}
+              onRegenerate={onRegenerate}
+            />
+          ) : null}
+        </SourcesBlock>
       </div>
     </div>
   );
@@ -568,21 +743,25 @@ function Bubble({
  * 二次计费且可能覆盖已接受的改动），赞踩要有反馈通道，两者都还没有。做一个点了没反应
  * 的按钮，比没有这个按钮更糟。
  */
-function MessageActions({ text, onRegenerate }: { text: string; onRegenerate?: () => void }) {
+function MessageActions({
+  text,
+  onRegenerate,
+}: {
+  text: string;
+  onRegenerate?: () => void;
+}) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   return (
-    // 静息时透明但**仍占位**：改成 hidden 会让整条消息在鼠标划过时高度跳一下，比一直
-    // 显示还吵。`focus-within` 是给键盘的——只挂 hover 等于把这两个动作从键盘上删掉。
     <div
       className={cn(
-        'mt-1.5 flex items-center gap-0.5 opacity-0 transition-opacity duration-150',
-        'group-hover/msg:opacity-100 focus-within:opacity-100',
+        "flex h-7 items-center gap-0.5 opacity-60 transition-opacity duration-150",
+        "group-hover/msg:opacity-100 focus-within:opacity-100 hover:opacity-100",
       )}
     >
       <button
         type="button"
-        aria-label={t('aiLab.chat.copy')}
+        aria-label={t("aiLab.chat.copy")}
         onClick={() => {
           void navigator.clipboard.writeText(text).then(() => {
             setCopied(true);
@@ -590,24 +769,24 @@ function MessageActions({ text, onRegenerate }: { text: string; onRegenerate?: (
           });
         }}
         className={cn(
-          'flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] transition-colors',
-          copied ? 'text-emerald-400' : 'text-neutral-500 hover:bg-white/[0.06] hover:text-neutral-300',
+          "flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] transition-colors",
+          copied ? "text-green" : "text-ink-3 hover:bg-hover hover:text-ink-2",
         )}
       >
         {copied ? <Check size={12} /> : <Icon name="copy" size={12} />}
-        {copied ? t('aiLab.chat.copied') : t('aiLab.chat.copy')}
+        {copied ? t("aiLab.chat.copied") : t("aiLab.chat.copy")}
       </button>
       {/* 只挂在最后一条回复上。给历史里任何一条都配重答，等于允许把对话改成一棵树，
           而这个界面只画得出一条线。 */}
       {onRegenerate && (
         <button
           type="button"
-          aria-label={t('aiLab.chat.regenerate')}
+          aria-label={t("aiLab.chat.regenerate")}
           onClick={onRegenerate}
-          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-300"
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
         >
           <Icon name="retry" size={12} />
-          {t('aiLab.chat.regenerate')}
+          {t("aiLab.chat.regenerate")}
         </button>
       )}
     </div>
@@ -631,37 +810,187 @@ type ChatThreadProps = {
   onRegenerate?: () => void;
 };
 
+type MessageRowProps = {
+  message: ChatMessage;
+  reduceMotion: boolean;
+  retired: boolean;
+  activity?: AgentActivity | null;
+  openCanvasSkillId: SkillId | null;
+  regenerable: boolean;
+  onToggleCanvas: (id: SkillId) => void;
+  onLogClick?: (resumePath: string) => void;
+  onApproval?: ApprovalDecision;
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+  onRegenerate?: () => void;
+};
+
+/**
+ * A stream frame changes only the active assistant message. Keeping each row as
+ * a memoized leaf prevents that frame from reparsing every completed Markdown
+ * response and rebuilding every historical card above it.
+ */
+const MessageRow = memo(function MessageRow({
+  message: m,
+  reduceMotion,
+  retired,
+  activity,
+  openCanvasSkillId,
+  regenerable,
+  onToggleCanvas,
+  onLogClick,
+  onApproval,
+  onWidgetAction,
+  onRegenerate,
+}: MessageRowProps) {
+  const takesOverThinking =
+    m.role === "assistant" && !!m.reasoning && !m.content;
+  const isUser = m.role === "user";
+
+  return (
+    <motion.div
+      initial={
+        takesOverThinking
+          ? false
+          : isUser
+            ? {
+                opacity: 0,
+                y: reduceMotion ? 0 : 10,
+                scale: reduceMotion ? 1 : 0.92,
+              }
+            : {
+                opacity: 0,
+                y: reduceMotion ? 0 : 16,
+                scale: reduceMotion ? 1 : 0.98,
+              }
+      }
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      transition={{
+        duration: reduceMotion ? 0 : isUser ? 0.26 : 0.3,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      style={isUser ? { transformOrigin: "100% 100%" } : undefined}
+    >
+      {m.role === "exec" ? (
+        <ExecCard
+          message={m}
+          onToggleCanvas={onToggleCanvas}
+          isCanvasOpen={openCanvasSkillId === m.skillId}
+        />
+      ) : m.role === "log" ? (
+        <LogLine message={m} onLogClick={onLogClick} />
+      ) : m.role === "activity" ? (
+        <ActivityLine message={m} />
+      ) : m.role === "approval" ? (
+        <ApprovalCard message={m} onApproval={onApproval} />
+      ) : m.role === "tools" ? (
+        <ToolTrace message={m} />
+      ) : m.role === "plan" ? (
+        <TasksCard
+          message={m}
+          retired={retired}
+          onToggleCanvas={onToggleCanvas}
+          isCanvasOpen={Boolean(
+            m.skillId && openCanvasSkillId === m.skillId,
+          )}
+          activity={activity}
+        />
+      ) : m.role === "widget" ? (
+        m.widget ? (
+          <div className="flex items-start">
+            <WidgetHost
+              registry={WIDGETS}
+              instance={m.widget}
+              onAction={onWidgetAction ?? (() => {})}
+            />
+          </div>
+        ) : null
+      ) : (
+        <Bubble
+          message={m}
+          onRegenerate={regenerable ? onRegenerate : undefined}
+        />
+      )}
+    </motion.div>
+  );
+});
+
 export { isPlanFulfilled, isRetirablePlan };
 
-export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, activity, onRegenerate }: ChatThreadProps) {
+export default function ChatThread({
+  messages,
+  onToggleCanvas,
+  openCanvasSkillId,
+  onLogClick,
+  onApproval,
+  onWidgetAction,
+  thinking,
+  activity,
+  onRegenerate,
+}: ChatThreadProps) {
   // 只有最后一条写完的助手回复能重答。这一轮还在跑的时候不给——重答会把它顶掉，
   // 而用户此刻看到的正是它在写。
   const regenerableId = (() => {
     if (!onRegenerate || thinking) return null;
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const m = messages[i];
-      if (m.role === 'assistant') return m.status === 'done' ? m.id : null;
-      if (m.role === 'user') return null;
+      if (m.role === "assistant") return m.status === "done" ? m.id : null;
+      if (m.role === "user") return null;
     }
     return null;
   })();
   // 这一轮从什么时候开始等的。`thinking` 由 false → true 的那一刻记一次，之后整轮不变
   // ——每次重渲都取 Date.now() 的话，计时永远显示 0。
-  const [thinkingSince, setThinkingSince] = useState<number | undefined>(undefined);
+  const [thinkingSince, setThinkingSince] = useState<number | undefined>(
+    undefined,
+  );
   useEffect(() => {
     setThinkingSince(thinking ? Date.now() : undefined);
   }, [thinking]);
 
-  const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollFrameRef = useRef<number | null>(null);
+  const followOutputRef = useRef(true);
+  const previousLastIdRef = useRef<string | null>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
-    // reduce 下也别平滑滚动——自动滚动是这套界面里最容易让人不适的一个动作。
-    endRef.current?.scrollIntoView({
-      behavior: reduceMotion ? 'auto' : 'smooth',
-      block: 'end',
+    const el = scrollRef.current;
+    const lastId = messages[messages.length - 1]?.id ?? null;
+    const addedMessage = previousLastIdRef.current !== lastId;
+    previousLastIdRef.current = lastId;
+    if (!el || !followOutputRef.current) return;
+    if (scrollFrameRef.current !== null)
+      cancelAnimationFrame(scrollFrameRef.current);
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      el.scrollTo({
+        top: el.scrollHeight,
+        // 平滑只属于“新增一条消息”。流式增长若每帧都开 smooth，会堆叠动画并不断强制布局。
+        behavior: addedMessage && !reduceMotion ? "smooth" : "auto",
+      });
     });
+    return () => {
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+        scrollFrameRef.current = null;
+      }
+    };
   }, [messages, thinking, reduceMotion]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Programmatic smooth scrolling also fires `scroll`; only use it to re-arm
+    // following at the bottom, never to mistake our own animation for user intent.
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 96) {
+      followOutputRef.current = true;
+    }
+  };
+
+  const pauseFollowing = () => {
+    followOutputRef.current = false;
+  };
 
   // 头像不再进对话：Polaris 已经常驻在输入框上方的工位，姿态（思考 / 输出）由那只
   // 宠物统一表达。每条消息再挂一个头像，等于把同一个角色复制 N 份。
@@ -677,100 +1006,59 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
    */
   const [retired, setRetired] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
-    const pending = messages.filter((m) => isRetirablePlan(m) && !retired.has(m.id));
+    const pending = messages.filter(
+      (m) => isRetirablePlan(m) && !retired.has(m.id),
+    );
     if (!pending.length) return;
     const timers = pending.map((m) =>
       window.setTimeout(() => {
         setRetired((prev) => new Set(prev).add(m.id));
-      }, PLAN_DWELL_MS)
+      }, PLAN_DWELL_MS),
     );
     return () => timers.forEach((tm) => window.clearTimeout(tm));
   }, [messages, retired]);
 
-
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      onWheel={(event) => {
+        if (event.deltaY < 0) pauseFollowing();
+      }}
+      onTouchMove={pauseFollowing}
+      className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6"
+    >
       <div className="max-w-3xl mx-auto flex flex-col gap-5">
         {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
             so only freshly-mounted turns animate, never re-renders of existing ones.
             外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
             替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
         <AnimatePresence initial={false}>
-        {messages.map((m) => {
-          // 思考链先于正文到达时，这条气泡是**接替**尾部指示器的：它挂载的位置正是
-          // 指示器此刻所在的位置，头部也和它长得一样。再演一遍「由下升入」，同一颗
-          // orb 就等于在原地动了一次——那一下的不顺就是从这儿来的。
-          const takesOverThinking = m.role === 'assistant' && !!m.reasoning && !m.content;
-          // 自己刚发出去的那句，动作要比别的重一点：它是**你按下回车的回执**。
-          // 起始 scale 压到 0.92、原点钉在右下角——也就是输入框所在的方向——读起来
-          // 就是从输入框那儿冒出来落进对话，而不是凭空淡入。
-          const isUser = m.role === 'user';
-          return (
-          <motion.div
-            key={m.id}
-            initial={
-              takesOverThinking
-                ? false
-                : isUser
-                  ? { opacity: 0, y: reduceMotion ? 0 : 10, scale: reduceMotion ? 1 : 0.92 }
-                  : { opacity: 0, y: reduceMotion ? 0 : 16, scale: reduceMotion ? 1 : 0.98 }
-            }
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.12 } }}
-            transition={{
-              duration: reduceMotion ? 0 : isUser ? 0.26 : 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            style={isUser ? { transformOrigin: '100% 100%' } : undefined}
-          >
-            {m.role === 'exec' ? (
-              <ExecCard
-                message={m}
-                onToggleCanvas={onToggleCanvas}
-                isCanvasOpen={openCanvasSkillId === m.skillId}
-              />
-            ) : m.role === 'log' ? (
-              <LogLine message={m} onLogClick={onLogClick} />
-            ) : m.role === 'activity' ? (
-              <ActivityLine message={m} />
-            ) : m.role === 'approval' ? (
-              <ApprovalCard message={m} onApproval={onApproval} />
-            ) : m.role === 'tools' ? (
-              <ToolTrace message={m} />
-            ) : m.role === 'plan' ? (
-              <TasksCard
-                message={m}
-                retired={retired.has(m.id)}
-                onToggleCanvas={onToggleCanvas}
-                isCanvasOpen={openCanvasSkillId === (m.skillId ?? 'analyze')}
-                activity={activity}
-              />
-            ) : m.role === 'widget' ? (
-              m.widget ? (
-                <div className="flex items-start">
-                  <WidgetHost
-                    registry={WIDGETS}
-                    instance={m.widget}
-                    onAction={onWidgetAction ?? (() => {})}
-                  />
-                </div>
-              ) : null
-            ) : (
-              <Bubble
-                message={m}
-                onRegenerate={m.id === regenerableId ? onRegenerate : undefined}
-              />
-            )}
-          </motion.div>
-          );
-        })}
+          {messages.map((m) => (
+            <MessageRow
+              key={m.id}
+              message={m}
+              reduceMotion={reduceMotion}
+              retired={retired.has(m.id)}
+              activity={m.role === "plan" ? activity : undefined}
+              openCanvasSkillId={openCanvasSkillId}
+              regenerable={m.id === regenerableId}
+              onToggleCanvas={onToggleCanvas}
+              onLogClick={onLogClick}
+              onApproval={onApproval}
+              onWidgetAction={onWidgetAction}
+              onRegenerate={onRegenerate}
+            />
+          ))}
         </AnimatePresence>
         <AnimatePresence>
           {thinking && (
-            <ThinkingIndicator activity={activity ?? null} startedAt={thinkingSince} />
+            <ThinkingIndicator
+              activity={activity ?? null}
+              startedAt={thinkingSince}
+            />
           )}
         </AnimatePresence>
-        <div ref={endRef} />
       </div>
     </div>
   );

@@ -1,46 +1,145 @@
 "use client";
 
-import { useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * FILTER TABLE
  * Status chips directly filter the task table.
  * ───────────────────────────────────────────────────────── */
 
-type Status = "todo" | "progress" | "done";
+type DemoStatus = "todo" | "progress" | "done";
 
-const FILTERS: { key: "all" | Status; label: string; dot?: string; count: number }[] = [
+export interface FilterTableFilter {
+  key: string;
+  label: string;
+  dot?: string;
+  count: number;
+}
+
+export interface FilterTableColumn {
+  key: string;
+  label: string;
+}
+
+export interface FilterTableRow {
+  id: string;
+  status: string;
+  cells: Record<string, ReactNode>;
+}
+
+export interface FilterTablePill {
+  label: string;
+  className: string;
+}
+
+export interface FilterTableProps {
+  filters?: FilterTableFilter[];
+  columns?: FilterTableColumn[];
+  rows?: FilterTableRow[];
+  pills?: Record<string, FilterTablePill>;
+  /** CSS grid-template-columns used by the heading and every row. */
+  gridTemplateColumns?: string;
+  ariaLabel?: string;
+  className?: string;
+}
+
+const FILTERS: FilterTableFilter[] = [
   { key: "all", label: "All", count: 5 },
   { key: "todo", label: "To do", dot: "#f09a2f", count: 2 },
   { key: "progress", label: "In Progress", dot: "#16a6c7", count: 2 },
   { key: "done", label: "Completed", dot: "#25a878", count: 1 },
 ];
 
-const ROWS: { task: string; date: string; status: Status; owner: string }[] = [
-  { task: "Restock mango sorbet", date: "Dec 03", status: "todo", owner: "Mango Moon Gelato" },
-  { task: "Churn black sesame", date: "Sep 22", status: "progress", owner: "Kumo Creamery" },
-  { task: "Print summer menu", date: "Jan 02", status: "todo", owner: "Coral Coast Sorbet" },
-  { task: "Taste-test batch 42", date: "Nov 08", status: "progress", owner: "Maple Orbit" },
-  { task: "Order waffle cones", date: "Apr 14", status: "done", owner: "Aurora Scoops" },
+const COLUMNS: FilterTableColumn[] = [
+  { key: "task", label: "Task name" },
+  { key: "date", label: "Date" },
+  { key: "status", label: "Status" },
+  { key: "owner", label: "Advisor" },
 ];
 
-const PILLS: Record<Status, { label: string; cls: string }> = {
-  todo: { label: "To do", cls: "filter-status-todo" },
-  progress: { label: "In Progress", cls: "filter-status-progress" },
-  done: { label: "Completed", cls: "filter-status-done" },
+const ROWS: FilterTableRow[] = [
+  {
+    id: "restock",
+    status: "todo",
+    cells: {
+      task: "Restock mango sorbet",
+      date: "Dec 03",
+      owner: "Mango Moon Gelato",
+    },
+  },
+  {
+    id: "churn",
+    status: "progress",
+    cells: {
+      task: "Churn black sesame",
+      date: "Sep 22",
+      owner: "Kumo Creamery",
+    },
+  },
+  {
+    id: "menu",
+    status: "todo",
+    cells: {
+      task: "Print summer menu",
+      date: "Jan 02",
+      owner: "Coral Coast Sorbet",
+    },
+  },
+  {
+    id: "taste",
+    status: "progress",
+    cells: {
+      task: "Taste-test batch 42",
+      date: "Nov 08",
+      owner: "Maple Orbit",
+    },
+  },
+  {
+    id: "cones",
+    status: "done",
+    cells: {
+      task: "Order waffle cones",
+      date: "Apr 14",
+      owner: "Aurora Scoops",
+    },
+  },
+];
+
+const PILLS: Record<DemoStatus, FilterTablePill> = {
+  todo: { label: "To do", className: "filter-status-todo" },
+  progress: { label: "In Progress", className: "filter-status-progress" },
+  done: { label: "Completed", className: "filter-status-done" },
 };
 
-export default function FilterTable() {
-  const [filter, setFilter] = useState<"all" | Status>("all");
+export default function FilterTable({
+  filters = FILTERS,
+  columns = COLUMNS,
+  rows = ROWS,
+  pills = PILLS,
+  gridTemplateColumns = "1.3fr 0.6fr 0.95fr 0.9fr",
+  ariaLabel = "Scrollable filtered table",
+  className = "",
+}: FilterTableProps = {}) {
+  const [filter, setFilter] = useState("all");
+
+  // A persistent tracker can be updated in place. If its previously selected
+  // status disappears, return to the first available filter instead of showing
+  // an inexplicably empty table.
+  useEffect(() => {
+    if (!filters.some((candidate) => candidate.key === filter)) {
+      setFilter(filters[0]?.key ?? "all");
+    }
+  }, [filter, filters]);
 
   return (
-    <div className="w-full max-w-105">
+    <div className={`w-full max-w-105 ${className}`}>
       {/* filter chips */}
       <div
         className="-mx-1 mb-1 flex items-center gap-1 overflow-x-auto px-1 py-1"
         style={{ scrollbarWidth: "none" }}
       >
-        {FILTERS.map((f) => {
+        {filters.map((f) => {
           const active = filter === f.key;
           return (
             <button
@@ -52,7 +151,12 @@ export default function FilterTable() {
                 font-medium transition-[background-color,box-shadow,color] duration-200
                 ${active ? "bg-surface text-ink shadow-btn" : "text-ink-2 hover:bg-hover"}`}
             >
-              {f.dot && <span className="size-1.5 rounded-full" style={{ background: f.dot }} />}
+              {f.dot && (
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ background: f.dot }}
+                />
+              )}
               {f.label}
               <span
                 className={`rounded-[4px] px-1 text-[10.5px] tabular-nums
@@ -67,25 +171,27 @@ export default function FilterTable() {
 
       {/* table */}
       <div
-        aria-label="Scrollable task table"
+        aria-label={ariaLabel}
         className="overflow-x-auto rounded-card bg-surface shadow-card"
         role="region"
         tabIndex={0}
         style={{ scrollbarWidth: "none" }}
       >
         <div className="min-w-[420px]">
-          <div className="grid grid-cols-[1.3fr_0.6fr_0.95fr_0.9fr] border-b border-line px-3 py-2 text-[11.5px] font-medium text-ink-3">
-            <span>Task name</span>
-            <span>Date</span>
-            <span>Status</span>
-            <span>Advisor</span>
+          <div
+            className="grid border-b border-line px-3 py-2 text-[11.5px] font-medium text-ink-3"
+            style={{ gridTemplateColumns }}
+          >
+            {columns.map((column) => (
+              <span key={column.key}>{column.label}</span>
+            ))}
           </div>
-          {ROWS.map((row) => {
+          {rows.map((row) => {
             const shown = filter === "all" || row.status === filter;
-            const pill = PILLS[row.status];
+            const pill = pills[row.status];
             return (
               <div
-                key={row.task}
+                key={row.id}
                 className="grid transition-[grid-template-rows,opacity] duration-300"
                 style={{
                   gridTemplateRows: shown ? "1fr" : "0fr",
@@ -95,21 +201,32 @@ export default function FilterTable() {
               >
                 <div className="overflow-hidden">
                   <div
-                    className="grid grid-cols-[1.3fr_0.6fr_0.95fr_0.9fr] items-center border-b
+                    className="grid items-center border-b
                       border-line px-3 py-2 text-[12px] transition-colors duration-100
                       last:border-0 hover:bg-hover"
+                    style={{ gridTemplateColumns }}
                   >
-                    <span className="truncate font-medium text-ink">{row.task}</span>
-                    <span className="text-ink-2 tabular-nums">{row.date}</span>
-                    <span>
+                    {columns.map((column) => (
                       <span
-                        className={`inline-flex h-5 items-center rounded-[5px] px-1.5
-                          text-[11px] font-medium ${pill.cls}`}
+                        key={column.key}
+                        className={
+                          column.key === "status"
+                            ? ""
+                            : "min-w-0 truncate text-ink-2"
+                        }
                       >
-                        {pill.label}
+                        {column.key === "status" && pill ? (
+                          <span
+                            className={`inline-flex h-5 items-center rounded-[5px] px-1.5
+                              text-[11px] font-medium ${pill.className}`}
+                          >
+                            {pill.label}
+                          </span>
+                        ) : (
+                          row.cells[column.key]
+                        )}
                       </span>
-                    </span>
-                    <span className="truncate text-ink-2">{row.owner}</span>
+                    ))}
                   </div>
                 </div>
               </div>

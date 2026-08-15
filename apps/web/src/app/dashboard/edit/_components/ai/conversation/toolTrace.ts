@@ -104,6 +104,7 @@ export function toToolChipRows(
     const verb = TOOL_VERB[call.toolName];
     const line = summaryLine(call.summary, t);
     return {
+      id: call.toolCallId,
       icon: TOOL_ICON[call.toolName] ?? 'run',
       label: verb
         ? t(`aiLab.tools.${verb}`, { defaultValue: call.toolName })

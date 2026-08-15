@@ -1,6 +1,6 @@
-import { nanoid } from 'nanoid';
-import type { EditableTarget } from './editableCanvas';
-import type { Section } from '@/types/frontend/resume';
+import { nanoid } from "nanoid";
+import type { EditableTarget } from "./editableCanvas";
+import type { Section } from "@/types/frontend/resume";
 
 /**
  * living canvas 的改动模型：可评审的就地修订形状、动作词汇、目标定位，以及接受后的写入。
@@ -10,13 +10,13 @@ import type { Section } from '@/types/frontend/resume';
 // Quick actions (element-scoped)
 
 export type QuickActionId =
-  | 'quantify'
-  | 'concise'
-  | 'verb'
-  | 'evidence'
-  | 'rewrite'
-  | 'tone'
-  | 'shorten';
+  | "quantify"
+  | "concise"
+  | "verb"
+  | "evidence"
+  | "rewrite"
+  | "tone"
+  | "shorten";
 
 export interface QuickAction {
   id: QuickActionId;
@@ -25,23 +25,23 @@ export interface QuickAction {
 
 /** Quick actions for an experience / project bullet. */
 export const BULLET_ACTIONS: QuickAction[] = [
-  { id: 'quantify', label: 'aiLab.canvas.action.quantify' },
-  { id: 'concise', label: 'aiLab.canvas.action.concise' },
-  { id: 'verb', label: 'aiLab.canvas.action.verb' },
-  { id: 'evidence', label: 'aiLab.canvas.action.evidence' },
+  { id: "quantify", label: "aiLab.canvas.action.quantify" },
+  { id: "concise", label: "aiLab.canvas.action.concise" },
+  { id: "verb", label: "aiLab.canvas.action.verb" },
+  { id: "evidence", label: "aiLab.canvas.action.evidence" },
 ];
 
 /** Quick actions for a summary-style block. */
 export const SUMMARY_ACTIONS: QuickAction[] = [
-  { id: 'rewrite', label: 'aiLab.canvas.action.rewrite' },
-  { id: 'tone', label: 'aiLab.canvas.action.tone' },
-  { id: 'shorten', label: 'aiLab.canvas.action.shorten' },
+  { id: "rewrite", label: "aiLab.canvas.action.rewrite" },
+  { id: "tone", label: "aiLab.canvas.action.tone" },
+  { id: "shorten", label: "aiLab.canvas.action.shorten" },
 ];
 
 export function actionsForTarget(target: EditableTarget): QuickAction[] {
   // The header summary is a free-text blurb — only the summary-style actions apply.
-  if (target.sectionKey === 'info') return SUMMARY_ACTIONS;
-  if (target.sectionKey === 'experience' || target.sectionKey === 'projects') {
+  if (target.sectionKey === "info") return SUMMARY_ACTIONS;
+  if (target.sectionKey === "experience" || target.sectionKey === "projects") {
     return BULLET_ACTIONS;
   }
   return [...BULLET_ACTIONS, ...SUMMARY_ACTIONS];
@@ -53,7 +53,7 @@ export function actionsForTarget(target: EditableTarget): QuickAction[] {
 
 // Selection-driven actions
 
-export type SelectionActionId = 'polish' | 'shorten' | 'translate';
+export type SelectionActionId = "polish" | "shorten" | "translate";
 
 export interface SelectionAction {
   id: SelectionActionId;
@@ -61,12 +61,12 @@ export interface SelectionAction {
 }
 
 export const SELECTION_ACTIONS: SelectionAction[] = [
-  { id: 'polish', label: 'aiLab.canvas.action.polish' },
-  { id: 'shorten', label: 'aiLab.canvas.action.shorten' },
-  { id: 'translate', label: 'aiLab.canvas.action.translate' },
+  { id: "polish", label: "aiLab.canvas.action.polish" },
+  { id: "shorten", label: "aiLab.canvas.action.shorten" },
+  { id: "translate", label: "aiLab.canvas.action.translate" },
 ];
 
-export type ActionKind = QuickActionId | SelectionActionId | 'free';
+export type ActionKind = QuickActionId | SelectionActionId | "free";
 
 // The reviewable change unit
 
@@ -79,7 +79,7 @@ export interface PendingChange {
   /** Optional review-only values for selection edits, so the diff card can stay scoped. */
   previewBefore?: string;
   previewAfter?: string;
-  previewKind?: EditableTarget['kind'];
+  previewKind?: EditableTarget["kind"];
   rationale: string;
   /** longer "why", revealed on demand */
   rationaleDetail?: string;
@@ -94,33 +94,65 @@ export interface PendingChange {
   isInsert?: boolean;
   /** bumped on each regenerate to cycle the mock variants */
   seed: number;
-  status: 'pending' | 'accepted';
+  status: "pending" | "accepted";
 }
 
 // Target locating
 
 /** Resume section key → display title, for change labels. */
 const SECTION_TITLES: Record<string, string> = {
-  experience: '工作经历',
-  education: '教育经历',
-  projects: '项目经历',
-  skills: '专业技能',
-  languages: '语言能力',
-  certificates: '证书资质',
-  profiles: '个人主页',
-  awards: '奖项',
+  experience: "工作经历",
+  education: "教育经历",
+  projects: "项目经历",
+  skills: "专业技能",
+  languages: "语言能力",
+  certificates: "证书资质",
+  profiles: "个人主页",
+  awards: "奖项",
 };
 
 export function sectionTitle(sectionKey: string): string {
   return SECTION_TITLES[sectionKey] || sectionKey;
 }
 
+/** Resume field key → display title, so a review card identifies the exact field. */
+const FIELD_TITLES: Record<string, string> = {
+  fullName: "姓名",
+  headline: "职业标题",
+  email: "邮箱",
+  phoneNumber: "电话",
+  address: "地址",
+  website: "网站",
+  avatar: "头像",
+  company: "公司",
+  position: "职位",
+  school: "学校",
+  degree: "学历",
+  major: "专业",
+  date: "时间",
+  location: "地点",
+  name: "名称",
+  ["title"]: "标题",
+  summary: "内容",
+  ["description"]: "描述",
+  level: "熟练度",
+  issuer: "颁发机构",
+  url: "链接",
+  score: "成绩",
+  keywords: "关键词",
+  value: "内容",
+};
+
+export function fieldTitle(fieldKey: string): string {
+  return FIELD_TITLES[fieldKey] || fieldKey;
+}
+
 /** Inverse of the renderer's `pathOf` — recover a target from a DOM anchor. */
 export function parsePath(
-  path: string
+  path: string,
 ): { sectionKey: string; itemId: string; fieldKey: string } | null {
   const info = /^info\.(.+)$/.exec(path);
-  if (info) return { sectionKey: 'info', itemId: '', fieldKey: info[1] };
+  if (info) return { sectionKey: "info", itemId: "", fieldKey: info[1] };
   const m = /^sections\.([^.[]+)\[(.+)\]\.([^.]+)$/.exec(path);
   if (!m) return null;
   return { sectionKey: m[1], itemId: m[2], fieldKey: m[3] };
@@ -130,25 +162,31 @@ export function parsePath(
 
 export function stripHtml(html: string): string {
   return html
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
 export type SelectionPreview = {
   previewBefore: string;
   previewAfter: string;
-  previewKind: 'text';
+  previewKind: "text";
 };
 
-function extractSelectedReplacement(beforeText: string, afterText: string, selectedText: string): string {
+function extractSelectedReplacement(
+  beforeText: string,
+  afterText: string,
+  selectedText: string,
+): string {
   const idx = beforeText.indexOf(selectedText);
   if (idx >= 0) {
     const prefix = beforeText.slice(0, idx);
     const suffix = beforeText.slice(idx + selectedText.length);
     if (afterText.startsWith(prefix) && afterText.endsWith(suffix)) {
-      return afterText.slice(prefix.length, afterText.length - suffix.length).trim();
+      return afterText
+        .slice(prefix.length, afterText.length - suffix.length)
+        .trim();
     }
   }
 
@@ -178,19 +216,23 @@ function extractSelectedReplacement(beforeText: string, afterText: string, selec
 export function buildSelectionPreview(
   fullBefore: string,
   fullAfter: string,
-  selectionText: string
+  selectionText: string,
 ): SelectionPreview | undefined {
   const selected = stripHtml(selectionText);
   if (!selected) return undefined;
 
   const beforeText = stripHtml(fullBefore);
   const afterText = stripHtml(fullAfter);
-  const replacement = extractSelectedReplacement(beforeText, afterText, selected);
+  const replacement = extractSelectedReplacement(
+    beforeText,
+    afterText,
+    selected,
+  );
 
   return {
     previewBefore: selected,
     previewAfter: replacement || afterText || selected,
-    previewKind: 'text',
+    previewKind: "text",
   };
 }
 
@@ -201,8 +243,11 @@ export function wrapLike(originalHtml: string, text: string): string {
 }
 
 /** Strip the HTML wrapper for plain-text targets (e.g. the header summary). */
-export function finalizeAfter(kind: EditableTarget['kind'], after: string): string {
-  return kind === 'text' ? stripHtml(after) : after;
+export function finalizeAfter(
+  kind: EditableTarget["kind"],
+  after: string,
+): string {
+  return kind === "text" ? stripHtml(after) : after;
 }
 
 // provider 只回 `{ after, rationale }`，下面几个 helper 把它组装成 PendingChange。
@@ -218,9 +263,9 @@ export interface EditResultLike {
 export function buildElementChange(
   target: EditableTarget,
   before: string,
-  action: QuickActionId | 'free',
+  action: QuickActionId | "free",
   result: EditResultLike,
-  freeText?: string
+  freeText?: string,
 ): PendingChange {
   return {
     id: nanoid(),
@@ -232,7 +277,7 @@ export function buildElementChange(
     action,
     freeText,
     seed: 0,
-    status: 'pending',
+    status: "pending",
   };
 }
 
@@ -241,9 +286,9 @@ export function buildSelectionChange(
   target: EditableTarget,
   fullHtml: string,
   selectionText: string,
-  action: SelectionActionId | 'free',
+  action: SelectionActionId | "free",
   result: EditResultLike,
-  opts?: { freeText?: string; lang?: string }
+  opts?: { freeText?: string; lang?: string },
 ): PendingChange {
   const after = finalizeAfter(target.kind, result.after);
   const preview = buildSelectionPreview(fullHtml, after, selectionText);
@@ -260,7 +305,7 @@ export function buildSelectionChange(
     selectionText,
     lang: opts?.lang,
     seed: 0,
-    status: 'pending',
+    status: "pending",
   };
 }
 
@@ -268,33 +313,45 @@ export function buildSelectionChange(
  * 这些 section 靠 itemName 渲染而非 summary。'name' 在所有模板的 itemName 候选里都是
  * 兜底项，写它跨模板都能显示；写 'summary' 则插入的内容根本看不见。
  */
-const NAME_FIELD_SECTIONS = new Set(['skills', 'languages', 'certificates', 'awards', 'profiles']);
+const NAME_FIELD_SECTIONS = new Set([
+  "skills",
+  "languages",
+  "certificates",
+  "awards",
+  "profiles",
+]);
 
 /** A fresh target for an insert — made by the caller so its path is stable across the async call. */
-export function makeInsertTarget(sectionKey: string, title: string): EditableTarget {
+export function makeInsertTarget(
+  sectionKey: string,
+  title: string,
+): EditableTarget {
   const isNameField = NAME_FIELD_SECTIONS.has(sectionKey);
   return {
     sectionKey,
     itemId: `new-${nanoid(6)}`,
-    fieldKey: isNameField ? 'name' : 'summary',
-    kind: isNameField ? 'text' : 'html',
+    fieldKey: isNameField ? "name" : "summary",
+    kind: isNameField ? "text" : "html",
     label: `${title} · 新增一条`,
   };
 }
 
 /** New-item proposal (green-only insert) → reviewable change. */
-export function buildInsertChange(target: EditableTarget, result: EditResultLike): PendingChange {
+export function buildInsertChange(
+  target: EditableTarget,
+  result: EditResultLike,
+): PendingChange {
   return {
     id: nanoid(),
     target,
-    before: '',
+    before: "",
     after: result.after,
     rationale: result.rationale,
     rationaleDetail: result.rationaleDetail,
-    action: 'free',
+    action: "free",
     isInsert: true,
     seed: 0,
-    status: 'pending',
+    status: "pending",
   };
 }
 
@@ -309,10 +366,10 @@ export function buildInsertChange(target: EditableTarget, result: EditResultLike
  */
 export function applyChangeToSections(
   sections: Section,
-  change: PendingChange
+  change: PendingChange,
 ): { sections: Section; applied: boolean } {
   // info 走 applyInfoChange，不是失败。
-  if (change.target.sectionKey === 'info') return { sections, applied: false };
+  if (change.target.sectionKey === "info") return { sections, applied: false };
   const next: Section = JSON.parse(JSON.stringify(sections));
   const items = next[change.target.sectionKey];
   if (!Array.isArray(items)) return { sections, applied: false };
@@ -322,15 +379,22 @@ export function applyChangeToSections(
     return { sections: next, applied: true };
   }
   if (change.isInsert) {
-    items.push({ id: change.target.itemId, visible: true, [change.target.fieldKey]: change.after });
+    items.push({
+      id: change.target.itemId,
+      visible: true,
+      [change.target.fieldKey]: change.after,
+    });
     return { sections: next, applied: true };
   }
   return { sections, applied: false };
 }
 
 /** Apply an accepted change onto resume.info (returns a new InfoType-shaped object). */
-export function applyInfoChange<T extends Record<string, unknown>>(info: T, change: PendingChange): T {
-  if (change.target.sectionKey !== 'info') return info;
+export function applyInfoChange<T extends Record<string, unknown>>(
+  info: T,
+  change: PendingChange,
+): T {
+  if (change.target.sectionKey !== "info") return info;
   return { ...info, [change.target.fieldKey]: change.after };
 }
 
@@ -339,9 +403,9 @@ export function reorderSection(sections: Section, sectionKey: string): Section {
   const items = sections[sectionKey];
   if (!Array.isArray(items) || items.length < 2) return sections;
   const score = (it: Record<string, unknown>) => {
-    const text = ['summary', 'description']
-      .map((k) => (typeof it[k] === 'string' ? (it[k] as string) : ''))
-      .join(' ');
+    const text = ["summary", "description"]
+      .map((k) => (typeof it[k] === "string" ? (it[k] as string) : ""))
+      .join(" ");
     const quantified = /\d|%|％/.test(text) ? 1000 : 0;
     return quantified + stripHtml(text).length;
   };
