@@ -1,2 +1,8 @@
 npm run lint
-npm run build
+# 构建产物写进 .next-verify，不用默认的 .next。
+#
+# 开着 `pnpm dev` 时提交，dev server 和这次校验构建会同时往 apps/web/.next 里写，
+# 于是 "Collecting page data" 阶段随机报 `Cannot find module './1732.js'` 或
+# `Cannot find module for page: /_document` —— 看着像 prerender flake，其实是两个
+# 进程抢一个目录。换个目录就没有交集了。
+NEXT_DIST_DIR=.next-verify npm run build
