@@ -1,13 +1,11 @@
 /**
  * Does a custom section actually reach the page?
  *
- * The bug this guards against is not a crash — it is silence. A section key no
- * template declares used to render nowhere at all, and item `customFields`
- * were dropped by any fieldMap that did not name them. Both survived every
- * layer above the renderer, so nothing failed; the content simply was not
- * there. That is only catchable by rendering and looking.
+ * This guards both sides of the custom-section contract: an undeclared section
+ * must still reach every template/export, and optional item fields must remain
+ * visible when present without affecting built-in sections.
  *
- * Run: node scripts/verify-custom-sections.mjs
+ * Run: pnpm verify:sections
  */
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -20,9 +18,11 @@ import { MagicResumeRenderer } from '../../../packages/resume-templates/src/rend
 import { MagicResumePdfDocument } from '../../../packages/resume-templates/src/pdf/MagicResumePdfDocument';
 
 const CUSTOM_HEADING = '个人优势';
-const ITEM_NAME = '综合能力';
+const LEGACY_ITEM_NAME = '综合能力';
 const CUSTOM_FIELD_NAME = '获奖等级';
 const CUSTOM_FIELD_VALUE = '国赛三等奖';
+const CUSTOM_DATE = '2024.06';
+const DESCRIPTION_TEXT = '熟练使用 Claude Code、Cursor、Codex';
 const SKILL_NAME = 'TypeScript';
 const LANGUAGE_NAME = '英语';
 
@@ -53,7 +53,8 @@ const resume = {
       {
         id: 'ps1',
         visible: true,
-        name: ITEM_NAME,
+        name: LEGACY_ITEM_NAME,
+        date: CUSTOM_DATE,
         summary: '<ul><li>熟练使用 Claude Code、Cursor、Codex</li><li>英语 CET-4、CET-6</li></ul>',
         customFields: [
           { id: 'cf1', name: CUSTOM_FIELD_NAME, value: CUSTOM_FIELD_VALUE },
@@ -100,9 +101,9 @@ async function main() {
 
     const problems = [];
     if (!text.includes(CUSTOM_HEADING)) problems.push('缺标题');
-    if (!text.includes(ITEM_NAME)) problems.push('缺条目');
-    if (!text.includes(CUSTOM_FIELD_NAME)) problems.push('缺自定义字段名');
-    if (!text.includes(CUSTOM_FIELD_VALUE)) problems.push('缺自定义字段值');
+    if (!text.includes(LEGACY_ITEM_NAME)) problems.push('缺自定义条目标题');
+    if (!text.includes(CUSTOM_DATE)) problems.push('缺自定义条目时间');
+    if (!text.includes(CUSTOM_FIELD_NAME) || !text.includes(CUSTOM_FIELD_VALUE)) problems.push('缺自定义字段');
     // The section it always had must not have been disturbed.
     if (!text.includes('某公司')) problems.push('内置段落丢失');
     // A sidebar-rendered built-in used to be synthesised a second time into the
@@ -160,7 +161,9 @@ async function main() {
   pdfText = pdfText.replace(/\s/g, '');
 
   check('heading is in the export', pdfText.includes(CUSTOM_HEADING));
-  check('item is in the export', pdfText.includes(ITEM_NAME));
+  check('description is in the export', pdfText.includes(DESCRIPTION_TEXT.replace(/\s/g, '')));
+  check('item title is in the export', pdfText.includes(LEGACY_ITEM_NAME));
+  check('item date is in the export', pdfText.includes(CUSTOM_DATE));
   check(
     'custom fields are in the export',
     pdfText.includes(CUSTOM_FIELD_NAME) && pdfText.includes(CUSTOM_FIELD_VALUE),

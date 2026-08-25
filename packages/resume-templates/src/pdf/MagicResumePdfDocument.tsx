@@ -778,16 +778,35 @@ const ListSectionBlock = ({ component, items, context }: {
       <View style={{ gap: 6 }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
+          const sectionKey = component.dataBinding.startsWith('sections.')
+            ? component.dataBinding.slice('sections.'.length)
+            : '';
+          const inlineItemFields = sectionKey === 'skills' || sectionKey === 'languages';
+          const itemName = getFieldValue(record, fields.itemName);
+          const itemDetail = getFieldValue(record, fields.itemDetail);
+          const itemDate = getFieldValue(record, fields.date);
           return (
             <View key={item.id || index} wrap={false}>
-              <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{getFieldValue(record, fields.itemName)}</Text>
-              <Text style={{ color: context.colors.text, fontSize: bodyFontSize }}>{getFieldValue(record, fields.itemDetail)}</Text>
-              <DateText
-                value={getFieldValue(record, fields.date)}
-                color={context.colors.textSecondary}
-                fontFamily={dateFontFamily}
-                fontSize={bodyFontSize}
-              />
+              {inlineItemFields ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: 8, padding: 0, margin: 0 }}>
+                  {itemName ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{itemName}</Text> : null}
+                  {itemDetail ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize }}>{itemDetail}</Text> : null}
+                </View>
+              ) : (
+                <>
+                  {itemName ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{itemName}</Text> : null}
+                  {itemDetail ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize }}>{itemDetail}</Text> : null}
+                  {itemDate ? <DateText value={itemDate} color={context.colors.textSecondary} fontFamily={dateFontFamily} fontSize={bodyFontSize} /> : null}
+                </>
+              )}
+              {inlineItemFields ? (
+                <DateText
+                  value={itemDate}
+                  color={context.colors.textSecondary}
+                  fontFamily={dateFontFamily}
+                  fontSize={bodyFontSize}
+                />
+              ) : null}
               <ItemCustomFields item={item} context={context} fontSize={bodyFontSize} />
               <Description
                 value={getFieldValue(record, fields.summary)}
