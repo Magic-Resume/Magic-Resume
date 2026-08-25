@@ -7,6 +7,17 @@ interface Item {
   [key: string]: unknown;
 }
 
+const INLINE_ITEM_ROW_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'row',
+  flexWrap: 'nowrap',
+  alignItems: 'center',
+  columnGap: '1rem',
+  padding: 0,
+  margin: 0,
+  whiteSpace: 'nowrap',
+};
+
 interface Props {
   title: string;
   items: Item[];
@@ -56,36 +67,42 @@ export const ListSection = React.memo(function ListSection({ title, items, field
         {items.map((item, idx) => {
           const summary = getFieldEntry(item, fieldMap.summary);
           const itemName = getFieldEntry(item, fieldMap.itemName);
+          const itemDetail = getFieldValue(item, fieldMap.itemDetail);
+          const itemDate = getFieldValue(item, fieldMap.date);
           const itemId = item.id != null ? String(item.id) : null;
+          const inlineItemFields = sectionKey === 'skills' || sectionKey === 'languages';
+          const renderedItemName = itemName && sectionKey && itemId ? (
+            <Editable
+              target={{
+                sectionKey,
+                itemId,
+                fieldKey: itemName.key,
+                kind: 'text',
+                label: `${title} · 第 ${idx + 1} 条`,
+              }}
+              text={itemName.value}
+            />
+          ) : (
+            itemName?.value
+          );
+          const itemContent = inlineItemFields ? (
+            <div style={INLINE_ITEM_ROW_STYLE}>
+              {itemName && <div className="font-bold">{renderedItemName}</div>}
+              {itemDetail && <span>{itemDetail}</span>}
+            </div>
+          ) : (
+            <>
+              {itemName && <div className="font-bold">{renderedItemName}</div>}
+              {itemDetail && <div>{itemDetail}</div>}
+            </>
+          );
           return (
             <li className="space-y-2" key={itemId || idx}>
               <div>
-                {/* The item title is the only translatable/editable text for
-                    skills / languages / certificates — make it an editable anchor
-                    so AI batch changes (e.g. translation) can diff it in place.
-                    Falls back to plain text when the canvas isn't enabled. */}
-                <div className="font-bold">
-                  {itemName && sectionKey && itemId ? (
-                    <Editable
-                      target={{
-                        sectionKey,
-                        itemId,
-                        fieldKey: itemName.key,
-                        kind: 'text',
-                        label: `${title} · 第 ${idx + 1} 条`,
-                      }}
-                      text={itemName.value}
-                    />
-                  ) : (
-                    getFieldValue(item, fieldMap.itemName)
-                  )}
-                </div>
-                {getFieldValue(item, fieldMap.itemDetail) && (
-                  <div>{getFieldValue(item, fieldMap.itemDetail)}</div>
-                )}
-                {getFieldValue(item, fieldMap.date) && (
-                  <div>{getFieldValue(item, fieldMap.date)}</div>
-                )}
+                {/* Item names stay editable in the AI canvas; empty optional
+                    fields simply leave no placeholder line behind. */}
+                {itemContent}
+                {itemDate && <div>{itemDate}</div>}
                 {/* Fields the user added by hand. Rendered explicitly, not
                     through the fieldMap: `getFieldValue` drops any key a
                     fieldMap does not declare, so a field somebody typed would

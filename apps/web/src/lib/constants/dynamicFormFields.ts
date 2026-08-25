@@ -29,7 +29,7 @@ const experienceFields: FieldConfig[] = [
 // ];
 
 const skillsFields: FieldConfig[] = [
-    { key: 'name', labelKey: 'dynamicForm.fields.skills.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.skills.name.placeholder', required: true },
+    { key: 'name', labelKey: 'dynamicForm.fields.skills.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.skills.name.placeholder' },
     { key: 'level', labelKey: 'dynamicForm.fields.skills.level.label', type: 'input', placeholderKey: 'dynamicForm.fields.skills.level.placeholder' },
 ];
 
@@ -41,12 +41,12 @@ const projectsFields: FieldConfig[] = [
 ];
 
 const languagesFields: FieldConfig[] = [
-    { key: 'language', labelKey: 'dynamicForm.fields.languages.language.label', type: 'input', placeholderKey: 'dynamicForm.fields.languages.language.placeholder', required: true },
+    { key: 'language', labelKey: 'dynamicForm.fields.languages.language.label', type: 'input', placeholderKey: 'dynamicForm.fields.languages.language.placeholder' },
     { key: 'level', labelKey: 'dynamicForm.fields.languages.level.label', type: 'input', placeholderKey: 'dynamicForm.fields.languages.level.placeholder' },
 ];
 
 const certificatesFields: FieldConfig[] = [
-    { key: 'name', labelKey: 'dynamicForm.fields.certificates.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.certificates.name.placeholder', required: true },
+    { key: 'name', labelKey: 'dynamicForm.fields.certificates.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.certificates.name.placeholder' },
     { key: 'issuer', labelKey: 'dynamicForm.fields.certificates.issuer.label', type: 'input', placeholderKey: 'dynamicForm.fields.certificates.issuer.placeholder' },
     { key: 'date', labelKey: 'dynamicForm.fields.certificates.date.label', type: 'input', placeholderKey: 'dynamicForm.fields.certificates.date.placeholder' },
 ];
@@ -55,12 +55,12 @@ const certificatesFields: FieldConfig[] = [
  * Fields for a section the app does not know about — one the resume brought
  * with it, or one the user created.
  *
- * Kept to the two that mean the same thing in any section: a heading and a
- * date. Everything else a custom section wants goes in the rich-text box
- * (bound to `summary` for every section) or in the item's own custom fields.
+ * Custom sections keep the flexible item shape from the original form, but
+ * every field is optional. The section label is the section heading; the item
+ * title is useful context when present, not an identity or validation key.
  */
 const customSectionFields: FieldConfig[] = [
-    { key: 'name', labelKey: 'dynamicForm.fields.custom.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.custom.name.placeholder', required: true },
+    { key: 'name', labelKey: 'dynamicForm.fields.custom.name.label', type: 'input', placeholderKey: 'dynamicForm.fields.custom.name.placeholder' },
     { key: 'date', labelKey: 'dynamicForm.fields.custom.date.label', type: 'input', placeholderKey: 'dynamicForm.fields.custom.date.placeholder' },
 ];
 
