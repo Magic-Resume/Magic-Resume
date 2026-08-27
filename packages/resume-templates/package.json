@@ -9,6 +9,18 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    },
+    "./dom": {
+      "types": "./dist/primitives/dom/renderNode.d.ts",
+      "default": "./dist/primitives/dom/renderNode.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
     "./TemplateCustomizer": {
       "types": "./dist/TemplateCustomizer/index.d.ts",
       "default": "./dist/TemplateCustomizer/index.js"
@@ -59,21 +71,25 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
-    "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run lint",
-    "test:pdf": "npm run build && tsx scripts/render-pdf-smoke.mjs"
+    "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "test": "npm run lint && npm run freeze && npm run test:unit",
+    "test:pdf": "npm run build && tsx scripts/render-pdf-smoke.mjs",
+    "test:unit": "tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+    "freeze": "node scripts/check-legacy-freeze.mjs",
+    "freeze:update": "node scripts/check-legacy-freeze.mjs --update"
   },
   "dependencies": {
+    "@magic-resume/icons": "workspace:*",
     "@magic-resume/resume-schema": "workspace:*",
     "@react-pdf/renderer": "4.5.1",
     "dompurify": "^3.2.6",
     "lodash.get": "^4.4.2",
     "lucide": "0.513.0",
+    "lucide-react": "^0.513.0",
     "node-html-parser": "8.0.3",
     "react-pdf-html": "2.1.5"
   },
   "peerDependencies": {
-    "lucide-react": "^0.513.0",
     "next": ">=15",
     "react": ">=19",
     "react-dom": ">=19",
@@ -83,8 +99,10 @@
     "@react-pdf/types": "2.11.1",
     "@types/dompurify": "^3.0.5",
     "@types/lodash.get": "^4.4.9",
+    "@types/node": "^20.19.41",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19",
+    "ajv": "^8.20.0",
     "tsx": "4.21.0",
     "typescript": "^5"
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { CornerDownLeft, MessageCircleQuestion } from 'lucide-react';
+import { CornerDownLeft, MessageCircleQuestion } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@magic-resume/utils';
 import { WidgetItem, WidgetShell } from '../motion';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { X, MessageSquare, Send } from 'lucide-react';
+import { X, MessageSquare, Send } from '@magic-resume/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 import { Comment } from '../_types';

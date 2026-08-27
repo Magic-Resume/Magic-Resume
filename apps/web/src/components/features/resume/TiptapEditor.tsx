@@ -30,7 +30,7 @@ import {
   Check,
   ExternalLink,
   Unlink,
-} from 'lucide-react';
+} from '@magic-resume/icons';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';

@@ -1,9 +1,10 @@
 import React from 'react';
 import { InfoType } from '../types/resume';
-import { MapPin, Phone, Mail, Globe } from 'lucide-react';
+import { Globe, Mail, MapPin, Phone } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { Editable } from '../renderer/EditableCanvas';
 import { safeHref } from './utils';
+import { sectionIconByName } from '../sectionIcons';
 
 interface Props {
   data: InfoType;
@@ -17,11 +18,11 @@ interface Props {
   showCustomFields?: boolean;
 }
 
-const LucideIcons = {
-  location: <MapPin className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />,
-  phone: <Phone className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />,
-  email: <Mail className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />,
-  website: <Globe className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />
+const ContactIcons = {
+  location: <MapPin className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+  phone: <Phone className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+  email: <Mail className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+  website: <Globe className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />
 };
 
 export const Header = React.memo(function Header({
@@ -33,7 +34,9 @@ export const Header = React.memo(function Header({
   avatarHeight = 40,
   avatarRounded = true,
   contactStyle = 'icon',
-  showCustomFields = false,
+  // 自定义基本信息是 Resume 的通用数据，不应只在两个示例模板里可见。
+  // 模板仍可显式传 false，给极简版式保留收起的选择。
+  showCustomFields = true,
 }: Props) {
   const { t } = useTranslation();
   const avatarClassName = avatarRounded
@@ -74,7 +77,7 @@ export const Header = React.memo(function Header({
   if (info.phoneNumber) {
     contactItems.push({
       key: 'phone',
-      icon: LucideIcons.phone,
+      icon: ContactIcons.phone,
       label: t('basicForm.fields.phoneNumber'),
       content: info.phoneNumber,
       href: `tel:${info.phoneNumber}`,
@@ -83,7 +86,7 @@ export const Header = React.memo(function Header({
   if (info.email) {
     contactItems.push({
       key: 'email',
-      icon: LucideIcons.email,
+      icon: ContactIcons.email,
       label: t('basicForm.fields.email'),
       content: info.email,
       href: `mailto:${info.email}`,
@@ -92,7 +95,7 @@ export const Header = React.memo(function Header({
   if (info.address) {
     contactItems.push({
       key: 'address',
-      icon: LucideIcons.location,
+      icon: ContactIcons.location,
       label: t('basicForm.fields.address'),
       content: info.address,
     });
@@ -101,7 +104,7 @@ export const Header = React.memo(function Header({
     const websiteHref = safeHref(info.website);
     contactItems.push({
       key: 'website',
-      icon: LucideIcons.website,
+      icon: ContactIcons.website,
       label: t('basicForm.fields.website'),
       content: info.website,
       href: websiteHref ?? undefined,
@@ -114,12 +117,19 @@ export const Header = React.memo(function Header({
     .map((field, index) => {
       const value = field.value.trim();
       const href = safeHref(value) ?? undefined;
+      const Icon = sectionIconByName(field.icon);
       return {
         key: field.id || `custom-${index}`,
+        custom: true as const,
         label: field.name.trim(),
         content: value,
         href,
         external: Boolean(href),
+        ...(Icon
+          ? {
+              icon: <Icon className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+            }
+          : {}),
       };
     });
   return (
@@ -158,6 +168,9 @@ export const Header = React.memo(function Header({
           >
             {[...contactItems, ...customFieldItems].map(item => (
               <div key={item.key} className="truncate" style={{ color: 'var(--color-text)' }}>
+                {'custom' in item && item.icon ? (
+                  <span className="mr-1 inline-flex align-middle">{item.icon}</span>
+                ) : null}
                 <span style={{ color: 'var(--color-text-secondary)' }}>{item.label}：</span>
                 {item.href ? (
                   <a

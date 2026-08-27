@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 const Logo = () => (

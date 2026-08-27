@@ -1,6 +1,11 @@
 import {
   Award,
+  Certificate,
   Briefcase,
+  Github,
+  Mail,
+  MapPin,
+  Phone,
   Code2,
   FileText,
   FolderOpen,
@@ -16,7 +21,7 @@ import {
   Trophy,
   User,
   Wrench,
-} from 'lucide-react';
+} from '@magic-resume/icons';
 import React from 'react';
 
 export type SectionIconComponent = React.ComponentType<{
@@ -47,6 +52,7 @@ export const SECTION_ICONS: Record<string, SectionIconComponent> = {
   wrench: Wrench,
   languages: Languages,
   award: Award,
+  certificate: Certificate,
   trophy: Trophy,
   user: User,
   globe: Globe,
@@ -58,6 +64,12 @@ export const SECTION_ICONS: Record<string, SectionIconComponent> = {
   sparkles: Sparkles,
   heart: Heart,
   file: FileText,
+  // 联系方式行。与 `primitives/icons.ts` 的 PDF 侧一一对应——
+  // **两边必须同名**，有测试钉住；只加一边的话，那个图标在屏幕上有、导出就没了。
+  phone: Phone,
+  mail: Mail,
+  github: Github,
+  location: MapPin,
 };
 
 /** Stable order for the picker — grouped by what they tend to mean. */

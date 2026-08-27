@@ -1,8 +1,13 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import type { WidgetActionResult, WidgetInstance, WidgetRegistry } from '../contract';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import type {
+  WidgetActionResult,
+  WidgetInstance,
+  WidgetRegistry,
+  WidgetRenderContext,
+} from "../contract";
 
 /**
  * Dispatches a widget message to its registered component. An unknown kind, or
@@ -16,10 +21,12 @@ export default function WidgetHost({
   registry,
   instance,
   onAction,
+  context,
 }: {
   registry: WidgetRegistry;
   instance: WidgetInstance;
   onAction: (widgetId: string, result: WidgetActionResult) => void;
+  context?: WidgetRenderContext;
 }) {
   const { t } = useTranslation();
   const descriptor = registry[instance.kind];
@@ -30,7 +37,9 @@ export default function WidgetHost({
   if (!descriptor || !normalized) {
     return (
       <div className="text-[11px] text-muted">
-        <span className="truncate">{t('aiLab.widgets.unsupported', { kind: instance.kind })}</span>
+        <span className="truncate">
+          {t("aiLab.widgets.unsupported", { kind: instance.kind })}
+        </span>
       </div>
     );
   }
@@ -39,6 +48,7 @@ export default function WidgetHost({
   return (
     <Component
       instance={{ ...instance, props: normalized }}
+      context={context}
       onAction={(result) => onAction(instance.widgetId, result)}
     />
   );

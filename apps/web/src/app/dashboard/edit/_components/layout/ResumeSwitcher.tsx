@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { useResumeStore } from '@/store/useResumeStore';
 

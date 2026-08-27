@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@magic-resume/utils';
 import { DURATION, EASE_ENTER } from '../motion';

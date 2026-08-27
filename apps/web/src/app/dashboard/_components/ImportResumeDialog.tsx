@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { MODEL_IMAGE_SUPPORT_MAP } from '@/lib/constants/modals';
-import { Loader2, X, FileText, FileJson, AlertTriangle } from 'lucide-react';
+import { Loader2, X, FileText, FileJson, AlertTriangle } from '@magic-resume/icons';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -15,7 +15,7 @@ import { useResumeStore } from '@/store/useResumeStore';
 import { useSettingStore } from '@/store/useSettingStore';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
 import { toast } from 'sonner';
-import { FaFileUpload } from 'react-icons/fa';
+import { FaFileUpload } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
@@ -415,7 +415,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                         >
                           {t('importDialog.errors.noApiKeyLink', { defaultValue: '设置' })}
                         </button>
-                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试。' })}
+                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试' })}
                       </span>
                     </div>
                   </motion.div>

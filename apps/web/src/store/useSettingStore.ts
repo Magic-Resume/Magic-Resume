@@ -77,8 +77,8 @@ const defaultSettings: SettingsData = {
   apiKey: '',
   baseUrl: '',
   model: '',
-  // 8192 (was 1024): long resume optimize / translate / create outputs were being
-  // silently truncated at 1024 tokens (CC7).
+  // 16k is the normal generation budget; the 64k hard ceiling stays in the
+  // provider field and backend safety cap for exceptional full-document runs.
   maxTokens: DEFAULT_MAX_TOKENS,
   // Cloud-sync-first: default on in cloud mode (opt-out — users can disable it in
   // settings). Self-hosted has no backend, so it must stay off. Existing users keep

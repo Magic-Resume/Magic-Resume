@@ -37,6 +37,7 @@ related: [CONVENTIONS.md]
 | [Magic-Resume Analytics Frontend Boundary](specs/analytics-sdk/design.md) | Draft | 2026-07-04 | Frontend-only analytics event catalog, privacy rules, and SDK integration boundary for Magic-Resume. |
 | [Magic-Resume Frontend Backend Integration](specs/frontend-v2-backend-integration/design.md) | Draft | 2026-07-04 | Frontend-only integration boundary for API routing, auth forwarding, streaming events, and response normalization. |
 | [Stage-First Editor Relayout](specs/editor-relayout/design.md) | Draft | 2026-07-03 | Design brief for restructuring the editor around a stage-first workflow. |
+| [用 Beautiful UI 重写 GenUI 交互层](specs/genui-beautiful-ui/design.md) | Draft | 2026-08-12 | 引入 beautifului.dev 的 19 个 AI 原生交互组件：一层设计令牌别名接入，组件从自演示改成数据驱动，替换现有任务/芯片/审批/加载四件并扩充对话与输入交互面。 |
 
 ## Reference
 

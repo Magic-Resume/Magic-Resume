@@ -28,6 +28,10 @@
     "./widgets": {
       "types": "./dist/widgets/index.d.ts",
       "default": "./dist/widgets/index.js"
+    },
+    "./beautiful": {
+      "types": "./dist/beautiful/index.d.ts",
+      "default": "./dist/beautiful/index.js"
     }
   },
   "files": [
@@ -40,11 +44,11 @@
     "test": "npm run lint"
   },
   "dependencies": {
+    "@magic-resume/icons": "workspace:*",
     "@magic-resume/utils": "workspace:*"
   },
   "peerDependencies": {
     "framer-motion": "^12.17.0",
-    "lucide-react": "^0.513.0",
     "react": ">=19",
     "react-dom": ">=19",
     "react-i18next": "^15.5.2"

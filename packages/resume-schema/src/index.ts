@@ -28,6 +28,9 @@ export const customInfoFieldSchema = z.object({
   id: z.string(),
   name: z.string(),
   value: z.string(),
+  // Persist the registry name, never a React component. The renderer still
+  // validates it against its own safe icon registry before drawing.
+  icon: z.string().optional(),
 });
 
 // Reject the URL schemes that make a rendered <a href> executable (defense in
@@ -80,6 +83,18 @@ export const resumeSchema = z.object({
   sectionOrder: z.array(sectionOrderItemSchema),
   template: templateSchema.catch('classic'),
   customTemplate: z.record(z.unknown()).optional(),
+  /**
+   * 整棵模板树。有它就**完全接管渲染**——不再走 `template` 指向的注册模板。
+   *
+   * 存在简历上而不是建一张模板表，是有意的：第一波要验证的是「复刻出来的版式能用」，
+   * 不是「模板能分享」。分享与画廊是独立的产品决定，留到以后。
+   *
+   * 形状不在这里约束（`z.unknown()`）：真正的校验在
+   * `@magic-resume/resume-templates` 的 `validateTemplate` + JSON Schema 里，
+   * 在这里再写一份 Zod 版就是第二份会漂的定义。渲染器拿到坏树会降级成不渲染，
+   * 不会崩——所以这里放行、那里把关是安全的分工。
+   */
+  templateOverride: z.unknown().optional(),
   themeColor: z.string(),
   typography: z.string(),
   isPublic: z.boolean().optional(),
@@ -111,6 +126,18 @@ export const updateTemplateInputSchema = resumeUpdateBaseSchema.extend({
   themeColor: z.string().optional(),
   typography: z.string().optional(),
   customTemplate: z.record(z.unknown()).optional(),
+  /**
+   * 整棵模板树。有它就**完全接管渲染**——不再走 `template` 指向的注册模板。
+   *
+   * 存在简历上而不是建一张模板表，是有意的：第一波要验证的是「复刻出来的版式能用」，
+   * 不是「模板能分享」。分享与画廊是独立的产品决定，留到以后。
+   *
+   * 形状不在这里约束（`z.unknown()`）：真正的校验在
+   * `@magic-resume/resume-templates` 的 `validateTemplate` + JSON Schema 里，
+   * 在这里再写一份 Zod 版就是第二份会漂的定义。渲染器拿到坏树会降级成不渲染，
+   * 不会崩——所以这里放行、那里把关是安全的分工。
+   */
+  templateOverride: z.unknown().optional(),
 });
 
 const defaultSectionKeys = [

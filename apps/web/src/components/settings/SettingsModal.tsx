@@ -2,12 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Cloud } from "lucide-react";
+import { Cloud } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ModalShell } from "@/components/ui/ModalShell";
 import { ModelConfigFields } from "@/components/llm/ModelConfigFields";
 import { McpAccessSection } from "@/app/dashboard/settings/_components/McpAccessSection";
+import { MemorySection } from "@/app/dashboard/settings/_components/MemorySection";
+import { JobProfileSection } from "@/app/dashboard/settings/_components/JobProfileSection";
+import { NotificationPreferencesSection } from "@/app/dashboard/settings/_components/NotificationPreferencesSection";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -36,7 +39,9 @@ const CATEGORIES: Category[] = [
   { key: "general", labelKey: "account.settings.nav.general" },
   { key: "model", labelKey: "account.settings.nav.model" },
   { key: "cloudSync", labelKey: "account.settings.nav.cloudSync", cloudOnly: true },
+  { key: "memory", labelKey: "account.settings.nav.memory", cloudOnly: true },
   { key: "mcp", labelKey: "account.settings.nav.mcp", cloudOnly: true },
+  { key: "notifications", labelKey: "account.settings.nav.notifications", cloudOnly: true },
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -204,7 +209,9 @@ export function SettingsModal() {
                           onChange={(code) => setPreferredLanguage(code)}
                           options={[
                             { value: "en", label: "English" },
-                            { value: "zh", label: "中文" },
+                            // 语言名用它自己的语言写，这是语言选择器的通例——把「中文」
+                            // 翻成 "Chinese" 反而让找不到中文的人更找不到。
+                            { value: "zh", label: "中文" }, // i18n-ignore
                           ]}
                         />
                       </SettingRow>
@@ -246,11 +253,33 @@ export function SettingsModal() {
                   </Pane>
                 )}
 
+                {active === "memory" && isCloudMode && (
+                  <Pane
+                    title={t("account.settings.nav.memory")}
+                    description={t("settings.memory.description")}
+                  >
+                    {/* 两层：上面是用户亲口说的那份画像，下面是 AI 推断出来的条目。
+                        相邻而分栏本身就说清了差别，分成两页反而要用文案再解释一遍
+                        （brief §11a）。 */}
+                    <JobProfileSection />
+                    <MemorySection />
+                  </Pane>
+                )}
+
                 {active === "mcp" && isCloudMode && (
                   <Pane title={t("account.settings.nav.mcp")} description={t("settings.mcp.description")}>
                     <div className="mt-6 [&_section]:mx-0 [&_section]:max-w-none">
                       <McpAccessSection showHeader={false} />
                     </div>
+                  </Pane>
+                )}
+
+                {active === "notifications" && isCloudMode && (
+                  <Pane
+                    title={t("account.settings.nav.notifications")}
+                    description={t("settings.notificationPreferences.description")}
+                  >
+                    <NotificationPreferencesSection />
                   </Pane>
                 )}
               </motion.div>

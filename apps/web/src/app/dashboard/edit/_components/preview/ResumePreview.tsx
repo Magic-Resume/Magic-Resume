@@ -8,6 +8,7 @@ import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/Mag
 import { getMagicTemplateById, getDefaultMagicTemplate } from '@magic-resume/resume-templates/config/magic-templates';
 import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
 
+import { TemplateErrorBoundary } from '@/components/shared/TemplateErrorBoundary';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { mergeTemplateConfig } from '@/lib/utils/templateUtils';
 import { useTranslation } from 'react-i18next';
@@ -102,7 +103,13 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
       </div>
     );
   }
-  return <MagicResumeRenderer template={template} data={resumeData} locale={i18n.resolvedLanguage || i18n.language} />;
+  // 模板崩了不该让整个编辑器白屏——用户刚打的字还在 store 里，只是看不见了。
+  // resetKey 用模板 id：换个模板应当重试，而不是一直卡在错误态。
+  return (
+    <TemplateErrorBoundary resetKey={template.id}>
+      <MagicResumeRenderer template={template} data={resumeData} locale={i18n.resolvedLanguage || i18n.language} />
+    </TemplateErrorBoundary>
+  );
 }
 
 // 导出 memo 化的预览组件，避开非核心数据导致的重渲染。

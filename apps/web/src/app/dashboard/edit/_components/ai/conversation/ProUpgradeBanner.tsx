@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { useEntitlement } from '@/lib/extensions/billing-client';
 import { useAccountUiStore } from '@/store/useAccountUiStore';

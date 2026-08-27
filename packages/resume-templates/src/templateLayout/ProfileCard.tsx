@@ -1,6 +1,6 @@
 import React from 'react';
 import { InfoType } from '../types/resume';
-import { MapPin, Phone, Mail, Globe } from 'lucide-react';
+import { Globe, Mail, MapPin, Phone } from '@magic-resume/icons';
 
 interface Props {
   data: InfoType;
@@ -10,11 +10,11 @@ interface Props {
   };
 }
 
-const LucideIcons = {
-  location: <MapPin className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />,
-  phone: <Phone className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />,
-  email: <Mail className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />,
-  website: <Globe className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)', strokeWidth: 2.5 }} />
+const ContactIcons = {
+  location: <MapPin className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+  phone: <Phone className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+  email: <Mail className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />,
+  website: <Globe className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />
 };
 
 export const ProfileCard = React.memo(function ProfileCard({ data: info, style, position }: Props) {
@@ -111,7 +111,7 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
           {info.email && (
             <div className="flex items-baseline gap-2">
               <div className="flex items-center justify-center w-4 h-4">
-                <span className="text-sm leading-none">{LucideIcons.email}</span>
+                <span className="text-sm leading-none">{ContactIcons.email}</span>
               </div>
               <span className="leading-4">{info.email}</span>
             </div>
@@ -119,7 +119,7 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
           {info.phoneNumber && (
             <div className="flex items-baseline gap-2">
               <div className="flex items-center justify-center w-4 h-4">
-                <span className="text-sm leading-none">{LucideIcons.phone}</span>
+                <span className="text-sm leading-none">{ContactIcons.phone}</span>
               </div>
               <span className="leading-4">{info.phoneNumber}</span>
             </div>
@@ -127,7 +127,7 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
           {info.address && (
             <div className="flex items-baseline gap-2">
               <div className="flex items-center justify-center w-4 h-4">
-                <span className="text-sm leading-none">{LucideIcons.location}</span>
+                <span className="text-sm leading-none">{ContactIcons.location}</span>
               </div>
               <span className="leading-4">{info.address}</span>
             </div>
@@ -135,7 +135,7 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
           {info.website && (
             <div className="flex items-baseline gap-2">
               <div className="flex items-center justify-center w-4 h-4">
-                <span className="text-sm leading-none">{LucideIcons.website}</span>
+                <span className="text-sm leading-none">{ContactIcons.website}</span>
               </div>
               <span className="leading-4">{info.website}</span>
             </div>

@@ -20,11 +20,11 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FaPlus, FaGripVertical } from 'react-icons/fa';
+import { FaPlus, FaGripVertical } from '@magic-resume/icons';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { DropMenu } from '@/components/ui/drop-menu';
-import { DotsHorizontalIcon, Pencil2Icon, CopyIcon, TrashIcon } from '@radix-ui/react-icons';
+import { DotsHorizontalIcon, Pencil2Icon, CopyIcon, TrashIcon } from '@magic-resume/icons';
 import { UniqueIdentifier } from '@dnd-kit/core';
 import { EditorComponents } from '@/lib/utils/componentOptimization';
 
@@ -32,7 +32,7 @@ const TiptapEditor = EditorComponents.TiptapEditor;
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from '@magic-resume/icons';
 import { ModalShell } from '@/components/ui/ModalShell';
 
 import { useResumeStore } from '@/store/useResumeStore';
@@ -102,8 +102,8 @@ function SortableItem<T extends BaseItem>({ id, item, index, handleEdit, handleD
 
   return (
     <div ref={setNodeRef} style={style} className={cn("group relative mb-2 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-2.5 transition-colors duration-150 hover:border-white/20", isDragging ? 'opacity-50' : 'opacity-100', item.visible === false && "opacity-50")}>
-      <div {...attributes} {...listeners} className={cn("flex h-8 w-5 items-center justify-center text-neutral-600 transition-colors duration-150 hover:text-neutral-300", disabled ? "cursor-default" : "cursor-grab active:cursor-grabbing")}>
-        <FaGripVertical size={12} />
+      <div {...attributes} {...listeners} className={cn("flex h-8 w-5 items-center justify-center text-neutral-400 transition-colors duration-150 hover:text-neutral-100", disabled ? "cursor-default" : "cursor-grab active:cursor-grabbing")}>
+        <FaGripVertical size={14} />
       </div>
       <div className="min-w-0 grow">
         {itemRender ? itemRender(item) : (
@@ -403,4 +403,4 @@ export default function SectionListWithModal<T extends BaseItem>({
       </ModalShell>
     </div>
   );
-} 
+}

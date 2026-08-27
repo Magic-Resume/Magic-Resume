@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from '@magic-resume/icons';
 import { isCloudMode } from "@/lib/config/app";
 
 /**

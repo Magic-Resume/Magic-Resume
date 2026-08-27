@@ -13,7 +13,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { Plus, SquarePen, Trash2 } from 'lucide-react';
+import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
 import {
   DndContext,
   closestCenter,
@@ -28,6 +28,8 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
+import { fromThrown } from '@/lib/errors/normalize';
+import { presentAppError } from '@/lib/errors/present';
 import ResumeEditSkeleton from './layout/ResumeEditSkeleton';
 import TemplatePanel, { rightPanelWidth } from './templates/TemplatePanel';
 import EditorFormPanel from './layout/EditorFormPanel';
@@ -96,7 +98,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     // agent 是从云端库读简历的，先尽力把编辑器最新状态推上去（关了云同步则无操作）。
     try {
       await syncToCloud();
-    } catch {
+    } catch (err) {
+      // 这一次吞掉的后果不是「少存一次」，而是**agent 接下来读的是旧简历**：它会照着
+      // 过时内容提改动，用户看着自己刚写的段落被改回去。必须说出来。
+      presentAppError(fromThrown(err, 'local'), { surface: 'background' });
     }
     router.push(`/dashboard/edit/${id}/ai-lab`);
   };
@@ -246,6 +251,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       }
     } catch (err) {
       console.error('[Save] Manual save failed:', err);
+      // 用户按了保存按钮，然后什么都没发生——静默在这里就是 bug。
+      presentAppError(fromThrown(err, 'local'), { surface: 'inline' });
     } finally {
       setIsSaving(false);
       console.log('[Save] Manual save process ended, loading state released.');
@@ -459,7 +466,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                   <BasicForm
                     info={info!}
                     updateInfo={updateInfo}
-                    enableCustomFields={activeResume?.template === 'product-ops-focus'}
                   />
                 ) : (
                   <SectionListWithModal
@@ -515,7 +521,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
           onClose={() => setDeletingSection(null)}
           title={t('customSection.deleteTitle', { defaultValue: '删除模块' })}
           description={t('customSection.deleteHint', {
-            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销。',
+            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销',
             name: deletingSection?.label ?? '',
           })}
           confirmText={t('common.delete', { defaultValue: '删除' })}
@@ -566,7 +572,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         <div className="editor-enter-left">
           <EditorFormPanel
             renderSections={renderSections}
-            sectionOrder={(sectionOrder || []).map(s => ({ key: s.key, label: s.label }))}
+            // 原样传，**别再 `.map(s => ({ key, label }))` 重建一遍**——那样会把用户
+            // 选的 `icon` 抹掉，于是同一个 section 在表单里是他选的图标、在侧栏里是
+            // 一张通用文档纸。`normalizeResumeSectionOrder` 里踩过同一个坑。
+            sectionOrder={sectionOrder || []}
             activeSection={activeSection}
             collapsed={leftCollapsed}
             onToggleCollapse={toggleLeftPanel}

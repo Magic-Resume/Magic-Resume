@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles } from '@magic-resume/icons';
 import { cn } from '@/lib/utils';
 import { getProvider, resolveProviderIdFromModel } from '@/lib/constants/modals';
 import { ProviderMark } from '@/components/llm/ProviderMark';
@@ -17,7 +17,7 @@ import { ProviderMark } from '@/components/llm/ProviderMark';
  */
 export default function ModelMark({
   model,
-  /** 「自动」这类没有具体模型的态：系统替你挑，用中性的 sparkle 表达。 */
+  /** 「自动」这类没有具体模型的态：系统替你挑，用中性的 sparkle。 */
   generic,
   size = 28,
   className,

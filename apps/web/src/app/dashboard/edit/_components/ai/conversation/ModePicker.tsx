@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronUp } from 'lucide-react';
+import { Check, ChevronUp } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
@@ -14,8 +14,8 @@ import {
 } from './modes';
 
 /**
- * 模式胶囊。带当前模式的 accent 微染——它是控件行里唯一有颜色的东西，因为
- * 「AI 现在能不能动我的简历」是这一行里唯一有后果的选择。
+ * 模式控件只借当前模式的 accent 着色文字——「AI 现在能不能动我的简历」
+ * 是这一行里唯一有后果的选择，但不需要靠背景色抢占注意力。
  *
  * 颜色走内联 style 而不是 Tailwind 类：类名是动态拼不出来的（Tailwind 只扫静态
  * 字符串），而 color-mix + 一个 hex 变量就够。
@@ -57,11 +57,9 @@ export default function ModePicker({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[14px] transition-colors disabled:opacity-40 cursor-pointer"
+        className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full px-2 text-[14px] transition-colors hover:bg-white/[0.06] disabled:opacity-40 cursor-pointer"
         style={{
           color: `color-mix(in oklab, ${accent} 78%, var(--text-primary))`,
-          background: `linear-gradient(138deg, color-mix(in oklab, ${accent} 22%, transparent), color-mix(in oklab, ${accent} 9%, transparent))`,
-          borderColor: `color-mix(in oklab, ${accent} 32%, transparent)`,
         }}
       >
         <ActiveIcon size={14} className="shrink-0" />

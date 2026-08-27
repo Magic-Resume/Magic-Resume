@@ -3,9 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { Moon, Sun } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Moon, Sun } from '@magic-resume/icons';
 import { BrandMark } from "@/app/dashboard/_components/BrandMark";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { setPreferredLanguage } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 /**
  * 认证页外壳:单列居中、深色工作台(浅色为日光实验台),入场轻 stagger。
@@ -55,6 +58,7 @@ export function AuthShell({
         }}
       />
 
+      <LanguageToggle />
       <ThemeToggle />
 
       <motion.div
@@ -93,6 +97,60 @@ export function AuthShell({
         </motion.div>
       </motion.div>
     </main>
+  );
+}
+
+/**
+ * 语言切换。**两个语种就不该做成下拉**——菜单是为了藏起长列表，这里只有两项，
+ * 藏起来的代价是多一次点击和一次「里面有什么」的猜测。分段控件把两个选项和当前
+ * 状态一次说完。
+ *
+ * 摆在左上角，和右上角的主题开关对称：都是「这一页的设置」，不是登录流程的一步，
+ * 所以都留在卡片之外。
+ */
+function LanguageToggle() {
+  const { t, i18n } = useTranslation();
+  const reduce = useReducedMotion();
+  // 首屏 SSR 与客户端首渲染同为 zh（见 `src/i18n.ts` 的注释），偏好在水合后的
+  // effect 里才应用——所以这里直接读 `i18n.language` 不会造成 hydration mismatch。
+  const current = (i18n.language || "zh").toLowerCase().startsWith("zh") ? "zh" : "en";
+
+  return (
+    <div
+      role="group"
+      aria-label={t("auth.language")}
+      className="absolute left-5 top-5 inline-flex h-9 items-center rounded-lg border border-hairline bg-raised p-0.5"
+    >
+      {(["zh", "en"] as const).map((code) => {
+        const active = current === code;
+        return (
+          <button
+            key={code}
+            type="button"
+            onClick={() => setPreferredLanguage(code)}
+            aria-pressed={active}
+            className={cn(
+              "relative h-8 rounded-[7px] px-2.5 text-[12.5px] font-medium transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-sky/40",
+              active
+                ? "text-[color:var(--text-primary)]"
+                : "text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]",
+            )}
+          >
+            {active && (
+              // 共享 `layoutId`：滑块在两个语种之间**滑过去**，而不是在这边消失、
+              // 那边出现——切换才读得出是同一个开关移动了位置。
+              <motion.span
+                layoutId="auth-language-pill"
+                transition={{ duration: reduce ? 0 : 0.2, ease: [0.22, 0.61, 0.25, 1] }}
+                className="absolute inset-0 rounded-[7px] bg-sunk"
+              />
+            )}
+            <span className="relative">{code === "zh" ? "中文" : "EN"}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

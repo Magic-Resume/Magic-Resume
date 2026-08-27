@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Globe, Link, Copy, Check, Lock } from "lucide-react";
+import { X, Globe, Link, Copy, Check, Lock } from '@magic-resume/icons';
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
@@ -100,7 +100,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div>
                   <h2 className="text-[15px] font-semibold tracking-tight text-white">{t('modals.share.title')}</h2>
-                  <p className="mt-0.5 text-[13px] text-neutral-500">{t('modals.share.subtitle')}</p>
                 </div>
               </div>
               <button

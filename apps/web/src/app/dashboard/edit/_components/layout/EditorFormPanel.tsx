@@ -7,7 +7,14 @@ import OutlineRail, { LEFT_PANEL_WIDTH } from "./OutlineRail";
 
 type EditorFormPanelProps = {
   renderSections: () => React.ReactNode;
-  sectionOrder?: { key: string; label: string }[];
+  /**
+   * `icon` 不能省。上一次修这个 bug 只补到了 `OutlineRail` 的 props，而 `sectionOrder`
+   * 是**经这里透传**下去的——TS 的对象字面量类型会把多出来的属性直接丢掉，于是自定义
+   * section 在表单里是用户选的图标、在侧栏里是一张通用文档纸，一模一样的症状又回来了。
+   *
+   * 透传层写窄类型就是这个后果：它不报错，只是安静地少带一个字段。
+   */
+  sectionOrder?: { key: string; label: string; icon?: string }[];
   activeSection?: string;
   collapsed?: boolean;
   onToggleCollapse?: () => void;

@@ -8,14 +8,14 @@ import {
   GraduationCap,
   FolderKanban,
   Zap,
-  Globe,
-  Award,
+  Certificate,
+  Languages,
   Contact,
-  PanelLeft,
-} from "lucide-react";
+} from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { sectionIconByName } from "@magic-resume/resume-templates";
 import { cn } from "@/lib/utils";
+import { MaskIcon } from "@/components/icons/MaskIcon";
 import AccountMenu from "@/components/shared/AccountMenu";
 
 export const LEFT_RAIL_WIDTH = 52;
@@ -34,8 +34,8 @@ const SECTION_META: Record<string, Meta> = {
   education: { icon: GraduationCap, labelKey: "sections.education" },
   projects: { icon: FolderKanban, labelKey: "sections.projects" },
   skills: { icon: Zap, labelKey: "sections.skills" },
-  languages: { icon: Globe, labelKey: "sections.languages" },
-  certificates: { icon: Award, labelKey: "sections.certificates" },
+  languages: { icon: Languages, labelKey: "sections.languages" },
+  certificates: { icon: Certificate, labelKey: "sections.certificates" },
   profiles: { icon: Contact, labelKey: "sections.profiles" },
 };
 
@@ -56,7 +56,12 @@ export function sectionMeta(key: string, iconName?: string): Meta {
 }
 
 type OutlineRailProps = {
-  sectionOrder: { key: string; label: string }[];
+  /**
+   * `icon` 不能省：它是用户在 `sectionOrder.icon` 里挑的那枚。这个 props 类型此前只
+   * 声明了 key/label，于是侧栏拿不到它、`sectionMeta` 退回 `FileText`——同一个自定义
+   * section 在表单里是用户选的图标，在侧栏里是一张通用文档纸。
+   */
+  sectionOrder: { key: string; label: string; icon?: string }[];
   activeSection: string;
   collapsed: boolean;
   onJump: (key: string) => void;
@@ -81,14 +86,14 @@ export default function OutlineRail({
         label={collapsed ? t("common.expand") : t("common.collapse")}
         onClick={onToggleCollapse}
       >
-        <PanelLeft size={18} />
+        <MaskIcon src="/marks/sidebar.svg" size={20} className="block" />
       </RailButton>
 
       <div className="my-1.5 h-px w-6 bg-white/[0.08]" />
 
       <div className="flex flex-1 flex-col items-center gap-1 overflow-y-auto scrollbar-hide">
-        {sectionOrder.map(({ key, label }) => {
-          const meta = sectionMeta(key);
+        {sectionOrder.map(({ key, label, icon: iconName }) => {
+          const meta = sectionMeta(key, iconName);
           const Icon = meta.icon;
           const name = meta.labelKey ? t(meta.labelKey) : label;
           return (

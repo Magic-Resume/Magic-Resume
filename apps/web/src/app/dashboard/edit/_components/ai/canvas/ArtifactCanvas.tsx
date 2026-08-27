@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Check, MapPin } from 'lucide-react';
+import { ArrowUpRight, Check, MapPin } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { RingGauge } from '@/components/ui/ring-gauge';
 import { cn } from '@/lib/utils';
@@ -10,8 +10,13 @@ import { Resume } from '@/types/frontend/resume';
 import ResumePreview from '../../preview/ResumePreview';
 import { SKILLS } from '../skills/registry';
 import type { CanvasState } from '../types';
-import type { MultiPersonaResumeAnalysis, PersonaAnalysis } from '@/types/agent/multi-persona';
+import type {
+  AnalysisImprovementAction,
+  MultiPersonaResumeAnalysis,
+  PersonaAnalysis,
+} from '@/types/agent/multi-persona';
 import type { FitDimension, FitReport } from '@/types/agent/fit-report';
+import { analysisImprovementActions } from '../lib/analysisIssues';
 
 type ArtifactCanvasProps = {
   state: CanvasState;
@@ -25,6 +30,8 @@ type ArtifactCanvasProps = {
    * weaknesses 正是优化的输入，此前它们只能看,用户得自己把结论重新打一遍字。
    */
   onFollowUp?: (text: string) => void;
+  /** Typed remediation keeps report provenance and verified resume locations intact. */
+  onFixAnalysisIssue?: (issue: AnalysisImprovementAction) => void;
 };
 
 const PERSONA_COLORS = { peer: '#38bdf8', leader: '#a78bfa', hrbp: '#34d399' };
@@ -94,10 +101,10 @@ function ScoreBar({ label, value, color, index }: { label: string; value: number
 
 function ScoreView({
   analysis,
-  onFollowUp,
+  onFixAnalysisIssue,
 }: {
   analysis: MultiPersonaResumeAnalysis | null;
-  onFollowUp?: (text: string) => void;
+  onFixAnalysisIssue?: (issue: AnalysisImprovementAction) => void;
 }) {
   const { t } = useTranslation();
 
@@ -113,7 +120,7 @@ function ScoreView({
     { label: t('aiLab.artifact.personas.hrbp'), color: PERSONA_COLORS.hrbp, data: analysis.hrbp_analysis },
   ];
   const strengths = topItems(personas.map((p) => p.data.strengths));
-  const improvements = topItems(personas.map((p) => p.data.weaknesses), 6);
+  const improvements = analysisImprovementActions(analysis, 6);
   // 三个人格各自的 suggestions 此前一条都没渲染过——它们是这份报告里最可执行的部分。
   const suggestions = topItems(personas.map((p) => p.data.suggestions), 6);
   // category_averages 同样被整份丢弃：只看总分不知道差在哪一类。
@@ -169,23 +176,23 @@ function ScoreView({
 
       {improvements.length > 0 && (
         <ReportSection label={t('aiLab.artifact.improvements')} color="#fbbf24">
-          {improvements.map((item) => (
-            <li key={item}>
+          {improvements.map((issue) => (
+            <li key={issue.id}>
               {/* 每条短板都是一次改写的入口：读到问题却要自己把它重新打一遍字，
                   是这份报告此前最大的浪费。 */}
-              {onFollowUp ? (
+              {onFixAnalysisIssue ? (
                 <button
                   type="button"
-                  onClick={() => onFollowUp(t('aiLab.artifact.fixWeaknessPrompt', { weakness: item }))}
+                  onClick={() => onFixAnalysisIssue(issue)}
                   className="flex w-full gap-2 rounded-lg px-1 py-0.5 text-left text-xs leading-relaxed text-neutral-400 transition-colors hover:bg-neutral-800/60 hover:text-neutral-200 cursor-pointer"
                 >
                   <ArrowUpRight size={13} className="text-amber-400 mt-0.5 shrink-0" />
-                  <span>{item}</span>
+                  <span>{issue.problem}</span>
                 </button>
               ) : (
                 <span className="flex gap-2 text-xs text-neutral-400 leading-relaxed">
                   <ArrowUpRight size={13} className="text-amber-400 mt-0.5 shrink-0" />
-                  <span>{item}</span>
+                  <span>{issue.problem}</span>
                 </span>
               )}
             </li>
@@ -358,7 +365,7 @@ function MatchView({
   );
 }
 
-export default function ArtifactCanvas({
+function ArtifactCanvas({
   state,
   resumeData,
   templateId,
@@ -366,6 +373,7 @@ export default function ArtifactCanvas({
   fitReport,
   onDiscard,
   onFollowUp,
+  onFixAnalysisIssue,
 }: ArtifactCanvasProps) {
   const { t } = useTranslation();
   const { open, skillId, view } = state;
@@ -379,7 +387,7 @@ export default function ArtifactCanvas({
     >
       {open && skill && (
         <>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col">
+          <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto p-5">
             {view === 'preview' && (
               <div className="bg-white/95 rounded-lg p-2 flex justify-center overflow-hidden">
                 <div style={{ transform: 'scale(0.5)', transformOrigin: 'top center', minWidth: '600px' }}>
@@ -401,7 +409,7 @@ export default function ArtifactCanvas({
 
             {view === 'score' && (
               <div className="mx-auto w-full max-w-2xl">
-                <ScoreView analysis={analysis} onFollowUp={onFollowUp} />
+                <ScoreView analysis={analysis} onFixAnalysisIssue={onFixAnalysisIssue} />
               </div>
             )}
 
@@ -432,3 +440,5 @@ export default function ArtifactCanvas({
     </div>
   );
 }
+
+export default React.memo(ArtifactCanvas);

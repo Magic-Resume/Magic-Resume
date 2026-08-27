@@ -18,7 +18,7 @@ import {
   Check,
   Copy,
   FileText,
-} from 'lucide-react';
+} from '@magic-resume/icons';
 import { isCloudMode } from '@/lib/config/app';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { useAccountUiStore, type AccountTab } from '@/store/useAccountUiStore';

@@ -1,29 +1,56 @@
-'use client';
+"use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
+import React, { memo, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
+  AlertCircle,
   Check,
+  Info,
   ChevronDown,
   Eye,
   EyeOff,
-  ShieldQuestion,
-  X,
   CornerUpLeft,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { SKILLS } from '../skills/registry';
-import Markdown from './Markdown';
-import { PolarisGlyph } from '../PolarisMark';
-import { WidgetHost } from '@magic-resume/genui';
-import { WIDGETS } from '../widgets/registry';
-import type { ApprovalRequest, ChatMessage, SkillId } from '../types';
-import type { WidgetActionResult } from '@magic-resume/genui/contract';
-import ActivityOrb from './ActivityOrb';
-import { activityLabelKey, type AgentActivity } from './agentActivity';
+  ExternalLink,
+} from "@magic-resume/icons";
+import { cn } from "@/lib/utils";
+import { SKILLS } from "../skills/registry";
+import Markdown from "./Markdown";
+import { PolarisGlyph } from "../PolarisMark";
+import { WidgetHost } from "@magic-resume/genui";
+import { WIDGETS } from "../widgets/registry";
+import type {
+  ApprovalRequest,
+  ChatMessage,
+  CitationSource,
+  SkillId,
+} from "../types";
+import {
+  Icon,
+  ApprovalCard as ApprovalPager,
+  type ApprovalQuestion,
+} from "@magic-resume/genui/beautiful";
+import ToolLine from "./ToolLine";
+import { splitTrajectoryBeats, visibleAssistantText } from "./trajectory";
+import TasksCard, {
+  PLAN_DWELL_MS,
+  isPlanFulfilled,
+  isRetirablePlan,
+} from "./TasksCard";
+import type { WidgetActionResult } from "@magic-resume/genui/contract";
+import ActivityOrb from "./ActivityOrb";
+import { activityLabelKey, type AgentActivity } from "./agentActivity";
+import { sourceDomain, visibleCitationSources } from "./citationSources";
+import SiteFavicon from "./SiteFavicon";
+import MessageNavigationRail from "./MessageNavigationRail";
+import ReasoningActivity from "./ReasoningActivity";
 
-type ApprovalDecision = (msgId: string, approved: boolean) => void;
+/** 审批卡上的一页答完了。一次中断可以带多个动作，所以要带页号。 */
+type ApprovalDecision = (
+  msgId: string,
+  pageIndex: number,
+  approved: boolean,
+) => void;
 
 /**
  * Bot-side avatar. Consecutive bot messages share one avatar: only the first in a
@@ -34,9 +61,18 @@ type ApprovalDecision = (msgId: string, approved: boolean) => void;
  * 「呼吸叙述」的最小单元（docs/specs/ai-working-motion）：一枚随全局心跳呼吸的
  * 北极星，替换线程里所有 spinner —— 系统只有一个心跳，不是一堆各转各的零件。
  */
-function BreathGlyph({ size = 11, className }: { size?: number; className?: string }) {
+function BreathGlyph({
+  size = 11,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   return (
-    <span className={cn('ai-breath inline-flex shrink-0', className)} aria-hidden="true">
+    <span
+      className={cn("ai-breath inline-flex shrink-0", className)}
+      aria-hidden="true"
+    >
       <PolarisGlyph size={size} />
     </span>
   );
@@ -48,10 +84,37 @@ function BreathGlyph({ size = 11, className }: { size?: number; className?: stri
  * shows nothing between send and first token — the gap the user reported. Sits at the
  * tail of the thread; hands off to the streaming bubble once text starts.
  */
-function ThinkingIndicator({ activity }: { activity: AgentActivity | null }) {
+function formatDuration(seconds: number): string {
+  return seconds < 60
+    ? `${seconds}s`
+    : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
+/** 已等待的秒数，取自 Beautiful UI 的 LoadingState（等宽数字，避免逐秒抖动）。 */
+function Elapsed({ startedAt }: { startedAt?: number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 500);
+    return () => clearInterval(t);
+  }, []);
+  if (!startedAt) return null;
+  return (
+    <span className="font-mono text-[11px] tabular-nums text-neutral-500">
+      {formatDuration(Math.floor((Date.now() - startedAt) / 1000))}
+    </span>
+  );
+}
+
+function ThinkingIndicator({
+  activity,
+  startedAt,
+}: {
+  activity: AgentActivity | null;
+  startedAt?: number;
+}) {
   const { t } = useTranslation();
   const reduce = useReducedMotion() ?? false;
-  const state = activity ?? 'thinking';
+  const state = activity ?? "thinking";
   return (
     <motion.div
       initial={{ opacity: 0, y: reduce ? 0 : 6 }}
@@ -66,12 +129,129 @@ function ThinkingIndicator({ activity }: { activity: AgentActivity | null }) {
       // 不写 transition 就吃 framer-motion 默认的 spring，跟全局那条 180ms 缓动
       // 对不上——而这正是「思考中 → 开始落笔」的交接点，最不该是另一种手感。
       transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
-      className="flex items-center gap-2 text-neutral-200"
+      className="flex items-center gap-2.5 text-neutral-200"
     >
-      {/* 形态 + 文案都随真实活动走：读取简历和汇总评分不再长一个样。 */}
+      {/* 形态随真实活动走：读取简历和汇总评分不再长一个样。
+          **不换成 Beautiful UI 的点阵**——那颗球是品牌锚点（.impeccable.md），且它
+          还额外承载「在做什么」；点阵只表示「在忙」。 */}
       <ActivityOrb activity={state} />
-      <span className="ai-narrate text-xs font-medium">{t(activityLabelKey(state))}</span>
+      <span
+        className="bg-clip-text text-xs font-medium text-transparent"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+          backgroundSize: "200% 100%",
+          animation: "shimmer-text 1.4s linear infinite",
+        }}
+      >
+        {t(activityLabelKey(state))}
+      </span>
+      {/* 耗时是纯增量：此前一整轮都没有任何「已经等了多久」的信息，长任务里那正是
+          用户最想知道的一件事。 */}
+      <Elapsed startedAt={startedAt} />
     </motion.div>
+  );
+}
+
+/**
+ * 老消息（`role === "tools"`，或没有 `timeline` 的历史助手消息）的工具列表。
+ *
+ * 新消息走 `message.timeline`，工具行按真实顺序夹在文字之间；这里只保证旧数据也是
+ * 平铺、不折叠、不漏函数名的同一套观感。
+ */
+function ToolTrace({ message }: { message: ChatMessage }) {
+  const calls = message.toolCalls ?? [];
+  if (calls.length === 0) return null;
+  return (
+    <div className="w-full max-w-lg">
+      {calls.map((call) => (
+        <ToolLine key={call.toolCallId} call={call} sources={message.sources} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * 助手消息的正文：**按真实发生顺序**铺开的一段旁白。
+ *
+ * 此前是固定三桶（思考 → 工具 → 正文）。于是模型「我去查一下 JD」那句先说的话，会被
+ * 渲染到它所预告的那次工具调用**下面**——而那句话的全部价值就在于它出现在动手之前。
+ * 有 `timeline` 就按 `timeline` 走；没有（老的持久化消息）回落到原来的排法。
+ *
+ * 流式光标只挂最后一段文字：中间那些已经封段的话早就说完了，不该还在闪。
+ */
+function AssistantBody({
+  message,
+  onWidgetAction,
+}: {
+  message: ChatMessage;
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+}) {
+  const streaming = Boolean(
+    message.streamed &&
+    message.status === "running" &&
+    visibleAssistantText(message).trim(),
+  );
+  const orderedBeats = message.timeline;
+  const beats = message.trajectory
+    ? splitTrajectoryBeats(message).visible
+    : orderedBeats;
+
+  if (!beats?.length) {
+    // 轨迹页接管了完整历史；对话页在运行中只保留**最后一个**真实动作作为状态锚点。
+    // 否则工具一开始，刚才的旁白移入轨迹后气泡会变成空白，用户又回到“是不是挂了”。
+    if (message.trajectory && orderedBeats?.length) {
+      const latest = message.toolCalls?.at(-1);
+      return message.status === "running" && latest ? (
+        <ToolLine call={latest} sources={message.sources} />
+      ) : null;
+    }
+    return (
+      <>
+        {message.toolCalls?.length ? (
+          <div className={cn((message.content ?? "").trim() && "mb-2")}>
+            <ToolTrace message={message} />
+          </div>
+        ) : null}
+        <Markdown streaming={streaming} sources={message.sources}>
+          {message.content ?? ""}
+        </Markdown>
+      </>
+    );
+  }
+
+  const lastTextIndex = beats.reduce(
+    (found, beat, index) => (beat.kind === "text" ? index : found),
+    -1,
+  );
+
+  return (
+    <>
+      {beats.map((beat, index) =>
+        beat.kind === "tool" ? (
+          <div key={beat.id} className="my-1">
+            <ToolLine call={beat.call} sources={message.sources} />
+          </div>
+        ) : beat.kind === "widget" ? (
+          <div key={beat.id} className="my-2 flex items-start">
+            <WidgetHost
+              registry={WIDGETS}
+              instance={beat.widget}
+              context={{ sources: message.sources }}
+              onAction={onWidgetAction ?? (() => {})}
+            />
+          </div>
+        ) : (
+          <Markdown
+            key={beat.id}
+            streaming={streaming && index === lastTextIndex}
+            sources={message.sources}
+          >
+            {beat.text}
+          </Markdown>
+        ),
+      )}
+    </>
   );
 }
 
@@ -81,15 +261,25 @@ function ThinkingIndicator({ activity }: { activity: AgentActivity | null }) {
  * running, subtle check when finished.
  */
 function ActivityLine({ message }: { message: ChatMessage }) {
-  const running = message.status === 'running';
+  const running = message.status === "running";
+  const failed = message.status === "failed";
   return (
-    <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+    <div
+      className={cn(
+        "flex items-center gap-2 text-[11px]",
+        failed ? "text-amber-300/80" : "text-neutral-500",
+      )}
+    >
       {running ? (
         <ActivityOrb activity="working" />
+      ) : failed ? (
+        <AlertCircle size={12} className="shrink-0" aria-hidden />
       ) : (
         <Check size={11} className="shrink-0 text-neutral-600" />
       )}
-      <span className={cn('truncate', running && 'ai-narrate')}>{message.content}</span>
+      <span className={cn("truncate", running && "ai-narrate")}>
+        {message.content}
+      </span>
     </div>
   );
 }
@@ -107,7 +297,7 @@ function ExecCard({
   const skill = message.skillId ? SKILLS[message.skillId] : null;
   if (!skill) return null;
   const Icon = skill.icon;
-  const running = message.status === 'running';
+  const running = message.status === "running";
   const clickable = !running && !!skill.canvas;
 
   const body = (
@@ -125,18 +315,23 @@ function ExecCard({
         ) : (
           <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
             <Check size={12} />
-            {t('aiLab.chat.done')}
+            {t("aiLab.chat.done")}
           </span>
         )}
       </div>
       <div className="mt-2.5 flex items-center justify-between gap-3">
-        <span className={cn('text-xs text-neutral-500 truncate', running && 'ai-narrate')}>
-          {running ? t('aiLab.chat.running') : skill.doneSummary}
+        <span
+          className={cn(
+            "text-xs text-neutral-500 truncate",
+            running && "ai-narrate",
+          )}
+        >
+          {running ? t("aiLab.chat.running") : skill.doneSummary}
         </span>
         {clickable && (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sky-400 bg-sky-500/10 group-hover:bg-sky-500/20 rounded-full px-2.5 py-1 shrink-0 transition-colors">
             {isCanvasOpen ? <EyeOff size={12} /> : <Eye size={12} />}
-            {isCanvasOpen ? t('aiLab.chat.collapse') : t('aiLab.chat.view')}
+            {isCanvasOpen ? t("aiLab.chat.collapse") : t("aiLab.chat.view")}
           </span>
         )}
       </div>
@@ -154,302 +349,10 @@ function ExecCard({
           {body}
         </button>
       ) : (
-        <div className="min-w-[260px] max-w-sm rounded-2xl bg-neutral-900 px-4 py-3.5">{body}</div>
-      )}
-    </div>
-  );
-}
-
-/**
- * A live review checklist (the analyze todolist). The agent ticks each step —
- * 读取简历 → 每个角色评审 → 汇总评分 — as its backend progress events land, so the
- * card is the narration of "分别 review" instead of one opaque "完成" badge. Once
- * done it doubles as the score-canvas toggle (the old exec-card affordance).
- */
-/**
- * 判据：这次运行是**真正跑完**，还是被中止 / 失败了。
- *
- * 两者都会被 `consumeStream` 的收尾置成 `status: 'done'`，光看它区分不了。差异在
- * 步骤上——正常收尾会把全部步骤置为 completed，而中止时只是把 in_progress 退回
- * pending。所以"全部 completed"才是跑完；有 pending 残留的那张卡必须留在对话里，
- * 否则一次被打断的运行会无声消失，用户连"它做到哪一步停的"都看不到。
- */
-/** 跑完之后停留多久再退场——让用户看见它确实完成了。 */
-const PLAN_DWELL_MS = 700;
-
-/**
- * 时间线几何。
- *
- * 这几个数**必须互相咬合**——导轨的 x 要等于标记盒中心、断口要等于图元自身高度、
- * orb 的落点要等于行高——所以集中成常量、由代码算出彼此，而不是散成一堆 Tailwind
- * arbitrary class 各写各的。上一版把 `left-[9.5px]` 和 `9.5 = 20/2 - 1/2` 的来历
- * 分开写在两处，读代码的人看不出它们是同一个数。
- */
-const TL = {
-  /** 一行文字的行高，也是标记盒的高度 */
-  rowH: 18,
-  /** 标记列宽。导轨画在它的中轴上 */
-  colW: 20,
-  /** 行与行之间的留白 */
-  gapY: 10,
-  /** 未开始 / 进行中的圆点直径 */
-  dot: 8,
-  /** 完成的 ✓ 尺寸 */
-  check: 12,
-  /** orb 换步时滑过去的时长 */
-  strideMs: 380,
-} as const;
-/** 导轨中轴。1px 的线要压在中心上，所以再减半个线宽。 */
-const TL_AXIS = TL.colW / 2 - 0.5;
-/** 图元在行内的上下边界——导轨在这里让开，不糊在标记上。 */
-const gapFor = (glyph: number) => ({
-  top: (TL.rowH - glyph) / 2,
-  bottom: (TL.rowH + glyph) / 2,
-});
-
-export function isPlanFulfilled(message: ChatMessage): boolean {
-  const todos = message.todos ?? [];
-  return todos.length > 0 && todos.every((t) => t.status === 'completed');
-}
-
-/** 技能清单（有 skillId、结果落在右侧画布）才退场；子代理清单没有产物，不能退场。 */
-export function isRetirablePlan(message: ChatMessage): boolean {
-  return message.role === 'plan' && !message.subagentName && isPlanFulfilled(message);
-}
-
-function PlanCard({
-  message,
-  retired,
-  onToggleCanvas,
-  isCanvasOpen,
-  activity,
-}: {
-  message: ChatMessage;
-  /** 已过完停留期：技能清单收成一行可点的指针，不再是卡。 */
-  retired?: boolean;
-  onToggleCanvas: (id: SkillId) => void;
-  isCanvasOpen: boolean;
-  /** agent 此刻在做哪一类活儿——决定骑在导轨上那颗 orb 的形态。 */
-  activity?: AgentActivity | null;
-}) {
-  const { t } = useTranslation();
-  const todos = message.todos ?? [];
-  const total = todos.length;
-  const done = todos.filter((t) => t.status === 'completed').length;
-  const fulfilled = isPlanFulfilled(message);
-  const finished = message.status === 'done' || fulfilled;
-  const reduce = useReducedMotion() ?? false;
-
-  // orb 落在哪一行——量出来的，不是算出来的：标签可能折行，行高就不再等距，
-  // 用 index × 行高推位置迟早会错位。
-  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
-  const [orbTop, setOrbTop] = useState<number | null>(null);
-
-  // 当前这一步 = 第一个未完成的。后端会同时把多步标成 in_progress，只认第一个，
-  // 否则三处一起发光就读成「三件事在并行」，而实际上只是状态没细分。
-  // （放在早退分支之前，因为下面那个 hook 依赖它——hooks 不能在 return 之后。）
-  const activeIndex = todos.findIndex((x) => x.status !== 'completed');
-  /** 已走完的行数。-1 表示一条未完成的都没有，即全部完成。 */
-  const doneUpTo = activeIndex === -1 ? total : activeIndex;
-
-  // useLayoutEffect：位置必须在绘制前写进 transform，否则 orb 会先在第一行闪一帧
-  // 再跳到当前行。
-  useLayoutEffect(() => {
-    if (finished || activeIndex < 0) {
-      setOrbTop(null);
-      return;
-    }
-    const el = itemRefs.current[activeIndex];
-    setOrbTop(el ? el.offsetTop : null);
-  }, [activeIndex, finished, total]);
-
-  // 技能清单跑完并过了停留期 → 收成一行可点的指针。
-  //
-  // 它必须留下点什么：右侧那份报告没有别的入口了——实时画布会把它顶掉，而“再加一
-  // 颗头部按钮”被否掉。时间线上留一条指针既不是卡也不是新控件，位置还正好在这次
-  // 运行发生的地方。
-  if (retired) {
-    return (
-      <button
-        type="button"
-        onClick={() => onToggleCanvas(message.skillId ?? 'analyze')}
-        className="group flex items-center gap-2 text-[11px] text-neutral-500 transition-colors hover:text-neutral-300 cursor-pointer"
-      >
-        <Check size={11} className="shrink-0 text-neutral-600" />
-        <span className="truncate">{message.content || t('aiLab.chat.taskList')}</span>
-        <span className="shrink-0 text-sky-400/70 transition-colors group-hover:text-sky-300">
-          {isCanvasOpen ? t('aiLab.chat.collapse') : t('aiLab.chat.view')}
-        </span>
-      </button>
-    );
-  }
-
-  // 子代理跑完 → 降成一行日志。它没有右侧产物，整张卡留着只是噪音；但完全抹掉
-  // 又会让"起过一个子代理"这件事无迹可寻，所以留一行。
-  if (message.subagentName && finished) {
-    const name =
-      message.subagentName !== '子代理' && message.subagentName !== 'general-purpose'
-        ? ` · ${message.subagentName}`
-        : '';
-    return (
-      <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-        <Check size={11} className="shrink-0 text-neutral-600" />
-        <span className="truncate">
-          {t('aiLab.chat.subagent')}
-          {name}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    // AI-native 的 ambient activity（skill: ai-native-ui-design）：不用进度条、不用
-    // 「Agent working…」标签，让**正在被处理的那一步自己发光**。上一版把卡片扒光后
-    // 五行长得一模一样、只差颜色深浅，等于把"AI 此刻在哪儿"这条最重要的信息扔了。
-    <div className="flex items-start">
-      <div className="min-w-[240px] max-w-sm">
-        {/* 计数右对齐：它是行尾的说明，不是标题旁的徽章。进度已经由导轨承载，
-            这里只补一个"总共多少步"——长清单里那是唯一说得出总量的地方。 */}
-        <div className="flex items-center justify-between gap-3 text-[12px]">
-          <span className="min-w-0 truncate font-medium text-neutral-300">
-            {message.subagentName ? (
-              <>
-                <span className="text-sky-400">{t('aiLab.chat.subagent')}</span>
-                {message.subagentName !== '子代理' && message.subagentName !== 'general-purpose'
-                  ? ` · ${message.subagentName}`
-                  : ''}
-              </>
-            ) : (
-              message.content || t('aiLab.chat.taskList')
-            )}
-          </span>
-          {finished ? (
-            <Check size={12} className="shrink-0 text-emerald-400" />
-          ) : total > 0 ? (
-            <span className="shrink-0 text-[11px] tabular-nums text-neutral-600">
-              {done}/{total}
-            </span>
-          ) : (
-            <BreathGlyph size={11} className="text-sky-400/70" />
-          )}
+        <div className="min-w-[260px] max-w-sm rounded-2xl bg-neutral-900 px-4 py-3.5">
+          {body}
         </div>
-
-        {/* 导轨由每一行**自己**画出与相邻标记之间的那一小段，而不再是 <ul> 的背景渐变。
-            旧写法里导轨画在容器最左侧、标记被 pl-3.5 推到 14px 之外，两套坐标系，
-            那条线从设计上就不可能穿过任何一个点——量出来差 16px。现在线段的 x 直接
-            由标记盒宽度算出（TL_AXIS），穿过是**构造**出来的，不是调出来的。
-            断口取各自图元的实际高度（✓ 12px / 圆点 8px），线在标记处让开。 */}
-        <ul className="relative mt-2.5">
-          {/* 骑在导轨上的那颗 orb —— 这张卡最想说的一句话。
-              它不是"第三种标记"，而是 **agent 本人站在计划的哪一级台阶上**：形态随
-              activity 变（读简历 / 评估 / 干活各不相同），位置随进度往下滑。这样一颗
-              球同时回答了「在做什么」和「做到哪儿」，而计数和导轨都只回答后者。
-              落点是量出来的（li.offsetTop），标签折行也不会错位；位移只动 transform，
-              交给合成器，流式那几帧再忙也不掉帧。 */}
-          {orbTop !== null && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute z-10 grid place-items-center"
-              style={{
-                left: 0,
-                top: 0,
-                width: TL.colW,
-                height: TL.rowH,
-                transform: `translateY(${orbTop}px)`,
-                transition: reduce ? undefined : `transform ${TL.strideMs}ms cubic-bezier(0.22,1,0.36,1)`,
-              }}
-            >
-              <ActivityOrb activity={activity ?? 'working'} />
-            </span>
-          )}
-          {todos.map((todo, i) => {
-            const isActive = !finished && i === activeIndex;
-            const isDone = todo.status === 'completed';
-            const ridden = isActive && orbTop !== null;
-            const gap = gapFor(isDone ? TL.check : TL.dot);
-            // 一个接头由「上一行的下半段 + 本行的上半段」拼成，两者必须同色，
-            // 所以都用「上一行是否已完成」来判定。
-            const linkAboveDone = i - 1 < doneUpTo;
-            const linkBelowDone = i < doneUpTo;
-            return (
-              <li
-                key={`${todo.content}-${i}`}
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                }}
-                aria-current={isActive ? 'step' : undefined}
-                className="relative flex gap-2"
-                style={{ paddingBottom: i === total - 1 ? 0 : TL.gapY }}
-              >
-                {i > 0 && (
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'absolute top-0 transition-colors duration-150',
-                      linkAboveDone ? 'bg-sky-400/45' : 'bg-neutral-800'
-                    )}
-                    style={{ left: TL_AXIS, width: 1, height: gap.top }}
-                  />
-                )}
-                {i < total - 1 && (
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'absolute bottom-0 transition-colors duration-150',
-                      linkBelowDone ? 'bg-sky-400/45' : 'bg-neutral-800'
-                    )}
-                    style={{ left: TL_AXIS, width: 1, top: gap.bottom }}
-                  />
-                )}
-                {/* 固定 20×18 的标记盒：三种状态占位完全相同，标签左缘才能齐平。
-                    旧写法把 12px 的 ✓ 和 6px 的圆点直接并排塞进 flex，宽度不等，
-                    量出来首行标签比其余行右移 12px。 */}
-                <span
-                  className="relative grid shrink-0 place-items-center"
-                  style={{ width: TL.colW, height: TL.rowH }}
-                >
-                  {isDone ? (
-                    // 打勾是这张卡上唯一"有事发生"的瞬间，给它一个极短的落定：
-                    // 只动 scale/opacity，不弹跳。
-                    <motion.span
-                      initial={reduce ? false : { opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                      className="flex"
-                    >
-                      <Check size={TL.check} className="text-neutral-500" />
-                    </motion.span>
-                  ) : (
-                    // 当前行的点被 orb 盖住了，就别再画一颗——两颗同心圆只会糊在一起。
-                    !ridden && (
-                      <span
-                        className={cn(
-                          'rounded-full transition-colors duration-150',
-                          isActive ? 'step-dot-active bg-sky-400' : 'border border-neutral-700'
-                        )}
-                        style={{ width: TL.dot, height: TL.dot }}
-                      />
-                    )
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    'min-w-0 text-[12px] transition-colors duration-150',
-                    isDone
-                      ? 'text-neutral-500'
-                      : isActive
-                        ? 'step-text-active text-sky-100'
-                        : 'text-neutral-600'
-                  )}
-                  style={{ lineHeight: `${TL.rowH}px` }}
-                >
-                  {todo.content}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      )}
     </div>
   );
 }
@@ -457,6 +360,15 @@ function PlanCard({
 /**
  * Human-in-the-loop approval prompt. The assistant asks before a sensitive action;
  * the user must allow / deny before it continues.
+ */
+/**
+ * 这一轮要用户拍的板，一页一个。
+ *
+ * 此前每个待批准的动作各是一张卡，竖着排；用户看不出「这一轮要我拍几个板、拍到第几个
+ * 了」。换成分页卡之后，进度胶囊把它说出来了。
+ *
+ * 这里只做翻译：把中断动作翻成 `ApprovalQuestion`，把「第几页选了什么」翻回
+ * approve/reject。判定与续跑都在 shell 那边（`handleApproval` → `answerInterrupt`）。
  */
 function ApprovalCard({
   message,
@@ -466,67 +378,47 @@ function ApprovalCard({
   onApproval?: ApprovalDecision;
 }) {
   const { t } = useTranslation();
-  const a = message.approval as ApprovalRequest | undefined;
-  if (!a) return null;
-  const decide = (approved: boolean) => onApproval?.(message.id, approved);
+  const pages = message.approvals;
+  if (!pages?.length) return null;
+
+  const allow = t("aiLab.chat.approval.allow");
+  const deny = t("aiLab.chat.approval.deny");
+
+  /** 已答的那一页显示什么。读简历还有「正在读 / 已读取」两级进度。 */
+  const answeredOf = (a: ApprovalRequest): string | undefined => {
+    if (a.status === "pending") return undefined;
+    if (a.status === "expired") return t("aiLab.widgets.form.expired");
+    if (a.status === "denied") return t("aiLab.chat.approval.denied");
+    if (a.readState === "read") return t("aiLab.chat.approval.read");
+    if (a.readState === "reading") return t("aiLab.chat.approval.reading");
+    return t("aiLab.chat.approval.allowed");
+  };
+
+  const questions: ApprovalQuestion[] = pages.map((a) => ({
+    q: a.question || message.content || t("aiLab.chat.approval.defaultMessage"),
+    type: "radio",
+    options: [allow, deny],
+    answered: answeredOf(a),
+  }));
 
   return (
     <div className="flex items-start">
-      <div className="min-w-[260px] max-w-md rounded-2xl border border-sky-500/30 bg-sky-500/[0.07] px-4 py-3.5">
-        <div className="flex items-start gap-2 text-[13px] text-sky-100 leading-relaxed">
-          <ShieldQuestion size={15} className="text-sky-400 shrink-0 mt-0.5" />
-          <span className="flex-1">{message.content || t('aiLab.chat.approval.defaultMessage')}</span>
-        </div>
-        {a.status === 'pending' ? (
-          <div className="mt-3 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => decide(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-xs font-medium text-sky-100 transition-colors cursor-pointer"
-            >
-              <Check size={12} />
-              {t('aiLab.chat.approval.allow')}
-            </button>
-            <button
-              type="button"
-              onClick={() => decide(false)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X size={12} />
-              {t('aiLab.chat.approval.deny')}
-            </button>
-          </div>
-        ) : (
-          <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-neutral-500">
-            {a.status === 'expired' ? (
-              <>
-                <X size={11} />
-                {t('aiLab.widgets.form.expired')}
-              </>
-            ) : a.status === 'denied' ? (
-              <>
-                <X size={11} />
-                {t('aiLab.chat.approval.denied')}
-              </>
-            ) : a.readState === 'read' ? (
-              <>
-                <Check size={11} className="text-emerald-500/80" />
-                {t('aiLab.chat.approval.read')}
-              </>
-            ) : a.readState === 'reading' ? (
-              <>
-                <BreathGlyph size={11} className="text-sky-400/70" />
-                <span className="ai-narrate">{t('aiLab.chat.approval.reading')}</span>
-              </>
-            ) : (
-              <>
-                <Check size={11} className="text-emerald-500/80" />
-                {t('aiLab.chat.approval.allowed')}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+      <ApprovalPager
+        questions={questions}
+        // 会话从本地记录恢复时后端线程早已回收，续跑必失败——那时整张卡只能读不能点。
+        disabled={pages.every((a) => a.status === "expired")}
+        labels={{
+          previous: t("aiLab.chat.approval.previous"),
+          next: t("aiLab.chat.approval.next"),
+          send: t("aiLab.chat.approval.send"),
+          goTo: t("aiLab.chat.approval.goTo"),
+          freeText: "",
+          freeTextAria: "",
+        }}
+        onAnswer={(pageIndex, answer) =>
+          onApproval?.(message.id, pageIndex, answer[0] === allow)
+        }
+      />
     </div>
   );
 }
@@ -540,10 +432,23 @@ function LogLine({
 }) {
   const { t } = useTranslation();
   const clickable = !!message.resumePath && !!onLogClick;
-  const className = 'flex items-center gap-2 text-[11px] text-neutral-500';
+  // 颜色替代阅读：扫一眼就知道这行是「成了 / 只是说明 / 没成」，不必读完文字。
+  // 三档都留在同一行的体量里——不抢戏，只是让人看得见。
+  const tone = message.tone ?? "ok";
+  const toneStyle = {
+    ok: { text: "text-neutral-500", icon: "text-emerald-500/80", Icon: Check },
+    info: { text: "text-sky-400/85", icon: "text-sky-400/70", Icon: Info },
+    warn: {
+      text: "text-amber-500/90",
+      icon: "text-amber-500/80",
+      Icon: AlertCircle,
+    },
+  }[tone];
+  const { Icon } = toneStyle;
+  const className = `flex items-center gap-2 text-[11px] ${toneStyle.text}`;
   const body = (
     <>
-      <Check size={12} className="text-emerald-500/80 shrink-0" />
+      <Icon size={12} className={`${toneStyle.icon} shrink-0`} />
       <span className="truncate">{message.content}</span>
     </>
   );
@@ -552,7 +457,7 @@ function LogLine({
     <button
       type="button"
       onClick={() => onLogClick!(message.resumePath!)}
-      title={t('aiLab.chat.backToChange')}
+      title={t("aiLab.chat.backToChange")}
       className={`${className} hover:text-neutral-300 transition-colors cursor-pointer w-full text-left`}
     >
       {body}
@@ -560,189 +465,421 @@ function LogLine({
   );
 }
 
-/**
- * 一轮的思考过程（推理模型回传的思维链）。
- *
- * **有就展示、没有就不展示**：不回传思维链的模型（OpenAI o 系列）这条通道天然为空，
- * 那时整块不渲染——不留一个点开是空的壳子。
- *
- * 默认收起：思考是过程，正文才是结论。想看的人点开，不想看的人不该被几百字的
- * 内心独白挡住答案。生成中标题带呼吸，读作「还在想」。
- */
-function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
+/** 回答使用的外部网页来源。内部知识来源已进消息模型，但目前按产品决定不渲染。 */
+function SourcesBlock({
+  sources = [],
+  children,
+}: {
+  sources?: CitationSource[];
+  children?: React.ReactNode;
+}) {
   const { t } = useTranslation();
-  /**
-   * `null` = 跟随状态，布尔 = 用户手动钉住过。
-   *
-   * 展开与否不是一个常量，取决于此刻还有没有别的东西可看：思考进行中，思维链**就是
-   * 屏幕上唯一在发生的事**，收起来只剩一行「正在思考…」，等于把唯一的进展藏了；
-   * 正文一开始它就降级成过程，该让位给结论。所以默认值跟着 running 走。
-   *
-   * 但用户点过之后就以他的意思为准——自动行为可以有主张，不能推翻明确的操作。
-   */
-  const [pinned, setPinned] = useState<boolean | null>(null);
-  const open = pinned ?? running;
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const visible = visibleCitationSources(sources);
+  if (!visible.length && !children) return null;
 
-  /**
-   * 生成中让视口跟住最新一段思考。
-   *
-   * 只在**用户本来就贴着底部**时才跟——他往上翻是在读前面的内容，这时候把他拽回
-   * 底部是最讨嫌的一类"贴心"。48px 的容差覆盖行高抖动。
-   */
-  useEffect(() => {
-    if (!open || !running) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    if (nearBottom) el.scrollTop = el.scrollHeight;
-  }, [text, open, running]);
   return (
-    <div className="mb-2">
-      {/* 思考中，这一行**就是**线程尾那个状态指示器——同一颗 orb、同一句文案、同一组
-          字号间距（见 ThinkingIndicator）。气泡是收到首个思考块才建的，那一刻指示器
-          退场、这里接上；两边长得不一样的话，交接就成了「换了个东西」而不是「同一个
-          东西长出了内容」。用户要的是并存：上面状态，下面思维链。
-
-          思考结束（正文开始）它降级为一个可展开的入口：orb 换成 chevron，链收起。
-          那时状态由正文自己承担，再留一颗球在这儿就是重复叙事。 */}
-      {/* 前导图元固定占 20px 见方，两态叠在同一个格子里交叉淡入淡出。
-          尺寸/间距/字号/字重四项在两态之间**全部不变**，只有颜色过渡——否则
-          「思考完」那一下是 orb 换 chevron(20→12)、gap(8→6)、字号(12→11) 一起跳，
-          标签会横向弹 10px，那才是真正扎眼的地方。
-          orb 只在 running 时挂载：留着一颗 opacity-0 的球，等于让每条读完的消息
-          都在后台跑一条 canvas RAF。 */}
-      <button
-        type="button"
-        onClick={() => setPinned(!open)}
-        aria-expanded={open}
-        className={cn(
-          'group inline-flex items-center gap-2 text-xs font-medium transition-colors duration-200 cursor-pointer',
-          running ? 'text-neutral-200' : 'text-neutral-500 hover:text-neutral-300',
-        )}
-      >
-        <span className="grid size-5 shrink-0 place-items-center">
-          {/* initial={false}：首次挂载时不演入场——这一刻它正接替尾部指示器那颗球，
-              淡入就等于原地闪一下。之后的两态互换才走 180ms 交叉淡。 */}
-          <AnimatePresence initial={false}>
-            {running ? (
-              <motion.span
-                key="orb"
-                className="col-start-1 row-start-1 flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                <ActivityOrb activity="thinking" />
-              </motion.span>
-            ) : (
-              <motion.span
-                key="chevron"
-                className="col-start-1 row-start-1 flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                <ChevronDown
-                  size={12}
-                  className={cn('transition-transform', open && 'rotate-180')}
-                />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </span>
-        <span className={cn(running && 'ai-narrate')}>
-          {running ? t(activityLabelKey('thinking')) : t('aiLab.reasoning.done')}
-        </span>
-      </button>
-      {/* 0fr → 1fr 收放：不动 height，交给 grid 自己算 */}
-      <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
-        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
-      >
-        <div className="overflow-hidden">
-          {/* 封顶 + 自己滚。思维链可以很长，任其铺开会把结论顶出视野——而结论才是
-              用户要的。不用 scrollbar-hide：一个能滚的区域藏掉滚动条就等于没了可滚的提示。 */}
-          <div
-            ref={scrollRef}
-            className="mt-1.5 max-h-[200px] overflow-y-auto whitespace-pre-wrap border-l border-white/[0.07] pl-3 text-[12px] leading-relaxed text-neutral-500"
+    <div className="mt-1.5">
+      <div className="flex min-h-7 flex-wrap items-center gap-1">
+        {children}
+        {visible.length ? (
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+            aria-label={t("aiLab.sources.toggle", { count: visible.length })}
+            className="inline-flex h-7 items-center gap-2 rounded-[7px] px-2 text-[12px] text-ink-2 transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.98]"
           >
-            {text}
+            <span className="flex -space-x-1" aria-hidden="true">
+              {visible.slice(0, 3).map((source) => (
+                <SiteFavicon
+                  key={source.id}
+                  source={source}
+                  className="size-[18px] rounded-full border border-raised"
+                  iconSize={9}
+                />
+              ))}
+            </span>
+            <span>{t("aiLab.sources.count", { count: visible.length })}</span>
+            <ChevronDown
+              size={11}
+              className={cn(
+                "transition-transform duration-200",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+        ) : null}
+      </div>
+
+      {visible.length ? (
+        <div
+          className="grid transition-[grid-template-rows,opacity] duration-200"
+          style={{
+            gridTemplateRows: open ? "1fr" : "0fr",
+            opacity: open ? 1 : 0,
+          }}
+        >
+          <div className="overflow-hidden">
+            {/*
+              每条来源固定为 44px；250px = 5 行 + 4 个间距 + 内边距 + 边框。
+              因而前五条完整可见，第六条起只在来源面板内滚动。
+            */}
+            <div className="mt-1.5 grid max-h-[250px] auto-rows-[44px] gap-1 overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-line bg-inset p-1.5 shadow-hairline">
+              {visible.map((source) => {
+                const domain = source.url ? sourceDomain(source.url) : "";
+                return (
+                  <a
+                    key={source.id}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/source flex h-11 min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-hover"
+                  >
+                    <SiteFavicon
+                      source={source}
+                      className="size-5 rounded-md border border-line"
+                      iconSize={10}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11.5px] text-ink-2 group-hover/source:text-ink">
+                        {source.title}
+                      </span>
+                      <span className="block truncate text-[10px] text-ink-3">
+                        {domain}
+                        {source.publishedDate
+                          ? ` · ${source.publishedDate}`
+                          : ""}
+                      </span>
+                    </span>
+                    <span className="font-mono text-[10px] tabular-nums text-ink-3">
+                      {source.citationId}
+                    </span>
+                    <ExternalLink
+                      size={11}
+                      className="shrink-0 text-ink-3 group-hover/source:text-accent-ink"
+                    />
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
+  );
+}
+
+/** 折叠态最多显示几行。约等于一屏气泡的高度，再多就该由用户决定要不要看。 */
+const USER_MESSAGE_CLAMP_LINES = 10;
+
+/**
+ * 用户发出的正文。
+ *
+ * ## 为什么要折叠
+ *
+ * 用户会往对话里贴 URL、data URI、整段 JD。一条 base64 图片能撑出几十屏，把上下文里
+ * 真正在发生的事全顶出视野——而那条消息的内容用户自己最清楚，不需要一直看着。
+ *
+ * ## 为什么按渲染高度判断而不是字数
+ *
+ * 同样 200 个字符，一段中文是两行，一条 data URI 是十几行。字数阈值对这两种内容里的
+ * 一种必定是错的。量实际溢出没有这个问题，代价只是一次 layout 读。
+ *
+ * ## 为什么展开后不再测量
+ *
+ * 展开态下 `scrollHeight === clientHeight`，再测就会得出「没有溢出」，按钮当场消失、
+ * 用户再也收不回去。所以只在折叠态测，展开时沿用上一次的结论。
+ */
+function UserMessageText({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+
+  useEffect(() => {
+    if (expanded) return;
+    const el = ref.current;
+    if (!el) return;
+    // 1px 容差：亚像素行高会让 scrollHeight 比 clientHeight 大出零点几，
+    // 严格比较会给每条不该有按钮的消息都挂上按钮。
+    const measure = () => setOverflows(el.scrollHeight - el.clientHeight > 1);
+    measure();
+    // 面板可以拖宽拖窄，宽度一变行数就变。
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
+  return (
+    <>
+      {/*
+        `[overflow-wrap:anywhere]`：URL 和 data URI **一个断行机会都没有**，默认的
+        `overflow-wrap: normal` 不肯拆，整条会从气泡右边缘一路铺出去盖住页面。用
+        `anywhere` 而不是 `break-words`——只有前者参与 min-content 计算，在这个 flex
+        子项里 `break-words` 拆不动；`break-all` 又太狠，会把正常中英文拦腰截断。
+
+        `whitespace-pre-wrap`：用户按 Enter 敲的换行不保留就会被压成空格，
+        「这个是腾讯的」于是和上一行的 URL 挤成同一句。
+      */}
+      <div
+        ref={ref}
+        className="whitespace-pre-wrap [overflow-wrap:anywhere]"
+        style={
+          expanded
+            ? undefined
+            : {
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: USER_MESSAGE_CLAMP_LINES,
+                overflow: "hidden",
+              }
+        }
+      >
+        {text}
+      </div>
+      {overflows && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 cursor-pointer text-[13px] text-neutral-400 transition-colors hover:text-neutral-200"
+        >
+          {/* 用通用的那对，不借 `aiLab.chat.collapse`——那半个键归画布按钮
+              （「收起 / 查看」）所有，借来就是两个控件共用一份文案、一起被改。 */}
+          {expanded ? t("common.collapse") : t("common.expand")}
+        </button>
+      )}
+    </>
   );
 }
 
 function Bubble({
   message,
+  onRegenerate,
+  onWidgetAction,
 }: {
   message: ChatMessage;
+  /** 只有最后一条助手回复拿得到，见 `MessageActions`。 */
+  onRegenerate?: () => void;
+  /** 时间线里的非阻塞卡片要能把用户动作交回去。 */
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
 }) {
-  if (message.role === 'user') {
+  if (message.role === "user") {
     const skill = message.skillId ? SKILLS[message.skillId] : null;
     const SkillIcon = skill?.icon;
     return (
       <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl bg-neutral-800 text-neutral-100 px-4 py-2.5 text-sm leading-relaxed">
+        <div className="min-w-0 max-w-[80%] rounded-2xl bg-neutral-800 px-4 py-2.5 text-[16px] leading-7 text-neutral-100">
           {skill && (
             <span className="inline-flex items-center gap-1 align-middle mr-2 rounded-md bg-neutral-700/70 px-1.5 py-0.5">
               {SkillIcon && <SkillIcon size={11} className={skill.accent} />}
-              <span className={cn('text-[11px] font-medium', skill.accent)}>{skill.name}</span>
+              <span className={cn("text-[11px] font-medium", skill.accent)}>
+                {skill.name}
+              </span>
             </span>
           )}
+          {message.attachmentNames?.length ? (
+            <div className="mb-1.5 flex items-start gap-1.5 text-left text-[13px] leading-5 text-neutral-200">
+              <Icon
+                name="attach"
+                size={12}
+                className="mt-1 shrink-0 text-neutral-400"
+              />
+              <div className="min-w-0 space-y-1">
+                {message.attachmentNames.map((name) => (
+                  <div key={name} className="truncate" title={name}>
+                    {name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : message.attachment ? (
+            <Icon
+              name="attach"
+              size={12}
+              className="mr-1.5 inline-block align-[-1px] text-neutral-400"
+            />
+          ) : null}
           {message.quote && (
             <div className="mb-2 flex items-start gap-2 rounded-lg bg-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
-              <CornerUpLeft size={12} className="mt-0.5 shrink-0 text-sky-400/80" />
+              <CornerUpLeft
+                size={12}
+                className="mt-0.5 shrink-0 text-sky-400/80"
+              />
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-medium text-neutral-500">{message.quote.label}</div>
+                <div className="text-[10px] font-medium text-neutral-500">
+                  {message.quote.label}
+                </div>
                 <div className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug text-neutral-300">
                   {message.quote.text}
                 </div>
               </div>
             </div>
           )}
-          {message.content}
+          <UserMessageText text={message.content ?? ""} />
         </div>
       </div>
     );
   }
+  const hasProcess = Boolean(message.reasoning);
   return (
-    <div className="flex items-start">
+    // `group/msg` 命名而不是裸 `group`：这棵树里已经有别的 group（技能卡、工具行），
+    // 裸 group 会让最近的那个祖先赢，操作行于是跟着无关的元素亮起来。
+    <div className="group/msg flex items-start">
       {/* 限宽。用户气泡是 max-w-[80%] 右对齐，助手正文原本 flex-1 吃满整列——
           一边缩着一边顶到边，读起来就是失衡，长句还会一路铺到用户气泡那一侧下方。
           给助手一个略宽于用户的上限：它是长文，但不该无边界。 */}
       {/* pt-1 是给正文做光学对齐的；有思考头时不能要——它会把那一行压低 4px，
           而这一行必须和它接替的尾部指示器落在同一条基线上。 */}
+      {/* 助手正文同样要能拆开无断点的长串——它现在正好会回显 logo 的 URL。
+          `overflow-wrap` 可继承，挂在容器上就覆盖了 markdown 的段落、列表与行内
+          `<code>`；代码块不受影响，`<pre>` 的 `white-space: pre` 本就不换行，
+          它的横向滚动照旧。 */}
       <div
         className={cn(
-          'min-w-0 max-w-[88%] text-sm text-neutral-200 leading-relaxed',
-          !message.reasoning && 'pt-1',
+          // `text-ink`（oklch 0.93）而不是 `text-neutral-200`：数值几乎一样，但它跟着
+          // 主题令牌走，浅色主题切过去时不会留下一块亮灰。
+          "min-w-0 max-w-[88%] text-[16px] leading-7 text-ink [overflow-wrap:anywhere]",
+          !hasProcess && "pt-1",
         )}
       >
-        {message.reasoning && (
-          <ReasoningBlock
-            text={message.reasoning}
-            running={message.status === 'running' && !message.content}
-          />
-        )}
-        {/* 一种渲染方式、一种手感。这里原来给非流式的助手台词加了 JS 定时器的伪打字
-            （24ms/字），跟真流式并存就是两种节奏；而 brief §3 明确要删掉这类假动效
-            ——它模拟的是并没有在发生的工作。光标同理挂回全局心跳。 */}
-        <Markdown>{message.content ?? ''}</Markdown>
-        {message.streamed && message.status === 'running' && (
-          <span className="ai-breath inline-block w-[3px] h-[0.95em] translate-y-[2px] ml-0.5 bg-sky-400/80 rounded-[1px]" />
-        )}
+        <AssistantResponse
+          message={message}
+          onRegenerate={onRegenerate}
+          onWidgetAction={onWidgetAction}
+        />
       </div>
+    </div>
+  );
+}
+
+/**
+ * 思考视窗与正文的交接点。
+ *
+ * 首个正文 token 到达时，ReasoningActivity 先按原版 AgentDisclosure 收缩；只有它的
+ * 动画真实完成后才挂正文。不能用固定 timeout 猜时长，也不能让空 Markdown 提前发光标。
+ */
+function AssistantResponse({
+  message,
+  onRegenerate,
+  onWidgetAction,
+}: {
+  message: ChatMessage;
+  onRegenerate?: () => void;
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+}) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const hasProcess = Boolean(message.reasoning);
+  const visibleText = visibleAssistantText(message);
+  const reasoningRunning =
+    hasProcess && message.status === "running" && !visibleText;
+  const reasoningRunningRef = useRef(reasoningRunning);
+  reasoningRunningRef.current = reasoningRunning;
+  const observedLiveReasoningRef = useRef(reasoningRunning);
+  const [answerReady, setAnswerReady] = useState(!reasoningRunning);
+
+  useEffect(() => {
+    if (reasoningRunning) {
+      observedLiveReasoningRef.current = true;
+      setAnswerReady(false);
+      return;
+    }
+    // 历史消息没有现场折叠过程，直接显示正文；减少动态效果时也不制造等待。
+    if (!observedLiveReasoningRef.current || reduceMotion) {
+      setAnswerReady(true);
+    }
+  }, [reasoningRunning, reduceMotion]);
+
+  return (
+    <>
+      {hasProcess && (
+        <ReasoningActivity
+          text={message.reasoning ?? ""}
+          running={reasoningRunning}
+          onCollapseComplete={() => {
+            if (reasoningRunningRef.current) return;
+            observedLiveReasoningRef.current = false;
+            setAnswerReady(true);
+          }}
+        />
+      )}
+      {answerReady ? (
+        <>
+          <AssistantBody message={message} onWidgetAction={onWidgetAction} />
+          {/* 来源和复制/重新生成属于完成态工具栏。搜索进行中只显示上面的搜索过程，
+              不提前挂一份重复来源；最终正文完成后再一起出现。 */}
+          {message.status === "done" && visibleText.trim() ? (
+            <SourcesBlock sources={message.sources}>
+              <MessageActions text={visibleText} onRegenerate={onRegenerate} />
+            </SourcesBlock>
+          ) : null}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * 一条助手回复写完之后的操作行。
+ *
+ * 形态取自 Beautiful UI 的 StreamingText——但**只保留复制**：重试要重发这一轮（会
+ * 二次计费且可能覆盖已接受的改动），赞踩要有反馈通道，两者都还没有。做一个点了没反应
+ * 的按钮，比没有这个按钮更糟。
+ */
+function MessageActions({
+  text,
+  onRegenerate,
+}: {
+  text: string;
+  onRegenerate?: () => void;
+}) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  return (
+    <div
+      className={cn(
+        "flex h-7 items-center gap-0.5 opacity-60 transition-opacity duration-150",
+        "group-hover/msg:opacity-100 focus-within:opacity-100 hover:opacity-100",
+      )}
+    >
+      <button
+        type="button"
+        aria-label={t("aiLab.chat.copy")}
+        onClick={() => {
+          void navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          });
+        }}
+        className={cn(
+          "flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] transition-colors",
+          copied ? "text-green" : "text-ink-3 hover:bg-hover hover:text-ink-2",
+        )}
+      >
+        {copied ? <Check size={12} /> : <Icon name="copy" size={12} />}
+        {copied ? t("aiLab.chat.copied") : t("aiLab.chat.copy")}
+      </button>
+      {/* 只挂在最后一条回复上。给历史里任何一条都配重答，等于允许把对话改成一棵树，
+          而这个界面只画得出一条线。 */}
+      {onRegenerate && (
+        <button
+          type="button"
+          aria-label={t("aiLab.chat.regenerate")}
+          onClick={onRegenerate}
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
+        >
+          <Icon name="retry" size={12} />
+          {t("aiLab.chat.regenerate")}
+        </button>
+      )}
     </div>
   );
 }
 
 type ChatThreadProps = {
   messages: ChatMessage[];
+  /** 右侧画布/报告出现时隐藏消息导航，避免两个右侧表面争抢同一块空间。 */
+  navigationVisible?: boolean;
   onToggleCanvas: (id: SkillId) => void;
   openCanvasSkillId: SkillId | null;
   onLogClick?: (resumePath: string) => void;
@@ -754,19 +891,196 @@ type ChatThreadProps = {
   thinking?: boolean;
   /** agent 此刻在干什么（由 SSE 事件推导）——驱动 orb 形态与旁白文案 */
   activity?: AgentActivity | null;
+  /** 重答最后一轮。不给就不渲染那个按钮。 */
+  onRegenerate?: () => void;
 };
 
-export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId, onLogClick, onApproval, onWidgetAction, thinking, activity }: ChatThreadProps) {
-  const endRef = useRef<HTMLDivElement>(null);
+type MessageRowProps = {
+  message: ChatMessage;
+  reduceMotion: boolean;
+  retired: boolean;
+  activity?: AgentActivity | null;
+  openCanvasSkillId: SkillId | null;
+  regenerable: boolean;
+  onToggleCanvas: (id: SkillId) => void;
+  onLogClick?: (resumePath: string) => void;
+  onApproval?: ApprovalDecision;
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+  onRegenerate?: () => void;
+};
+
+/**
+ * A stream frame changes only the active assistant message. Keeping each row as
+ * a memoized leaf prevents that frame from reparsing every completed Markdown
+ * response and rebuilding every historical card above it.
+ */
+const MessageRow = memo(function MessageRow({
+  message: m,
+  reduceMotion,
+  retired,
+  activity,
+  openCanvasSkillId,
+  regenerable,
+  onToggleCanvas,
+  onLogClick,
+  onApproval,
+  onWidgetAction,
+  onRegenerate,
+}: MessageRowProps) {
+  const takesOverThinking =
+    m.role === "assistant" && !!m.reasoning && !m.content;
+  const isUser = m.role === "user";
+
+  return (
+    <motion.div
+      data-slot="message"
+      data-from={m.role}
+      data-message-id={m.id}
+      initial={
+        takesOverThinking
+          ? false
+          : isUser
+            ? {
+                opacity: 0,
+                y: reduceMotion ? 0 : 10,
+                scale: reduceMotion ? 1 : 0.92,
+              }
+            : {
+                opacity: 0,
+                y: reduceMotion ? 0 : 16,
+                scale: reduceMotion ? 1 : 0.98,
+              }
+      }
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      transition={{
+        duration: reduceMotion ? 0 : isUser ? 0.26 : 0.3,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      style={isUser ? { transformOrigin: "100% 100%" } : undefined}
+    >
+      {m.role === "exec" ? (
+        <ExecCard
+          message={m}
+          onToggleCanvas={onToggleCanvas}
+          isCanvasOpen={openCanvasSkillId === m.skillId}
+        />
+      ) : m.role === "log" ? (
+        <LogLine message={m} onLogClick={onLogClick} />
+      ) : m.role === "activity" ? (
+        <ActivityLine message={m} />
+      ) : m.role === "approval" ? (
+        <ApprovalCard message={m} onApproval={onApproval} />
+      ) : m.role === "tools" ? (
+        <ToolTrace message={m} />
+      ) : m.role === "plan" ? (
+        <TasksCard
+          message={m}
+          retired={retired}
+          onToggleCanvas={onToggleCanvas}
+          isCanvasOpen={Boolean(m.skillId && openCanvasSkillId === m.skillId)}
+          activity={activity}
+        />
+      ) : m.role === "widget" ? (
+        m.widget ? (
+          <div className="flex items-start">
+            <WidgetHost
+              registry={WIDGETS}
+              instance={m.widget}
+              context={{ sources: m.sources }}
+              onAction={onWidgetAction ?? (() => {})}
+            />
+          </div>
+        ) : null
+      ) : (
+        <Bubble
+          message={m}
+          onRegenerate={regenerable ? onRegenerate : undefined}
+          onWidgetAction={onWidgetAction}
+        />
+      )}
+    </motion.div>
+  );
+});
+
+export { isPlanFulfilled, isRetirablePlan };
+
+export default function ChatThread({
+  messages,
+  navigationVisible = true,
+  onToggleCanvas,
+  openCanvasSkillId,
+  onLogClick,
+  onApproval,
+  onWidgetAction,
+  thinking,
+  activity,
+  onRegenerate,
+}: ChatThreadProps) {
+  // 只有最后一条写完的助手回复能重答。这一轮还在跑的时候不给——重答会把它顶掉，
+  // 而用户此刻看到的正是它在写。
+  const regenerableId = (() => {
+    if (!onRegenerate || thinking) return null;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const m = messages[i];
+      if (m.role === "assistant") return m.status === "done" ? m.id : null;
+      if (m.role === "user") return null;
+    }
+    return null;
+  })();
+  // 这一轮从什么时候开始等的。`thinking` 由 false → true 的那一刻记一次，之后整轮不变
+  // ——每次重渲都取 Date.now() 的话，计时永远显示 0。
+  const [thinkingSince, setThinkingSince] = useState<number | undefined>(
+    undefined,
+  );
+  useEffect(() => {
+    setThinkingSince(thinking ? Date.now() : undefined);
+  }, [thinking]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const scrollFrameRef = useRef<number | null>(null);
+  const followOutputRef = useRef(true);
+  const previousLastIdRef = useRef<string | null>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
-    // reduce 下也别平滑滚动——自动滚动是这套界面里最容易让人不适的一个动作。
-    endRef.current?.scrollIntoView({
-      behavior: reduceMotion ? 'auto' : 'smooth',
-      block: 'end',
+    const el = scrollRef.current;
+    const lastId = messages[messages.length - 1]?.id ?? null;
+    const addedMessage = previousLastIdRef.current !== lastId;
+    previousLastIdRef.current = lastId;
+    if (!el || !followOutputRef.current) return;
+    if (scrollFrameRef.current !== null)
+      cancelAnimationFrame(scrollFrameRef.current);
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      el.scrollTo({
+        top: el.scrollHeight,
+        // 平滑只属于“新增一条消息”。流式增长若每帧都开 smooth，会堆叠动画并不断强制布局。
+        behavior: addedMessage && !reduceMotion ? "smooth" : "auto",
+      });
     });
+    return () => {
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+        scrollFrameRef.current = null;
+      }
+    };
   }, [messages, thinking, reduceMotion]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Programmatic smooth scrolling also fires `scroll`; only use it to re-arm
+    // following at the bottom, never to mistake our own animation for user intent.
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 96) {
+      followOutputRef.current = true;
+    }
+  };
+
+  const pauseFollowing = () => {
+    followOutputRef.current = false;
+  };
 
   // 头像不再进对话：Polaris 已经常驻在输入框上方的工位，姿态（思考 / 输出）由那只
   // 宠物统一表达。每条消息再挂一个头像，等于把同一个角色复制 N 份。
@@ -780,96 +1094,76 @@ export default function ChatThread({ messages, onToggleCanvas, openCanvasSkillId
    *
    * 先停一拍再收：不停的话最后一步打勾的同一帧卡就变了，用户根本没看到它完成。
    */
-  const [retired, setRetired] = useState<ReadonlySet<string>>(new Set());
+  const [retired, setRetired] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(messages.filter(isRetirablePlan).map((message) => message.id)),
+  );
   useEffect(() => {
-    const pending = messages.filter((m) => isRetirablePlan(m) && !retired.has(m.id));
+    const pending = messages.filter(
+      (m) => isRetirablePlan(m) && !retired.has(m.id),
+    );
     if (!pending.length) return;
     const timers = pending.map((m) =>
       window.setTimeout(() => {
         setRetired((prev) => new Set(prev).add(m.id));
-      }, PLAN_DWELL_MS)
+      }, PLAN_DWELL_MS),
     );
     return () => timers.forEach((tm) => window.clearTimeout(tm));
   }, [messages, retired]);
 
-
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6">
-      <div className="max-w-3xl mx-auto flex flex-col gap-5">
-        {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
-            so only freshly-mounted turns animate, never re-renders of existing ones.
-            外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
-            替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
-        <AnimatePresence initial={false}>
-        {messages.map((m) => {
-          // 思考链先于正文到达时，这条气泡是**接替**尾部指示器的：它挂载的位置正是
-          // 指示器此刻所在的位置，头部也和它长得一样。再演一遍「由下升入」，同一颗
-          // orb 就等于在原地动了一次——那一下的不顺就是从这儿来的。
-          const takesOverThinking = m.role === 'assistant' && !!m.reasoning && !m.content;
-          // 自己刚发出去的那句，动作要比别的重一点：它是**你按下回车的回执**。
-          // 起始 scale 压到 0.92、原点钉在右下角——也就是输入框所在的方向——读起来
-          // 就是从输入框那儿冒出来落进对话，而不是凭空淡入。
-          const isUser = m.role === 'user';
-          return (
-          <motion.div
-            key={m.id}
-            initial={
-              takesOverThinking
-                ? false
-                : isUser
-                  ? { opacity: 0, y: reduceMotion ? 0 : 10, scale: reduceMotion ? 1 : 0.92 }
-                  : { opacity: 0, y: reduceMotion ? 0 : 16, scale: reduceMotion ? 1 : 0.98 }
-            }
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.12 } }}
-            transition={{
-              duration: reduceMotion ? 0 : isUser ? 0.26 : 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            style={isUser ? { transformOrigin: '100% 100%' } : undefined}
-          >
-            {m.role === 'exec' ? (
-              <ExecCard
+    <div className="relative min-h-0 flex-1">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onWheel={(event) => {
+          if (event.deltaY < 0) pauseFollowing();
+        }}
+        onTouchMove={pauseFollowing}
+        className="h-full overflow-y-auto scrollbar-hide px-4 py-6"
+      >
+        <div ref={contentRef} className="max-w-3xl mx-auto flex flex-col gap-5">
+          {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
+              so only freshly-mounted turns animate, never re-renders of existing ones.
+              外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
+              替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
+          <AnimatePresence initial={false}>
+            {messages.map((m) => (
+              <MessageRow
+                key={m.id}
                 message={m}
-                onToggleCanvas={onToggleCanvas}
-                isCanvasOpen={openCanvasSkillId === m.skillId}
-              />
-            ) : m.role === 'log' ? (
-              <LogLine message={m} onLogClick={onLogClick} />
-            ) : m.role === 'activity' ? (
-              <ActivityLine message={m} />
-            ) : m.role === 'approval' ? (
-              <ApprovalCard message={m} onApproval={onApproval} />
-            ) : m.role === 'plan' ? (
-              <PlanCard
-                message={m}
+                reduceMotion={reduceMotion}
                 retired={retired.has(m.id)}
+                activity={m.role === "plan" ? activity : undefined}
+                openCanvasSkillId={openCanvasSkillId}
+                regenerable={m.id === regenerableId}
                 onToggleCanvas={onToggleCanvas}
-                isCanvasOpen={openCanvasSkillId === (m.skillId ?? 'analyze')}
-                activity={activity}
+                onLogClick={onLogClick}
+                onApproval={onApproval}
+                onWidgetAction={onWidgetAction}
+                onRegenerate={onRegenerate}
               />
-            ) : m.role === 'widget' ? (
-              m.widget ? (
-                <div className="flex items-start">
-                  <WidgetHost
-                    registry={WIDGETS}
-                    instance={m.widget}
-                    onAction={onWidgetAction ?? (() => {})}
-                  />
-                </div>
-              ) : null
-            ) : (
-              <Bubble message={m} />
+            ))}
+          </AnimatePresence>
+          <AnimatePresence>
+            {thinking && (
+              <ThinkingIndicator
+                activity={activity ?? null}
+                startedAt={thinkingSince}
+              />
             )}
-          </motion.div>
-          );
-        })}
-        </AnimatePresence>
-        <AnimatePresence>
-          {thinking && <ThinkingIndicator activity={activity ?? null} />}
-        </AnimatePresence>
-        <div ref={endRef} />
+          </AnimatePresence>
+        </div>
       </div>
+      <MessageNavigationRail
+        messages={messages}
+        viewportRef={scrollRef}
+        contentRef={contentRef}
+        visible={navigationVisible}
+        onNavigate={(atLiveEdge) => {
+          followOutputRef.current = atLiveEdge;
+        }}
+      />
     </div>
   );
 }

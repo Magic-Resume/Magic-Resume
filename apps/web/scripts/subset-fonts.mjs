@@ -9,6 +9,10 @@
 // Sources (kept in public/fonts/full/, also back the runtime rare-glyph fallback):
 //   - Source Han Sans/Serif SC .woff  (黑体 / 宋体; CID CFF)
 //   - LXGW WenKai .woff (楷体; Regular=常规, Medium=当 700 加粗用,无独立 Bold)
+// ⚠️ 源文件的 OS/2 usWeightClass 必须与「注册成哪一档」一致:当粗体用的 Medium 要标
+// 700。屏幕与 PDF 都靠这个值判断要不要合成粗体(浏览器是 Blink 的规则,PDF 是
+// patches/@react-pdf__render 的同一条判据),标错会让两端在不同字体上合成而漂移。
+// 这里只做子集、原样带过 OS/2,所以责任在 full/ 的源文件。
 // 楷体源本是 TrueType(glyf),已 CFF 化(见 scripts/ttf2otf-kaiti.py)——react-pdf
 // 的 fontkit@2.0.4 glyf 子集路径对复杂字有 bug,CFF 走正常的 CFFSubset。
 // The full fonts stay in public/fonts/full/. See pdf/browser.tsx.

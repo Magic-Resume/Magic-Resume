@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Share2, Loader2 } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Share2, Loader2 } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { useSettingStore } from "@/store/useSettingStore";
 import { preloadResumePdfExport } from "@/lib/utils/pdf-export";

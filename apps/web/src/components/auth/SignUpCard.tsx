@@ -5,14 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from '@magic-resume/icons';
 import { AuthShell } from "./AuthShell";
 import { AuthButton, AuthField, FieldError, OtpField } from "./AuthPrimitives";
 import { SocialButtons, type OAuthProvider } from "./SocialButtons";
 import { getClerkErrorMessage } from "./authErrors";
 import { readLastMethod, writeLastMethod, type AuthMethod } from "./lastMethod";
 import { afterAuthUrl } from "./afterAuthUrl";
+import { isSessionExistsError, useRedirectIfSignedIn } from "./useSignedInRedirect";
 import { LegalConsent } from "./LegalConsent";
+import { useTermsGate } from "./TermsGate";
 
 const SSO_CALLBACK_URL = "/sso-callback";
 
@@ -28,6 +30,7 @@ export default function SignUpCard() {
   const afterAuth = afterAuthUrl(useSearchParams()?.toString());
   const { isLoaded, signUp, setActive } = useSignUp();
   const reduce = useReducedMotion();
+  const redirectingSignedIn = useRedirectIfSignedIn(afterAuth);
 
   const [step, setStep] = React.useState<Step>("start");
   const [email, setEmail] = React.useState("");
@@ -36,6 +39,8 @@ export default function SignUpCard() {
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [pendingOAuth, setPendingOAuth] = React.useState<OAuthProvider | null>(null);
+  // 条款门禁：只包住入口动作，不碰下面任何一步的注册逻辑。
+  const terms = useTermsGate();
   const [lastMethod, setLastMethod] = React.useState<AuthMethod | null>(null);
 
   React.useEffect(() => setLastMethod(readLastMethod()), []);
@@ -43,6 +48,15 @@ export default function SignUpCard() {
   const goTo = (next: Step) => {
     setError(null);
     setStep(next);
+  };
+
+  /** 见 SignInCard：`session_exists` 是「你已经登录了」，不是错误。 */
+  const onAuthError = (err: unknown) => {
+    if (isSessionExistsError(err)) {
+      router.replace(afterAuth);
+      return;
+    }
+    setError(getClerkErrorMessage(err, t));
   };
 
   const handleOAuth = async (provider: OAuthProvider) => {
@@ -58,7 +72,7 @@ export default function SignUpCard() {
       });
     } catch (err) {
       setPendingOAuth(null);
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     }
   };
 
@@ -73,7 +87,7 @@ export default function SignUpCard() {
       setCode("");
       goTo("verify");
     } catch (err) {
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     } finally {
       setBusy(false);
     }
@@ -94,7 +108,7 @@ export default function SignUpCard() {
         setError(t("auth.errors.generic"));
       }
     } catch (err) {
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     } finally {
       setBusy(false);
     }
@@ -106,7 +120,7 @@ export default function SignUpCard() {
     try {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
     } catch (err) {
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     }
   };
 
@@ -117,6 +131,9 @@ export default function SignUpCard() {
     exit: { opacity: 0 },
     transition: { duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] as const },
   };
+
+  // 见 SignInCard：已登录时正在跳走，别再渲染注册表单。
+  if (redirectingSignedIn) return null;
 
   return (
     <AuthShell
@@ -131,16 +148,19 @@ export default function SignUpCard() {
           {step === "start" && (
             <div className="flex flex-col gap-2.5">
               <SocialButtons
-                onSelect={handleOAuth}
+                onSelect={(provider) => terms.guard(() => void handleOAuth(provider))()}
                 pending={pendingOAuth}
                 disabled={!isLoaded}
                 lastMethod={lastMethod}
               />
-              <AuthButton onClick={() => goTo("email")} disabled={!isLoaded}>
+              <AuthButton onClick={terms.guard(() => goTo("email"))} disabled={!isLoaded}>
                 {t("auth.continueWith.email")}
               </AuthButton>
+              {/* 主动勾选取代了这一步原来的被动 `LegalConsent`——它比「注册即视为同意」
+                  更强。`email` 那一步仍保留那句话：那是账号真正被创建的时刻，
+                  `LegalConsent` 的注释里对这个位置有过刻意论证。 */}
+              <div className="pt-1.5">{terms.checkbox}</div>
               {error && <FieldError>{error}</FieldError>}
-              <LegalConsent />
             </div>
           )}
 
@@ -210,6 +230,7 @@ export default function SignUpCard() {
           )}
         </motion.div>
       </AnimatePresence>
+      {terms.dialog}
     </AuthShell>
   );
 }

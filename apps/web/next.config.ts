@@ -212,6 +212,27 @@ const nextConfig: NextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
         ],
       },
+      {
+        /**
+         * PDF 用的 CJK 字体：内容固定、体积巨大（子集 2.4–4.0MB，全量 13–17MB），
+         * 必须 immutable。
+         *
+         * Next.js 对 `public/` 默认发 `Cache-Control: public, max-age=0` —— 只有
+         * `_next/static` 才是 immutable。于是每次切换字体档位（sans / serif / kaiti）
+         * 都要回服务器验证一次 4MB 的文件；有 ETag 能拿 304 不重传正文，但那一个
+         * 往返就摆在用户点下字体到预览刷新之间。
+         *
+         * 文件名不带内容 hash，所以换字体文件时要改名（或加版本目录），
+         * 否则一年内的老客户端拿不到新版。
+         */
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
     ];
   },
   

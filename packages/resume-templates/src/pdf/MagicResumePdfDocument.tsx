@@ -9,6 +9,10 @@
  * 跨页孤行，而这里没有分页。保留是因为哪天恢复分页它们就是对的写法，别照着再加。
  */
 import React from 'react';
+import { compileTreeComponent } from '../primitives/treeComponent';
+import { renderNode as renderTreeNode } from '../primitives/pdf/renderNode';
+import { renderTreeDocument } from '../primitives/pdf/document';
+import { compile } from '../primitives/compile';
 import {
   Document,
   Image,
@@ -18,20 +22,7 @@ import {
   View,
 } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
-import type { IconNode } from 'lucide';
-import {
-  Award,
-  Briefcase,
-  FolderOpen,
-  Globe,
-  GraduationCap,
-  Languages,
-  Mail,
-  MapPin,
-  Phone,
-  User,
-  Wrench,
-} from 'lucide';
+import { ResumeIconNodes } from '@magic-resume/icons';
 import type {
   ComponentDefinition,
   ComponentStyle,
@@ -40,12 +31,51 @@ import type {
 } from '../types/magic-dsl';
 import type { InfoType, Resume, SectionItem } from '../types/resume';
 import { getPdfFontStack, getPdfRichTextFontFamily } from '../font-family';
-import { PdfLucideIcon } from './PdfLucideIcon';
+import { PdfHugeIcon, type PdfIconNode } from './PdfHugeIcon';
+import { iconNodeByName } from '../primitives/icons';
 import { PdfRichText } from './PdfRichText';
+import { isBuiltInSection, zhTitleForSection } from '../sectionSemantics';
+import {
+  getFieldValue as resolveField,
+  safeHref,
+} from '../fieldAccess';
+
+/**
+ * 取值规则与屏幕渲染器**共用同一份**（`fieldAccess`）——此前这里各写了一份，
+ * 对 `0` 的处理与屏幕相反。这里只把「没取到」收口成空串，因为 react-pdf 侧
+ * 全部按 `string` 用，不需要 `null` 那层可编辑性语义。
+ */
+const getFieldValue = (
+  item: Record<string, unknown>,
+  field: string | string[] | undefined,
+): string => resolveField(item, field) ?? '';
+
+/**
+ * 用户填的链接。**必须走 `safeHref`**：此前这里是无脑加 `https://` 前缀，
+ * `javascript:alert(1)` 会变成 `https://javascript:alert(1)` 并生成一个活的 `<Link>`。
+ * 拿不到安全 URL 就回 undefined，`ContactText` 会渲染成纯文本。
+ */
+const safeWebsiteUrl = (value: string): string | undefined =>
+  safeHref(value) ?? undefined;
 import { FREE_FORM_PAGE_SIZE, getFreeFormPageMinHeight } from './page-size';
 import { skillLevelToFraction } from '../templateLayout/skill-level';
 
 type PdfStyle = Style | Style[];
+
+const {
+  award: Award,
+  briefcase: Briefcase,
+  certificate: Certificate,
+  folderKanban: FolderKanban,
+  globe: Globe,
+  graduation: GraduationCap,
+  languages: Languages,
+  location: MapPin,
+  mail: Mail,
+  phone: Phone,
+  user: User,
+  wrench: Wrench,
+} = ResumeIconNodes;
 
 export interface MagicResumePdfDocumentProps {
   data: Resume;
@@ -55,59 +85,35 @@ export interface MagicResumePdfDocumentProps {
   cjkFallback?: boolean;
 }
 
-const ZH_TITLE_BY_SECTION_KEY: Record<string, string> = {
-  summary: '个人总结',
-  experience: '工作经历',
-  education: '教育经历',
-  projects: '项目经历',
-  skills: '专业技能',
-  languages: '语言能力',
-  certificates: '证书资质',
-  profiles: '个人主页',
-  awards: '奖项',
-};
-
-const ZH_TITLE_BY_ENGLISH: Record<string, string> = {
-  summary: '个人总结',
-  experience: '工作经历',
-  'work experience': '工作经历',
-  'professional experience': '专业经历',
-  education: '教育经历',
-  projects: '项目经历',
-  skills: '专业技能',
-  'technical skills': '技术技能',
-  languages: '语言能力',
-  certificates: '证书资质',
-  certifications: '证书资质',
-  profiles: '个人主页',
-  links: '个人主页',
-  awards: '奖项',
-};
-
-const SECTION_ICON_MAP: Record<string, IconNode> = {
+const SECTION_ICON_MAP: Record<string, PdfIconNode> = {
   summary: User,
   experience: Briefcase,
   education: GraduationCap,
-  projects: FolderOpen,
+  projects: FolderKanban,
   skills: Wrench,
   languages: Languages,
-  certificates: Award,
+  certificates: Certificate,
   profiles: User,
   awards: Award,
 };
 
-const TITLE_ICON_KEYWORDS: Array<[string, IconNode]> = [
+const TITLE_ICON_KEYWORDS: Array<[string, PdfIconNode]> = [
   ['工作', Briefcase], ['experience', Briefcase], ['work', Briefcase],
   ['教育', GraduationCap], ['education', GraduationCap],
-  ['项目', FolderOpen], ['project', FolderOpen],
+  ['项目', FolderKanban], ['project', FolderKanban],
   ['技能', Wrench], ['skill', Wrench], ['technical', Wrench],
   ['语言', Languages], ['language', Languages],
-  ['证书', Award], ['certif', Award], ['award', Award],
+  ['证书', Certificate], ['certif', Certificate], ['award', Award],
   ['个人', User], ['profile', User], ['summary', User],
   ['联系', Globe], ['contact', Globe],
 ];
 
-const getSectionIcon = (component: ComponentDefinition): IconNode | undefined => {
+const getSectionIcon = (component: ComponentDefinition): PdfIconNode | undefined => {
+  const selectedIcon = component.props?.titleIcon;
+  if (typeof selectedIcon === 'string') {
+    const icon = iconNodeByName(selectedIcon);
+    if (icon) return icon;
+  }
   const sectionKey = component.dataBinding.startsWith('sections.')
     ? component.dataBinding.slice('sections.'.length)
     : '';
@@ -127,28 +133,6 @@ const cssSizeToPoints = (value: string | number | undefined, fallback = 0): numb
   if (value.endsWith('mm')) return parsed * 2.83465;
   if (value.endsWith('pt')) return parsed;
   return parsed * 0.75;
-};
-
-const getNestedValue = (item: Record<string, unknown>, path: string): unknown => {
-  return path.split('.').reduce<unknown>((current, key) => {
-    if (!current || typeof current !== 'object') return undefined;
-    return (current as Record<string, unknown>)[key];
-  }, item);
-};
-
-const getFieldValue = (
-  item: Record<string, unknown>,
-  field: string | string[] | undefined,
-): string => {
-  if (!field) return '';
-  const fields = Array.isArray(field) ? field : [field];
-
-  for (const candidate of fields) {
-    const value = getNestedValue(item, candidate);
-    if (value !== undefined && value !== null && value !== '') return String(value);
-  }
-
-  return '';
 };
 
 const isVisible = (item: SectionItem) => (
@@ -173,7 +157,7 @@ const resolveTitle = (component: ComponentDefinition, locale?: string): string =
   const sectionKey = component.dataBinding.startsWith('sections.')
     ? component.dataBinding.slice('sections.'.length)
     : '';
-  return ZH_TITLE_BY_SECTION_KEY[sectionKey] ?? ZH_TITLE_BY_ENGLISH[title.trim().toLowerCase()] ?? title;
+  return zhTitleForSection(sectionKey, title);
 };
 
 /** 模板未描述的 section 的字段别名。必须与 HTML 渲染器保持一致，否则屏幕与导出会长得不一样。 */
@@ -187,10 +171,11 @@ const CUSTOM_SECTION_FIELD_MAP = {
 /** A `ListSection` definition for an ordered key the template does not declare. */
 const synthesiseCustomSection = (
   data: Resume,
-  entry: { key: string; label?: string },
+  entry: { key: string; label?: string; icon?: string },
 ): ComponentDefinition | null => {
-  // Built-ins are never synthesised — see the HTML renderer's twin.
-  if (ZH_TITLE_BY_SECTION_KEY[entry.key]) return null;
+  // 内建分区不合成。判据来自 `sectionSemantics`——**两个渲染器共用同一份**，
+  // 此前各存一份导致 summary/awards 在导出时静默消失。
+  if (isBuiltInSection(entry.key)) return null;
 
   const items = (data.sections as Record<string, unknown> | undefined)?.[entry.key];
   if (!Array.isArray(items) || items.length === 0) return null;
@@ -203,7 +188,7 @@ const synthesiseCustomSection = (
     position: { area: 'main' },
     // Both titles carry the heading as the candidate wrote it, so `resolveTitle`
     // cannot swap in a translation for a section only they have named.
-    props: { title, titleZh: title },
+    props: { title, titleZh: title, ...(entry.icon ? { titleIcon: entry.icon } : {}) },
     fieldMap: CUSTOM_SECTION_FIELD_MAP,
   } as ComponentDefinition;
 };
@@ -226,7 +211,12 @@ const sortComponents = (template: MagicTemplateDSL, data: Resume): ComponentDefi
   for (const entry of data.sectionOrder ?? []) {
     const component = sections.find((candidate) => candidate.dataBinding === `sections.${entry.key}`);
     if (component) {
-      ordered.push(component);
+      const icon = (entry as { icon?: unknown }).icon;
+      ordered.push(
+        typeof icon === 'string'
+          ? { ...component, props: { ...component.props, titleIcon: icon } }
+          : component,
+      );
       continue;
     }
     if (declaredBindings.has(`sections.${entry.key}`)) continue;
@@ -277,14 +267,14 @@ interface RenderContext {
   locale?: string;
 }
 
-const InlineIcon = ({ icon, color, size, offsetY, strokeWidth = 2 }: {
-  icon: IconNode;
+const InlineIcon = ({ icon, color, size, offsetY, strokeWidth = 1.5 }: {
+  icon: PdfIconNode;
   color: string;
   size: number;
   offsetY?: number;
   strokeWidth?: number;
 }) => (
-  <PdfLucideIcon
+  <PdfHugeIcon
     icon={icon}
     color={color}
     size={size}
@@ -298,7 +288,7 @@ const InlineIcon = ({ icon, color, size, offsetY, strokeWidth = 2 }: {
 
 const SectionTitle = ({ title, icon, sidebar, color, dividerColor, fontSize, context }: {
   title: string;
-  icon?: IconNode;
+  icon?: PdfIconNode;
   sidebar?: boolean;
   color?: string;
   dividerColor?: string;
@@ -338,11 +328,6 @@ const SectionTitle = ({ title, icon, sidebar, color, dividerColor, fontSize, con
       </Text>
     </View>
   );
-};
-
-const safeWebsiteUrl = (value: string): string => {
-  if (!value) return '';
-  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 };
 
 const ContactText = ({ value, href, style }: { value: string; href?: string; style: PdfStyle }) => {
@@ -399,17 +384,25 @@ const HeaderBlock = ({ info, component, context }: {
   const contactFontSize = 7.5;
   const contactIconOffsetY = -0.75;
   const contactLineHeight = 1;
-  const contacts: Array<{ label: string; value: string; href: string; icon?: IconNode }> = [
+  // href 可缺省：`safeWebsiteUrl` 拒绝不可信 URL 时回 undefined，ContactText 渲染成纯文本。
+  const contacts: Array<{ label: string; value: string; href?: string; icon?: PdfIconNode; custom?: boolean }> = [
     { label: context.locale?.startsWith('zh') ? '电话' : 'Phone', value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '', icon: Phone },
     { label: context.locale?.startsWith('zh') ? '邮箱' : 'Email', value: info.email, href: info.email ? `mailto:${info.email}` : '', icon: Mail },
     { label: context.locale?.startsWith('zh') ? '地址' : 'Address', value: info.address, href: '', icon: MapPin },
     { label: context.locale?.startsWith('zh') ? '网站' : 'Website', value: info.website, href: safeWebsiteUrl(info.website), icon: Globe },
   ].filter((item) => item.value);
 
-  if (props.showCustomFields) {
+  if (props.showCustomFields !== false) {
     for (const field of info.customFields ?? []) {
       if (field.name?.trim() && field.value?.trim()) {
-        contacts.push({ label: field.name.trim(), value: field.value.trim(), href: '' });
+        const value = field.value.trim();
+        contacts.push({
+          label: field.name.trim(),
+          value,
+          href: safeWebsiteUrl(value),
+          icon: iconNodeByName(field.icon ?? ''),
+          custom: true,
+        });
       }
     }
   }
@@ -443,6 +436,15 @@ const HeaderBlock = ({ info, component, context }: {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: labelContacts ? 5 : 7, marginTop: 2 }}>
           {contacts.map((item) => (
             <View key={`${item.label}:${item.value}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, width: labelContacts ? '47%' : undefined }}>
+              {labelContacts && item.custom && item.icon ? (
+                <InlineIcon
+                  icon={item.icon}
+                  color={context.colors.primary}
+                  size={contactFontSize}
+                  offsetY={contactIconOffsetY}
+                  strokeWidth={1.5}
+                />
+              ) : null}
               {labelContacts ? <Text style={{ color: context.colors.textSecondary, fontSize: contactFontSize, lineHeight: contactLineHeight }}>{item.label}:</Text> : null}
               {!labelContacts && item.icon ? (
                 <InlineIcon
@@ -450,7 +452,7 @@ const HeaderBlock = ({ info, component, context }: {
                   color={context.colors.primary}
                   size={contactFontSize}
                   offsetY={contactIconOffsetY}
-                  strokeWidth={2.5}
+                  strokeWidth={1.5}
                 />
               ) : null}
               <ContactText value={item.value} href={item.href} style={{ color: context.colors.text, fontSize: contactFontSize, lineHeight: contactLineHeight, textDecoration: 'none' }} />
@@ -472,11 +474,12 @@ const CenteredPhotoHeaderBlock = ({ info, component, context }: {
   const avatarWidth = cssSizeToPoints(Number(props.avatarWidth ?? 86));
   const avatarHeight = cssSizeToPoints(Number(props.avatarHeight ?? 119));
   const separator = typeof props.contactSeparator === 'string' ? props.contactSeparator : '|';
-  const showCustomFields = props.showCustomFields === true;
+  const showCustomFields = props.showCustomFields !== false;
   const nameFontSize = cssSizeToPoints(context.typography.fontSize.xxl, 22);
   const contactFontSize = cssSizeToPoints(context.typography.fontSize.md, 10);
   const headlineFontSize = cssSizeToPoints(context.typography.fontSize.lg, 12);
-  const contacts: Array<{ key: string; value: string; href: string }> = [
+  // 同上：href 可缺省。
+  const contacts: Array<{ key: string; value: string; href?: string; icon?: PdfIconNode }> = [
     { key: 'phone', value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '' },
     { key: 'email', value: info.email, href: info.email ? `mailto:${info.email}` : '' },
     { key: 'address', value: info.address, href: '' },
@@ -485,9 +488,15 @@ const CenteredPhotoHeaderBlock = ({ info, component, context }: {
 
   if (showCustomFields) {
     for (const [index, field] of (info.customFields ?? []).entries()) {
+      const label = field?.name?.trim();
       const value = field?.value?.trim();
-      if (!value) continue;
-      contacts.push({ key: field.id || `custom-${index}`, value, href: '' });
+      if (!label || !value) continue;
+      contacts.push({
+        key: field.id || `custom-${index}`,
+        value: `${label}：${value}`,
+        href: safeWebsiteUrl(value),
+        icon: iconNodeByName(field.icon ?? ''),
+      });
     }
   }
 
@@ -524,6 +533,9 @@ const CenteredPhotoHeaderBlock = ({ info, component, context }: {
                   <Text style={{ color: context.colors.text, fontSize: contactFontSize, marginHorizontal: 3 }}>
                     {separator}
                   </Text>
+                ) : null}
+                {item.icon ? (
+                  <InlineIcon icon={item.icon} color={context.colors.primary} size={contactFontSize} offsetY={-0.5} />
                 ) : null}
                 <ContactText
                   value={item.value}
@@ -614,11 +626,20 @@ const ContactBlock = ({ info, component, sidebar, context }: {
   const iconSize = cssSizeToPoints('16px', 12);
   const lineHeight = 1.2;
   const itemGap = cssSizeToPoints('12px', 9);
-  const items = [
-    { icon: MapPin, value: info.address, href: '' },
-    { icon: Phone, value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '' },
-    { icon: Mail, value: info.email, href: info.email ? `mailto:${info.email}` : '' },
-    { icon: Globe, value: info.website, href: safeWebsiteUrl(info.website) },
+  const items: Array<{ key: string; icon?: PdfIconNode; label?: string; value: string; href?: string }> = [
+    { key: 'address', icon: MapPin, value: info.address, href: '' },
+    { key: 'phone', icon: Phone, value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '' },
+    { key: 'email', icon: Mail, value: info.email, href: info.email ? `mailto:${info.email}` : '' },
+    { key: 'website', icon: Globe, value: info.website, href: safeWebsiteUrl(info.website) },
+    ...(info.customFields ?? [])
+      .filter((field) => field?.name?.trim() && field.value?.trim())
+      .map((field, index) => ({
+        key: field.id || `custom-${index}`,
+        label: field.name.trim(),
+        value: field.value.trim(),
+        href: safeWebsiteUrl(field.value),
+        icon: iconNodeByName(field.icon ?? ''),
+      })),
   ].filter((item) => item.value);
   if (items.length === 0) return null;
 
@@ -641,10 +662,14 @@ const ContactBlock = ({ info, component, sidebar, context }: {
       />
       <View style={{ gap: itemGap }}>
         {items.map((item) => (
-          <View key={item.value} style={{ flexDirection: 'row', alignItems: 'center', gap: itemGap }}>
-            <InlineIcon icon={item.icon} color={iconColor} size={iconSize} />
+          <View key={item.key} style={{ flexDirection: 'row', alignItems: 'center', gap: itemGap }}>
+            {item.icon ? (
+              <InlineIcon icon={item.icon} color={iconColor} size={iconSize} />
+            ) : (
+              <View style={{ width: iconSize }} />
+            )}
             <ContactText
-              value={item.value}
+              value={item.label ? `${item.label}：${item.value}` : item.value}
               href={item.href}
               style={{ color, fontSize, lineHeight, textDecoration: 'none' }}
             />
@@ -1034,6 +1059,19 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
   sidebar: boolean;
   context: RenderContext;
 }) => {
+  // ── 绞杀榕接缝（与 HTML 渲染器同一个判断） ──
+  // 这两处必须同时改：只改一边，就又造出了一对孪生实现——
+  // `summary` / `awards` 在导出里消失，起因正是这种「本该一致的两处」漂了。
+  if (component.tree) {
+    const root = compileTreeComponent(
+      component.tree,
+      data as unknown as Record<string, unknown>,
+      component.id,
+    );
+    if (!root) return null;
+    return <>{renderTreeNode(root, { fontFamily: context.richTextFontFamily })}</>;
+  }
+
   if (component.dataBinding === 'info') {
     if (component.type === 'ProfileCard') return <ProfileBlock info={data.info} component={component} sidebar={sidebar} context={context} />;
     if (component.type === 'ContactInfo') return <ContactBlock info={data.info} component={component} sidebar={sidebar} context={context} />;
@@ -1053,6 +1091,25 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
 };
 
 export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = false }: MagicResumePdfDocumentProps) => {
+  // 整棵模板树接管：与 HTML 渲染器**同一个判断、同一个编译入口**。
+  // 只改一边就是又造一对孪生实现——`summary`/`awards` 那次事故就是这么来的。
+  if (data.templateOverride) {
+    const { root, page, diagnostics } = compile(
+      data.templateOverride as never,
+      data as unknown as Record<string, unknown>,
+    );
+    if (process.env.NODE_ENV !== 'production') {
+      for (const d of diagnostics) console.warn(`[resume-templates] templateOverride: ${d.message}`);
+    }
+    return renderTreeDocument(root, page, {
+      fontFamily: getPdfRichTextFontFamily(
+        template.designTokens.typography.fontFamily.primary,
+        cjkFallback,
+      ),
+      width: cssSizeToPoints(template.layout.containerWidth, FREE_FORM_PAGE_SIZE.width),
+    });
+  }
+
   const { colors, typography, spacing } = template.designTokens;
   // 页宽 / 模块间距取自 layout(自定义面板的容器宽度 / 模块间距滑杆写入处),
   // 缺省回落 A4 宽与 spacing.lg —— 硬编码会让这两项自定义静默失效。

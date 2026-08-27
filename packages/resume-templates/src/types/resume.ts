@@ -79,6 +79,7 @@ export type CustomInfoField = {
   id: string;
   name: string;
   value: string;
+  icon?: string;
 };
 
 export type InfoType = {
@@ -130,6 +131,12 @@ export type Resume = {
   sectionOrder: SectionOrder[];
   template: string;
   customTemplate?: CustomTemplateConfig;
+  /**
+   * 整棵模板树（原语层）。有它就完全接管渲染，不再走 `template` 指向的注册模板。
+   * 形状不在这里约束——校验在 `primitives/validate.ts` 与 JSON Schema 里，
+   * 在类型上再定义一份就是第二份会漂的定义。
+   */
+  templateOverride?: unknown;
   themeColor: string;
   typography: string;
   isPublic?: boolean;

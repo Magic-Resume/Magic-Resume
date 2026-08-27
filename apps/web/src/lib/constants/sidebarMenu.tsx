@@ -5,10 +5,10 @@ import {
   FolderKanban,
   GraduationCap,
   Zap,
-  Globe,
-  Award,
+  Certificate,
+  Languages,
   BriefcaseBusiness
-} from 'lucide-react';
+} from '@magic-resume/icons';
 
 export type SidebarMenuItem = {
   key: string;
@@ -52,13 +52,13 @@ const sidebarMenu: SidebarMenuItem[] = [
   },
   {
     key: 'languages',
-    icon: Globe,
+    icon: Languages,
     label: 'sections.languages',
     itemRender: (item) => <div className="truncate font-bold text-sm">{String(item.language ?? '')}</div>
   },
   {
     key: 'certificates',
-    icon: Award,
+    icon: Certificate,
     label: 'sections.certificates',
     // 证书条目的标题字段是 name(见 dynamicFormFields.certificatesFields),
     // 不是 certificate——旧写法取不到值,列表行会整行空白。

@@ -1,5 +1,8 @@
 import { WEB_AGENT_ROUTES } from '@/lib/api/routes';
+import { fromResponse } from '@/lib/errors/normalize';
+import type { AppError } from '@/lib/errors/types';
 import type { AgentLlmConfig, AgentSseEvent } from './types';
+import type { AnalysisImprovementAction } from '@/types/agent/multi-persona';
 
 /**
  * AI Lab 唯一的服务客户端。调用都经 Next.js route handler，所以这里用相对 `/api/...`
@@ -7,40 +10,24 @@ import type { AgentLlmConfig, AgentSseEvent } from './types';
  */
 
 /**
- * 把上游错误消息映射成用户能行动的友好文案。后端透传的原始字符串
- * （如 `Upstream 'agent' unavailable`、`invalid_api_key`）对用户没有意义，
- * 按状态码 + 关键词归类后再展示；无法归类时回退原始信息。
+ * 把一次失败响应变成可抛的 {@link AgentRequestError}。
+ *
+ * 以前这里是七条按英文散文匹配的正则。它们判错过一次真实故障：BFF 把上游响应整体换成
+ * "Backend request failed with status 429"，正则命中里面那个 "429"，于是「日额度用完」
+ * 被说成「请求过于频繁」，而下游的充值闸门测的是中文串「额度不足」——两边都没命中，
+ * 用户看到一句不相干的话，且没有任何充值入口。
+ *
+ * 现在读码不读字符串。判定只此一处（`fromResponse`），闸门也读同一个码。
  */
-function friendlyAgentError(status: number, raw: string): string {
-  const haystack = `${status} ${raw}`;
-  let friendly = '';
-  if (/timeout|timed out|ETIMEDOUT|abort/i.test(haystack)) {
-    friendly = '请求超时，请检查网络后重试';
-  } else if (/unauthori[sz]ed|forbidden|invalid.*(api.?key|key|token|credential)|authentication|401|403/.test(haystack)) {
-    friendly = 'API Key 无效或没有权限，请检查密钥';
-  } else if (/quota|insufficient.*(balance|credit|quota)|balance|billing|402/.test(haystack)) {
-    friendly = '账户额度不足，请检查余额或配额';
-  } else if (/rate.?limit|too many requests|429/.test(haystack)) {
-    friendly = '请求过于频繁，请稍后重试';
-  } else if (/upstream|origin|gateway|backend.*(unavail|down|error)|502|503/.test(haystack)) {
-    friendly = '服务商上游暂不可用，请稍后重试或检查服务状态';
-  } else if (/not found|no such model|404/.test(haystack)) {
-    friendly = '接口或模型不存在，请检查配置';
-  } else if (status >= 500) {
-    friendly = '服务商返回服务器错误，请稍后重试';
-  }
-  if (!friendly) return raw;
-  return raw && raw !== friendly ? `${friendly}（${raw}）` : friendly;
+async function readError(res: Response): Promise<AgentRequestError> {
+  return new AgentRequestError(await fromResponse(res, 'bff'));
 }
 
-async function readError(res: Response): Promise<string> {
-  try {
-    const data = await res.json();
-    const raw =
-      (data?.error || data?.message || data?.detail || `请求失败（${res.status}）`) as string;
-    return friendlyAgentError(res.status, raw);
-  } catch {
-    return `请求失败（${res.status}）`;
+/** 带上归一化后的 {@link AppError}，让 catch 侧不必再从 message 里往回猜。 */
+export class AgentRequestError extends Error {
+  constructor(readonly appError: AppError) {
+    super(appError.errorCode);
+    this.name = 'AgentRequestError';
   }
 }
 
@@ -49,23 +36,60 @@ async function readError(res: Response): Promise<string> {
  * 遇到非流式错误响应（后端开流前发的 401/422/429）会抛错。
  */
 export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseEvent> {
-  if (!res.ok || !res.body) throw new Error(await readError(res));
+  if (!res.ok || !res.body) throw await readError(res);
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
 
   // 按行解析：既容忍标准 `\n\n` 分帧的 SSE，也容忍把 `\n\n` 压成 `\n` 的代理层。
+  //
+  // 解析失败此前是完全无声的：一帧被中间层折行、或 JSON 里混进未转义换行，整条简历改动
+  // 就这么消失，连一句日志都没有。数出来并在流末喊一声——不改行为，只是让它不再无迹可寻。
+  let malformed = 0;
+  let lastStreamSequence = 0;
   const parse = (raw: string): AgentSseEvent | null => {
     const line = raw.trim();
     if (!line.startsWith('data:')) return null;
     const json = line.slice(5).trim();
     if (!json) return null;
+    let event: AgentSseEvent;
     try {
-      return JSON.parse(json) as AgentSseEvent;
+      event = JSON.parse(json) as AgentSseEvent;
     } catch {
+      malformed += 1;
+      if (malformed === 1) {
+        console.warn('[ai] unparsable SSE frame (first 80 chars):', json.slice(0, 80));
+      }
       return null;
     }
+    // Missing protocolVersion is the supported v0 compatibility path. A v1
+    // stream must be gap-free; otherwise accepting its final snapshot could
+    // reconcile against a patch we never received.
+    if (event.protocolVersion !== undefined && event.protocolVersion !== 1) {
+      throw new AgentRequestError({
+        errorCode: 'upstream_unavailable',
+        subCode: 'sse_protocol_unsupported',
+        retryable: true,
+        source: 'sse',
+        cause: event.protocolVersion,
+      });
+    }
+    if (event.protocolVersion === 1) {
+      const received = event.streamSequence;
+      const expected = lastStreamSequence + 1;
+      if (!Number.isInteger(received) || received !== expected) {
+        throw new AgentRequestError({
+          errorCode: 'upstream_unavailable',
+          subCode: 'sse_sequence_gap',
+          retryable: true,
+          source: 'sse',
+          cause: { expected, received },
+        });
+      }
+      lastStreamSequence = received;
+    }
+    return event;
   };
 
   while (true) {
@@ -81,6 +105,9 @@ export async function* consumeSseFrames(res: Response): AsyncGenerator<AgentSseE
   }
   const tail = parse(buffer);
   if (tail) yield tail;
+  if (malformed > 0) {
+    console.warn(`[ai] dropped ${malformed} unparsable SSE frame(s) this run`);
+  }
 }
 
 /** 流式跑一次 agent，产出解析好的 {@link AgentSseEvent}。 */
@@ -113,6 +140,13 @@ export async function* streamPdfParse(
 
 export interface ChatStreamParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  /** 私有 R2 对象的短期读取地址；后端渲染为页面图并放进同一条用户消息。 */
+  attachments?: Array<{
+    id: string;
+    name: string;
+    contentType: string;
+    sourceUrl: string;
+  }>;
   /**
    * 对话档位（共创 / 规划 / 问答）。只传枚举——契约文本在服务端，客户端传原文等于
    * 开放任意系统提示注入。服务端按档位注入到单次模型调用，不进会话历史，所以切
@@ -127,6 +161,8 @@ export interface ChatStreamParams {
    * pushing a full resume snapshot into every chat turn.
    */
   resumeId?: string;
+  request_type?: 'fix_analysis_weakness';
+  context?: { analysisIssue?: AnalysisImprovementAction };
   /**
    * User-provided model config for this AI request.
    */
@@ -179,6 +215,7 @@ export interface ApproveToolParams {
   resumeId?: string;
   /** 续跑沿用同一档位，否则批准之后那半程回到无约束状态。 */
   agentMode?: 'cocreate' | 'plan' | 'ask';
+  request_type?: 'fix_analysis_weakness';
   config?: AgentLlmConfig;
   signal?: AbortSignal;
 }
