@@ -93,6 +93,8 @@ export type CustomInfoField = {
   id: string;
   name: string;
   value: string;
+  /** Optional name from the shared section-icon registry. */
+  icon?: string;
 };
 
 export type SectionItem = {
@@ -140,6 +142,11 @@ export type Resume = {
   sectionOrder: SectionOrder[];
   template: string; // Base template ID
   customTemplate?: CustomTemplateConfig; // User custom configuration
+  /**
+   * 整棵模板树（原语层）。有它就完全接管渲染，不再走 `template` 指向的注册模板。
+   * 形状由 `@magic-resume/resume-templates` 的校验器把关，这里不重复定义。
+   */
+  templateOverride?: unknown;
   themeColor: string;
   typography: string;
   versions?: ResumeVersion[];

@@ -2,14 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Shapes,
+  Files,
   LayoutGrid,
-  Type,
+  TextFont,
   Palette,
-  PanelRight,
   RotateCcw,
   ChevronRight,
-} from "lucide-react";
+} from '@magic-resume/icons';
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
@@ -20,6 +19,7 @@ import { useResumeStore } from "@/store/useResumeStore";
 import { extractCustomConfig, mergeTemplateConfig } from "@/lib/utils/templateUtils";
 import { parseCssPixelValue } from "@/lib/utils/css";
 import { cn } from "@/lib/utils";
+import { MaskIcon } from "@/components/icons/MaskIcon";
 import ResumeMiniPreview from "../../../_components/ResumeMiniPreview";
 import TemplateStoreModal from "./TemplateStoreModal";
 import {
@@ -243,9 +243,9 @@ export default function TemplatePanel({
   }, []);
 
   const railItems: { id: SectionId; icon: React.ReactNode; label: string }[] = [
-    { id: "template", icon: <Shapes size={18} />, label: t("templateCustomizer.sections.template") },
+    { id: "template", icon: <Files size={18} />, label: t("templateCustomizer.sections.template") },
     { id: "layout", icon: <LayoutGrid size={18} />, label: t("templateCustomizer.sections.layout") },
-    { id: "typography", icon: <Type size={18} />, label: t("templateCustomizer.sections.typography") },
+    { id: "typography", icon: <TextFont size={18} />, label: t("templateCustomizer.sections.typography") },
     { id: "colors", icon: <Palette size={18} />, label: t("templateCustomizer.sections.colors") },
   ];
 
@@ -254,7 +254,7 @@ export default function TemplatePanel({
       {/* Template */}
       <AccordionSection
         sectionId="template"
-        icon={<Shapes size={16} />}
+        icon={<Files size={16} />}
         title={t("templateCustomizer.sections.template")}
         open={open.template}
         onToggle={() => toggleSection("template")}
@@ -457,7 +457,7 @@ export default function TemplatePanel({
       {/* Typography */}
       <AccordionSection
         sectionId="typography"
-        icon={<Type size={16} />}
+        icon={<TextFont size={16} />}
         title={t("templateCustomizer.sections.typography")}
         open={open.typography}
         onToggle={() => toggleSection("typography")}
@@ -645,7 +645,7 @@ export default function TemplatePanel({
     return (
       <div className="flex h-full w-full flex-col bg-desk">
         <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
-          <Shapes size={16} className="text-sky-300" />
+          <Files size={16} className="text-sky-300" />
           <h2 className="text-[15px] font-semibold tracking-tight text-white">
             {t("templatePanel.customizeTitle")}
           </h2>
@@ -685,7 +685,11 @@ export default function TemplatePanel({
             active={false}
             onClick={() => setRightCollapsed(!rightCollapsed)}
           >
-            <PanelRight size={18} />
+            <MaskIcon
+              src="/marks/sidebar.svg"
+              size={20}
+              className="block -scale-x-100"
+            />
           </RailButton>
 
           <div className="my-1.5 h-px w-6 bg-white/[0.08]" />

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { X } from '@magic-resume/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
@@ -89,4 +89,3 @@ const RenameResumeDialog = React.memo(({
 RenameResumeDialog.displayName = 'RenameResumeDialog';
 
 export default RenameResumeDialog;
- 

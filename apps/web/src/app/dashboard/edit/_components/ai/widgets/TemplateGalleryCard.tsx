@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LayoutTemplate } from 'lucide-react';
+import { LayoutTemplate } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { Gallery, WidgetItem, WidgetShell } from '@magic-resume/genui';
 import type { WidgetOption, WidgetProps } from '@magic-resume/genui/contract';
@@ -35,7 +35,7 @@ export default function TemplateGalleryCard({ instance }: WidgetProps) {
       : t('aiLab.widgets.gallery.template');
 
   return (
-    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-raised px-4 py-3.5">
+    <WidgetShell density="block">
       <div className="flex items-center gap-2.5">
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-tint-sky">
           <LayoutTemplate size={14} className="text-ink-sky" />

@@ -79,10 +79,19 @@ export async function resolveAiAccessConfig(
 
   const canInternal = Boolean(entitlement.canUseInternal);
 
-  // No hard-coded backend default: send the user's picked model, else fall back to
-  // the first offered model. modelName is only omitted when we truly have neither.
-  const internalModel =
-    settings.selectedModel || entitlement.availableModels?.[0];
+  /**
+   * 用户点了名就送他点的；**没点名就什么都不送**，让服务端填 `llm.defaultModel`。
+   *
+   * 这里曾经退到 `availableModels[0]`，而那个数组是按模型名字母序排的（`model: 'asc'`）——
+   * 等于让「自动」默认跑在字母序第一的模型上，与它的价格无关。更糟的是它**静默废掉了
+   * relay 的按档降级**：`resolveEffectiveModel` 以「送来的正是全局默认」为「调用方没选」
+   * 的判定信号，送一个别的模型名就会让它提前返回，`Plan.defaultModel` 永远不生效——
+   * 免费档因此按目录里最贵的那个模型计费，正是那段逻辑当初要修的问题。
+   *
+   * 省略 modelName 还顺带让两条路径收敛：entitlement 查不到时走的
+   * `unverifiedInternalConfig` 本来就不带模型名。
+   */
+  const internalModel = settings.selectedModel || undefined;
   const internalConfig = (): AiAccessResult => ({
     ok: true,
     config: {

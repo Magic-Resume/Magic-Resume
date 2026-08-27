@@ -29,6 +29,9 @@ const IGNORE_PATTERNS = [
   'src/lib/constants/modals.ts',
   // 开发期陈列 / 验收页，不进生产（组件自身 `process.env.NODE_ENV` 兜底）。
   'src/app/genui/**',
+  // 与 genui 同类：仅开发环境的陈列 / 实验页，生产返回 404。
+  // 它的文案是给开发者读的调试标签，不是产品 UI——翻译它没有消费方。
+  'src/app/template-lab/**',
   // ⚠️ 这条**是欠账，不是例外**。
   //
   // `FORM_DEFS` 里有 80 条中文：42 条 title/label/placeholder，外加 `opts(...)` 里
@@ -97,6 +100,9 @@ function isLikelyHardcoded(text: string): boolean {
 }
 
 // --- 核心逻辑 ---
+/** 看着像 i18n key 的字符串：点分、全小写开头、至少两段。用来在表达式里认出 key。 */
+const LIKELY_KEY = /^[a-z][\w-]*(\.[\w-]+)+$/;
+
 async function run() {
   console.log('🚀 Starting i18n validation check...');
 
@@ -143,6 +149,36 @@ async function run() {
           if (args.length > 0 && Node.isStringLiteral(args[0])) {
             const key = args[0].getText().replace(/['"]/g, '');
             checkKey(key, node, relativePath);
+          }
+          // A2. 动态 key：`t(\`aiLab.history.group.${label}\`)`。
+          //
+          // 具体那一段拼出什么只有运行时知道，但**前缀是静态的**——校验它对应的父对象
+          // 存不存在，就能挡住整块文案缺失这一类。之前挡不住：一整块 `history.group`
+          // 没有，检查器全绿，而界面上直接显示出 `aiLab.history.group.today` 这串 key。
+          if (args.length > 0 && Node.isTemplateExpression(args[0])) {
+            const head = args[0].getHead().getLiteralText();
+            const prefix = head.replace(/\.$/, '');
+            if (prefix.includes('.')) checkKeyPrefix(prefix, node, relativePath);
+          }
+          // A3. key 藏在表达式里：`t(cond ? 'a.b.c' : \`a.b.${x}\`)`。
+          //
+          // 上面两条只看 `args[0]` 本身是不是字面量/模板串，三元、逻辑或、变量一概
+          // 落空——线上就是这么漏的：`aiLab.interview.prep.*` 整组不存在，检查全绿，
+          // 而面试间的屏幕正中直接把 key 印给了用户。往里走一层。
+          if (
+            args.length > 0 &&
+            !Node.isStringLiteral(args[0]) &&
+            !Node.isTemplateExpression(args[0])
+          ) {
+            args[0].forEachDescendant((inner) => {
+              if (Node.isStringLiteral(inner)) {
+                const key = inner.getLiteralText();
+                if (LIKELY_KEY.test(key)) checkKey(key, node, relativePath);
+              } else if (Node.isTemplateExpression(inner)) {
+                const prefix = inner.getHead().getLiteralText().replace(/\.$/, '');
+                if (LIKELY_KEY.test(prefix)) checkKeyPrefix(prefix, node, relativePath);
+              }
+            });
           }
         }
       }
@@ -219,6 +255,35 @@ async function run() {
           line: node.getStartLineNumber(),
           type: 'MISSING_KEY',
           message: `Missing key "${key}" in ${lang}/translation.json`
+        });
+      }
+    }
+  }
+
+  /**
+   * 动态 key 的静态前缀下必须挂着**至少一个**子键。
+   *
+   * 只能验到这一层：`${kind}` 取什么值这里推不出来。但整块消失是最常见也最刺眼的失败
+   * （界面上直接把 key 印出来给用户看），而它恰好只需要前缀就能挡住。
+   */
+  function checkKeyPrefix(prefix: string, node: Node, file: string) {
+    for (const lang of LANGUAGES) {
+      const keys = translationKeys[lang];
+      if (!keys) continue;
+      const needle = `${prefix}.`;
+      let found = false;
+      for (const key of keys) {
+        if (key.startsWith(needle)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        errors.push({
+          file,
+          line: node.getStartLineNumber(),
+          type: 'MISSING_KEY',
+          message: `Missing key group "${prefix}.*" in ${lang}/translation.json (used as a dynamic key)`,
         });
       }
     }

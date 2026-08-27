@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useClerk } from '@clerk/nextjs';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
-import { ArrowRight, Bell, FlaskConical } from 'lucide-react';
+import { ArrowRight, Bell, FlaskConical } from '@magic-resume/icons';
 import { getCountdownTimeLeft, type CountdownTimeLeft } from '@/lib/utils/dateTime';
 
 interface ComingSoonProps {

@@ -8,41 +8,66 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useSearchParams } from "next/navigation";
+import AssetLibrary from "@/components/assets/AssetLibrary";
 import { motion, AnimatePresence } from "framer-motion";
+import type { StagedAttachment } from "./lib/attachments";
 import {
   FileText,
-  SquarePen,
   X,
-  PencilRuler,
+  AiGenerateIcon,
   Check,
+  ChevronLeft,
   KeyRound,
   Gauge,
-} from "lucide-react";
+} from "@magic-resume/icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import {
+  settleWidgetInMessages,
+  upsertWidgetInMessages,
+} from "./lib/widgetPlacement";
+import { MaskIcon } from "@/components/icons/MaskIcon";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { InfoType, Resume, Section } from "@/types/frontend/resume";
 import { SKILLS } from "./skills/registry";
 import { GenUIProvider } from "@magic-resume/genui";
-import { WIDGETS, askChoiceKind } from "./widgets/registry";
+import { WIDGETS, askChoiceKind, requestFormKind } from "./widgets/registry";
 import { AI_WIDGET_SOURCES } from "./widgets/sources";
 import type {
   WidgetActionResult,
   WidgetEnvelope,
   WidgetKind,
 } from "@magic-resume/genui/contract";
-import type { CanvasState, ChatMessage, PlanTodo, SkillId } from "./types";
+import type {
+  CanvasState,
+  AgentTrajectory,
+  ChatMessage,
+  PlanTodo,
+  SkillId,
+  ToolCall,
+} from "./types";
 import ChatThread from "./conversation/ChatThread";
 import Composer from "./conversation/Composer";
 import PolarisPerch from "./conversation/PolarisPerch";
 import { setFlightOrigin } from "./conversation/polarisFlight";
-import { AGENT_MODES, type AgentMode } from "./conversation/modes";
+import {
+  AGENT_MODES,
+  DEFAULT_AGENT_MODE,
+  type AgentMode,
+} from "./conversation/modes";
 import {
   activityForTool,
   type AgentActivity,
 } from "./conversation/agentActivity";
 import { subjectOf, type ToolCallSummary } from "./conversation/toolTrace";
+import {
+  completeTrajectoryStep,
+  finishTrajectory,
+  markTrajectoryFirstToken,
+  startTrajectoryStep,
+} from "./conversation/trajectory";
 import {
   citationSourcesFromWebSearchToolResult,
   mergeCitationSources,
@@ -59,13 +84,14 @@ import {
 } from "./lib/streamingBuffer";
 import WelcomeSuggestions from "./conversation/WelcomeSuggestions";
 import ArtifactCanvas from "./canvas/ArtifactCanvas";
-import { PolarisAvatar, LabMark } from "./PolarisMark";
-import InterviewOverlay from "./interview/InterviewOverlay";
+import { PolarisAvatar } from "./PolarisMark";
 import LivingCanvas, {
   type BatchRequest,
   type FocusRequest,
+  workspaceChangesToPending,
 } from "./canvas/living/LivingCanvas";
 import { type BatchKind, type TargetedSelectionDiff } from "./lib/diffResume";
+import { STAGE_WIDTH, stageIntentOf } from "./lib/stageIntent";
 import type {
   AnalysisImprovementAction,
   MultiPersonaResumeAnalysis,
@@ -75,7 +101,6 @@ import {
   streamChat,
   approveTool,
   endSessionThread,
-  streamPdfParse,
   AgentRequestError,
   type HitlDecision,
 } from "./lib/services/agentClient";
@@ -94,12 +119,27 @@ import { useSettingStore } from "@/store/useSettingStore";
 import { diffResumeToChanges } from "./lib/diffResume";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 import type { AiChangesDroppedPayload } from "@/lib/extensions/app-lifecycle";
-import { useAiSessionStore } from "@/store/useAiSessionStore";
+import {
+  useAiSessionStore,
+  type AiSessionSnapshot,
+} from "@/store/useAiSessionStore";
+import ConversationHistory from "./conversation/ConversationHistory";
+import ConversationTrajectory from "./conversation/ConversationTrajectory";
+import { conversationApi } from "@/lib/api/conversationApi";
+import {
+  getAttachmentReadUrl,
+  uploadAttachmentToBackend,
+} from "@/lib/api/attachmentUpload";
 import { ModelConfigFields } from "@/components/llm/ModelConfigFields";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import i18nInstance from "@/i18n";
 import { useEntitlement } from "@/lib/extensions/billing-client";
 import { isCloudMode } from "@/lib/config/app";
+import {
+  buildWorkspacePreparedChanges,
+  workspaceApi,
+  type WorkspaceResolution,
+} from "@/lib/api/workspace";
 
 type AiChatShellProps = {
   resumeData: Resume;
@@ -108,6 +148,10 @@ type AiChatShellProps = {
   onApplySections: (sections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
   onApplyFullResume: (resume: Resume) => void;
+  onApplyWorkspaceResolution: (
+    document: Pick<Resume, "info" | "sections" | "sectionOrder">,
+    revision: number,
+  ) => void;
   setIsAiJobRunning: (running: boolean) => void;
 };
 
@@ -171,8 +215,54 @@ function toBackendHistory(
     }));
 }
 
+/**
+ * 同一次工具调用挂在两处：`toolCalls`（复制、eval、旧持久化消息读它）和 `timeline`
+ * （渲染读它）。两处各写各的，迟早漂移成「时间线上那行还在转圈、列表里早已完成」，
+ * 而且不会报错。所以只留这一个写入口。
+ *
+ * `toolCallId` 缺席时命中全部——沿用 `tool_completed` 原有的宽松语义（有些上游不回传 id）。
+ */
+function patchToolCall(
+  message: ChatMessage,
+  toolCallId: string | undefined,
+  patch: Partial<ToolCall>,
+): ChatMessage {
+  const hit = (call: ToolCall) => !toolCallId || call.toolCallId === toolCallId;
+  return {
+    ...message,
+    toolCalls: (message.toolCalls ?? []).map((call) =>
+      hit(call) ? { ...call, ...patch } : call,
+    ),
+    timeline: message.timeline?.map((beat) =>
+      beat.kind === "tool" && hit(beat.call)
+        ? { ...beat, call: { ...beat.call, ...patch } }
+        : beat,
+    ),
+  };
+}
+
 function resolveState<T>(next: React.SetStateAction<T>, prev: T): T {
   return typeof next === "function" ? (next as (value: T) => T)(prev) : next;
+}
+
+function TrajectoryGlyph({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="5" cy="6" r="1.6" />
+      <circle cx="5" cy="18" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+      <path d="M6.6 6h4.2a3 3 0 0 1 3 3v0a3 3 0 0 0 3 3h.6M6.6 18h4.2a3 3 0 0 0 3-3v0" />
+    </svg>
+  );
 }
 
 export default function AiChatShell({
@@ -182,15 +272,31 @@ export default function AiChatShell({
   onApplySections,
   onApplyInfo,
   onApplyFullResume,
+  onApplyWorkspaceResolution,
   setIsAiJobRunning,
 }: AiChatShellProps) {
   const { t } = useTranslation();
   const resumeId = resumeData.id;
+  // 从资产库「拿它优化简历」跳过来时带的引用。只播种一次，不自动发送。
+  const seededPrompt = useSearchParams()?.get("prompt") ?? undefined;
+  /**
+   * 内嵌的资产库面板。
+   *
+   * 盖在对话上而不是跳去 /dashboard/assets：用户多半只是想回头看一眼刚才那份调研，
+   * 把他踢出对话再让他自己走回来，就是「另开」。`composerSeed` 带 key 后缀是为了在
+   * 「拿它优化简历」时强制重挂 Composer——它的输入值只在挂载那一次播种。
+   */
+  const [assetsOpen, setAssetsOpen] = useState(false);
+  const [composerSeed, setComposerSeed] = useState<{ text: string; nonce: number } | null>(
+    seededPrompt ? { text: seededPrompt, nonce: 0 } : null,
+  );
   const aiSession = useAiSessionStore((s) => s.sessions[resumeId]);
   const loadAiSession = useAiSessionStore((s) => s.loadSession);
   const patchAiSession = useAiSessionStore((s) => s.patchSession);
   const resetAiSession = useAiSessionStore((s) => s.resetSession);
   const flushAiSession = useAiSessionStore((s) => s.flushSession);
+  const sealAiSession = useAiSessionStore((s) => s.sealSession);
+  const adoptAiSession = useAiSessionStore((s) => s.adoptSession);
   const started = aiSession?.started ?? false;
   // useMemo：`?? []` 每次渲染都产出新数组，会让依赖 messages 的 effect 每帧重跑。
   const messages = useMemo(
@@ -209,6 +315,18 @@ export default function AiChatShell({
             ...message,
             content: streamingMessage.content,
             reasoning: streamingMessage.reasoning || message.reasoning,
+            // 时间线里存的是**已封段**的节拍；还在写的那一段只存在于 overlay 里，
+            // 这里补成末尾一拍。写完（或遇到下一个工具）才由封段落进 messages。
+            timeline: streamingMessage.tail
+              ? [
+                  ...(message.timeline ?? []),
+                  {
+                    kind: "text" as const,
+                    id: `${streamingMessage.id}:live`,
+                    text: streamingMessage.tail,
+                  },
+                ]
+              : message.timeline,
           }
         : message,
     );
@@ -220,8 +338,12 @@ export default function AiChatShell({
   const livingSkillId = aiSession?.livingSkillId ?? null;
   const analysis = aiSession?.analysis ?? null;
   const fitReport = aiSession?.fitReport ?? null;
-  const [overlayOpen, setOverlayOpen] = useState(false);
+  // 面试浮层的开关挪进了瞬态 store：入口卡（`interaction: 'client'`）要能直接开它，
+  // 而 client 卡不回传 agent、只改本地状态，够不着组件的局部 useState。
   const [running, setRunning] = useState(false);
+  const [conversationView, setConversationView] = useState<
+    "conversation" | "trajectory"
+  >("conversation");
   /**
    * Agent 此刻在干什么。由 SSE 事件推导，不是猜的——见 conversation/agentActivity.ts。
    * 此前这些事件里除了 read_resume 之外全被丢弃，界面上所有等待都长一个样。
@@ -260,6 +382,35 @@ export default function AiChatShell({
   const planCanvasSkillRef = useRef<SkillId | null>(null);
   const [awaitingReply, setAwaitingReply] = useState(false);
   const [draftReady, setDraftReady] = useState<Resume | null>(null);
+
+  const resolveWorkspaceProposal = useCallback(
+    async (
+      proposalId: string,
+      decisions: { accept?: string[]; reject?: string[] },
+    ): Promise<WorkspaceResolution> => {
+      const result = await workspaceApi.resolve(resumeData.id, proposalId, decisions);
+      const document = result.resume;
+      if (
+        !document ||
+        typeof document !== "object" ||
+        !document.info ||
+        !document.sections ||
+        !Array.isArray(document.sectionOrder)
+      ) {
+        throw new Error("Workspace 返回的简历内容不完整");
+      }
+      onApplyWorkspaceResolution(
+        {
+          info: document.info as Resume["info"],
+          sections: document.sections as Resume["sections"],
+          sectionOrder: coerceSectionOrder(document.sectionOrder),
+        },
+        result.revision,
+      );
+      return result;
+    },
+    [resumeData.id, onApplyWorkspaceResolution],
+  );
   // 暂停中的那次中断。裁决按动作下标归位，全部到齐才续跑——后端要求裁决数与动作数相等。
   const pendingInterruptRef = useRef<{
     requestId: string;
@@ -362,23 +513,15 @@ export default function AiChatShell({
   const sessionIdRef = useRef("");
   // 在飞行的运行：controller 负责中止，generation 让被顶替的回调提前返回而非写进新会话。
   const controllerRef = useRef<AbortController | null>(null);
+  // 附件解析不是 chat SSE，却同样是一项重 AI 任务。这个 ref 防止用户在 React 状态落定前
+  // 连点两次发送，重新把并发名额挤满。
+  const attachmentTurnInFlightRef = useRef(false);
   const runGenRef = useRef(0);
   // 新运行、重置或卸载发生在旧流的 finally 之前时，先把旧流的本地草稿落进会话，
   // 避免 generation 抬高后旧回调被正确丢弃、但用户已经看到的半段正文也一起消失。
   const activeStreamCommitRef = useRef<ActiveStreamCommit | null>(null);
   // 运行函数是共用的，失败时流里没有别的办法说明是哪个技能在跑。
   const activeSkillRef = useRef<SkillId | null>(null);
-  const interviewStartedAtRef = useRef<number | null>(null);
-
-  /** 结束面试并上报时长。用开始时间戳把关，避免关闭/卸载等路径各报一次从未开始的面试。 */
-  const reportInterviewEnded = useCallback(() => {
-    const startedAt = interviewStartedAtRef.current;
-    if (startedAt === null) return;
-    interviewStartedAtRef.current = null;
-    appLifecycle.aiInterviewEnded({
-      durationSec: Math.round((Date.now() - startedAt) / 1000),
-    });
-  }, []);
   if (aiSession?.sessionId) sessionIdRef.current = aiSession.sessionId;
   // 本会话是否已在服务端开过状态，供"新对话"回收；关闭弹窗故意保留会话。
   const sessionUsedRef = useRef(false);
@@ -532,38 +675,12 @@ export default function AiChatShell({
    * 不是又冒一张——进度、逐步填充的结果卡都靠这个。这类卡不占中断槽，流照跑。
    */
   const upsertWidget = useCallback(
-    (widgetId: string, envelope: WidgetEnvelope) => {
-      setMessages((prev) => {
-        const idx = prev.findIndex((m) => m.widget?.widgetId === widgetId);
-        if (idx === -1) {
-          return [
-            ...prev,
-            {
-              id: nanoid(),
-              role: "widget",
-              widget: {
-                widgetId,
-                kind: envelope.kind,
-                props: envelope.props ?? {},
-                status: "pending",
-              },
-            },
-          ];
-        }
-        const existing = prev[idx].widget!;
-        const next = [...prev];
-        next[idx] = {
-          ...prev[idx],
-          widget: {
-            ...existing,
-            kind: envelope.kind,
-            props: envelope.merge
-              ? { ...existing.props, ...(envelope.props ?? {}) }
-              : (envelope.props ?? {}),
-          },
-        };
-        return next;
-      });
+    (widgetId: string, envelope: WidgetEnvelope, ownerId?: string) => {
+      setMessages((prev) =>
+        upsertWidgetInMessages(prev, widgetId, envelope, ownerId, () =>
+          nanoid(),
+        ),
+      );
     },
     [setMessages],
   );
@@ -633,6 +750,17 @@ export default function AiChatShell({
     });
   }, [setCanvas, setLivingOpen, setLivingSkillId, setStarted]);
 
+  const toggleTrajectory = useCallback(() => {
+    const opening = conversationView !== "trajectory";
+    setConversationView(opening ? "trajectory" : "conversation");
+    if (opening) {
+      // 轨迹页要吃满主区域；右侧画布仍可从对话页按原入口重新打开。
+      setCanvas(CLOSED_CANVAS);
+      setLivingOpen(false);
+      setLivingSkillId(null);
+    }
+  }, [conversationView, setCanvas, setLivingOpen, setLivingSkillId]);
+
   // 整篇简历类技能的结果落到 living canvas 上作为就地待定改动，而不是开 Diff 标签页。
   const isBatchSkill = (id: SkillId) => id === "optimize" || id === "translate";
 
@@ -652,6 +780,46 @@ export default function AiChatShell({
       pendingOnQuota?: PendingRun,
     ) => {
       const aiId = nanoid();
+      let trajectory: AgentTrajectory = {
+        startedAt: Date.now(),
+        steps: [],
+      };
+      let currentTrajectoryStepId: string | undefined;
+      let currentTextStartedAt: number | undefined;
+      const publishTrajectory = () => {
+        if (!bubbleCreated) return;
+        const snapshot = trajectory;
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === aiId
+              ? { ...message, trajectory: snapshot }
+              : message,
+          ),
+        );
+      };
+      const beginTrajectoryStep = (
+        at: number,
+        requestedId?: string,
+        model?: string,
+      ) => {
+        const id = requestedId || `${aiId}:step:${trajectory.steps.length + 1}`;
+        trajectory = startTrajectoryStep(trajectory, { id, at, model });
+        currentTrajectoryStepId = id;
+        currentTextStartedAt = undefined;
+        publishTrajectory();
+      };
+      const ensureTrajectoryStep = (at: number) => {
+        if (!currentTrajectoryStepId) beginTrajectoryStep(at);
+        return currentTrajectoryStepId;
+      };
+      const markFirstToken = (at: number) => {
+        const stepId = ensureTrajectoryStep(at);
+        const next = markTrajectoryFirstToken(trajectory, stepId, at);
+        if (next !== trajectory) {
+          trajectory = next;
+          publishTrajectory();
+        }
+      };
       // 本轮模型给的逐字段改动理由（`explain_changes`）。按 `section/itemId/fieldKey` 配到评审卡上；
       // 它先于 `resume_update` 到达，所以攒在这一轮的作用域里。
       const changeNotes = new Map<string, string>();
@@ -665,11 +833,14 @@ export default function AiChatShell({
           content: "",
           status: "running",
           streamed: true,
+          trajectory,
         });
         bubbleCreated = true;
         setAwaitingReply(false);
       };
-      const attachSources = (sources: ReturnType<typeof normalizeCitationSources>) => {
+      const attachSources = (
+        sources: ReturnType<typeof normalizeCitationSources>,
+      ) => {
         if (!sources.length) return;
         ensureBubble();
         setMessages((prev) =>
@@ -722,7 +893,20 @@ export default function AiChatShell({
           );
         }
         if (!bubbleCreated) return;
+        const completedAt = Date.now();
+        trajectory = finishTrajectory(trajectory, completedAt);
         const snapshot = streamBuffer.snapshot();
+        // 收尾时把最后一段文字也封进时间线：流式期间它只活在 overlay 里，overlay 一清
+        // 就没了——不封的话答案会在运行结束的那一帧凭空消失。
+        //
+        // 覆盖值（错误兜底文案）自成一拍：出错且一个字都没流出来时，`snapshot.tail` 是空的，
+        // 照抄它会让时间线上什么都没有——于是气泡空着，错误被咽掉。这正是
+        // `testAiFailuresAreVisible` 守的那条线。已经流出过内容时覆盖值等于全文，
+        // 此时仍走 tail，避免把封过段的部分再画一遍。
+        const tail =
+          content !== undefined && content !== snapshot.content
+            ? content
+            : snapshot.tail;
         setMessages((prev) =>
           prev.map((message) =>
             message.id === aiId
@@ -731,6 +915,20 @@ export default function AiChatShell({
                   content: content ?? snapshot.content,
                   reasoning: snapshot.reasoning || undefined,
                   status: "done",
+                  trajectory,
+                  timeline: tail
+                    ? [
+                        ...(message.timeline ?? []),
+                        {
+                          kind: "text" as const,
+                          id: `${aiId}:tail`,
+                          text: tail,
+                          stepId: currentTrajectoryStepId,
+                          startedAt: currentTextStartedAt ?? completedAt,
+                          completedAt,
+                        },
+                      ]
+                    : message.timeline,
                 }
               : message,
           ),
@@ -751,6 +949,7 @@ export default function AiChatShell({
             // 自己把气泡拉起来，否则思考只能等正文出现才有地方放——而推理模型恰恰
             // 是「想很久、然后才开口」，那段最该被看见的等待就又变成一片空白。
             if (!activeSubagentRef.current) {
+              markFirstToken(Date.now());
               ensureBubble();
               streamBuffer.appendReasoning(ev.content);
             }
@@ -758,6 +957,9 @@ export default function AiChatShell({
             setActivity("writing");
             // 子代理的原始 token 不进聊天：它的进度在自己的清单卡上，结果走 resume_update。
             if (!activeSubagentRef.current) {
+              const at = Date.now();
+              markFirstToken(at);
+              currentTextStartedAt ??= at;
               ensureBubble();
               streamBuffer.appendContent(ev.content);
             }
@@ -789,7 +991,11 @@ export default function AiChatShell({
               const plan = planInterrupt(requestId, actions, {
                 hasWidget: (kind) => Boolean(WIDGETS[kind]),
                 resolveKind: (toolName, args) =>
-                  toolName === "ask_choice" ? askChoiceKind(args) : toolName,
+                  toolName === "ask_choice"
+                    ? askChoiceKind(args)
+                    : toolName === "request_form"
+                      ? requestFormKind(args)
+                      : toolName,
                 allowsResumeRead:
                   AGENT_MODES[agentModeRef.current].allowsResumeRead,
               });
@@ -873,12 +1079,41 @@ export default function AiChatShell({
               | WidgetEnvelope
               | undefined;
             if (envelope?.kind) {
-              upsertWidget(envelope.widgetId || nanoid(), envelope);
+              // 先确保气泡存在：卡片可能早于首个正文到达（工具先跑、模型后说），
+              // 那时 aiId 还没有对应的消息，卡片会退化成独立消息又排到操作栏后面。
+              ensureBubble();
+              // 卡片属于这一轮，要排在它的操作栏之前。
+              upsertWidget(envelope.widgetId || nanoid(), envelope, aiId);
             }
           } else if (ev.type === "llm_started") {
             // 模型开始生成、首字未到 = 思考中。之前这个事件整个被丢掉，于是「已经
             // 在想」和「还没开始」在界面上没有区别。
             setActivity((prev) => (prev === "writing" ? prev : "thinking"));
+            const payload = ev.payload as
+              | { requestId?: string; model?: string }
+              | undefined;
+            beginTrajectoryStep(Date.now(), payload?.requestId, payload?.model);
+          } else if (ev.type === "llm_usage") {
+            const payload = ev.payload as
+              | {
+                  requestId?: string;
+                  trajectoryVisible?: boolean;
+                  usage?: {
+                    inputTokens?: number;
+                    outputTokens?: number;
+                    totalTokens?: number;
+                  };
+                }
+              | undefined;
+            if (payload?.trajectoryVisible === false) continue;
+            const stepId = payload?.requestId ?? currentTrajectoryStepId;
+            trajectory = completeTrajectoryStep(
+              trajectory,
+              stepId,
+              Date.now(),
+              payload?.usage,
+            );
+            publishTrajectory();
           } else if (ev.type === "tool_started") {
             const payload = ev.payload as
               | { toolName?: string; toolCallId?: string; args?: unknown }
@@ -889,6 +1124,8 @@ export default function AiChatShell({
             // 把这一轮动过的工具收成一张卡。此前除 read_resume 外全部不可见——跑完就没了，
             // 用户回头看不出它到底做了什么。
             if (toolName) {
+              const startedAt = Date.now();
+              const stepId = ensureTrajectoryStep(startedAt);
               // 工具过程属于这一条助手回复。先确保气泡存在，再把调用挂上去；否则当模型先
               // 写了半句再调用工具时，独立 tools 消息会被追加到答案下方，最终顺序倒置。
               ensureBubble();
@@ -896,14 +1133,44 @@ export default function AiChatShell({
                 toolCallId: payload?.toolCallId ?? nanoid(),
                 toolName,
                 subject: subjectOf(payload?.args),
+                stepId,
+                startedAt,
               };
+              // 动手之前先把话说完：模型「我去查一下 JD」那句到此为止，封成时间线上的一拍，
+              // 工具行排在它**后面**。不封的话这句会跟收尾的答案连成一段，一起掉到工具行下方。
+              const said = streamBuffer.sealContent();
+              const saidStartedAt = currentTextStartedAt ?? startedAt;
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === aiId
-                    ? { ...m, toolCalls: [...(m.toolCalls ?? []), call] }
+                    ? {
+                        ...m,
+                        toolCalls: [...(m.toolCalls ?? []), call],
+                        timeline: [
+                          ...(m.timeline ?? []),
+                          ...(said
+                            ? [
+                                {
+                                  kind: "text" as const,
+                                  id: `${call.toolCallId}:said`,
+                                  text: said,
+                                  stepId,
+                                  startedAt: saidStartedAt,
+                                  completedAt: startedAt,
+                                },
+                              ]
+                            : []),
+                          {
+                            kind: "tool" as const,
+                            id: call.toolCallId,
+                            call,
+                          },
+                        ],
+                      }
                     : m,
                 ),
               );
+              currentTextStartedAt = undefined;
             }
             if (toolName === "read_resume") {
               // 读取进度显示在审批卡上，没有卡可更新时才退化成单独一行活动。
@@ -928,14 +1195,10 @@ export default function AiChatShell({
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === aiId
-                  ? {
-                      ...m,
-                      toolCalls: (m.toolCalls ?? []).map((c) =>
-                        !doneId || c.toolCallId === doneId
-                          ? { ...c, done: true }
-                          : c,
-                      ),
-                    }
+                  ? patchToolCall(m, doneId, {
+                      done: true,
+                      completedAt: Date.now(),
+                    })
                   : m,
               ),
             );
@@ -947,20 +1210,18 @@ export default function AiChatShell({
                   toolName?: string;
                   result?: unknown;
                   summary?: ToolCallSummary;
+                  isError?: boolean;
+                  error?: string;
                 }
               | undefined;
-            if (p?.summary && p.toolCallId) {
+            if ((p?.summary || p?.isError) && p.toolCallId) {
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === aiId
-                    ? {
-                        ...m,
-                        toolCalls: (m.toolCalls ?? []).map((c) =>
-                          c.toolCallId === p.toolCallId
-                            ? { ...c, summary: p.summary }
-                            : c,
-                        ),
-                      }
+                    ? patchToolCall(m, p.toolCallId, {
+                        summary: p.summary,
+                        error: p.isError ? p.error || "Tool failed" : undefined,
+                      })
                     : m,
                 ),
               );
@@ -1097,6 +1358,54 @@ export default function AiChatShell({
                   n.why,
                 );
               }
+            }
+          } else if (ev.type === "workspace_proposal_ready") {
+            // Workspace V2 never sends the candidate resume over SSE. Fetch it
+            // from Platform, then have Platform verify the browser-generated
+            // field inventory against its encrypted base/candidate pair.
+            if (ev.payload.resumeId !== resumeData.id) {
+              console.warn("[ai] ignored workspace proposal for another resume", ev.payload);
+              continue;
+            }
+            try {
+              const proposal = await workspaceApi.getProposal(
+                resumeData.id,
+                ev.payload.proposalId,
+              );
+              const inventory = await buildWorkspacePreparedChanges(
+                proposal.baseResume,
+                proposal.candidateResume,
+              );
+              const prepared = await workspaceApi.prepare(
+                resumeData.id,
+                proposal.id,
+                inventory,
+              );
+              const changes = workspaceChangesToPending(
+                prepared.changes,
+                prepared.baseResume,
+              );
+              if (!changes.length) {
+                logChange("这次没有可评审的改动", undefined, "info");
+                continue;
+              }
+              batchNonce.current += 1;
+              setCanvas(CLOSED_CANVAS);
+              setLivingOpen(true);
+              setLivingSkillId(
+                prepared.kind === "TRANSLATE" ? "translate" : "optimize",
+              );
+              setBatchRequest({
+                kind: prepared.kind === "TRANSLATE" ? "translate" : "optimize",
+                nonce: batchNonce.current,
+                workspaceProposalId: prepared.id,
+                workspaceChanges: changes,
+              });
+            } catch (error) {
+              warnDropped(
+                (error as Error)?.message || "加载改动提案失败，请重试",
+                "apply_failed",
+              );
             }
           } else if (ev.type === "resume_write_failed") {
             // 服务端断言：本轮试过改简历、一次都没成功。这条事件存在的全部意义，就是不让
@@ -1420,11 +1729,16 @@ export default function AiChatShell({
           setAwaitingReply(false);
           setActivity(null);
           controllerRef.current = null;
+          // 一轮跑完 = 这条时间线不再变，此刻才是把它投给服务端的正确时机。
+          // 期间那些卡片（审批、todo、工具）一直在原地改，早投就是投了个半成品。
+          sealAiSession(resumeId);
         }
       }
     },
     [
       t,
+      resumeId,
+      sealAiSession,
       addMessage,
       warnDropped,
       logChange,
@@ -1630,6 +1944,12 @@ export default function AiChatShell({
     async (
       history: { role: "user" | "assistant"; content: string }[],
       mode: "create" | "general",
+      attachments?: Array<{
+        id: string;
+        name: string;
+        contentType: string;
+        sourceUrl: string;
+      }>,
     ) => {
       activeActionTypeRef.current = null;
       const pending: PendingRun = { kind: "chat", history, mode };
@@ -1648,6 +1968,7 @@ export default function AiChatShell({
             // 把对话限定到这份简历，又不必每轮推送整份快照。
             resumeId: scopedResumeId(),
             config,
+            ...(attachments?.length ? { attachments } : {}),
             signal,
           }),
         pending,
@@ -1701,18 +2022,88 @@ export default function AiChatShell({
    * 技能选择交给 agent：`engine/skills/` 全部挂载，`AGENTS.md` 教它怎么挑，`ask_choice`
    * 让它在拿不准时问一句。想显式指定的仍走 `/` 菜单（`runSkillWithText`）。
    */
-  const handleSend = useCallback(
-    (text: string) => {
+  /** 输入框只把文件交给平台后端；在用户发送前不调用解析模型。 */
+  const uploadAttachment = useCallback(
+    (file: File, signal: AbortSignal) =>
+      uploadAttachmentToBackend(file, signal),
+    [],
+  );
+
+  const runAttachmentTurn = useCallback(
+    async (text: string, attachments: StagedAttachment[]) => {
+      // 文件气泡与文字属于同一条用户轮次。服务器会在这次 chat run 内把页面图放进模型输入；
+      // 绝不先跑一轮“附件解析模型”，再开第二个聊天请求。
+      const historyBeforeTurn = toBackendHistory(messagesRef.current);
       setStarted(true);
-      // 在乐观插入之前先构造发给后端的历史。
+      addMessage({
+        id: nanoid(),
+        role: "user",
+        content: text,
+        attachment: true,
+        attachmentNames: attachments.map((attachment) => attachment.file.name),
+      });
+
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      setRunning(true);
+      setIsAiJobRunning(true);
+      try {
+        const inputs = await Promise.all(
+          attachments.map(async (attachment) => ({
+            id: attachment.id,
+            name: attachment.file.name,
+            contentType: attachment.stored!.contentType,
+            sourceUrl: await getAttachmentReadUrl(
+              attachment.stored!.key,
+              controller.signal,
+            ),
+          })),
+        );
+        if (controller.signal.aborted) return;
+        await runChat(
+          historyBeforeTurn.concat([
+            {
+              role: "user",
+              content: text || "请查看我附上的文件。",
+            },
+          ]),
+          chatMode === "create" ? "create" : "general",
+          inputs,
+        );
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          toast.error(errorText(error, t("aiLab.attach.failed")));
+        }
+      } finally {
+        attachmentTurnInFlightRef.current = false;
+        if (controllerRef.current === controller) controllerRef.current = null;
+        setRunning(false);
+        setIsAiJobRunning(false);
+      }
+    },
+    [addMessage, chatMode, runChat, setIsAiJobRunning, setStarted, t],
+  );
+
+  const handleSend = useCallback(
+    (text: string, attachments?: StagedAttachment[]) => {
+      const readyAttachments = (attachments ?? []).filter(
+        (attachment) => attachment.status === "ready" && attachment.stored,
+      );
+      if (readyAttachments.length) {
+        if (attachmentTurnInFlightRef.current) return;
+        attachmentTurnInFlightRef.current = true;
+        void runAttachmentTurn(text, readyAttachments);
+        return;
+      }
+      if (!text) return;
+      setStarted(true);
       const history = toBackendHistory(messagesRef.current).concat([
         { role: "user", content: text },
       ]);
       addMessage({ id: nanoid(), role: "user", content: text });
-      // `create` 是显式模式（由 `/` 菜单的创建技能置位），不是关键词猜出来的——留着。
       void runChat(history, chatMode === "create" ? "create" : "general");
     },
-    [chatMode, addMessage, runChat, setStarted],
+    [addMessage, chatMode, runAttachmentTurn, runChat, setStarted],
   );
 
   /**
@@ -1751,106 +2142,6 @@ export default function AiChatShell({
    * 既有的草稿条上：右侧能看，用户点「应用到简历」才生效（原则③改动先提案）。
    * 解析器自己拿不准的地方（parse_warnings）如实说出来，不闷掉。
    */
-  const handleAttachPdf = useCallback(
-    (file: File) => {
-      setStarted(true);
-      // 文件名带一个附件标记而不是把 emoji 拼进正文：emoji 的字形由系统字体决定，
-      // 三个平台三种画风三种基线，而且颜色不受主题控制。渲染层画 SVG。
-      addMessage({
-        id: nanoid(),
-        role: "user",
-        content: file.name,
-        attachment: true,
-      });
-      const activityId = nanoid();
-      addMessage({
-        id: activityId,
-        role: "activity",
-        content: t("aiLab.attach.parsing"),
-        status: "running",
-      });
-
-      void (async () => {
-        const form = new FormData();
-        form.append("file", file);
-        try {
-          let parsed: unknown = null;
-          let warnings: string[] = [];
-          for await (const ev of streamPdfParse(form)) {
-            if (ev.type === "resume_update") {
-              parsed =
-                ev.data ??
-                (ev.payload as { resume?: unknown } | undefined)?.resume ??
-                null;
-            } else if (ev.type === "error" || ev.type === "run_failed") {
-              // 「这份 PDF 像是扫描件」这类针对具体文档的解释就在帧的 message 里，
-              // 它进 detail 行；标题永远是本地化的码文案。
-              throw new Error(
-                errorText(fromSseEvent(ev), t("aiLab.attach.failed")),
-              );
-            }
-          }
-          const record = (parsed ?? {}) as Record<string, unknown>;
-          if (Array.isArray(record.parse_warnings)) {
-            warnings = record.parse_warnings.filter(
-              (w): w is string => typeof w === "string" && Boolean(w.trim()),
-            );
-          }
-          const sections = record.sections;
-          if (
-            !sections ||
-            typeof sections !== "object" ||
-            Array.isArray(sections)
-          ) {
-            throw new Error(t("aiLab.attach.failed"));
-          }
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === activityId
-                ? {
-                    ...m,
-                    content: t("aiLab.attach.parsed"),
-                    status: "done" as const,
-                  }
-                : m,
-            ),
-          );
-          const draft = {
-            ...record,
-            sectionOrder: coerceSectionOrder(record.sectionOrder),
-          } as unknown as Resume;
-          setResumeDraft(draft);
-          setDraftReady(draft);
-          if (warnings.length) {
-            upsertWidget(`pdf-warnings:${activityId}`, {
-              kind: "fabrication_notice",
-              props: {
-                items: warnings,
-                title: t("aiLab.attach.warningsTitle"),
-                body: t("aiLab.attach.warningsBody"),
-              },
-            });
-          }
-        } catch (e) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === activityId
-                ? {
-                    ...m,
-                    content: t("aiLab.attach.failed"),
-                    status: "done" as const,
-                  }
-                : m,
-            ),
-          );
-          toast.error(
-            e instanceof Error ? e.message : t("aiLab.attach.failed"),
-          );
-        }
-      })();
-    },
-    [addMessage, setMessages, setResumeDraft, setStarted, t, upsertWidget],
-  );
 
   // 用户操作了 GenUI 卡片：标记已处理，再按这类卡的约定把结果送回去。
   const handleWidgetAction = useCallback(
@@ -1865,24 +2156,20 @@ export default function AiChatShell({
           });
         }
       }
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.widget?.widgetId === widgetId
-            ? {
-                ...m,
-                widget: {
-                  ...m.widget,
-                  status: result.type === "submit" ? "submitted" : "cancelled",
-                },
-              }
-            : m,
-        ),
-      );
+      const status = result.type === "submit" ? "submitted" : "cancelled";
+      setMessages((prev) => settleWidgetInMessages(prev, widgetId, status));
 
       const message = messagesRef.current.find(
         (m) => m.widget?.widgetId === widgetId,
       );
-      const w = message?.widget;
+      const beatWidget = messagesRef.current
+        .flatMap((m) => m.timeline ?? [])
+        .find(
+          (beat) => beat.kind === "widget" && beat.widget.widgetId === widgetId,
+        );
+      const w =
+        message?.widget ??
+        (beatWidget?.kind === "widget" ? beatWidget.widget : undefined);
       // 结果去哪由注册表说了算：续跑暂停的运行 / 当成一条用户消息发出 / 卡片自己消化。
       switch (w ? WIDGETS[w.kind]?.interaction : undefined) {
         case "client":
@@ -1937,9 +2224,23 @@ export default function AiChatShell({
       activeSkillRef.current = id;
       reportSkillStarted(id);
 
+      // 「模拟面试」不再由 chip 直接开浮层。零参数进场意味着面试官不知道面哪个岗位、
+      // 面多久，只能瞎猜；而这恰恰是 agent 该先问清楚的事。chip 现在只是把意图说出口，
+      // 后续由 agent 路由到 `start_interview`，推一张带参数的入口卡。
       if (skill.surface === "immersive") {
-        interviewStartedAtRef.current = Date.now();
-        setOverlayOpen(true);
+        const intent = t || skill.buildIntent({});
+        addMessage({
+          id: nanoid(),
+          role: "user",
+          content: intent,
+          skillId: id,
+        });
+        void runChat(
+          toBackendHistory(messagesRef.current).concat([
+            { role: "user", content: intent },
+          ]),
+          "general",
+        );
         return;
       }
 
@@ -2177,10 +2478,9 @@ export default function AiChatShell({
     const nextSession = resetAiSession(resumeId);
     sessionIdRef.current = nextSession.sessionId;
     sessionUsedRef.current = false;
-    reportInterviewEnded();
-    setOverlayOpen(false);
     setAwaitingReply(false);
     setDraftReady(null);
+    setConversationView("conversation");
     // 运行态必须在这里自己收掉。consumeStream 的 finally 裹着 `if (isCurrent())`
     // ——那道守卫是防「被顶替的旧运行关掉新运行的转圈」，但上面刚把 generation 抬走，
     // isCurrent() 已经是 false，清理块整个被跳过；而重置又没有新运行来接手，
@@ -2189,11 +2489,75 @@ export default function AiChatShell({
     setIsAiJobRunning(false);
     setActivity(null);
     controllerRef.current = null;
-  }, [resetAiSession, resumeId, reportInterviewEnded, setIsAiJobRunning]);
+  }, [resetAiSession, resumeId, setIsAiJobRunning]);
 
+  /**
+   * 「新对话」。
+   *
+   * 上云后旧对话进历史、随时能翻回来，所以**空闲时直接开新的，不再问**——那句
+   * 「当前对话会丢失」曾经是真的，现在只是在拦一个没有代价的动作。
+   * 仍在跑时才问：那会中断生成，是真的要拍板。
+   */
   const requestResetSession = useCallback(() => {
-    setResetConfirmOpen(true);
-  }, []);
+    if (running) {
+      setResetConfirmOpen(true);
+      return;
+    }
+    resetSession();
+  }, [running, resetSession]);
+
+  /**
+   * 切到历史里的某一场。
+   *
+   * 先把当前这场收干净再换——`resetSession` 之外的另一条换会话路径，漏了这一步就是
+   * 把还没投递的尾巴连同 sessionId 一起丢掉。
+   */
+  const pickConversation = useCallback(
+    async (id: string) => {
+      activeStreamCommitRef.current?.();
+      runGenRef.current += 1;
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+      sealAiSession(resumeId);
+      try {
+        const detail = await conversationApi.get(id);
+        const snapshot = detail.snapshot as Partial<AiSessionSnapshot> | null;
+        const restored = detail.messages.map((m) => ({
+          ...((m.payload ?? {}) as Record<string, unknown>),
+          role: m.role,
+          content: m.content ?? undefined,
+        })) as ChatMessage[];
+        adoptAiSession(resumeId, {
+          ...(snapshot ?? {}),
+          sessionId: detail.id,
+          sessionUsed: true,
+          started: restored.length > 0,
+          messages: restored,
+          chatMode: snapshot?.chatMode ?? "idle",
+          agentMode: snapshot?.agentMode ?? DEFAULT_AGENT_MODE,
+          canvas: CLOSED_CANVAS,
+          livingOpen: snapshot?.livingOpen ?? false,
+          livingSkillId: snapshot?.livingSkillId ?? null,
+          analysis: snapshot?.analysis ?? null,
+          fitReport: snapshot?.fitReport ?? null,
+          // 这些消息服务端本来就有，别再投一遍。
+          syncedCount: restored.length,
+          updatedAt: Date.now(),
+        });
+        sessionIdRef.current = detail.id;
+        sessionUsedRef.current = true;
+      } catch {
+        toast.error(t("aiLab.history.loadFailed"));
+        return;
+      }
+      setAwaitingReply(false);
+      setDraftReady(null);
+      setRunning(false);
+      setIsAiJobRunning(false);
+      setActivity(null);
+    },
+    [adoptAiSession, resumeId, sealAiSession, setIsAiJobRunning, t],
+  );
 
   const stopRun = useCallback(() => {
     controllerRef.current?.abort();
@@ -2328,10 +2692,12 @@ export default function AiChatShell({
         disabled={running}
         running={running}
         onStop={stopRun}
-        onAttachPdf={handleAttachPdf}
+        onUploadAttachment={uploadAttachment}
         mode={agentMode}
         onModeChange={setAgentMode}
         conversationStarted={started}
+        key={composerSeed ? `seed-${composerSeed.nonce}` : "composer"}
+        initialValue={composerSeed?.text}
       />
     </>
   );
@@ -2341,18 +2707,65 @@ export default function AiChatShell({
     // 组件库只知道「按名字要一份选项」。
     <GenUIProvider sources={AI_WIDGET_SOURCES}>
       <div className="relative flex flex-col h-full">
-        <header className="flex items-center gap-3 px-5 py-3 shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-sky-500/15 to-sky-500/[0.04] border border-sky-500/25 flex items-center justify-center text-sky-300">
-            <LabMark size={19} />
+        {/* 内嵌资产库：盖在对话上，不跳出去。返回一下就回到刚才那场对话，
+            连滚动位置都还在——这正是「就地」和「另开」的差别。 */}
+        {assetsOpen && (
+          <div className="absolute inset-0 z-40 flex flex-col bg-desk">
+            <div className="flex h-[68px] shrink-0 items-center gap-2 px-4 sm:px-5">
+              <button
+                type="button"
+                onClick={() => setAssetsOpen(false)}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                <ChevronLeft size={16} />
+                {t("common.back")}
+              </button>
+              <span className="text-[15px] font-semibold text-ink">
+                {t("aiLab.assets.title")}
+              </span>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <AssetLibrary
+                embedded
+                scopedResumeId={resumeId}
+                onUse={(prompt) => {
+                  setComposerSeed((current) => ({
+                    text: prompt,
+                    nonce: (current?.nonce ?? 0) + 1,
+                  }));
+                  setAssetsOpen(false);
+                }}
+              />
+            </div>
           </div>
-          <span className="text-base font-semibold text-white tracking-tight">
-            {t("aiLab.header.title")}
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400 border border-neutral-800 rounded-full px-2.5 py-1">
-            <FileText size={12} />
-            {resumeData.name || "未命名简历"}
-          </span>
-          <div className="ml-auto flex items-center gap-3 text-neutral-500">
+        )}
+        <header className="flex h-[68px] shrink-0 items-center gap-3 px-4 sm:px-5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="shrink-0 text-[17px] font-semibold tracking-tight text-white">
+              {t("aiLab.header.title")}
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-neutral-500">
+              <FileText size={13} className="shrink-0" />
+              <span className="max-w-[180px] truncate">
+                {resumeData.name || t("aiLab.header.untitledResume")}
+              </span>
+            </span>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-1 text-neutral-500">
+            <button
+              type="button"
+              onClick={toggleTrajectory}
+              aria-pressed={conversationView === "trajectory"}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer active:scale-[0.98]",
+                conversationView === "trajectory"
+                  ? "bg-sky-500/12 text-sky-300"
+                  : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
+              )}
+            >
+              <TrajectoryGlyph />
+              {t("aiLab.trajectory.run")}
+            </button>
             <HeaderQuota />
             <button
               type="button"
@@ -2360,13 +2773,13 @@ export default function AiChatShell({
               aria-label={t("aiLab.header.liveCanvas")}
               title={t("aiLab.header.liveCanvasTitle")}
               className={cn(
-                "inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer",
+                "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer",
                 livingOpen
-                  ? "text-sky-300 border-sky-500/40 bg-sky-500/10"
-                  : "text-neutral-400 border-neutral-800 hover:text-white hover:border-neutral-700",
+                  ? "bg-sky-500/12 text-sky-300"
+                  : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
               )}
             >
-              <PencilRuler size={13} />
+              <AiGenerateIcon size={13} />
               {t("aiLab.header.liveCanvas")}
             </button>
             <button
@@ -2374,15 +2787,25 @@ export default function AiChatShell({
               onClick={requestResetSession}
               aria-label={t("aiLab.header.newChat")}
               title={t("aiLab.header.newChat")}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-white/[0.06] hover:text-white cursor-pointer"
             >
-              <SquarePen size={17} />
+              <MaskIcon src="/marks/compose.svg" size={20} />
             </button>
+            {/* 历史放在控制组：标题从左缘开始，仍保留一键展开左侧抽屉的入口。 */}
+            <ConversationHistory
+              onOpenAssets={() => setAssetsOpen(true)}
+              resumeId={resumeId}
+              resumeName={resumeData.name || t("aiLab.header.untitledResume")}
+              currentId={aiSession?.sessionId ?? null}
+              onPick={pickConversation}
+              onNewChat={requestResetSession}
+              busy={running}
+            />
             <button
               type="button"
               onClick={handleClose}
               aria-label="关闭"
-              className="hover:text-white transition-colors cursor-pointer active:scale-90"
+              className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-white/[0.06] hover:text-white cursor-pointer active:scale-90"
             >
               <X size={20} />
             </button>
@@ -2406,13 +2829,12 @@ export default function AiChatShell({
         <ConfirmDialog
           isOpen={resetConfirmOpen}
           onClose={() => setResetConfirmOpen(false)}
-          onConfirm={resetSession}
+          onConfirm={() => {
+            setResetConfirmOpen(false);
+            resetSession();
+          }}
           title={t("aiLab.reset.title")}
-          description={
-            running
-              ? t("aiLab.reset.descriptionRunning")
-              : t("aiLab.reset.descriptionIdle")
-          }
+          description={t("aiLab.reset.descriptionRunning")}
           confirmText={t("aiLab.reset.confirm")}
           cancelText={t("common.cancel")}
           variant="danger"
@@ -2422,11 +2844,24 @@ export default function AiChatShell({
           <div
             className={cn(
               "relative flex-1 flex flex-col min-w-0 overflow-hidden",
-              !started && "justify-center",
+              !started &&
+                conversationView === "conversation" &&
+                "justify-center",
             )}
           >
             <AnimatePresence initial={false} mode="popLayout">
-              {!started ? (
+              {conversationView === "trajectory" ? (
+                <motion.div
+                  key="trajectory"
+                  className="flex min-h-0 flex-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <ConversationTrajectory messages={displayMessages} />
+                </motion.div>
+              ) : !started ? (
                 <motion.div
                   key="greeting"
                   initial="hidden"
@@ -2496,6 +2931,7 @@ export default function AiChatShell({
                 >
                   <ChatThread
                     messages={displayMessages}
+                    navigationVisible={!livingOpen && !canvas.open}
                     onToggleCanvas={toggleCanvas}
                     onLogClick={focusOnCanvas}
                     onApproval={handleApproval}
@@ -2515,7 +2951,7 @@ export default function AiChatShell({
               )}
             </AnimatePresence>
 
-            {started && <PolarisPerch />}
+            {started && conversationView === "conversation" && <PolarisPerch />}
 
             <motion.div
               layout="position"
@@ -2546,11 +2982,20 @@ export default function AiChatShell({
             另一个 0→44% **同时**跑，而且分属 framer-motion 与 CSS transition 两套系统、
             曲线时长都不同。重叠期间两者宽度之和会超过 100%，中间的对话列被挤到 0 再
             弹回来——那就是「先开画布再开评分」时看到的闪烁。
-            现在宽度只由这一层动一次（0 ↔ 58% ↔ 44%），里面的内容做交叉淡入。 */}
+            现在宽度只由这一层动一次，里面的内容做交叉淡入。
+
+            宽度读的是**意图**而不是内容身份（见 `lib/stageIntent.ts`）：原来
+            `livingOpen ? 58% : canvas.open ? 44%` 让宽度成了「谁在里面」的函数，
+            于是切换内容就跳 14%，而用户并没有要求改变布局。 */}
           <motion.div
             className="shrink-0 min-w-0 overflow-hidden"
             initial={false}
-            animate={{ width: livingOpen ? "58%" : canvas.open ? "44%" : "0%" }}
+            animate={{
+              width:
+                STAGE_WIDTH[
+                  stageIntentOf({ livingOpen, canvasOpen: canvas.open })
+                ],
+            }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -2575,6 +3020,7 @@ export default function AiChatShell({
                     focusRequest={focusRequest}
                     previewResume={draftReady}
                     working={chatMode === "create" && running && !draftReady}
+                    onResolveWorkspace={resolveWorkspaceProposal}
                   />
                 </motion.div>
               ) : canvas.open ? (
@@ -2601,17 +3047,12 @@ export default function AiChatShell({
             </AnimatePresence>
           </motion.div>
         </div>
-
-        <InterviewOverlay
-          open={overlayOpen}
-          onBack={() => setOverlayOpen(false)}
-        />
       </div>
     </GenUIProvider>
   );
 }
 
-/** 顶部胶囊：点开显示内置额度余量。仅云端——BYOK 用的是用户自己的 key，没有内置额度可显示。 */
+/** 顶部额度状态：点开显示内置额度余量。仅云端——BYOK 用的是用户自己的 key，没有内置额度可显示。 */
 function HeaderQuota() {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -2642,10 +3083,10 @@ function HeaderQuota() {
         aria-label={t("aiLab.header.quotaTitle")}
         title={t("aiLab.header.quotaTitle")}
         className={cn(
-          "inline-flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border transition-colors cursor-pointer",
+          "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer",
           open
-            ? "text-sky-300 border-sky-500/40 bg-sky-500/10"
-            : "text-neutral-400 border-neutral-800 hover:text-white hover:border-neutral-700",
+            ? "bg-sky-500/12 text-sky-300"
+            : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
         )}
       >
         <Gauge size={13} />

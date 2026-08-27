@@ -1,14 +1,20 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import {
+  BarChart3,
+  Check,
+  ChevronDown,
+  Eye,
+  MessageCircleQuestion,
+  PenLine,
+  Search,
+  Wrench,
+} from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { ChatMessage, PlanTodo, SkillId, TodoSegment } from '../types';
-import { Icon } from '@magic-resume/genui/beautiful';
-import ActivityOrb from './ActivityOrb';
 import type { AgentActivity } from './agentActivity';
-import { useSpringHeight } from './useSpringHeight';
 
 /**
  * 任务清单卡。
@@ -17,9 +23,8 @@ import { useSpringHeight } from './useSpringHeight';
  * 但一次运行在对话里没有边界——三张清单连着出现时分不清哪几步属于哪一次。现在它是
  * 一张**有容器的卡**，跑完能收起，于是「这一轮做了什么」成了一个可以整体折叠的东西。
  *
- * 每一行左侧的形态由 agent 自己声明（`todo.activity`，后端从 `[[kind:label]]` 标记
- * 派生），不是我们猜的——这正是 `agentActivity.ts` 里那条「不演一个并没有发生的状态」
- * 得以放宽的原因：现在有真实来源了。
+ * 视觉完全采用用户给的 TaskRows 参考：surface 胶囊、序号环、green 完成态与可展开
+ * 明细。业务层仍消费真实 todo 状态，不运行参考代码里那套演示用定时脚本。
  */
 
 /** 跑完之后停留多久再退场——让用户看见它确实完成了。 */
@@ -40,14 +45,13 @@ export default function TasksCard({
   retired,
   onToggleCanvas,
   isCanvasOpen,
-  activity,
 }: {
   message: ChatMessage;
   /** 已过完停留期：主任务清单收成一行摘要，不再是卡。 */
   retired?: boolean;
   onToggleCanvas: (id: SkillId) => void;
   isCanvasOpen: boolean;
-  /** agent 此刻在做哪一类活儿。只在 todo 自己没声明时兜底。 */
+  /** 保留调用契约；新样式严格按任务状态显示序号环，不再混入旧 activity orb。 */
   activity?: AgentActivity | null;
 }) {
   const { t } = useTranslation();
@@ -58,12 +62,6 @@ export default function TasksCard({
   const finished = message.status === 'done' || fulfilled;
 
   const [collapsed, setCollapsed] = useState(false);
-  const { clipRef, contentRef, settle } = useSpringHeight<HTMLUListElement>(collapsed);
-
-  // 行数、状态、语言任何一样变了都要重新量——不重新量就会裁掉最后一行。
-  useEffect(() => {
-    settle();
-  }, [settle, total, done, finished]);
 
   const elapsed = useElapsedSeconds(message.startedAt, finished);
   const elapsedLabel = elapsed === null
@@ -80,7 +78,7 @@ export default function TasksCard({
   if (retired) {
     const summary = (
       <>
-        <Check size={11} className="shrink-0 text-neutral-600" />
+        <Check size={11} className="shrink-0 text-ink-3" />
         <span className="truncate">{message.content || t('aiLab.chat.taskList')}</span>
       </>
     );
@@ -88,7 +86,7 @@ export default function TasksCard({
 
     if (!canvasSkillId) {
       return (
-        <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+        <div className="flex items-center gap-2 text-[11px] text-ink-3">
           {summary}
         </div>
       );
@@ -98,10 +96,10 @@ export default function TasksCard({
       <button
         type="button"
         onClick={() => onToggleCanvas(canvasSkillId)}
-        className="group flex cursor-pointer items-center gap-2 text-[11px] text-neutral-500 transition-colors hover:text-neutral-300"
+        className="group flex cursor-pointer items-center gap-2 text-[11px] text-ink-3 transition-colors hover:text-ink-2 active:translate-y-px"
       >
         {summary}
-        <span className="shrink-0 text-sky-400/70 transition-colors group-hover:text-sky-300">
+        <span className="shrink-0 text-ink-2 transition-colors group-hover:text-ink">
           {isCanvasOpen ? t('aiLab.chat.collapse') : t('aiLab.chat.view')}
         </span>
       </button>
@@ -113,8 +111,8 @@ export default function TasksCard({
   if (message.subagentName && finished) {
     const name = namedSubagent(message.subagentName);
     return (
-      <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-        <Check size={11} className="shrink-0 text-neutral-600" />
+      <div className="flex items-center gap-2 text-[11px] text-ink-3">
+        <Check size={11} className="shrink-0 text-ink-3" />
         <span className="truncate">
           {t('aiLab.chat.subagent')}
           {name ? ` · ${name}` : ''}
@@ -128,141 +126,247 @@ export default function TasksCard({
     : message.content || t('aiLab.chat.tasks');
 
   return (
-    <div className="w-full max-w-lg">
+    <div className="flex w-full max-w-110 flex-col gap-2">
       <div
-        className={cn(
-          'relative overflow-hidden rounded-2xl bg-[#16171b] px-4 py-3',
-          'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300'
-        )}
+        className="overflow-hidden bg-surface shadow-card motion-safe:animate-[fade-up_450ms_cubic-bezier(0.23,1,0.32,1)_both]"
+        style={{ borderRadius: collapsed ? 22 : 14 }}
       >
-        {/* 极光：两团径向渐变缓慢漂移，跑完整体提亮。它是这张卡唯一的「还活着」信号——
-            比进度条诚实：它不假装知道还剩多少。 */}
-        <span
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute inset-0 transition-opacity duration-700 motion-safe:animate-[aurora_14s_ease-in-out_infinite_alternate]',
-            finished ? 'opacity-100' : 'opacity-60'
-          )}
-          style={{
-            background: finished
-              ? 'radial-gradient(120% 180% at 86% 44%, rgba(56,189,248,.34) 0%, transparent 62%), radial-gradient(90% 140% at 60% 86%, rgba(14,116,165,.26) 0%, transparent 58%)'
-              : 'radial-gradient(120% 180% at 88% 42%, rgba(56,189,248,.20) 0%, transparent 62%), radial-gradient(90% 140% at 62% 88%, rgba(14,116,165,.18) 0%, transparent 58%)',
-          }}
-        />
-
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setCollapsed((v) => !v)}
-            aria-expanded={!collapsed}
-            className="flex w-full cursor-pointer items-center gap-2.5 text-left"
-          >
-            <ChevronDown
-              size={14}
-              className={cn(
-                'shrink-0 text-neutral-300 transition-transform duration-300',
-                collapsed && '-rotate-90'
-              )}
-            />
-            <span className="min-w-0 truncate text-[13px] font-medium text-neutral-200">
-              {title}
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          className="flex h-11 w-full cursor-pointer items-center gap-2.5 px-2.5 text-left outline-none transition-colors duration-200 hover:bg-inset active:translate-y-px focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-line-strong"
+        >
+          <ChevronDown
+            size={14}
+            className={cn(
+              'shrink-0 text-ink-3 transition-transform duration-300',
+              collapsed && '-rotate-90'
+            )}
+          />
+          <span className="min-w-0 truncate text-[12px] font-medium leading-none text-ink">
+            {title}
+          </span>
+          <span className="flex-1" />
+          {elapsed !== null && (
+            <span className="inline-flex h-5.5 shrink-0 items-center rounded-full bg-hover px-2 text-[11px] tabular-nums text-ink-2">
+              {elapsedLabel}
             </span>
-            <span className="flex-1" />
-            {elapsed !== null && (
-              <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-0.5 text-[11.5px] tabular-nums text-neutral-300">
-                {elapsedLabel}
-              </span>
-            )}
-            {finished ? (
-              <span className="shrink-0 rounded-full bg-sky-950/80 px-3 py-0.5 text-[11.5px] font-medium text-sky-300">
-                {t('aiLab.chat.completed')}
-              </span>
-            ) : (
-              <span className="shrink-0 text-[12px] tabular-nums text-neutral-400">
-                {done}/{Math.max(total, 1)}
-              </span>
-            )}
-          </button>
+          )}
+          {finished ? (
+            <span className="inline-flex h-5.5 shrink-0 items-center rounded-full bg-green-tint px-2 text-[11px] font-medium text-green">
+              {t('aiLab.chat.completed')}
+            </span>
+          ) : (
+            <span className="shrink-0 text-[11px] tabular-nums text-ink-3">
+              {done}/{Math.max(total, 1)}
+            </span>
+          )}
+        </button>
+      </div>
 
-          {/* 高度由 useSpringHeight 逐帧写入——**这里刻意没有 CSS transition**。
-              行是成串到达的，transition 每次从零速度重启，看起来一顿一顿。 */}
-          <div ref={clipRef} className="overflow-hidden" style={{ willChange: 'height' }}>
-            {/* 只能用 padding 不能用 margin：测量不含 margin，留 margin 就会被裁掉。 */}
-            {/* 三列共用同一张网格：状态 / 任务胶囊 / 补充说明。第二列由本组最长的
-                胶囊决定（最多 16rem），所以胶囊右边界和说明列不会逐行漂移。 */}
-            <ul
-              ref={contentRef}
-              className="grid list-none grid-cols-[1.25rem_fit-content(16rem)_minmax(0,1fr)] gap-x-2.5 gap-y-2 pb-0.5 pt-2"
-            >
-              {todos.map((todo, i) => (
-                <TaskRow
-                  key={`${todo.content}-${i}`}
-                  todo={todo}
-                  fallbackActivity={activity}
-                />
-              ))}
-            </ul>
-          </div>
+      <div
+        className="grid transition-[grid-template-rows,opacity] duration-300"
+        style={{
+          gridTemplateRows: collapsed ? '0fr' : '1fr',
+          opacity: collapsed ? 0 : 1,
+          transitionTimingFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
+        }}
+      >
+        <div className="overflow-hidden">
+          <TaskChecklist todos={todos} />
         </div>
       </div>
     </div>
   );
 }
 
-function TaskRow({
-  todo,
-  fallbackActivity,
+function SpinnerRing({
+  active,
+  children,
 }: {
-  todo: PlanTodo;
-  fallbackActivity?: AgentActivity | null;
+  active?: boolean;
+  children?: React.ReactNode;
 }) {
-  const isDone = todo.status === 'completed';
-  // agent 声明的优先；它没说才用「这一轮整体在干什么」兜底。
-  const rowActivity = todo.activity ?? fallbackActivity ?? 'working';
-  const segments = segmentsOf(todo);
-  const [primary, ...secondary] = segments;
+  const size = 24;
+  const stroke = 2;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
 
   return (
-    <li
-      className={cn(
-        'col-span-3 grid grid-cols-subgrid items-center transition-opacity duration-500',
-        isDone && 'opacity-45'
-      )}
+    <span
+      className="relative inline-flex shrink-0 items-center justify-center"
+      style={{ width: size, height: size }}
     >
-      <span className="grid h-5 w-5 shrink-0 place-items-center">
-        {isDone ? (
-          <span className="grid h-[18px] w-[18px] place-items-center rounded-full bg-sky-500 motion-safe:animate-in motion-safe:zoom-in-75 motion-safe:duration-300">
-            <Check size={11} className="text-[#fff]" strokeWidth={3} />
-          </span>
-        ) : (
-          <ActivityOrb activity={rowActivity} />
-        )}
+      <svg
+        width={size}
+        height={size}
+        className="absolute inset-0"
+        style={active ? { animation: 'spin 1.1s linear infinite' } : undefined}
+        aria-hidden
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--line)"
+          strokeWidth={stroke}
+        />
+        {active ? (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="var(--ink-3)"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${circumference * 0.28} ${circumference * 0.72}`}
+          />
+        ) : null}
+      </svg>
+      <span className="relative text-[10.5px] font-semibold tabular-nums text-ink">
+        {children}
       </span>
-      <span className="min-w-0 pt-px text-[13px] text-neutral-200">
-        {primary ? <TaskSegmentView segment={primary} isDone={isDone} stretch /> : null}
-      </span>
-      <span className="flex min-w-0 flex-wrap items-center gap-1.5 pt-px text-[13px] text-neutral-200">
-        {secondary.map((segment, index) => (
-          <TaskSegmentView key={index} segment={segment} isDone={isDone} />
-        ))}
-      </span>
-    </li>
+    </span>
+  );
+}
+
+/**
+ * 任务行直接归 TasksCard 所有，不再套 Beautiful UI 的通用 TaskRows。这样卡片的颜色、
+ * 圆角、行高与展开层只受这一份代码控制，流式状态变化也不会穿过两套样式令牌。
+ */
+function TaskChecklist({ todos }: { todos: PlanTodo[] }) {
+  const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
+
+  return (
+    <div className="flex flex-col gap-2">
+      {todos.map((todo, index) => {
+        const key = `${todo.content}-${index}`;
+        const isDone = todo.status === 'completed';
+        const [primary, ...secondary] = segmentsOf(todo);
+        const expandable = secondary.length > 0;
+        const open = expandable && (openRows[key] ?? false);
+
+        return (
+          <div
+            key={key}
+            className="self-stretch overflow-hidden bg-surface shadow-card transition-[border-radius,background-color] duration-300 hover:bg-inset"
+            style={{
+              borderRadius: open ? 14 : 22,
+              animation: `fade-up 420ms cubic-bezier(0.23,1,0.32,1) ${index * 80}ms both`,
+            }}
+          >
+            <button
+              type="button"
+              aria-expanded={expandable ? open : undefined}
+              disabled={!expandable}
+              onClick={
+                expandable
+                  ? () =>
+                      setOpenRows((current) => ({
+                        ...current,
+                        [key]: !open,
+                      }))
+                  : undefined
+              }
+              className={cn(
+                'flex h-11 w-full items-center gap-2.5 px-2.5 text-left outline-none',
+                expandable
+                  ? 'cursor-pointer active:translate-y-px focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-line-strong'
+                  : 'cursor-default',
+              )}
+            >
+              <span className="flex size-6 shrink-0 items-center justify-center">
+                {isDone ? (
+                  <span className="grid size-5.5 place-items-center rounded-full bg-green text-[#fff] motion-safe:animate-[pop-in_300ms_cubic-bezier(0.23,1,0.32,1)_both]">
+                    <Check size={11} className="text-[#fff]" strokeWidth={3} />
+                  </span>
+                ) : (
+                  <SpinnerRing active={todo.status === 'in_progress'}>
+                    {index + 1}
+                  </SpinnerRing>
+                )}
+              </span>
+
+              <span
+                title={todo.content}
+                className={cn(
+                  'min-w-0 flex-1 truncate text-[12px] font-medium leading-none text-ink',
+                  isDone && 'opacity-45',
+                )}
+              >
+                {primary ? (
+                  <TaskSegmentView segment={primary} isDone={isDone} />
+                ) : (
+                  <span className={cn('truncate text-ink', isDone && 'line-through')}>
+                    {todo.content}
+                  </span>
+                )}
+              </span>
+
+              {expandable ? (
+                <span className="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3">
+                  <ChevronDown
+                    size={15}
+                    className={cn(
+                      'transition-transform duration-300',
+                      open && 'rotate-180',
+                    )}
+                  />
+                </span>
+              ) : null}
+            </button>
+
+            <div
+              className="grid transition-[grid-template-rows,opacity] duration-300"
+              style={{
+                gridTemplateRows: open ? '1fr' : '0fr',
+                opacity: open ? 1 : 0,
+                transitionTimingFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
+              }}
+            >
+              <div className="overflow-hidden">
+                <div className="mb-2.5 grid grid-cols-[24px_1fr] gap-2.5 px-2.5">
+                  <span aria-hidden className="mx-auto h-full w-px bg-line" />
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    {secondary.map((segment, detailIndex) => (
+                      <div
+                        key={`${segment.type}:${detailIndex}`}
+                        className="min-w-0"
+                        style={
+                          open
+                            ? {
+                                animation: `fade-up 280ms cubic-bezier(0.23,1,0.32,1) ${100 + detailIndex * 80}ms both`,
+                              }
+                            : undefined
+                        }
+                      >
+                        <TaskSegmentView segment={segment} isDone={isDone} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
 function TaskSegmentView({
   segment,
   isDone,
-  stretch = false,
 }: {
   segment: TodoSegment;
   isDone: boolean;
-  /** 主任务胶囊撑满共享的第二列，使所有右边界落在同一条线上。 */
-  stretch?: boolean;
 }) {
   if (segment.type === 'text') {
     return (
-      <span className={cn('text-neutral-400', isDone && 'line-through')}>
+      <span className={cn('text-[12px] leading-4 text-ink-2', isDone && 'line-through')}>
         {segment.text}
       </span>
     );
@@ -271,36 +375,51 @@ function TaskSegmentView({
   return (
     <span
       className={cn(
-        'inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-2.5 transition-colors duration-500',
-        stretch && 'w-full',
+        'inline-flex max-w-full items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-2.5 transition-colors duration-500',
         isDone
-          ? 'border-transparent bg-white/[0.07]'
-          : 'border-sky-400/40 bg-sky-400/10'
+          ? 'border-transparent bg-hover'
+          : 'border-line-strong bg-inset'
       )}
     >
-      {/* 芯片图标由后端给的 `kind` 决定（read/write/analyze/search/ask/tool）。
-          一律手写 SVG：emoji 的字形随系统字体变，在 12.5px 的芯片里会比正文
-          大一圈还对不齐，颜色也不受主题控制。 */}
-      <Icon
-        name={segment.kind}
-        size={12}
-        className={cn('shrink-0', isDone ? 'text-neutral-500' : 'text-sky-300')}
+      <TaskChipIcon
+        kind={segment.kind}
+        className={isDone ? 'text-ink-3' : 'text-ink-2'}
       />
       <span
         className={cn(
-          'truncate text-[12.5px]',
-          isDone ? 'text-neutral-400 line-through' : 'text-sky-100'
+          'truncate text-[11px] leading-4',
+          isDone ? 'text-ink-3 line-through' : 'text-ink-2'
         )}
       >
-        {/* **不能用 text-white**：这个仓把 Tailwind 的 white 整体翻成了暖墨
-            （globals.css `--color-white: oklch(0.270 0.010 85)`，为浅色主题服务），
-            且 `.dark` 里没有覆盖——深色子树里用它也是暗的，动词会直接看不见。
-            用语义令牌，它跟着子树的主题走。 */}
         <span className={cn(!isDone && 'text-ink')}>{segment.verb}</span>
         {segment.rest ? ` ${segment.rest}` : ''}
       </span>
     </span>
   );
+}
+
+function TaskChipIcon({
+  kind,
+  className,
+}: {
+  kind: Extract<TodoSegment, { type: 'chip' }>['kind'];
+  className?: string;
+}) {
+  const props = { size: 12, strokeWidth: 2, className: cn('shrink-0', className) };
+  switch (kind) {
+    case 'read':
+      return <Eye {...props} />;
+    case 'write':
+      return <PenLine {...props} />;
+    case 'analyze':
+      return <BarChart3 {...props} />;
+    case 'search':
+      return <Search {...props} />;
+    case 'ask':
+      return <MessageCircleQuestion {...props} />;
+    case 'tool':
+      return <Wrench {...props} />;
+  }
 }
 
 /**

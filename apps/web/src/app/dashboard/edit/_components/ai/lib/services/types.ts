@@ -32,6 +32,7 @@ export type AgentEventType =
    */
   | "resume_write_failed"
   | "resume_sync_failed"
+  | "workspace_proposal_ready"
   | "resume_analysis"
   | "fit_report"
   /** deterministic anti-fabrication gate flagged unsourced names in an edit */
@@ -78,12 +79,14 @@ type AgentToolSseEvent = AgentSseBase &
       }
     | {
         type: "tool_result";
-        payload: {
-          toolCallId?: string;
-          toolName?: string;
-          result?: unknown;
-          summary?: unknown;
-          kind?: string;
+      payload: {
+        toolCallId?: string;
+        toolName?: string;
+        result?: unknown;
+        summary?: unknown;
+        isError?: boolean;
+        error?: string;
+        kind?: string;
           phase?: string;
           [key: string]: unknown;
         };
@@ -146,14 +149,28 @@ type AgentTerminalSseEvent = AgentSseBase &
     | { type: "done"; payload?: never }
   );
 
+type AgentWorkspaceSseEvent = AgentSseBase & {
+  type: "workspace_proposal_ready";
+  payload: {
+    proposalId: string;
+    workspaceId: string;
+    resumeId: string;
+    runId: string;
+    status: string;
+    changeCount: number;
+  };
+};
+
 type SpecializedEventType =
   | AgentToolSseEvent["type"]
   | AgentResumeSseEvent["type"]
+  | AgentWorkspaceSseEvent["type"]
   | AgentTerminalSseEvent["type"];
 
 export type AgentSseEvent =
   | AgentToolSseEvent
   | AgentResumeSseEvent
+  | AgentWorkspaceSseEvent
   | AgentTerminalSseEvent
   | (AgentSseBase & {
       type: Exclude<AgentEventType, SpecializedEventType>;

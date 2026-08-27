@@ -2,16 +2,25 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUp, CornerUpLeft, Mic, Plus, Square, X } from 'lucide-react';
+import { CornerUpLeft, Mic, Plus, SendArrow, Square, X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { errorText } from '@/lib/errors/present';
 import { SKILLS, SKILL_LIST } from '../skills/registry';
 import type { SkillId } from '../types';
 import ModelStrengthPicker from './ModelStrengthPicker';
 import ModeDotField from './ModeDotField';
+import ModeGlyph from './ModeGlyph';
 import ModePicker from './ModePicker';
 import ProUpgradeBanner from './ProUpgradeBanner';
+import AttachmentChips from './AttachmentChips';
+import {
+  ACCEPT_ATTR,
+  MAX_ATTACHMENTS,
+  validateIncoming,
+  type StagedAttachment,
+} from '../lib/attachments';
 import { useSpeechInput } from './useSpeechInput';
 import {
   AGENT_MODES,
@@ -44,7 +53,8 @@ export type QuotedContext = { label: string; text: string };
 type ComposerProps = {
   /** Run a skill picked via `/`, carrying whatever the user typed after the chip. */
   onRunSkill: (id: SkillId, text: string) => void;
-  onSend: (text: string) => void;
+  /** 附件与文字一起发。**附件在这条契约里而不是另开一条**——它们属于同一条消息。 */
+  onSend: (text: string, attachments?: StagedAttachment[]) => void;
   /** When set, the input shows a quoted chip and sending routes the instruction here. */
   quotedContext?: QuotedContext | null;
   onSendWithContext?: (text: string) => void;
@@ -53,46 +63,24 @@ type ComposerProps = {
   /** 生成中:发送按钮原位变成停止按钮(ChatGPT/Claude 式),不再另起浮动胶囊。 */
   running?: boolean;
   onStop?: () => void;
-  /** 用户在对话里直接投一份旧简历 PDF。缺了它,「我有份旧简历」只能被打发去别处。 */
-  onAttachPdf?: (file: File) => void;
+  /** 选中文件后只上传进 R2；解析必须等用户发送，避免无意消耗模型额度。 */
+  onUploadAttachment?: (
+    file: File,
+    signal: AbortSignal,
+  ) => Promise<{ key: string; filename: string; contentType: string }>;
   /** 当前模式 —— 提到会话层，因为真正的闸门在 AiChatShell 的运行逻辑里。 */
   mode: AgentMode;
   onModeChange: (mode: AgentMode) => void;
   /** 对话已开始。升级条只属于欢迎态：一旦开聊，它就是压在输入框下面的一条广告。 */
   conversationStarted?: boolean;
+  /**
+   * 一次性播种输入框（从资产库「拿它优化简历」跳过来时带的引用）。
+   *
+   * 只在首次挂载时生效，之后完全由用户掌控——持续受控会在他打字时被外部值顶回去。
+   * **刻意不自动发送**：AI 是合作者不是推土机，最后一下得他自己按。
+   */
+  initialValue?: string;
 };
-
-/**
- * 底部控件行的共用胶囊底子。设计稿是 58px（848px 宽的独立展示件），按 ×0.7 缩到
- * 面板节奏后是 42px，实际用下来仍偏重，最终定在 38px——控件行、麦克风、发送键
- * 全部同高，混排不同高度比尺寸本身更显怪。
- */
-const PILL =
-  'inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] ' +
-  'bg-white/[0.045] text-[14px] text-neutral-100 transition-colors hover:bg-white/[0.075] ' +
-  'disabled:opacity-40 disabled:hover:bg-white/[0.045] cursor-pointer';
-
-/** 模式条左侧那颗 3×3 点阵。随模式换形，和点阵场的排布呼应。 */
-function ModeGlyph({ mode }: { mode: AgentMode }) {
-  const round = mode === 'plan';
-  return (
-    <span
-      aria-hidden
-      className="grid shrink-0 grid-cols-3 gap-[2px] transition-transform duration-300"
-      style={{
-        transform:
-          mode === 'plan' ? 'rotate(45deg) scale(0.92)' : mode === 'ask' ? 'scaleX(1.08)' : 'none',
-      }}
-    >
-      {Array.from({ length: 9 }, (_, i) => (
-        <i
-          key={i}
-          className={cn('block h-[3px] w-[3px] bg-current', round ? 'rounded-full' : 'rounded-[1px]')}
-        />
-      ))}
-    </span>
-  );
-}
 
 function Composer({
   onRunSkill,
@@ -100,16 +88,111 @@ function Composer({
   quotedContext,
   onSendWithContext,
   onClearQuoted,
-  onAttachPdf,
+  onUploadAttachment,
   disabled,
   running,
   onStop,
   mode,
   onModeChange,
   conversationStarted,
+  initialValue,
 }: ComposerProps) {
   const { t, i18n } = useTranslation();
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue ?? '');
+
+  // ── 附件暂存 ──────────────────────────────────────────────────────────
+  const [attachments, setAttachments] = useState<StagedAttachment[]>([]);
+  const [attachNotice, setAttachNotice] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  /** 进行中的 R2 上传。移除 chip 时中止请求，避免上传一个不会发送的附件。 */
+  const abortersRef = useRef(new Map<string, AbortController>());
+
+  const dropAttachment = useCallback((id: string) => {
+    abortersRef.current.get(id)?.abort();
+    abortersRef.current.delete(id);
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  // 组件卸载时中止尚未完成的上传。
+  useEffect(() => {
+    const aborters = abortersRef.current;
+    return () => {
+      aborters.forEach((c) => c.abort());
+      aborters.clear();
+    };
+  }, []);
+
+  const uploadInto = useCallback(
+    (id: string, file: File) => {
+      if (!onUploadAttachment) return;
+      const controller = new AbortController();
+      abortersRef.current.set(id, controller);
+      void onUploadAttachment(file, controller.signal)
+        .then((stored) => {
+          if (controller.signal.aborted) return;
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: 'ready', stored } : a,
+            ),
+          );
+        })
+        .catch((err: unknown) => {
+          // 用户主动移除触发的 abort 不是失败，不该在一个已经消失的 chip 上标红。
+          if (controller.signal.aborted) return;
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id
+                ? {
+                    ...a,
+                    status: 'failed',
+                    error: errorText(err, t('aiLab.attach.failed')),
+                  }
+                : a,
+            ),
+          );
+        })
+        .finally(() => abortersRef.current.delete(id));
+    },
+    [onUploadAttachment, t],
+  );
+
+  const addFiles = useCallback(
+    (files: File[]) => {
+      if (!onUploadAttachment) return;
+      setAttachNotice(null);
+      setAttachments((prev) => {
+        const next = [...prev];
+        const queued: Array<{ id: string; file: File }> = [];
+        for (const file of files) {
+          const check = validateIncoming(file, next);
+          if (!check.ok) {
+            // 越界就地说明，**不静默丢弃**——用户拖了三个进来只进两个却没人告诉他，
+            // 比直接拒绝更糟。
+            setAttachNotice(
+              t(`aiLab.attach.reject.${check.reason}`, {
+                name: file.name,
+                max: MAX_ATTACHMENTS,
+              }),
+            );
+            continue;
+          }
+          const id = `att-${Date.now()}-${next.length}-${file.name}`;
+          next.push({
+            id,
+            file,
+            kind: check.kind,
+            status: 'uploading',
+          });
+          queued.push({ id, file });
+        }
+        // setState 的 updater 必须是纯的，副作用挪到下一个 tick 再发。
+        queueMicrotask(() => queued.forEach((q) => uploadInto(q.id, q.file)));
+        return next;
+      });
+    },
+    [onUploadAttachment, t, uploadInto],
+  );
+
   const [highlight, setHighlight] = useState(0);
   // The skill picked from `/`: shown as a highlighted chip in the input. Selecting
   // does NOT launch — the user keeps typing context, then Enter runs it (Claude-style).
@@ -179,9 +262,13 @@ function Composer({
   const showSlash = slashActive && matches.length > 0;
   const activeMeta = activeSkill ? SKILLS[activeSkill] : null;
   const ActiveIcon = activeMeta?.icon;
-  const canSend = !!activeSkill || !!value.trim() || !!quotedContext;
+  const readyAttachments = attachments.filter((attachment) => attachment.status === 'ready');
+  const canSend =
+    !!activeSkill || !!value.trim() || !!quotedContext || readyAttachments.length > 0;
+  // 附件还在上传时，消息不能先跑出去：否则这一轮会拿到一份还不存在的文件。
+  const attachmentPending = attachments.some((attachment) => attachment.status === 'uploading');
   // 发送键点亮 = 对用户输入的第一次确认。空态是描边幽灵圆，不预先承诺一个此刻不存在的动作。
-  const sendLit = canSend && !disabled;
+  const sendLit = canSend && !disabled && !attachmentPending;
 
   // 模式条文案：听写 > 切换中 > 就绪。听写时把实时识别的字接在后面，
   // 省得再为它另造一块 UI——这条带子本来就是「现在处于什么状态」的位置。
@@ -208,6 +295,7 @@ function Composer({
   };
 
   const submit = () => {
+    if (attachmentPending) return;
     if (slashActive) {
       const chosen = matches[highlight];
       if (chosen) chooseSkill(chosen.id);
@@ -227,9 +315,14 @@ function Composer({
       return;
     }
     const text = value.trim();
-    if (!text) return;
-    onSend(text);
+    // 只发附件是合法的——「这是我的旧简历」本来就不需要再说一句话。
+    if (!text && readyAttachments.length === 0) return;
+    onSend(text, readyAttachments.length ? readyAttachments : undefined);
     setValue('');
+    // 到这里附件均已上传完成；解析会随这条已发送的消息在会话层启动。
+    abortersRef.current.clear();
+    setAttachments([]);
+    setAttachNotice(null);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -276,8 +369,39 @@ function Composer({
   };
 
   return (
-    <div className="px-4 pb-4 pt-2 shrink-0">
-      <div className="relative max-w-3xl mx-auto">
+    <div
+      className="px-4 pb-4 pt-2 shrink-0"
+      /*
+        拖拽落在整个输入区而不只是那个「添加文件」按钮上：拖着文件的人瞄准的是
+        输入框，不是一个 38px 的胶囊。`dragenter/leave` 会被子元素反复触发，
+        所以用 `dragover` 持续置位、`dragleave` 只在真的离开外框时清除。
+      */
+      onDragOver={(e) => {
+        if (!onUploadAttachment || disabled) return;
+        if (!Array.from(e.dataTransfer.types).includes('Files')) return;
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setDragging(false);
+      }}
+      onDrop={(e) => {
+        if (!onUploadAttachment || disabled) return;
+        const files = Array.from(e.dataTransfer.files ?? []);
+        if (!files.length) return;
+        e.preventDefault();
+        setDragging(false);
+        addFiles(files);
+      }}
+    >
+      <div
+        className={cn(
+          'relative max-w-3xl mx-auto rounded-[22px] transition-shadow',
+          // 拖拽提示只加一圈内描边，不换背景、不放大——动效轻、贴着元素。
+          dragging && 'shadow-[inset_0_0_0_2px_rgba(56,189,248,0.55)]',
+        )}
+      >
         <AnimatePresence>
           {showSlash && (
             <motion.div
@@ -369,10 +493,10 @@ function Composer({
             设计稿的绝对值不能照搬——它的页面底是中灰紫 oklch(0.251)，输入井 oklch(0.134)
             比页底更暗；我们的桌面底是 #0A0A0A(0.145)，照搬会让输入井沉进背景里看不见。
             这里保留「逐层向内变暗」的相对关系，整体抬到 desk 之上。 */}
-        <div className="rounded-[30px] border border-white/[0.06] bg-gradient-to-b from-neutral-800/65 to-neutral-800/45 p-1 shadow-[0_16px_36px_-18px_rgba(0,0,0,0.7)]">
+        <div className="rounded-[30px] border border-[var(--border-hairline)] bg-[var(--surface-sunk)] p-1 shadow-[var(--elev-3)] dark:border-white/[0.06] dark:bg-gradient-to-b dark:from-neutral-800/65 dark:to-neutral-800/45 dark:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.7)]">
           {/* 这一层**不能**加 overflow-hidden：模式 / 模型菜单都是向上展开的，会被裁掉。
               点阵 canvas 的圆角裁剪交给模式条自己（它本来就要 overflow-hidden）。 */}
-          <div className="relative rounded-[26px] bg-neutral-900/70">
+          <div className="relative rounded-[26px] bg-[var(--surface-raised)] dark:bg-neutral-900/70">
             {/* 点阵层。刻意铺得比模式条高（48 > 30）：模式条底边与输入井顶部圆角之间
                 那两个夹角，原先是 overflow-hidden 把 canvas 裁在模式条里够不到的死角。
                 多出来的部分由 cutout 按输入井的形状挖空，井本身的观感一点不受影响。
@@ -416,7 +540,7 @@ function Composer({
 
             {/* 凹槽输入井。@container 挂在这儿：标签的收放该看输入区自己有多宽，
                 不是看视口——AI 面板宽度是可变的。 */}
-            <div className="@container relative z-10 rounded-[13px_13px_26px_26px] border border-white/[0.05] bg-neutral-950/55 p-2.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.34)]">
+            <div className="@container relative z-10 rounded-[13px_13px_26px_26px] border border-[var(--border-strong)] bg-[var(--surface-raised)] p-2.5 shadow-[inset_0_1px_2px_oklch(0.2_0.02_85_/_0.06)] dark:border-white/[0.05] dark:bg-neutral-950/55 dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.34)]">
               {/* 技能 chip 行内摆在文字前面，占位符 / 正文接着它往下写。
                   accent 色回来了：它已经不在控件行里，不再和模式胶囊争「这一行唯一
                   有颜色的东西」，而技能本身有颜色恰恰是最快认出「现在要跑什么」的方式。 */}
@@ -457,6 +581,13 @@ function Composer({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={onKeyDown}
+                onPaste={(e) => {
+                  // 截图粘贴。**只在真有文件时拦截**——否则粘贴普通文字也会被吃掉。
+                  const files = Array.from(e.clipboardData?.files ?? []);
+                  if (!files.length) return;
+                  e.preventDefault();
+                  addFiles(files);
+                }}
                 disabled={disabled}
                 placeholder={
                   quotedContext
@@ -465,24 +596,37 @@ function Composer({
                       ? t('aiLab.composer.placeholderSkill', { skill: activeMeta.name })
                       : t(modePlaceholderKey(mode))
                 }
-                className="block min-h-[66px] min-w-0 flex-1 resize-none overflow-y-hidden bg-transparent px-1.5 pt-1.5 text-[16px] leading-[1.5] text-neutral-100 placeholder:text-neutral-500 transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-50"
+                className="block min-h-[66px] min-w-0 flex-1 resize-none overflow-y-hidden bg-transparent px-1.5 pt-1.5 text-[16px] leading-[1.5] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-50 dark:text-neutral-100 dark:placeholder:text-neutral-500"
               />
               </div>
 
+              {/*
+                chip 落在 textarea 与工具条之间：那是视线从「打字」移向「发送」的必经
+                路径，放这里不会漏看。放输入框上方会被当成引用块，放工具条下面则越过
+                了发送键。
+              */}
+              <AttachmentChips
+                attachments={attachments}
+                onRemove={dropAttachment}
+                notice={attachNotice}
+                disabled={disabled}
+              />
+
               <div className="mt-3 flex items-center justify-between gap-2.5">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  {onAttachPdf && (
+                <div className="flex min-w-0 items-center gap-1.5">
+                  {onUploadAttachment && (
                     <>
                       <input
                         ref={fileRef}
                         type="file"
-                        accept="application/pdf,.pdf"
+                        multiple
+                        accept={ACCEPT_ATTR}
                         className="hidden"
                         onChange={(e) => {
-                          const f = e.target.files?.[0];
+                          const picked = Array.from(e.target.files ?? []);
                           // 清空 value：同一个文件连选两次也要能再触发一次 change。
                           e.target.value = '';
-                          if (f) onAttachPdf(f);
+                          if (picked.length) addFiles(picked);
                         }}
                       />
                       <button
@@ -491,13 +635,9 @@ function Composer({
                         onClick={() => fileRef.current?.click()}
                         aria-label={t('aiLab.composer.attachPdf')}
                         title={t('aiLab.composer.attachPdf')}
-                        className={cn(PILL, 'w-[38px] justify-center @[420px]:w-auto @[420px]:justify-start @[420px]:pl-3 @[420px]:pr-3.5')}
+                        className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-transparent text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-100 disabled:opacity-40 cursor-pointer"
                       >
-                        <Plus size={16} className="shrink-0 text-neutral-400" />
-                        {/* 窄面板下退回纯图标：标签是第一个该让位的东西 */}
-                        <span className="hidden @[420px]:inline">
-                          {t('aiLab.composer.attachFile')}
-                        </span>
+                        <Plus size={21} strokeWidth={2.25} className="shrink-0" />
                       </button>
                     </>
                   )}
@@ -555,22 +695,20 @@ function Composer({
                         type="button"
                         aria-label={t('aiLab.composer.send')}
                         onClick={submit}
-                        disabled={disabled || !canSend}
+                        disabled={disabled || !canSend || attachmentPending}
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
                         transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
                         className={cn(
                           'grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border transition-colors duration-150',
-                          // 点亮态靠**对比度**而不是**色相**说「可以发了」：一整颗饱和蓝在这个
-                          // 极暗、近乎单色的输入框里会直接跳出来。neutral-100/900 这对在浅色
-                          // 主题下会自动翻面（深墨底 + 近白箭头），不需要额外分支。
+                          // 可发送时沿用蓝底白色上箭头，和深色输入框形成明确但不过分刺眼的主操作。
                           sendLit
-                            ? 'border-transparent bg-neutral-100 text-neutral-900 hover:bg-neutral-50 cursor-pointer'
+                            ? 'border-transparent bg-[#3f72d1] text-[#fff] hover:bg-[#4a7dde] cursor-pointer'
                             : 'border-white/[0.1] text-neutral-500 cursor-default'
                         )}
                       >
-                        <ArrowUp size={17} />
+                        <SendArrow size={17} strokeWidth={2.5} />
                       </motion.button>
                     )}
                   </AnimatePresence>

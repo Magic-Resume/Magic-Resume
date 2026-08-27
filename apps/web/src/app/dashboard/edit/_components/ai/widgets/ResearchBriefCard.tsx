@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Building2, ExternalLink, MessageCircleQuestion } from 'lucide-react';
+import { Building2, ExternalLink, MessageCircleQuestion } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetItem, WidgetShell } from '@magic-resume/genui';
 import type { WidgetProps } from '@magic-resume/genui/contract';
@@ -46,7 +46,7 @@ export default function ResearchBriefCard({ instance, onAction }: WidgetProps) {
   const Icon = variant === 'interview' ? MessageCircleQuestion : Building2;
 
   return (
-    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-raised px-4 py-3.5">
+    <WidgetShell density="block">
       <div className="flex items-center gap-2.5">
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-tint-sky">
           <Icon size={14} className="text-ink-sky" />
@@ -55,7 +55,7 @@ export default function ResearchBriefCard({ instance, onAction }: WidgetProps) {
           {props.title || t(`aiLab.widgets.${variant}Research.title`)}
         </span>
         {sourceCount > 0 ? (
-          <span className="shrink-0 rounded-md bg-sunk px-1.5 py-0.5 text-[10px] tabular-nums text-tertiary">
+          <span className="shrink-0 rounded-md bg-sunk px-1.5 py-0.5 text-[10px] tabular-nums text-muted">
             {t('aiLab.sources.count', { count: sourceCount })}
           </span>
         ) : null}
@@ -75,7 +75,7 @@ export default function ResearchBriefCard({ instance, onAction }: WidgetProps) {
                     defaultValue: group.title || group.key,
                   })}
                 </h3>
-                <span className="ml-auto text-[10px] tabular-nums text-tertiary">
+                <span className="ml-auto text-[10px] tabular-nums text-muted">
                   {group.items.length}
                 </span>
               </div>
@@ -111,7 +111,7 @@ export default function ResearchBriefCard({ instance, onAction }: WidgetProps) {
                         href={item.url}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-raised px-2 py-1 text-[10px] font-medium text-tertiary shadow-sm transition-colors hover:text-primary"
+                        className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-raised px-2 py-1 text-[10px] font-medium text-muted shadow-sm transition-colors hover:text-primary"
                         title={item.url}
                       >
                         <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded bg-tint-sky text-[7px] font-bold text-ink-sky">

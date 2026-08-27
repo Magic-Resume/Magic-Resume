@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from '@magic-resume/icons';
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -59,7 +59,18 @@ export function ProviderButton({
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <div className="flex flex-col gap-1">
-      <AuthButton variant={highlight ? "primary" : "neutral"} loading={loading} {...props}>
+      {/* 「上次用这个」是**提示**，不是号召。原来它把按钮换成 primary（`bg-fill-sky`），
+          于是整页最响的一块是一个纯粹的提醒——而且那块饱和蓝在浅色主题下完全不属于
+          「暖纸桌」那套配色。改成中性按钮 + 一圈弱 sky 描边：认得出，但不抢。 */}
+      <AuthButton
+        variant="neutral"
+        loading={loading}
+        {...props}
+        className={cn(
+          highlight && "ring-1 ring-inset ring-[color:var(--ink-sky)]/35",
+          props.className,
+        )}
+      >
         {!loading && (
           <span className="grid h-4 w-4 place-items-center [&>svg]:h-full [&>svg]:w-full">{icon}</span>
         )}

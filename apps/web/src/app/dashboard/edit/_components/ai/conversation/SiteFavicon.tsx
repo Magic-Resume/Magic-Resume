@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { GlobeIcon } from "@radix-ui/react-icons";
+import { GlobeIcon } from '@magic-resume/icons';
 import type { CitationSource } from "../types";
 import { siteFaviconUrl } from "./citationSources";
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Loader2, Share2 } from 'lucide-react';
+import { Loader2, Share2 } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 export default function Loading() {

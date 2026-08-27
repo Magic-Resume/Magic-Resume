@@ -41,6 +41,11 @@ function translateCode(
   t: Translate,
 ): string {
   const values = interpolationValues(params, t);
+  // 老服务或中间代理只会给 429，拿不到具体等待秒数。也必须给插值一个保守默认，
+  // 否则 i18next 会把 `{{retryAfter}}` 当作用户可见文本留在屏幕上。
+  if (code === 'rate_limited' && values.retryAfter === undefined) {
+    values.retryAfter = formatSeconds(5, t);
+  }
 
   // key 阶梯：先试按 subject/rule 细化的那条，再退到码本身。13 个码靠 params 细化出
   // 几十句文案，而不是靠往封闭表里加码。

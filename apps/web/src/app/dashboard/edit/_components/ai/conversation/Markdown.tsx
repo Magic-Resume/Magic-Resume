@@ -68,7 +68,9 @@ function CodeRenderer({
   const writing = code !== raw;
   if (!lang) {
     return (
-      <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-[12px] font-mono text-sky-300">
+      // `bg-inset` + `accent-ink` 而不是 `bg-neutral-800` + `sky-300`：同一套令牌，
+      // 浅色主题切过去时它会跟着走，写死的 sky-300 不会。
+      <code className="rounded-[5px] bg-inset px-1.5 py-0.5 font-mono text-[12.5px] text-accent-ink shadow-hairline">
         {code}
         {writing && <Caret />}
       </code>
@@ -197,14 +199,25 @@ function Words({ children }: { children?: React.ReactNode }) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────
+ * 正文排版。
+ *
+ * 令牌用 `--ink` / `--line` / `--surface` 那一套，**不用裸 `neutral-*` 和 `text-white`**：
+ * 界面其余部分（卡片、投递面板、审批卡）都已经在这套语义色上，正文还留在 Tailwind
+ * 默认灰阶里，两者放在同一屏就是两种冷暖——这才是它显脏的根因，不是字号。
+ *
+ * 层级靠**上间距和字重**拉开，不靠字号堆。正文基准是 16px/28（在 `ChatThread` 的气泡
+ * 容器上），原来 h1/h2/h3 是 18/17/16px——三级之间各差 1px，等于没有层级，而 h3 和正文
+ * 完全同号。这是对话不是文档，标题不能靠放大来占位置。
+ * ───────────────────────────────────────────────────────── */
 const COMPONENTS: Components = {
   p: ({ children }) => (
-    <p className="my-2 first:mt-0 last:mb-0 leading-relaxed">
+    <p className="my-3.5 first:mt-0 last:mb-0">
       <Words>{children}</Words>
     </p>
   ),
   strong: ({ children }) => (
-    <strong className="font-semibold text-white">
+    <strong className="font-semibold text-ink">
       <Words>{children}</Words>
     </strong>
   ),
@@ -214,28 +227,35 @@ const COMPONENTS: Components = {
     </em>
   ),
   ul: ({ children }) => (
-    <ul className="my-2 list-disc pl-5 space-y-1">{children}</ul>
+    <ul className="my-3.5 list-disc space-y-1.5 pl-[1.4rem] first:mt-0 last:mb-0">
+      {children}
+    </ul>
   ),
   ol: ({ children }) => (
-    <ol className="my-2 list-decimal pl-5 space-y-1">{children}</ol>
+    <ol className="my-3.5 list-decimal space-y-1.5 pl-[1.4rem] first:mt-0 last:mb-0">
+      {children}
+    </ol>
   ),
   li: ({ children }) => (
-    <li className="leading-relaxed marker:text-neutral-500">
+    <li className="marker:text-ink-3">
       <Words>{children}</Words>
     </li>
   ),
+  // 正文基准是 16px/28（见 ChatThread 的气泡容器）。三级标题 19 / 17 / 16，
+  // 层级主要靠**上间距**（24 / 20 / 16）拉开——h3 和正文同号，只靠字重区分，
+  // 因为再往下缩就比正文还小，读起来不像标题像批注。
   h1: ({ children }) => (
-    <h1 className="mt-3 mb-1.5 text-base font-semibold text-white">
+    <h1 className="mt-6 mb-2 text-[19px] font-semibold leading-snug text-ink first:mt-0">
       <Words>{children}</Words>
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mt-3 mb-1.5 text-[15px] font-semibold text-white">
+    <h2 className="mt-5 mb-1.5 text-[17px] font-semibold leading-snug text-ink first:mt-0">
       <Words>{children}</Words>
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mt-2.5 mb-1 text-sm font-semibold text-white">
+    <h3 className="mt-4 mb-1 text-[16px] font-semibold leading-snug text-ink first:mt-0">
       <Words>{children}</Words>
     </h3>
   ),
@@ -244,26 +264,32 @@ const COMPONENTS: Components = {
   // 一个等宽块里。
   pre: ({ children }) => <>{children}</>,
   blockquote: ({ children }) => (
-    <blockquote className="my-2 border-l-2 border-neutral-700 pl-3 text-neutral-400">
+    <blockquote className="my-3.5 border-l-2 border-accent/35 pl-3.5 text-ink-2">
       {children}
     </blockquote>
   ),
-  hr: () => <hr className="my-3 border-neutral-800" />,
+  hr: () => <hr className="my-4 border-line" />,
+  // 只画横向分隔线，不画网格。逐格描边在深色底上会变成一张亮线网，正文表格通常只有
+  // 三五行，撑不起那么重的结构——投递面板定稿时也是这个结论。
   table: ({ children }) => (
-    <div className="my-2 overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]">{children}</table>
+    <div className="my-3.5 overflow-x-auto rounded-[10px] shadow-hairline">
+      <table className="w-full border-collapse text-[14px] leading-normal">
+        {children}
+      </table>
     </div>
   ),
   thead: ({ children }) => (
-    <thead className="text-left text-neutral-400">{children}</thead>
+    <thead className="bg-inset/60 text-left text-[13px] text-ink-2">
+      {children}
+    </thead>
   ),
   th: ({ children }) => (
-    <th className="border border-neutral-800 px-2.5 py-1.5 font-medium">
+    <th className="border-b border-line px-3 py-2 font-medium">
       <Words>{children}</Words>
     </th>
   ),
   td: ({ children }) => (
-    <td className="border border-neutral-800 px-2.5 py-1.5 align-top">
+    <td className="border-b border-line/60 px-3 py-2 align-top leading-relaxed">
       <Words>{children}</Words>
     </td>
   ),
@@ -273,10 +299,12 @@ function LinkRenderer({
   children,
   href,
   sources,
+  interactiveLinks,
 }: {
   children?: React.ReactNode;
   href?: string;
   sources: CitationSource[];
+  interactiveLinks: boolean;
 }) {
   const { t } = useTranslation();
   const label = React.Children.toArray(children).join("").trim();
@@ -310,24 +338,39 @@ function LinkRenderer({
         className="mx-0.5 inline-flex h-6 items-center gap-2 rounded-[7px] border border-line bg-inset px-1.5 align-[-1px] text-[11.5px] leading-none text-ink-2 shadow-hairline"
       >
         <span className="flex -space-x-1">
-          {citations.slice(0, 3).map((source) => (
-            <a
-              key={source.id}
-              href={source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={source.title}
-              aria-label={source.title}
-              data-citation-id={source.citationId}
-              className="rounded-full transition-transform duration-150 hover:-translate-y-px active:scale-[0.96]"
-            >
-              <SiteFavicon
-                source={source}
-                className="size-[18px] rounded-full border border-raised"
-                iconSize={9}
-              />
-            </a>
-          ))}
+          {citations.slice(0, 3).map((source) =>
+            interactiveLinks ? (
+              <a
+                key={source.id}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={source.title}
+                aria-label={source.title}
+                data-citation-id={source.citationId}
+                className="rounded-full transition-transform duration-150 hover:-translate-y-px active:scale-[0.96]"
+              >
+                <SiteFavicon
+                  source={source}
+                  className="size-[18px] rounded-full border border-raised"
+                  iconSize={9}
+                />
+              </a>
+            ) : (
+              <span
+                key={source.id}
+                title={source.title}
+                data-citation-id={source.citationId}
+                className="rounded-full"
+              >
+                <SiteFavicon
+                  source={source}
+                  className="size-[18px] rounded-full border border-raised"
+                  iconSize={9}
+                />
+              </span>
+            ),
+          )}
         </span>
         <span>{t("aiLab.sources.count", { count: citations.length })}</span>
       </span>
@@ -335,6 +378,18 @@ function LinkRenderer({
   }
   if (citation?.url) {
     const domain = sourceDomain(citation.url);
+    if (!interactiveLinks) {
+      return (
+        <span
+          title={`${citation.title} · ${domain}`}
+          data-citation-id={citation.citationId}
+          className="mx-0.5 inline-flex h-6 max-w-[14rem] items-center gap-1.5 rounded-[7px] border border-line bg-inset px-1.5 align-[-1px] text-[11.5px] leading-none text-ink-2 shadow-hairline"
+        >
+          <SiteFavicon source={citation} />
+          <span className="truncate">{domain}</span>
+        </span>
+      );
+    }
     return (
       <a
         href={citation.url}
@@ -365,6 +420,13 @@ function LinkRenderer({
       </span>
     );
   }
+  if (!interactiveLinks) {
+    return (
+      <span className="text-accent-ink underline decoration-line underline-offset-2">
+        <Words>{children}</Words>
+      </span>
+    );
+  }
   return (
     <a
       href={href}
@@ -385,10 +447,16 @@ export default function Markdown({
   children,
   streaming = false,
   sources = [],
+  interactiveLinks = true,
+  inline = false,
 }: {
   children: string;
   streaming?: boolean;
   sources?: CitationSource[];
+  /** False when rendered inside another interactive control such as a widget action button. */
+  interactiveLinks?: boolean;
+  /** Compact widget copy should not introduce a block-level paragraph wrapper. */
+  inline?: boolean;
 }) {
   const source = linkCitationMarkers(
     normalizeMarkdownSource(children),
@@ -397,13 +465,26 @@ export default function Markdown({
   const components = React.useMemo<Components>(
     () => ({
       ...COMPONENTS,
+      ...(inline
+        ? {
+            p: ({ children: paragraphChildren }) => (
+              <span>
+                <Words>{paragraphChildren}</Words>
+              </span>
+            ),
+          }
+        : {}),
       a: ({ children: linkChildren, href }) => (
-        <LinkRenderer href={href} sources={sources}>
+        <LinkRenderer
+          href={href}
+          sources={sources}
+          interactiveLinks={interactiveLinks}
+        >
           {linkChildren}
         </LinkRenderer>
       ),
     }),
-    [sources],
+    [inline, interactiveLinks, sources],
   );
   const visibleTokens = React.useRef<Map<string, number>>(new Map());
   // 每次渲染独立计数；effect 只在这一帧提交后才替换 previous，兼容 Strict Mode 双渲染。

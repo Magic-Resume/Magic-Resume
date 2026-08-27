@@ -7,7 +7,7 @@ import { NotificationList } from './_components/NotificationList';
 
 export default function NotificationsPage() {
   const { t } = useTranslation();
-  const { notifications, isLoading, markAsRead, unreadCount } = useNotifications();
+  const { notifications, isLoading, markAsRead, markAllRead, unreadCount, nextCursor, loadMore } = useNotifications();
 
   // i18n language resolves client-side; render nothing on the server so SSR and the
   // first client render agree (matches the dashboard's client-only list pattern).
@@ -30,11 +30,29 @@ export default function NotificationsPage() {
               </span>
             )}
           </div>
+          {unreadCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => void markAllRead()}
+              className="rounded-full px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-sky-200"
+            >
+              {t('notificationsPage.markAllRead')}
+            </button>
+          ) : null}
         </header>
 
         {/* feed capped to a readable column, left-aligned under the title */}
         <div className="max-w-2xl">
           <NotificationList notifications={notifications} isLoading={isLoading} markAsRead={markAsRead} />
+          {nextCursor ? (
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              className="mt-5 rounded-full border border-white/[0.08] px-3.5 py-1.5 text-xs text-neutral-400 transition-colors hover:border-sky-400/30 hover:text-sky-200"
+            >
+              {t('notificationsPage.loadMore')}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

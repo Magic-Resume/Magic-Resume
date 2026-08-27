@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useReducedMotion } from 'framer-motion';
-import { FileText, Bell, Milestone, ChevronLeft } from 'lucide-react';
+import { FileText, Bell, Milestone, FolderOpen, ChevronLeft } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import AccountMenu from '@/components/shared/AccountMenu';
@@ -65,7 +65,10 @@ export default function DashboardSidebar() {
       return next;
     });
 
-  if (pathname.includes('/edit')) return null;
+  // 编辑器与面试页都自带全屏外壳。父级 dashboard/layout 是复合的，挡不住侧栏，
+  // 所以由侧栏自己按路由隐身——这是这个仓库既有的做法。
+  if (pathname.includes('/edit') || pathname.includes('/interview'))
+    return null;
 
   const anim = animReady && !reduce;
   const labelStyle: React.CSSProperties | undefined = anim
@@ -116,10 +119,19 @@ export default function DashboardSidebar() {
             collapsed={collapsed}
             labelStyle={labelStyle}
           />
+          {/* 放在简历和时间线之间：它属于求职资产，和时间线同族，而不是账号设置那一类。 */}
           <NavItem
-            href="/knowledge/timelines"
+            href="/dashboard/assets"
+            label={label('sidebar.assets')}
+            active={pathname.startsWith('/dashboard/assets')}
+            icon={<FolderOpen size={18} />}
+            collapsed={collapsed}
+            labelStyle={labelStyle}
+          />
+          <NavItem
+            href="/dashboard/timelines"
             label={label('sidebar.knowledge')}
-            active={pathname.startsWith('/knowledge')}
+            active={pathname.startsWith('/dashboard/timelines')}
             icon={<Milestone size={18} />}
             collapsed={collapsed}
             labelStyle={labelStyle}

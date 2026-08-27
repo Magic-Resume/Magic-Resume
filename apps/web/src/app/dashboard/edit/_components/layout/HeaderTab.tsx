@@ -1,4 +1,4 @@
-import { Bug, ChevronLeft, Gift, History } from 'lucide-react';
+import { Bug, ChevronLeft, Gift, History } from '@magic-resume/icons';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
 import { warmInvitePoster } from '@/lib/utils/invite-poster';
 import Link from 'next/link';

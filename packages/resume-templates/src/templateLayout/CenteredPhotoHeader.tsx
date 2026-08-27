@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { InfoType } from '../types/resume';
 import { Editable } from '../renderer/EditableCanvas';
 import { safeHref } from './utils';
+import { sectionIconByName } from '../sectionIcons';
 
 interface Props {
   data: InfoType;
@@ -20,6 +21,7 @@ type ContactItem = {
   value: string;
   href?: string;
   external?: boolean;
+  icon?: React.ReactNode;
 };
 
 export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
@@ -30,7 +32,7 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
   avatarHeight = 119,
   avatarRounded = false,
   contactSeparator = '|',
-  showCustomFields = false,
+  showCustomFields = true,
 }: Props) {
   const { t } = useTranslation();
   const contacts: ContactItem[] = [];
@@ -50,14 +52,17 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
   }
   if (showCustomFields) {
     for (const [index, field] of (info.customFields ?? []).entries()) {
+      const label = field?.name?.trim();
       const value = field?.value?.trim();
-      if (!value) continue;
+      if (!label || !value) continue;
       const href = safeHref(value) ?? undefined;
+      const Icon = sectionIconByName(field.icon);
       contacts.push({
         key: field.id || `custom-${index}`,
-        value,
+        value: `${label}：${value}`,
         href,
         external: Boolean(href),
+        ...(Icon ? { icon: <Icon size={14} aria-hidden /> } : {}),
       });
     }
   }
@@ -109,6 +114,7 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
                 {index > 0 && (
                   <span className="mx-1" aria-hidden>{contactSeparator}</span>
                 )}
+                {item.icon ? <span className="mr-1 inline-flex items-center">{item.icon}</span> : null}
                 {item.href ? (
                   <a
                     href={item.href}

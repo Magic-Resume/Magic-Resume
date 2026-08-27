@@ -9,7 +9,7 @@ import {
   Settings,
   Sparkles,
   User as UserIcon,
-} from "lucide-react";
+} from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { useAppAuth, useAppUser } from "@/lib/auth";
 import { isCloudMode } from "@/lib/config/app";

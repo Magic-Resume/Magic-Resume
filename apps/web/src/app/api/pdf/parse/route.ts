@@ -2,11 +2,38 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerUserId } from '@/lib/auth/server';
 import { serverFetchBackend } from '@/lib/auth/serverFetchBackend';
 
-// Cap parse time and upload size so a huge/crafted PDF can't buffer unbounded into
+// Cap parse time and upload size so a huge/crafted file can't buffer unbounded into
 // memory here and get amplified onto the agent backend (DoS). 10 MB comfortably
 // covers real resumes.
 export const maxDuration = 60;
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+/**
+ * 受理的格式。
+ *
+ * agent-service 的 `pdf.service.ts` 早就支持 `pdf | docx | plain | image` 四类
+ * （图片转 data URL 交视觉模型、docx 走 mammoth 抽正文）。**卡住后三类的一直是
+ * 这里原来那行「Only PDF files are accepted」的 415**——后端能力在，前端不放行。
+ *
+ * 仍然保留白名单而不是全放：这条路由把文件原样转发给一个会调模型的后端，
+ * 受理面越大，能塞进来的东西越多。
+ */
+const ACCEPTED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'docx', 'md', 'txt'];
+const ACCEPTED_MIME_PREFIXES = ['image/'];
+const ACCEPTED_MIME_EXACT = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/markdown',
+  'text/plain',
+];
+
+function isAccepted(file: File): boolean {
+  if (ACCEPTED_MIME_EXACT.includes(file.type)) return true;
+  if (ACCEPTED_MIME_PREFIXES.some((p) => file.type.startsWith(p))) return true;
+  // 扩展名兜底：某些系统对 docx / markdown 报的 MIME 不全，甚至是空串。
+  const ext = file.name.toLowerCase().split('.').pop() ?? '';
+  return ACCEPTED_EXTENSIONS.includes(ext);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,19 +54,23 @@ export async function POST(req: NextRequest) {
     // closed dialog / navigation cancels upstream generation promptly.
     const formData = await req.formData();
 
-    // Validate the upload: must be a PDF within the size cap. Guards the memory/DoS
-    // path for chunked requests that omit Content-Length.
+    // 旧调用方仍会 multipart 直接传文件；输入框的新链路传的是 platform-api
+    // 为私有 R2 对象签发的短期 `sourceUrl`。URL 的 R2/SigV4 约束在 agent-service
+    // 再做一次强校验，Next 这一层不下载文件，因此不会让 URL 变成 Web 的 SSRF 入口。
     const file = formData.get('file');
-    if (!(file instanceof File)) {
+    const sourceUrl = formData.get('sourceUrl');
+    if (file instanceof File) {
+      if (!isAccepted(file)) {
+        return NextResponse.json(
+          { error: 'Unsupported file type' },
+          { status: 415 },
+        );
+      }
+      if (file.size > MAX_PDF_BYTES) {
+        return NextResponse.json({ error: 'File too large' }, { status: 413 });
+      }
+    } else if (typeof sourceUrl !== 'string' || !sourceUrl) {
       return NextResponse.json({ error: 'Missing file' }, { status: 400 });
-    }
-    const isPdf =
-      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    if (!isPdf) {
-      return NextResponse.json({ error: 'Only PDF files are accepted' }, { status: 415 });
-    }
-    if (file.size > MAX_PDF_BYTES) {
-      return NextResponse.json({ error: 'File too large' }, { status: 413 });
     }
 
     const backendResponse = await serverFetchBackend('/api/pdf/parse', {

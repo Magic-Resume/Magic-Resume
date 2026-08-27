@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ArrowDownUp } from 'lucide-react';
+import { Plus, ArrowDownUp } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 const WIDTH = 200;

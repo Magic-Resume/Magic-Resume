@@ -92,6 +92,8 @@ export interface PendingChange {
   lang?: string;
   /** true for "add a new item" proposals (rendered green-only, appended on accept) */
   isInsert?: boolean;
+  /** Platform-owned Workspace change id. Present means resolve through CAS, never local autosync. */
+  workspaceChangeId?: string;
   /** bumped on each regenerate to cycle the mock variants */
   seed: number;
   status: "pending" | "accepted";

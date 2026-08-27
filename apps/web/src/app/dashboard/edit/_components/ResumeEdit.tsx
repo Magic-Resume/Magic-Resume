@@ -13,7 +13,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { Plus, SquarePen, Trash2 } from 'lucide-react';
+import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
 import {
   DndContext,
   closestCenter,
@@ -466,7 +466,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                   <BasicForm
                     info={info!}
                     updateInfo={updateInfo}
-                    enableCustomFields={activeResume?.template === 'product-ops-focus'}
                   />
                 ) : (
                   <SectionListWithModal
@@ -573,7 +572,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         <div className="editor-enter-left">
           <EditorFormPanel
             renderSections={renderSections}
-            sectionOrder={(sectionOrder || []).map(s => ({ key: s.key, label: s.label }))}
+            // 原样传，**别再 `.map(s => ({ key, label }))` 重建一遍**——那样会把用户
+            // 选的 `icon` 抹掉，于是同一个 section 在表单里是他选的图标、在侧栏里是
+            // 一张通用文档纸。`normalizeResumeSectionOrder` 里踩过同一个坑。
+            sectionOrder={sectionOrder || []}
             activeSection={activeSection}
             collapsed={leftCollapsed}
             onToggleCollapse={toggleLeftPanel}

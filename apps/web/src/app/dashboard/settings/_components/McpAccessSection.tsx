@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useAppAuth } from '@/lib/auth';
-import { Check, Copy, KeyRound, RefreshCw, Terminal, Trash2 } from 'lucide-react';
+import { Check, Copy, KeyRound, RefreshCw, Terminal, Trash2 } from '@magic-resume/icons';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';

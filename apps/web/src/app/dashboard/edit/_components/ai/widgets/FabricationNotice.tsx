@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetItem, WidgetShell } from '@magic-resume/genui';
 import type { WidgetProps } from '@magic-resume/genui/contract';
@@ -20,7 +20,7 @@ export default function FabricationNotice({ instance }: WidgetProps) {
   if (!items.length && !props.body) return null;
 
   return (
-    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-raised px-4 py-3.5">
+    <WidgetShell density="block">
       <div className="flex items-center gap-2.5">
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/12">
           <ShieldAlert size={14} className="text-amber-400" />

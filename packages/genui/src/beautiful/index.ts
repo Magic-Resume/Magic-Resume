@@ -9,7 +9,13 @@ export { default as FilterTable } from './FilterTable';
 export { default as FineTuneCard } from './FineTuneCard';
 export { default as LoadingState } from './LoadingState';
 export { default as RecommendationCard } from './RecommendationCard';
-export { default as RecordsTable } from './RecordsTable';
+export {
+  default as RecordsTable,
+  RecordsTag,
+  RecordsTagList,
+  RecordsAddCalculation,
+  RECORDS_TYPE_GLYPHS,
+} from './RecordsTable';
 export { default as SearchList } from './SearchList';
 export { default as SidebarNav } from './SidebarNav';
 export { default as StreamingText } from './StreamingText';
@@ -40,6 +46,16 @@ export type {
   RecommendationCardProps,
 } from './RecommendationCard';
 export type { ContextChunk } from './ContextCards';
+export type { SidebarItem, SidebarSection, SidebarNavProps } from './SidebarNav';
+export type {
+  RecordsColumn,
+  RecordsColumnMeta,
+  RecordsLabels,
+  RecordsPrompt,
+  RecordsRow,
+  RecordsTableProps,
+  RecordsToolKind,
+} from './RecordsTable';
 export type {
   FilterTableColumn,
   FilterTableFilter,

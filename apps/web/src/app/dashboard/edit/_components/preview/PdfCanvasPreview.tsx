@@ -53,6 +53,17 @@ const CSS_PX_PER_PDF_POINT = 96 / 72;
 const MAX_DEVICE_PIXEL_RATIO = 2;
 const UPDATE_DEBOUNCE_MS = 150;
 const CROSSFADE_DURATION_MS = 180;
+/**
+ * 慢帧提示的浮现阈值。
+ *
+ * PDF 生成已挪进 Web Worker，主线程不再冻结——代价是那段等待变得**完全无声**：
+ * 旧页面静止不动，直到新页面淡入。所以补一条极细的进度线。
+ *
+ * 但它必须有阈值：普通编辑一帧 57–80ms，无条件显示的话每敲一个字都要闪一下，
+ * 那是噪声不是反馈。换字体要 340–820ms（现解析并子集化一款新 CJK 字体），
+ * 那才是它该出现的场合。400ms 卡在两者中间。
+ */
+const SLOW_FRAME_HINT_MS = 400;
 // A4 at 96dpi (595.28pt × 841.89pt). Used only for the very first paint, when no
 // previous frame exists to inherit sizes from (B4). Subsequent frames carry the
 // last frame's real page sizes so an in-flight layer never collapses to this
@@ -304,6 +315,7 @@ const removeLayer = (layers: PdfPreviewLayer[], layerId: number) =>
   layers.filter((layer) => layer.id !== layerId);
 
 export function PdfCanvasPreview({ className, locale, resume }: PdfCanvasPreviewProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<PdfPreviewState>({
     status: "idle",
     error: null,
@@ -375,6 +387,18 @@ export function PdfCanvasPreview({ className, locale, resume }: PdfCanvasPreview
     };
   }, [renderKey, locale]);
 
+  // 只有「已经有可见页面」时才提示——首帧有骨架屏，两者同时出现是重复告知。
+  const [showSlowHint, setShowSlowHint] = useState(false);
+  const isGenerating = state.status === "loading";
+  useEffect(() => {
+    if (!isGenerating) {
+      setShowSlowHint(false);
+      return;
+    }
+    const timeoutId = window.setTimeout(() => setShowSlowHint(true), SLOW_FRAME_HINT_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [isGenerating]);
+
   const activeLayer = getActiveLayer(layers);
   const hasVisibleLayer = layers.some((layer) => layer.phase === "active" || layer.phase === "exiting");
   const isActiveLayerRendering = Boolean(
@@ -393,6 +417,23 @@ export function PdfCanvasPreview({ className, locale, resume }: PdfCanvasPreview
 
   return (
     <div className={cn("relative grid", className)}>
+      {/* 慢帧提示：顶边一条 1px 扫光。不占布局、不拦指针，只在这一帧真的要等时浮现。
+          reduce-motion 下不扫，改成一条静止的浅线——仍然告知，只是不动。 */}
+      {showSlowHint && hasVisibleLayer ? (
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px overflow-hidden"
+        >
+          <span className="sr-only">{t('pdfPreview.regenerating')}</span>
+          <span
+            aria-hidden
+            className={cn(
+              "block h-full bg-sky-400/70",
+              reduceMotion ? "w-full opacity-40" : "w-1/3 animate-[magic-preview-sweep_1.1s_ease-in-out_infinite]",
+            )}
+          />
+        </div>
+      ) : null}
       {layers.map((layer) => {
         const pageNumbers = Array.from({ length: layer.pageCount }, (_, index) => index + 1);
 

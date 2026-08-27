@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Download, FileJson, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { Check, Download, FileJson, FileText, Image as ImageIcon, Loader2, X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { Resume } from '@/types/frontend/resume';

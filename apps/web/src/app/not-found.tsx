@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 export default function NotFound() {

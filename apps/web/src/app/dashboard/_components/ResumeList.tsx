@@ -14,7 +14,7 @@ import {
   Trash2,
   FlaskConical,
   Cloud,
-} from 'lucide-react';
+} from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { DropMenu } from '@/components/ui/drop-menu';
 import { Resume } from '@/types/frontend/resume';
@@ -138,9 +138,6 @@ function CreatePanel({ onClick }: { onClick: () => void }) {
           <div className="text-lg font-semibold tracking-tight text-neutral-50">
             {t('dashboard.create.title')}
           </div>
-          <div className="mt-0.5 text-[13px] text-neutral-400">
-            {t('dashboard.create.description')}
-          </div>
         </div>
         <span className="inline-flex items-center gap-1 text-[13px] font-medium text-sky-300">
           {t('dashboard.create.cta')}
@@ -171,9 +168,6 @@ function ImportPanel({ onClick }: { onClick: () => void }) {
       <div>
         <div className="text-base font-semibold tracking-tight text-neutral-100">
           {t('dashboard.import.title')}
-        </div>
-        <div className="mt-0.5 text-[13px] text-neutral-500">
-          {t('dashboard.import.description')}
         </div>
       </div>
     </motion.button>
@@ -381,9 +375,6 @@ function EmptyState() {
         <FlaskConical size={22} />
       </div>
       <h3 className="mt-4 text-base font-semibold text-neutral-200">{t('dashboard.empty.title')}</h3>
-      <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-neutral-500">
-        {t('dashboard.empty.description')}
-      </p>
     </div>
   );
 }

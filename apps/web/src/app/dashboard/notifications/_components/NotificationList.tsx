@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { Bell } from 'lucide-react';
+import { Bell } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { NotificationItem } from './NotificationItem';
 import { Notification } from '@/lib/api/notifications';
@@ -41,9 +41,6 @@ function EmptyState() {
         <Bell size={22} />
       </div>
       <h3 className="mt-4 text-base font-semibold text-neutral-200">{t('notificationsPage.empty.title')}</h3>
-      <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-neutral-500">
-        {t('notificationsPage.empty.description')}
-      </p>
     </div>
   );
 }

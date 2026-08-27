@@ -51,7 +51,20 @@
     "legalConsent": "注册即表示你已阅读并同意",
     "legalTerms": "《用户协议》",
     "legalAnd": "与",
-    "legalPrivacy": "《隐私政策》"
+    "legalPrivacy": "《隐私政策》",
+    "terms": {
+      "agree": "我已阅读并同意 <terms>服务条款</terms> 与 <privacy>隐私政策</privacy>",
+      "confirmTitle": "确认服务条款与隐私政策",
+      "agreeAndContinue": "同意并继续",
+      "docTerms": "服务条款",
+      "docPrivacy": "隐私政策",
+      "openInNewTab": "新标签页打开",
+      "close": "关闭",
+      "checkboxLabel": "我已阅读并同意服务条款与隐私政策",
+      "updatedTitle": "服务条款有更新",
+      "updatedHint": "我们更新了服务条款与隐私政策，继续使用前请再确认一次。"
+    },
+    "language": "语言"
   },
   "comingSoon": {
     "title": "好东西,马上就来",
@@ -159,7 +172,9 @@
         "general": "常规",
         "model": "模型",
         "cloudSync": "云同步",
-        "mcp": "MCP"
+        "mcp": "MCP",
+        "memory": "记忆",
+        "notifications": "通知"
       },
       "general": {
         "description": "偏好设置保持克制，只保留会影响日常创作的选项",
@@ -271,8 +286,7 @@
     "title": "通知中心",
     "unread": "{{count}} 条未读",
     "empty": {
-      "title": "暂无通知",
-      "description": "当有人评论或回复您的简历时，通知将显示在这里"
+      "title": "暂无通知"
     },
     "type": {
       "comment": "评论了",
@@ -282,8 +296,29 @@
       "view": "查看详情",
       "markRead": "标记为已读"
     },
+    "category": {
+      "COLLABORATION": "协作通知",
+      "SUPPORT": "反馈答复",
+      "BILLING": "计费通知",
+      "ACCOUNT": "账户通知",
+      "TIMELINE": "时间线提醒",
+      "ANNOUNCEMENT": "产品公告"
+    },
+    "detail": {
+      "description": "站内通知详情",
+      "sender": "发送人",
+      "relatedResume": "相关简历",
+      "noBody": "这条通知没有更多正文。",
+      "openAction": "前往处理",
+      "close": "关闭",
+      "loading": "正在加载公告正文",
+      "loadFailed": "公告正文加载失败，请稍后重试。",
+      "retry": "重新加载"
+    },
     "notificationUpdateFailed": "更新通知失败",
-    "someone": "某人"
+    "someone": "某人",
+    "markAllRead": "全部标为已读",
+    "loadMore": "加载更多"
   },
   "settings": {
     "title": "设置",
@@ -345,6 +380,28 @@
         "cancel": "取消"
       }
     },
+    "notificationPreferences": {
+      "description": "管理可选的邮件提醒；站内通知始终会送达。",
+      "loadFailed": "通知设置加载失败，请稍后重试。",
+      "saveFailed": "通知设置保存失败，请稍后重试。",
+      "requiredNote": "计费和账号安全类邮件不可关闭；它们以及所有站内通知都会正常送达。",
+      "COLLABORATION": {
+        "label": "协作批注",
+        "description": "有人在你的简历上评论或回复时发送邮件。"
+      },
+      "SUPPORT": {
+        "label": "反馈答复",
+        "description": "管理员处理完你的反馈时发送邮件。"
+      },
+      "TIMELINE": {
+        "label": "时间线提醒",
+        "description": "仅在你订阅邮件时间线提醒时生效。"
+      },
+      "ANNOUNCEMENT": {
+        "label": "产品公告",
+        "description": "重要功能更新与产品公告发布时发送邮件。"
+      }
+    },
     "mcp": {
       "title": "MCP 接入",
       "accessTitle": "AI 编程工具接入",
@@ -386,7 +443,53 @@
       "save": "保存"
     },
     "goToApp": "进入应用",
-    "starOnGithub": "在 GitHub 上点赞"
+    "starOnGithub": "在 GitHub 上点赞",
+    "memory": {
+      "description": "这里是 AI 记住的关于你的事。记错了就删掉它。",
+      "enabled": "让 AI 记住我",
+      "enabledDescription": "记住你的背景与偏好，下次不用重讲一遍。关掉后已记的内容会保留，只是不再新增。",
+      "loadFailed": "记忆没能加载出来",
+      "empty": "还没有记住任何事。多聊几次、做几场模拟面试，这里就会有内容。",
+      "disabledNotice": "记忆已关闭。下面这些还留着，随时可以删。",
+      "forgetAll": "全部忘掉",
+      "confirmForgetAll": "要忘掉全部 {{count}} 条吗？",
+      "delete": "删除",
+      "confirmDelete": "删掉这条记忆？",
+      "faded": "已淡化",
+      "fadedHint": "很久没被用到了，之后会越来越少影响回答",
+      "sourceInterview": "来自 {{date}} 的模拟面试",
+      "sourceCanvas": "来自你在画布上的选择",
+      "group": {
+        "profile": "关于你",
+        "pref": "你的偏好",
+        "signal": "从对话里看出的"
+      }
+    },
+    "jobProfile": {
+      "title": "求职画像",
+      "enabled": "启用求职画像",
+      "enabledDescription": "把你说过的求职情况带进每一次对话，AI 就不用反复问。关掉只是不再带上，内容仍然保留。",
+      "empty": "还没有画像。",
+      "startOnboarding": "去填一份",
+      "manage": "管理",
+      "loadFailed": "画像没加载出来。",
+      "disabledNotice": "已停用：内容保留着，只是不再带进对话。",
+      "more": "更多",
+      "regenerate": "重新生成",
+      "delete": "删除画像",
+      "revise": "改一改",
+      "revisePlaceholder": "说一句话改它，比如「我不去杭州了」",
+      "apply": "应用",
+      "discard": "放弃",
+      "failed": "这一步没成功，再试一次。",
+      "updatedJustNow": "刚刚更新",
+      "updated": "{{when}}更新",
+      "pending": "答案已经存下了，画像还没生成出来。",
+      "retry": "重试生成",
+      "redoOnboarding": "重新回答",
+      "deleteConfirmTitle": "删除求职画像？",
+      "deleteConfirmBody": "删掉之后，AI 会退回通用建议——它不再知道你的目标岗位和当前卡点。答案不保留，要重新走一遍引导。"
+    }
   },
   "modals": {
     "dynamicForm": {
@@ -404,7 +507,7 @@
         "translate": "一键翻译",
         "interview": "模拟面试"
       },
-      "title": "AI 实验室",
+      "title": "Polaris",
       "subtitle": "分析和优化您的简历以匹配目标工作要求，或通过 lighthouse 风格报告获取专业建议",
       "description": "分析和优化您的简历以匹配目标工作要求，或获取专业的Lighthouse式分析报告",
       "optimizeTab": {
@@ -815,7 +918,6 @@
     },
     "share": {
       "title": "发布在线简历",
-      "subtitle": "生成专属链接，让您的简历在线可访问",
       "publicAccess": "公开访问",
       "publicAccessDesc": "任何拥有链接的人都可以查看",
       "privateAccessDesc": "仅自己可见",
@@ -827,7 +929,6 @@
     },
     "versionHistory": {
       "title": "版本记录",
-      "subtitle": "恢复您简历之前的版本",
       "restore": "恢复",
       "loading": "加载中...",
       "viewRender": "渲染",
@@ -995,7 +1096,9 @@
       "title": "自定义字段",
       "namePlaceholder": "字段名称（例如，LinkedIn）",
       "valuePlaceholder": "值（例如，your-linkedin-url）",
-      "addButton": "添加自定义字段"
+      "addButton": "添加自定义字段",
+      "iconButton": "选择图标",
+      "iconLabel": "选一个图标"
     },
     "avatarAlt": "头像",
     "avatarUpload": {
@@ -1067,7 +1170,11 @@
     "customize": "自定义模板",
     "error": "加载模板失败",
     "retry": "重试",
-    "none": "未找到模板"
+    "none": "未找到模板",
+    "font": {
+      "download": "下载字体",
+      "downloading": "下载中"
+    }
   },
   "templateStore": {
     "title": "模板商店",
@@ -1196,16 +1303,13 @@
     },
     "create": {
       "title": "创建新简历",
-      "description": "从模板搭一份,开始打磨",
       "cta": "开始创建"
     },
     "import": {
-      "title": "导入现有",
-      "description": "JSON 或 PDF"
+      "title": "导入现有"
     },
     "empty": {
-      "title": "还没有简历",
-      "description": "从模板创建第一份,或导入现有的 JSON / PDF"
+      "title": "还没有简历"
     }
   },
   "sidebar": {
@@ -1214,11 +1318,11 @@
     "knowledge": "校招时间线",
     "settings": "设置",
     "open": "打开侧边栏",
-    "close": "关闭侧边栏"
+    "close": "关闭侧边栏",
+    "assets": "资产库"
   },
   "knowledge": {
     "title": "校招时间线",
-    "back": "返回工作台",
     "common": {
       "error": "内容没加载出来，稍等一下再试试",
       "retry": "重试",
@@ -1517,7 +1621,8 @@
     }
   },
   "pdfPreview": {
-    "generateFailed": "PDF 预览生成失败，请稍后重试；导出按钮会显示更具体的错误"
+    "generateFailed": "PDF 预览生成失败，请稍后重试；导出按钮会显示更具体的错误",
+    "regenerating": "正在重新生成预览"
   },
   "common": {
     "loading": "加载中...",
@@ -1559,7 +1664,8 @@
     "done": "完成",
     "cancel": "取消",
     "back": "返回",
-    "confirm": "确定"
+    "confirm": "确定",
+    "retry": "重试"
   },
   "pricing": {
     "buyPack": "购买令牌包",
@@ -1645,13 +1751,14 @@
       "stop": "停止生成"
     },
     "header": {
-      "title": "AI 实验室",
+      "title": "Polaris",
       "liveCanvas": "实时画布",
       "liveCanvasTitle": "在简历上直接让 AI 改",
       "newChat": "新对话",
       "quota": "剩余额度",
       "quotaTitle": "查看剩余额度",
-      "quotaUnavailable": "暂时无法获取额度"
+      "quotaUnavailable": "暂时无法获取额度",
+      "untitledResume": "未命名简历"
     },
     "closeConfirm": {
       "title": "关闭 AI 面板？",
@@ -1665,7 +1772,8 @@
       "confirm": "开启新对话"
     },
     "reasoning": {
-      "done": "查看思考过程"
+      "done": "查看思考过程",
+      "thought": "思考了 {{duration}}"
     },
     "activity": {
       "thinking": "正在琢磨…",
@@ -1781,6 +1889,9 @@
       "copy": "复制",
       "copied": "已复制",
       "regenerate": "重新生成",
+      "navigation": "消息导航",
+      "navigationUser": "你",
+      "navigationItem": "跳到第 {{index}} / {{count}} 条{{actor}}消息",
       "readingResume": "正在读取你的简历…",
       "writeFailed": "这轮没能改动简历，画布保持原样 · 可以再说一次试试",
       "syncFailed": "改动预览已收到，但最终简历对账失败；本次不会显示为成功，请重试"
@@ -1930,10 +2041,16 @@
           "all": "全部"
         },
         "columns": {
+          "company": "公司",
           "role": "岗位",
           "date": "日期",
           "status": "状态",
-          "source": "链接"
+          "source": "链接",
+          "appliedAt": "投递日期",
+          "nextActionAt": "下一步",
+          "sourceUrl": "链接",
+          "location": "地点",
+          "notes": "备注"
         },
         "status": {
           "SAVED": "已收藏",
@@ -1944,6 +2061,47 @@
           "ACCEPTED": "已接受",
           "REJECTED": "未通过",
           "WITHDRAWN": "已撤回"
+        },
+        "footer": {
+          "count": " 条记录",
+          "applied": "{{count}} 条已投递",
+          "links": "{{count}} 个链接",
+          "addCalculation": "添加统计",
+          "filled": "{{count}} 项已填"
+        },
+        "table": {
+          "selectAll": "全选投递",
+          "selectRow": "选择这条投递",
+          "sortBy": "按{{label}}排序",
+          "resizeColumn": "调整{{label}}列宽",
+          "tableOptions": "表格选项",
+          "compactColumns": "收窄列宽",
+          "resetColumnWidths": "还原列宽",
+          "clearSelection": "清除选择",
+          "type": "类型",
+          "propertyType": "属性类型",
+          "tool": "来源",
+          "userInput": "手动记录",
+          "pin": "置顶",
+          "unpin": "取消置顶",
+          "moreSettings": "更多设置",
+          "behavior": "行为",
+          "requiredValue": "必填",
+          "allowEmpty": "允许留空",
+          "showConfidence": "显示把握程度",
+          "types": {
+            "Text": "文本",
+            "Date": "日期",
+            "Single select": "单选",
+            "Multi select": "多选",
+            "URL": "链接"
+          },
+          "aiComputed": "AI 计算"
+        },
+        "actions": {
+          "addColumn": "在投递面板加一列，类型是{{type}}。先问我这一列叫什么、内容从哪来；如果要你去查，就查完把每一行都填上。",
+          "calculate": "把投递面板的「{{column}}」这一列算一下，每条投递都填上真实查到的值，查不到就留空。",
+          "hideColumn": "把投递面板的「{{column}}」列去掉。"
         }
       },
       "recommendation": {
@@ -1957,6 +2115,62 @@
           "low": "信息不足",
           "none": "没说把握"
         }
+      },
+      "interviewRoom": {
+        "title": "面试间已就绪",
+        "enter": "进入面试",
+        "duration": "约 {{count}} 分钟",
+        "style": {
+          "standard": "常规面",
+          "pressure": "压力面",
+          "behavioral": "行为面"
+        },
+        "language": {
+          "zh": "中文",
+          "en": "英文"
+        },
+        "difficulty": {
+          "entry": "入门",
+          "standard": "常规",
+          "hard": "进阶"
+        }
+      },
+      "templateReplica": {
+        "title": "复刻版式预览",
+        "apply": "应用到简历",
+        "applied": "已应用",
+        "previewFailed": "这棵模板树没能渲染出来，我再改一版",
+        "diagnostics": "有 {{count}} 处还需要调整"
+      },
+      "companyLogos": {
+        "title": "选择公司 Logo",
+        "submitted": "已确认",
+        "skipped": "已跳过",
+        "candidateCount": "{{count}} 个候选",
+        "noCandidates": "未找到候选",
+        "version": "版本 {{index}}",
+        "custom": "自定义",
+        "imageUrl": "图片链接",
+        "urlPlaceholder": "https://…/logo.svg",
+        "selected": "已选择 {{selected}}/{{total}}",
+        "skip": "跳过",
+        "cancel": "取消",
+        "confirm": "确认选择",
+        "type": {
+          "symbol": "图形",
+          "icon": "图标",
+          "logo": "完整",
+          "image": "图片"
+        }
+      },
+      "trackerFields": {
+        "question": "这块投递面板要盯哪几件事？",
+        "freeText": "还想要别的…",
+        "answered": "已选好要盯的列",
+        "previous": "上一题",
+        "next": "下一题",
+        "send": "确定",
+        "goTo": "跳到第 {{n}} 题"
       }
     },
     "interview": {
@@ -1965,7 +2179,91 @@
       "microphone": "麦克风",
       "end": "结束面试",
       "comingSoonBadge": "还没上线",
-      "comingSoon": "语音模拟面试还在打磨中。它会用你的简历和目标岗位出题、边听边追问，做完给你一份可复盘的纪要——现在还差最后一段路，先不上假的给你"
+      "comingSoon": "语音模拟面试还在打磨中。它会用你的简历和目标岗位出题、边听边追问，做完给你一份可复盘的纪要——现在还差最后一段路，先不上假的给你",
+      "starting": "正在准备面试…",
+      "connecting": "正在接通…",
+      "listening": "在听",
+      "thinking": "思考中",
+      "speaking": "面试官在说",
+      "micHint": "直接开口回答，说完停顿一下即可",
+      "micDenied": "拿不到麦克风权限。浏览器地址栏右侧可以重新授权",
+      "startVoice": "开始语音面试",
+      "startText": "用打字面试",
+      "finished": "面试结束",
+      "you": "你",
+      "interviewer": "面试官",
+      "inputPlaceholder": "输入你的回答…",
+      "send": "发送",
+      "stageLabel": "阶段",
+      "stage": {
+        "introduction": "开场",
+        "experience": "项目经历",
+        "technical": "技术深度",
+        "behavioral": "行为面",
+        "closing": "收尾",
+        "finished": "已结束"
+      },
+      "report": {
+        "title": "面试复盘",
+        "generating": "正在生成复盘报告…",
+        "overall": "综合准备度",
+        "retry": "重新生成",
+        "strengths": "做得好的地方",
+        "improvements": "可以改进的地方",
+        "reviews": "逐题点评",
+        "yourAnswer": "你当时说",
+        "better": "更好的答法",
+        "empty": "这场面试还没有可点评的回答",
+        "dropped": "有 {{count}} 条点评因为引用的原话对不上被丢弃了",
+        "dims": {
+          "expression": "表达清晰",
+          "depth": "技术深度",
+          "jobFit": "岗位契合",
+          "structure": "结构化"
+        },
+        "band": {
+          "ready": "可以上场了",
+          "nearly": "接近可以",
+          "developing": "还在打磨",
+          "early": "刚起步"
+        },
+        "verdict": {
+          "ready": "准备得不错，可以去真面了",
+          "nearly": "差一点，卡在几个具体答法上",
+          "developing": "基本盘有了，答法还要练",
+          "early": "这是第一步——下面几条改完，下次会很不一样"
+        },
+        "emptyHint": "多答几题，这里就会逐题告诉你怎么改",
+        "questionIndex": "第 {{index}} 题"
+      },
+      "micDeniedHint": "拿不到麦克风权限，你也可以打字回答",
+      "composerPlaceholder": "输入你的回答…",
+      "transcriptEmpty": "面试官马上开口，准备好就行",
+      "startFailed": "面试没能开始，稍后再试一次",
+      "turnFailed": "这一轮没送出去，再说一遍试试",
+      "finishFailed": "这场面试还没能结束，再试一次",
+      "reportFailed": "复盘报告没能生成，重试一次",
+      "voiceError": {
+        "connection": "语音断了，可以改用打字继续"
+      },
+      "backToDashboard": "回到工作台",
+      "leaveTitle": "现在离开会结束这场面试",
+      "leaveHint": "已经说过的内容会保留，但不会有复盘报告。",
+      "leaveCancel": "继续面试",
+      "leaveConfirm": "结束并离开",
+      "prep": {
+        "session": "正在建面试间…",
+        "knowledge": "正在读你的简历和目标岗位…",
+        "opening": "面试官在想开场问题…",
+        "connecting": "正在接通语音…",
+        "stalled": "比平时慢了一些，还在准备"
+      },
+      "mute": "静音",
+      "unmute": "取消静音",
+      "unavailable": "面试间暂时开不了，稍后再试一次",
+      "noLaunch": "这场面试没有找到，回工作台重新开始一场",
+      "showTranscript": "展开逐字稿",
+      "hideTranscript": "收起逐字稿"
     },
     "living": {
       "askPolarisDetail": "询问 Polaris · 说说怎么改",
@@ -1990,7 +2288,15 @@
       "parsed": "读完了，草稿在右边",
       "failed": "这份 PDF 我没读出来",
       "warningsTitle": "有几处我拿不准",
-      "warningsBody": "这份 PDF 里下面这些地方我读得不确定，落到草稿里之前你先看一眼"
+      "warningsBody": "这份 PDF 里下面这些地方我读得不确定，落到草稿里之前你先看一眼",
+      "parsingShort": "上传中",
+      "remove": "移除 {{name}}",
+      "reject": {
+        "unsupported": "「{{name}}」这个格式还读不了",
+        "too-large": "「{{name}}」太大了，换个小一点的",
+        "too-many": "一次最多带 {{max}} 个文件",
+        "duplicate": "「{{name}}」已经在上面了"
+      }
     },
     "tools": {
       "count": "{{count}} 次工具调用",
@@ -2003,7 +2309,22 @@
       "summary": {
         "sections": "读到 {{count}} 个模块",
         "results": "{{count}} 条结果"
-      }
+      },
+      "track": "记录",
+      "fallback": "处理",
+      "searchingWeb": "正在搜索网页",
+      "searchingSites": "正在搜索 {{count}} 个网站",
+      "interview": "面试",
+      "design": "复刻版式",
+      "browse": "浏览",
+      "plan": "列计划",
+      "delegate": "交给子代理",
+      "run": "执行",
+      "logo": "取公司图标",
+      "verify": "核验",
+      "show": "展示",
+      "explain": "说明改动",
+      "ask": "提问"
     },
     "canvas": {
       "action": {
@@ -2017,6 +2338,100 @@
         "polish": "优化这段",
         "translate": "翻译"
       }
+    },
+    "trajectory": {
+      "title": "轨迹",
+      "run": "运行轨迹",
+      "conversation": "对话",
+      "turns": "{{count}} Turns",
+      "steps": "{{count}} Steps",
+      "calls": "{{count}} Calls",
+      "turn": "Turn {{count}}",
+      "lanes": {
+        "input": "Input",
+        "model": "Model",
+        "tools": "Tools"
+      },
+      "actor": {
+        "user": "User",
+        "assistant": "Polaris",
+        "tool": "Tool"
+      },
+      "search": "搜索轨迹",
+      "empty": "这场对话还没有轨迹记录",
+      "emptyHint": "发送下一条消息后，模型与工具调用会按真实顺序记录在这里"
+    },
+    "history": {
+      "toggle": "历史对话",
+      "untitled": "未命名对话",
+      "delete": "删除",
+      "confirmDelete": "删掉这场对话？",
+      "loadFailed": "这场对话没能打开，稍后再试",
+      "switchWhileBusy": "这一轮还没回完，切走会中断它。",
+      "switchAnyway": "仍然切换",
+      "group": {
+        "today": "今天",
+        "week": "最近 7 天",
+        "earlier": "更早"
+      },
+      "search": "搜索对话",
+      "searchEmpty": "没有匹配的对话",
+      "empty": "这份简历还没有对话记录"
+    },
+    "assets": {
+      "title": "资产库",
+      "searchPlaceholder": "搜索标题",
+      "ariaList": "资产列表",
+      "types": {
+        "all": "全部",
+        "JD_RESEARCH": "岗位调研",
+        "COMPANY_PROFILE": "公司画像",
+        "TEMPLATE": "版式复刻",
+        "COVER_LETTER": "求职信",
+        "BOARD": "投递面板",
+        "INTERVIEW": "面试记录"
+      },
+      "meta": "{{resume}} · {{time}} · v{{version}}",
+      "expiresIn": "{{count}} 天后消失",
+      "expiresTomorrow": "明天消失",
+      "expiresToday": "今天到期",
+      "keep": "留住",
+      "kept": "已留住",
+      "keepFailed": "没能留住，稍后再试",
+      "use": "拿它优化简历",
+      "copy": "复制",
+      "copied": "已复制",
+      "archive": "归档",
+      "archiveConfirm": "确定归档？归档后正文不再保留",
+      "archived": "已归档",
+      "emptyTitle": "这里还是空的",
+      "filteredEmpty": "这个筛选下没有资产",
+      "clearFilter": "清除筛选",
+      "loadFailed": "资产库没能加载出来",
+      "retry": "重试",
+      "previewExpired": "这份已经过期了",
+      "previewArchived": "已归档的内容不再保留",
+      "previewMissing": "这份资产找不到了",
+      "previewUnsupported": "这类内容暂不支持预览",
+      "nearLimit": "资产快满了（{{count}}/500），归档一些不再用的吧",
+      "usePrompt": "参考资产「{{title}}」，帮我优化这份简历。",
+      "seeAll": "查看全部 {{count}} 条",
+      "count": "{{count}} 项",
+      "boardTitle": "投递面板",
+      "interviewFallback": "一场模拟面试",
+      "interviewScore": "评分 {{score}}",
+      "openInterview": "打开面试报告",
+      "collapse": "收起",
+      "showMore": "还有 {{count}} 条",
+      "delete": "删除",
+      "deleteConfirmTitle": "删除这份资产？",
+      "deleteConfirmBody": "整条记录会消失，不可恢复。如果只是想收起来不占地方，用「归档」——那样正文虽然读不出来，但记录还在。",
+      "deleteInterviewConfirmTitle": "删除这场面试记录？",
+      "deleteInterviewConfirmBody": "逐字记录和复盘报告会一起删除，且无法恢复。",
+      "discussBoard": "去 AI 里聊这块面板",
+      "clearBoard": "清空面板",
+      "clearBoardConfirmTitle": "清空投递面板？",
+      "clearBoardConfirmBody": "将删除 {{count}} 条投递记录和你配过的自定义列，不可恢复。面板本身会留着，下次记录投递时还在。"
     }
   },
   "report": {
@@ -2068,7 +2483,7 @@
     "common": "加载中...",
     "aiThinking": "AI 思考中...",
     "aiLab": {
-      "start": "正在启动 AI 实验室...",
+      "start": "正在启动 Polaris...",
       "preparing": "正在准备智能面试官与分析工具..."
     },
     "history": {
@@ -2168,6 +2583,156 @@
     "actions": {
       "retry": "重试",
       "upgrade": "去充值"
+    }
+  },
+  "templateError": {
+    "title": "这个模板没能渲染出来",
+    "description": "你的内容都还在，换一个模板就能继续。我们已经收到告警。"
+  },
+  "onboarding": {
+    "title": "求职画像",
+    "dismiss": "以后再说",
+    "skip": "跳过",
+    "previous": "上一步",
+    "next": "下一步",
+    "finish": "完成",
+    "addCustom": "自己填",
+    "customPlaceholder": "输入后回车",
+    "steps": {
+      "direction": {
+        "title": "你在找什么工作？"
+      },
+      "stage": {
+        "title": "现在处在哪个阶段？"
+      },
+      "skills": {
+        "title": "你的主要技术栈是？"
+      },
+      "blocker": {
+        "title": "现在最难的是哪一步？"
+      }
+    },
+    "fields": {
+      "role": {
+        "label": "目标岗位",
+        "options": {
+          "frontend": "前端",
+          "backend": "后端",
+          "fullstack": "全栈",
+          "client": "客户端",
+          "algorithm": "算法",
+          "data": "数据",
+          "ai": "AI / 大模型",
+          "test": "测试开发",
+          "devops": "运维 / SRE",
+          "security": "安全",
+          "embedded": "嵌入式",
+          "gamedev": "游戏开发",
+          "product": "产品",
+          "design": "设计",
+          "operations": "运营",
+          "marketing": "市场",
+          "sales": "销售",
+          "hr": "人力资源",
+          "finance": "财务",
+          "legal": "法务",
+          "pm": "项目管理",
+          "research": "研究 / 科研",
+          "content": "内容 / 编辑",
+          "customer": "客户成功"
+        }
+      },
+      "industry": {
+        "label": "行业方向",
+        "options": {
+          "internet": "互联网",
+          "ecommerce": "电商",
+          "finance": "金融",
+          "ai": "人工智能",
+          "game": "游戏",
+          "hardware": "硬件",
+          "soe": "国企 / 央企",
+          "education": "教育",
+          "healthcare": "医疗健康",
+          "manufacturing": "制造业",
+          "auto": "汽车 / 新能源",
+          "media": "传媒",
+          "consulting": "咨询",
+          "realestate": "地产",
+          "logistics": "物流",
+          "energy": "能源",
+          "retail": "零售",
+          "nonprofit": "公益 / NGO"
+        }
+      },
+      "careerStage": {
+        "label": "求职阶段",
+        "options": {
+          "campus": "应届校招",
+          "experienced": "社招跳槽",
+          "switching": "转行",
+          "intern": "找实习"
+        }
+      },
+      "city": {
+        "label": "目标城市",
+        "options": {
+          "beijing": "北京",
+          "shanghai": "上海",
+          "shenzhen": "深圳",
+          "hangzhou": "杭州",
+          "guangzhou": "广州",
+          "chengdu": "成都",
+          "remote": "远程"
+        }
+      },
+      "stack": {
+        "label": "技术栈与技能",
+        "options": {
+          "react": "React",
+          "vue": "Vue",
+          "typescript": "TypeScript",
+          "node": "Node.js",
+          "java": "Java",
+          "go": "Go",
+          "python": "Python",
+          "cpp": "C++",
+          "rust": "Rust",
+          "swift": "Swift",
+          "kotlin": "Kotlin",
+          "flutter": "Flutter",
+          "sql": "SQL",
+          "k8s": "Kubernetes",
+          "docker": "Docker",
+          "aws": "AWS",
+          "pytorch": "PyTorch",
+          "figma": "Figma",
+          "sap": "SAP",
+          "tableau": "Tableau",
+          "crm": "CRM",
+          "excel": "Excel",
+          "ps": "Photoshop",
+          "office": "Office"
+        }
+      },
+      "blocker": {
+        "label": "最卡的一步",
+        "options": {
+          "whereToApply": "不知道投哪",
+          "thinResume": "简历没内容",
+          "noReply": "投了没回音",
+          "failInterview": "面试挂了",
+          "choosingOffer": "有 offer 在纠结"
+        }
+      },
+      "note": {
+        "label": "还有什么想让我知道的",
+        "placeholder": "比如：想从测开转前端，但简历上全是测试经历"
+      }
+    },
+    "done": {
+      "title": "记下了",
+      "subtitle": "我这就把你的画像写出来，进去就能用"
     }
   }
 }

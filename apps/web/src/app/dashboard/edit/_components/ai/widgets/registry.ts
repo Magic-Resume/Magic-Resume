@@ -1,24 +1,24 @@
 import { ChoiceCard, FormCard } from '@magic-resume/genui';
 import TemplateGalleryCard from './TemplateGalleryCard';
+import TemplateReplicaCard from './TemplateReplicaCard';
 import FabricationNotice from './FabricationNotice';
 import JobResearchCard from './JobResearchCard';
 import RecommendationChoiceCard from './RecommendationChoiceCard';
 import ResearchBriefCard from './ResearchBriefCard';
+import InterviewRoomCard from './InterviewRoomCard';
 import ApplicationTrackerCard, {
   APPLICATION_STATUSES,
   type ApplicationStatus,
 } from './ApplicationTrackerCard';
+import CompanyLogoPickerCard, { type CompanyLogoChoice } from './CompanyLogoPickerCard';
+import TrackerFieldsCard from './TrackerFieldsCard';
 import type {
   ResearchBriefGroup,
   ResearchBriefItem,
   ResearchBriefVariant,
 } from './ResearchBriefCard';
 import type { RecommendationOption } from '@magic-resume/genui/beautiful';
-import type {
-  WidgetFormField,
-  WidgetOption,
-  WidgetRegistry,
-} from '@magic-resume/genui/contract';
+import type { WidgetFormField, WidgetOption, WidgetRegistry } from '@magic-resume/genui/contract';
 
 /** `['a','b']` → options. Used for the many short, fixed lists below. */
 const opts = (...labels: string[]): WidgetOption[] =>
@@ -89,18 +89,47 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function sanitizeLogoUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const urls: string[] = [];
+  for (const value of raw) {
+    if (typeof value !== 'string') continue;
+    const url = value.trim();
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') continue;
+    } catch {
+      continue;
+    }
+    if (!urls.includes(url)) urls.push(url);
+    if (urls.length >= 4) break;
+  }
+  return urls;
+}
+
+function normalizeCompanyLogoChoices(options: unknown): CompanyLogoChoice[] {
+  if (!isRecord(options)) return [];
+  const names = [
+    ...new Set(
+      sanitizeOptions(options.companies)
+        .map((option) => option.label.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, 8);
+  return names.map((name) => ({
+    name,
+    candidates: sanitizeLogoUrls(options[`candidates:${name}`]),
+  }));
+}
+
 /**
  * 这次的选择带没带「我推荐哪个」。
  *
  * 判据是模型**表了态**：给了 `recommended`，或至少一项写了理由/置信度。没表态就走
  * 普通的一排 chips——把没有主见的选择渲染成推荐卡，等于替模型编一个它没说过的倾向。
  */
-function hasRecommendation(
-  options: RecommendationOption[],
-  recommended: unknown,
-): boolean {
-  if (typeof recommended === 'number' && Number.isInteger(recommended))
-    return true;
+function hasRecommendation(options: RecommendationOption[], recommended: unknown): boolean {
+  if (typeof recommended === 'number' && Number.isInteger(recommended)) return true;
   return options.some((o) => o.why !== undefined || o.confidence !== undefined);
 }
 
@@ -116,6 +145,16 @@ const RESEARCH_GROUPS = [
   { key: 'recruiter_questions', accent: '#22d3ee', actionable: true },
   { key: 'preparation_plan', accent: '#38bdf8' },
 ] as const;
+
+const JOB_RESEARCH_TONE_ACCENTS: Record<string, string> = {
+  info: '#38bdf8',
+  positive: '#34d399',
+  success: '#34d399',
+  warning: '#fbbf24',
+  risk: '#fb7185',
+  danger: '#fb7185',
+  neutral: '#94a3b8',
+};
 
 interface ResearchGroupDefinition {
   key: string;
@@ -181,12 +220,7 @@ function normalizeResearchItem(raw: unknown): ResearchBriefItem | null {
   if (!isRecord(raw)) return null;
 
   const text = cleanString(
-    raw.text ??
-      raw.content ??
-      raw.claim ??
-      raw.label ??
-      raw.title ??
-      raw.finding,
+    raw.text ?? raw.content ?? raw.claim ?? raw.label ?? raw.title ?? raw.finding,
     MAX_RESEARCH_TEXT,
   );
   if (!text) return null;
@@ -196,19 +230,13 @@ function normalizeResearchItem(raw: unknown): ResearchBriefItem | null {
     : Array.isArray(raw.sources) && isRecord(raw.sources[0])
       ? raw.sources[0]
       : undefined;
-  const url = safeHttpUrl(
-    raw.url ?? raw.sourceUrl ?? raw.href ?? source?.url ?? source?.href,
-  );
+  const url = safeHttpUrl(raw.url ?? raw.sourceUrl ?? raw.href ?? source?.url ?? source?.href);
   const sourceName = cleanString(
     raw.sourceName ?? raw.publisher ?? source?.name ?? source?.title,
     100,
   );
   const date = cleanString(
-    raw.date ??
-      raw.publishedDate ??
-      raw.publishedAt ??
-      source?.date ??
-      source?.publishedDate,
+    raw.date ?? raw.publishedDate ?? raw.publishedAt ?? source?.date ?? source?.publishedDate,
     40,
   );
   return {
@@ -266,31 +294,23 @@ export function normalizeResearchWidgetProps(
     const items = normalizeResearchItems(
       Array.isArray(raw)
         ? raw
-        : (record?.items ??
-            record?.entries ??
-            record?.findings ??
-            record?.questions),
+        : (record?.items ?? record?.entries ?? record?.findings ?? record?.questions),
     );
     if (!items.length) return;
     groups.push({
       key,
       title: cleanString(record?.title ?? record?.label, 80),
       accent: definition?.accent ?? '#38bdf8',
-      actionable:
-        record?.actionable === true || definition?.actionable === true,
+      actionable: record?.actionable === true || definition?.actionable === true,
       items,
     });
   };
 
   if (Array.isArray(rawGroups)) {
-    rawGroups
-      .slice(0, MAX_RESEARCH_GROUPS)
-      .forEach((group, index) => append(group, index));
+    rawGroups.slice(0, MAX_RESEARCH_GROUPS).forEach((group, index) => append(group, index));
   } else if (isRecord(rawGroups)) {
     const orderedKeys = [
-      ...definitions
-        .map((definition) => definition.key)
-        .filter((key) => key in rawGroups),
+      ...definitions.map((definition) => definition.key).filter((key) => key in rawGroups),
       ...Object.keys(rawGroups).filter(
         (key) => !definitions.some((definition) => definition.key === key),
       ),
@@ -301,14 +321,92 @@ export function normalizeResearchWidgetProps(
   if (!groups.length) return null;
   const title =
     cleanString(
-      props.title ??
-        props.companyName ??
-        props.company ??
-        props.jobTitle ??
-        props.role,
+      props.title ?? props.companyName ?? props.company ?? props.jobTitle ?? props.role,
       120,
     ) ?? '';
   return { variant, title, groups };
+}
+
+/**
+ * 岗位调研先后公开过两种 wire shape：旧版是按固定 key 分组的对象，当前 push_ui
+ * 契约则是 `[{ title, tone, items }]`。历史消息已经持久化，前端必须两种都能读；只改
+ * 后端会让用户已经收到的卡片永远停在「无法渲染」。
+ */
+export function normalizeJobResearchProps(props: Record<string, unknown>): {
+  jobTitle: string;
+  groups: Array<{
+    key: string;
+    title?: string;
+    items: string[];
+    accent: string;
+    actionable?: boolean;
+  }>;
+} | null {
+  const rawGroups = props.groups;
+  const byKey = new Map<string, ResearchGroupDefinition>(
+    RESEARCH_GROUPS.map((definition) => [definition.key, definition]),
+  );
+  const groups: Array<{
+    key: string;
+    title?: string;
+    items: string[];
+    accent: string;
+    actionable?: boolean;
+  }> = [];
+  const seen = new Set<string>();
+
+  const append = (raw: unknown, index: number, suggestedKey?: string) => {
+    const record = isRecord(raw) ? raw : undefined;
+    const definition: ResearchGroupDefinition | undefined =
+      (suggestedKey ? byKey.get(suggestedKey) : undefined) ?? RESEARCH_GROUPS[index];
+    const baseKey = groupKey(
+      record?.key ?? record?.id ?? record?.type ?? suggestedKey,
+      definition?.key ?? `group_${index + 1}`,
+    );
+    const key = seen.has(baseKey) ? `${baseKey}_${index + 1}` : baseKey;
+    const items = normalizeResearchItems(
+      Array.isArray(raw)
+        ? raw
+        : (record?.items ?? record?.entries ?? record?.findings ?? record?.questions),
+    ).map((item) => item.text);
+    if (!items.length) return;
+
+    const tone = cleanString(record?.tone, 24)?.toLowerCase();
+    seen.add(key);
+    groups.push({
+      key,
+      ...(cleanString(record?.title ?? record?.label, 80)
+        ? { title: cleanString(record?.title ?? record?.label, 80) }
+        : {}),
+      items,
+      accent:
+        (tone ? JOB_RESEARCH_TONE_ACCENTS[tone] : undefined) ??
+        definition?.accent ??
+        '#38bdf8',
+      ...(record?.actionable === true || definition?.actionable === true
+        ? { actionable: true }
+        : {}),
+    });
+  };
+
+  if (Array.isArray(rawGroups)) {
+    rawGroups.slice(0, MAX_RESEARCH_GROUPS).forEach((group, index) => append(group, index));
+  } else if (isRecord(rawGroups)) {
+    const orderedKeys = [
+      ...RESEARCH_GROUPS.map((definition) => definition.key).filter((key) => key in rawGroups),
+      ...Object.keys(rawGroups).filter(
+        (key) => !RESEARCH_GROUPS.some((definition) => definition.key === key),
+      ),
+    ].slice(0, MAX_RESEARCH_GROUPS);
+    orderedKeys.forEach((key, index) => append(rawGroups[key], index, key));
+  }
+
+  if (!groups.length) return null;
+  return {
+    jobTitle:
+      cleanString(props.jobTitle ?? props.title ?? props.message, 160) ?? '',
+    groups,
+  };
 }
 
 function normalizeDate(value: unknown): string | undefined {
@@ -317,9 +415,71 @@ function normalizeDate(value: unknown): string | undefined {
   return Number.isNaN(new Date(raw).getTime()) ? undefined : raw;
 }
 
+/** 内置列的键。自定义列不在此列，它们的值走 `fields`。 */
+const BUILTIN_TRACKER_COLUMNS = new Set([
+  'company',
+  'role',
+  'status',
+  'appliedAt',
+  'nextActionAt',
+  'sourceUrl',
+  'location',
+  'notes',
+]);
+
+/**
+ * 面板列。`label` 只对自定义列有意义——内置列的显示名归前端 i18n，跟随界面语言，
+ * 后端存的是空串。
+ */
+function normalizeTrackerColumns(value: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(value)) return [];
+  const columns: Array<Record<string, unknown>> = [];
+  const seen = new Set<string>();
+  for (const raw of value) {
+    if (!isRecord(raw)) continue;
+    const key = cleanString(raw.key, 60);
+    if (!key || seen.has(key)) continue;
+    const builtin = BUILTIN_TRACKER_COLUMNS.has(key);
+    const label = cleanString(raw.label, 60) ?? '';
+    // 自定义列没有名字就没法显示——丢掉，而不是渲染一个无头的列。
+    if (!builtin && !label) continue;
+    seen.add(key);
+    columns.push({
+      key,
+      builtin,
+      label,
+      type: cleanString(raw.type, 40) ?? 'Text',
+      source: raw.source === 'ai' ? 'ai' : 'user',
+      ...(cleanString(raw.prompt, 2_000) ? { prompt: cleanString(raw.prompt, 2_000) } : {}),
+    });
+    if (columns.length >= 12) break;
+  }
+  return columns;
+}
+
+/** 自定义列在这一行的取值。`computedAt` 缺席 = 还没算过，前端据此显示「计算中」。 */
+function normalizeTrackerFields(value: unknown): Record<string, { value: string; computed: boolean }> {
+  const fields: Record<string, { value: string; computed: boolean }> = {};
+  if (!isRecord(value)) return fields;
+  for (const [key, raw] of Object.entries(value)) {
+    if (!isRecord(raw)) continue;
+    const cleanKey = cleanString(key, 60);
+    if (!cleanKey || BUILTIN_TRACKER_COLUMNS.has(cleanKey)) continue;
+    fields[cleanKey] = {
+      value: cleanString(raw.value, 2_000) ?? '',
+      computed: Boolean(cleanString(raw.computedAt, 64)),
+    };
+    if (Object.keys(fields).length >= 12) break;
+  }
+  return fields;
+}
+
 export function normalizeApplicationTrackerProps(
   props: Record<string, unknown>,
-): { applications: Array<Record<string, unknown>> } | null {
+): {
+  columns: Array<Record<string, unknown>>;
+  applications: Array<Record<string, unknown>>;
+} | null {
   if (!Array.isArray(props.applications)) return null;
   const applications: Array<Record<string, unknown>> = [];
   for (const [index, raw] of props.applications.entries()) {
@@ -338,18 +498,12 @@ export function normalizeApplicationTrackerProps(
       role,
       status,
       ...(sourceUrl ? { sourceUrl } : {}),
-      ...(cleanString(raw.location, 120)
-        ? { location: cleanString(raw.location, 120) }
-        : {}),
-      ...(normalizeDate(raw.appliedAt)
-        ? { appliedAt: normalizeDate(raw.appliedAt) }
-        : {}),
-      ...(normalizeDate(raw.nextActionAt)
-        ? { nextActionAt: normalizeDate(raw.nextActionAt) }
-        : {}),
-      ...(normalizeDate(raw.updatedAt)
-        ? { updatedAt: normalizeDate(raw.updatedAt) }
-        : {}),
+      ...(cleanString(raw.location, 120) ? { location: cleanString(raw.location, 120) } : {}),
+      ...(normalizeDate(raw.appliedAt) ? { appliedAt: normalizeDate(raw.appliedAt) } : {}),
+      ...(normalizeDate(raw.nextActionAt) ? { nextActionAt: normalizeDate(raw.nextActionAt) } : {}),
+      ...(normalizeDate(raw.updatedAt) ? { updatedAt: normalizeDate(raw.updatedAt) } : {}),
+      ...(cleanString(raw.notes, 2_000) ? { notes: cleanString(raw.notes, 2_000) } : {}),
+      fields: normalizeTrackerFields(raw.fields),
     });
     if (applications.length >= 50) break;
   }
@@ -359,7 +513,7 @@ export function normalizeApplicationTrackerProps(
   // rows are still rejected below so corrupt payloads do not masquerade as an
   // intentionally empty board.
   if (props.applications.length > 0 && applications.length === 0) return null;
-  return { applications };
+  return { columns: normalizeTrackerColumns(props.columns), applications };
 }
 
 /**
@@ -374,7 +528,16 @@ export function normalizeApplicationTrackerProps(
  */
 export const FORM_DEFS: Record<
   string,
-  { title: string; fields: WidgetFormField[]; skippable?: boolean }
+  {
+    title: string;
+    fields: WidgetFormField[];
+    skippable?: boolean;
+    /**
+     * 这一种的字段由 `options[<key>]` 里的名字**逐个生成**，而不是写死在 `fields` 里。
+     * 只有「要问哪几项」运行时才知道的表单需要它（目前仅 `company_logos`）。
+     */
+    fromOptions?: string;
+  }
 > = {
   job_info: {
     title: '目标岗位信息',
@@ -422,10 +585,27 @@ export const FORM_DEFS: Record<
         id: 'evidence',
         label: '真实背景与口径',
         kind: 'textarea',
-        placeholder:
-          '例如统计周期、样本量、对比基线、数据来源，或你实际负责的范围…',
+        placeholder: '例如统计周期、样本量、对比基线、数据来源，或你实际负责的范围…',
       },
     ],
+  },
+
+  /**
+   * 旧会话里的 company_logos 通用表单兜底。新运行会由 requestFormKind 路由到带预览的
+   * CompanyLogoPickerCard；保留这一份是为了让已持久化的旧中断仍可回答。
+   *
+   * **字段是动态的**——一家公司一个输入框，公司名由 agent 通过 `options.companies` 给。
+   * 这是这张表里唯一一个字段不固定的 kind（见下面 `fromOptions`），因为「要问哪几家」
+   * 只有运行时才知道；其余 kind 的字段仍然写死在这里，模型只挑 kind、编不出畸形表单。
+   *
+   * 整张卡可跳过：拿不到就空着是既定行为（绝不用通用图标顶替），所以「跳过」是一个
+   * 正当答案，不是放弃。
+   */
+  company_logos: {
+    title: '补几个公司 logo',
+    skippable: true,
+    fromOptions: 'companies',
+    fields: [],
   },
 
   // ---- 引导创建 ----
@@ -462,16 +642,7 @@ export const FORM_DEFS: Record<
         kind: 'chips',
         allowCustom: true,
         optional: true,
-        options: opts(
-          '互联网',
-          'AI',
-          '电商',
-          '金融',
-          '游戏',
-          '硬件/制造',
-          '教育',
-          '医疗',
-        ),
+        options: opts('互联网', 'AI', '电商', '金融', '游戏', '硬件/制造', '教育', '医疗'),
       },
       {
         id: 'seniority',
@@ -622,6 +793,45 @@ export const FORM_DEFS: Record<
  * tool args become props — is ours. Add a card = one entry here.
  */
 export const WIDGETS: WidgetRegistry = {
+  /**
+   * `replicate_template` runs in the agent, but previewing and applying its
+   * JSON tree belong in the browser: it has the active résumé and is where the
+   * user can make the irreversible-looking choice explicitly.
+   */
+  template_replica: {
+    component: TemplateReplicaCard,
+    interaction: 'client',
+    normalize: (props) => {
+      const template = props.template;
+      if (!isRecord(template)) return null;
+      return {
+        template,
+        ...(typeof props.note === 'string' && props.note.trim()
+          ? { note: props.note.trim().slice(0, 200) }
+          : {}),
+      };
+    },
+  },
+
+  company_logo_picker: {
+    component: CompanyLogoPickerCard,
+    interaction: 'resume',
+    normalize: (props) => {
+      if (props.formKind !== 'company_logos') return null;
+      const companies = normalizeCompanyLogoChoices(props.options);
+      if (!companies.length) return null;
+      return {
+        title: '选择公司 Logo',
+        message:
+          typeof props.message === 'string' && props.message.trim()
+            ? props.message.trim().slice(0, 160)
+            : '每家公司已预选推荐版本，你可以切换或粘贴自定义链接。',
+        companies,
+        skippable: true,
+      };
+    },
+  },
+
   request_form: {
     component: FormCard,
     interaction: 'resume',
@@ -634,13 +844,39 @@ export const WIDGETS: WidgetRegistry = {
       // only those; everything else keeps our list. A field whose options come
       // back empty degrades to free text rather than an unusable empty row.
       const supplied = (props.options ?? {}) as Record<string, unknown>;
-      const fields = def.fields.map((field) => {
-        if (!field.dynamicOptions) return field;
-        const options = sanitizeOptions(supplied[field.id]);
-        return options.length
-          ? { ...field, options }
-          : { ...field, kind: 'text' as const, options: undefined };
-      });
+      const fields = def.fromOptions
+        ? // 逐项生成的表单（company_logos）：名字来自模型，所以要当不可信输入处理——
+          // 去重、去空、限长、封顶条数。一张挂着二十个输入框的卡片是没法填的，而
+          // 生成它只需要模型多吐几个名字。
+          [
+            ...new Set(
+              sanitizeOptions(supplied[def.fromOptions])
+                .map((option) => option.label.trim())
+                .filter(Boolean),
+            ),
+          ]
+            .slice(0, 8)
+            .map<WidgetFormField>((name) => ({
+              // id 用公司名本身：回传的 `values` 因此天然是「公司 → URL」的映射，
+              // 模型不需要再对一次序号。
+              id: name,
+              label: name,
+              kind: 'text',
+              // 每一格都可空——用户只有其中两家的图也该能提交。
+              optional: true,
+              placeholder: 'PNG / JPEG 图片链接',
+            }))
+        : def.fields.map((field) => {
+            if (!field.dynamicOptions) return field;
+            const options = sanitizeOptions(supplied[field.id]);
+            return options.length
+              ? { ...field, options }
+              : { ...field, kind: 'text' as const, options: undefined };
+          });
+
+      // 一项都没生成出来（模型没给名字/全是空串）就不发这张卡：一张没有输入框的
+      // 表单点「提交」等于什么都没说，模型却会当成用户答过了。
+      if (def.fromOptions && fields.length === 0) return null;
 
       return {
         formKind,
@@ -662,15 +898,38 @@ export const WIDGETS: WidgetRegistry = {
     }),
   },
 
+  /**
+   * 实时语音面试的入口。`client`：点「进入」就地开浮层，不回传 agent——决定已经做完了，
+   * 绕一圈只多一次停顿和一次计费。
+   */
+  interview_room: {
+    component: InterviewRoomCard,
+    interaction: 'client',
+    normalize: (props) => {
+      const role = typeof props.role === 'string' ? props.role.trim() : '';
+      // 没有岗位就不是一场能面的面试——降级成文本，比开一个对着空气提问的房间好。
+      if (!role) return null;
+      const duration = Number(props.durationMinutes);
+      const style =
+        props.style === 'pressure' || props.style === 'behavioral' ? props.style : 'standard';
+      return {
+        role,
+        ...(typeof props.jobDescription === 'string' && props.jobDescription.trim()
+          ? { jobDescription: props.jobDescription }
+          : {}),
+        durationMinutes: Number.isFinite(duration) && duration > 0 ? Math.round(duration) : 20,
+        style,
+      };
+    },
+  },
+
   // 纯展示，用户没有要回答的东西——反捏造校验的提示，由引擎推送而非模型调用。
   fabrication_notice: {
     component: FabricationNotice,
     interaction: 'client',
     normalize: (props) => {
       const items = Array.isArray(props.items)
-        ? props.items.filter(
-            (x): x is string => typeof x === 'string' && Boolean(x.trim()),
-          )
+        ? props.items.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
         : [];
       if (!items.length) return null;
       return {
@@ -707,18 +966,7 @@ export const WIDGETS: WidgetRegistry = {
   job_research: {
     component: JobResearchCard,
     interaction: 'message',
-    normalize: (props) => {
-      const src = (props.groups ?? {}) as Record<string, unknown>;
-      const groups = RESEARCH_GROUPS.map((g) => ({
-        ...g,
-        items: sanitizeOptions(src[g.key]).map((o) => o.label),
-      })).filter((g) => g.items.length);
-      if (!groups.length) return null;
-      return {
-        jobTitle: typeof props.jobTitle === 'string' ? props.jobTitle : '',
-        groups,
-      };
-    },
+    normalize: normalizeJobResearchProps,
   },
 
   company_research: {
@@ -733,9 +981,24 @@ export const WIDGETS: WidgetRegistry = {
     normalize: (props) => normalizeResearchWidgetProps(props, 'interview'),
   },
 
+  /**
+   * 投递面板。加列 / 算列 / 隐藏列都是**真**动作，所以走 `message` 而不是 `client`：
+   * 点一下等于替用户说了那句话，agent 收到后写库再把面板推回来。前端自己不改面板
+   * ——否则界面上会出现一列库里没有的东西。
+   */
+  /**
+   * 建面板前先问要盯哪几列。走 request_form 的中断通道，所以结果按默认档（`edit`）
+   * 回填到工具参数，不是当成一条用户消息。
+   */
+  tracker_fields_picker: {
+    component: TrackerFieldsCard,
+    interaction: 'resume',
+    normalize: () => ({}),
+  },
+
   application_tracker: {
     component: ApplicationTrackerCard,
-    interaction: 'client',
+    interaction: 'message',
     normalize: normalizeApplicationTrackerProps,
   },
 
@@ -743,8 +1006,7 @@ export const WIDGETS: WidgetRegistry = {
     component: ChoiceCard,
     interaction: 'resume',
     normalize: (props) => {
-      const message =
-        typeof props.message === 'string' ? props.message.trim() : '';
+      const message = typeof props.message === 'string' ? props.message.trim() : '';
       const options = sanitizeOptions(props.options);
       // Both are the whole card — a question with no answers, or answers with
       // no question, is not something to render half of.
@@ -763,16 +1025,12 @@ export const WIDGETS: WidgetRegistry = {
     component: RecommendationChoiceCard,
     interaction: 'resume',
     normalize: (props) => {
-      const message =
-        typeof props.message === 'string' ? props.message.trim() : '';
+      const message = typeof props.message === 'string' ? props.message.trim() : '';
       const options = sanitizeRichOptions(props.options);
       if (!message || options.length < 2) return null;
       const raw = props.recommended;
       const recommended =
-        typeof raw === 'number' &&
-        Number.isInteger(raw) &&
-        raw >= 0 &&
-        raw < options.length
+        typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw < options.length
           ? raw
           : 0;
       return { message, options, recommended };
@@ -781,11 +1039,14 @@ export const WIDGETS: WidgetRegistry = {
 };
 
 /** 中断分发用：这一次 `ask_choice` 该走推荐卡还是普通选择卡。 */
-export function askChoiceKind(
-  args: Record<string, unknown> | undefined,
-): string {
+export function askChoiceKind(args: Record<string, unknown> | undefined): string {
   const options = sanitizeRichOptions(args?.options);
-  return hasRecommendation(options, args?.recommended)
-    ? 'ask_choice_recommended'
-    : 'ask_choice';
+  return hasRecommendation(options, args?.recommended) ? 'ask_choice_recommended' : 'ask_choice';
+}
+
+/** `request_form` 里只有 Logo 选择需要专用预览卡，其余仍走通用字段表单。 */
+export function requestFormKind(args: Record<string, unknown> | undefined): string {
+  if (args?.formKind === 'company_logos') return 'company_logo_picker';
+  if (args?.formKind === 'tracker_fields') return 'tracker_fields_picker';
+  return 'request_form';
 }

@@ -30,7 +30,7 @@ export default function RecommendationChoiceCard({ instance, onAction }: WidgetP
   const resolved = instance.status !== 'pending';
 
   return (
-    <WidgetShell className="min-w-[280px] max-w-md flex-1">
+    <WidgetShell density="block" surface={false}>
       <RecommendationCard
         message={props.message ?? ''}
         options={options}

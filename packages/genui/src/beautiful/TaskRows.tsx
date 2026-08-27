@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 
 /* ─────────────────────────────────────────────────────────
  * TASK ROWS
@@ -77,6 +78,21 @@ export interface TaskRowItem {
   pill?: string;
   /** 展开后的明细行。 */
   details?: TaskRowDetail[];
+  /**
+   * 替掉行首那个由 `status` 派生的徽章。
+   *
+   * 给的理由：`status` 只有四态，而调用方可能有更细的「这一行此刻在干什么」——
+   * AI Lab 的任务行按 agent 自己声明的 activity（读/写/分析/搜索…）换形态，那是
+   * 四态表达不了的。不给就仍用派生徽章，行为不变。
+   */
+  leading?: ReactNode;
+  /**
+   * 替掉纯文本 `label` 的渲染（例如把动词做成芯片）。
+   *
+   * `label` 仍然必填且不会被省略——它继续承担 `title` 与无障碍读屏，
+   * 富节点只负责好看的那一层。
+   */
+  labelNode?: ReactNode;
 }
 
 /**
@@ -89,23 +105,29 @@ export interface TaskRowItem {
 export default function TaskRows({
   tasks,
   list = false,
+  className = '',
 }: {
   tasks: TaskRowItem[];
   /** `true` 合成一张表（行之间只有分隔线）；`false` 每行一张独立卡片。 */
   list?: boolean;
+  /** 追加到容器上，供宿主覆盖宽度与外观（同 `FilterTable` 的约定）。 */
+  className?: string;
 }) {
   const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
   const rows = tasks.map((t) => ({
     key: t.key,
-    badge:
+    badge: t.leading ?? (
       t.status === 'done' ? (
         <Badge tone="green">{CheckIcon}</Badge>
       ) : t.status === 'failed' ? (
         <Badge tone="red">{XIcon}</Badge>
       ) : (
         <SpinnerRing active={t.status === 'running'}>{t.step ?? ''}</SpinnerRing>
-      ),
+      )
+    ),
     label: t.label,
+    labelNode: t.labelNode,
+    leading: t.leading,
     amount: t.amount,
     pill: t.pill ? (
       <span
@@ -127,11 +149,13 @@ export default function TaskRows({
     <div
       className={`flex w-full max-w-110 flex-col ${
         list ? "gap-0 self-start overflow-hidden rounded-card bg-surface shadow-card" : "min-h-[196px] gap-2"
-      }`}
+      } ${className}`}
     >
       {rows.map((row, i) => {
         // 原版会在脚本走到某一步时自动展开某一行；真实数据里没有"某一步"，只听用户。
         const open = manualOpen[row.key] ?? false;
+        // 没有明细就不该有展开控件——点开一片空白比没有箭头更糟。
+        const expandable = row.details.length > 0;
         return (
           <div
             key={row.key}
@@ -145,18 +169,29 @@ export default function TaskRows({
           >
             <button
               type="button"
-              aria-expanded={open}
-              onClick={() => setManualOpen((current) => ({ ...current, [row.key]: !open }))}
-              className="flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 hover:bg-inset"
+              disabled={!expandable}
+              aria-expanded={expandable ? open : undefined}
+              onClick={
+                expandable
+                  ? () => setManualOpen((current) => ({ ...current, [row.key]: !open }))
+                  : undefined
+              }
+              className={`flex h-11 w-full items-center gap-2.5 px-2.5 text-left transition-colors duration-100 ${
+                expandable ? 'hover:bg-inset' : 'cursor-default'
+              }`}
             >
               <span className="flex size-6 shrink-0 items-center justify-center">
                 {row.badge}
               </span>
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
-                {row.label}
+              <span
+                title={row.label}
+                className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink"
+              >
+                {row.labelNode ?? row.label}
               </span>
               <span className="text-[12.5px] text-ink-2 tabular-nums">{row.amount}</span>
               {row.pill}
+              {expandable && (
               <span
                 aria-hidden="true"
                 className="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full text-ink-3"
@@ -169,6 +204,7 @@ export default function TaskRows({
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </span>
+              )}
             </button>
 
             {/* dropdown detail — same expandable grammar as Chain of Thought */}

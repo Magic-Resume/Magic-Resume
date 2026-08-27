@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@magic-resume/icons';
 import { cn } from '@magic-resume/utils';
 import { WidgetItem } from '../motion';
 import type { WidgetOption } from '../contract';

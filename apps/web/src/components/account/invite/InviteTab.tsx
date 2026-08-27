@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Gift, Users } from 'lucide-react';
+import { Gift, Users } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
 

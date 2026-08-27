@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 import { AnimatePresence } from "framer-motion";
-import { ListChecks } from "lucide-react";
+import { ListChecks } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { InfoType, Resume, Section } from "@/types/frontend/resume";
 import {
@@ -34,6 +34,7 @@ import {
   buildInsertChange,
   buildSelectionChange,
   finalizeAfter,
+  fieldTitle,
   makeInsertTarget,
   parsePath,
   reorderSection,
@@ -46,6 +47,7 @@ import {
   type SelectionActionId,
 } from "../../lib/changeModel";
 import { requestEdit, type EditParams } from "../../lib/services/editClient";
+import { memoryApi } from "@/lib/api/memoryApi";
 import {
   invalidateAiEntitlement,
   isQuotaOrCustomConfigError,
@@ -56,6 +58,10 @@ import {
   type BatchKind,
   type TargetedSelectionDiff,
 } from "../../lib/diffResume";
+import type {
+  WorkspaceProposalChange,
+  WorkspaceResolution,
+} from "@/lib/api/workspace";
 
 const PAGE_WIDTH = 794;
 const SCALE = 0.82;
@@ -70,8 +76,140 @@ export type BatchRequest = {
   targetedSelection?: TargetedSelectionDiff;
   /** 模型给的逐字段改动理由，键为 `section/itemId/fieldKey`（`explain_changes`）。 */
   changeNotes?: Map<string, string>;
+  /** Server-prepared, CAS-addressable V2 proposal changes. */
+  workspaceChanges?: PendingChange[];
+  workspaceProposalId?: string;
 };
 export type FocusRequest = { path: string; nonce: number };
+
+/**
+ * Platform has already validated these targets against the encrypted proposal.
+ * This adapter only gives LivingCanvas enough presentation data to review them;
+ * accept/reject stays server-side through `workspaceChangeId`.
+ */
+export function workspaceChangesToPending(
+  changes: WorkspaceProposalChange[],
+  baseResume: Record<string, unknown>,
+): PendingChange[] {
+  return changes
+    .filter((change) => change.status === "PENDING")
+    .map((change) => {
+      const target = change.target;
+      if (target.scope === "info") {
+        const before = readWorkspaceValue(baseResume, target);
+        return {
+          id: change.id,
+          workspaceChangeId: change.id,
+          target: {
+            sectionKey: "info",
+            itemId: "",
+            fieldKey: target.fieldKey,
+            kind: kindFor(change.after),
+            label: fieldTitle(target.fieldKey),
+          },
+          before: previewValue(before),
+          after: previewValue(change.after),
+          rationale: "",
+          action: "rewrite",
+          seed: 0,
+          status: "pending",
+        } satisfies PendingChange;
+      }
+      if (target.scope === "sectionItem") {
+        const before = readWorkspaceValue(baseResume, target);
+        return {
+          id: change.id,
+          workspaceChangeId: change.id,
+          target: {
+            sectionKey: target.sectionKey,
+            itemId: target.itemId,
+            fieldKey: target.fieldKey,
+            kind: kindFor(change.after),
+            label: `${sectionTitle(target.sectionKey)} · ${fieldTitle(target.fieldKey)}`,
+          },
+          before: previewValue(before),
+          after: previewValue(change.after),
+          rationale: "",
+          action: "rewrite",
+          seed: 0,
+          status: "pending",
+        } satisfies PendingChange;
+      }
+      if (target.scope === "section") {
+        const after = previewValue(change.after);
+        return {
+          id: change.id,
+          workspaceChangeId: change.id,
+          target: {
+            sectionKey: target.sectionKey,
+            itemId: target.itemId,
+            fieldKey: "summary",
+            kind: kindFor(after),
+            label: `${sectionTitle(target.sectionKey)} · ${change.action === "INSERT" ? "新增条目" : "移除条目"}`,
+          },
+          before: previewValue(readWorkspaceValue(baseResume, target)),
+          after,
+          rationale: "",
+          action: "rewrite",
+          isInsert: change.action === "INSERT",
+          seed: 0,
+          status: "pending",
+        } satisfies PendingChange;
+      }
+      return {
+        id: change.id,
+        workspaceChangeId: change.id,
+        target: {
+          sectionKey: "info",
+          itemId: "",
+          fieldKey: "sectionOrder",
+          kind: "text",
+          label: "Section order",
+        },
+        before: previewValue(baseResume.sectionOrder),
+        after: previewValue(change.after),
+        rationale: "",
+        action: "rewrite",
+        seed: 0,
+        status: "pending",
+      } satisfies PendingChange;
+    });
+}
+
+function readWorkspaceValue(
+  resume: Record<string, unknown>,
+  target: WorkspaceProposalChange["target"],
+): unknown {
+  if (target.scope === "info") {
+    const info = resume.info;
+    return info && typeof info === "object" && !Array.isArray(info)
+      ? (info as Record<string, unknown>)[target.fieldKey]
+      : undefined;
+  }
+  if (target.scope === "sectionOrder") return resume.sectionOrder;
+  const sections = resume.sections;
+  if (!sections || typeof sections !== "object" || Array.isArray(sections)) return undefined;
+  const items = (sections as Record<string, unknown>)[target.sectionKey];
+  if (!Array.isArray(items)) return undefined;
+  const item = items.find(
+    (entry) => entry && typeof entry === "object" && (entry as { id?: unknown }).id === target.itemId,
+  ) as Record<string, unknown> | undefined;
+  return target.scope === "section" ? item : item?.[target.fieldKey];
+}
+
+function previewValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value === undefined || value === null) return "";
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function kindFor(value: unknown): EditableTarget["kind"] {
+  return /<[a-z][\s\S]*>/i.test(previewValue(value)) ? "html" : "text";
+}
 
 type LivingCanvasProps = {
   resumeData: Resume;
@@ -109,6 +247,11 @@ type LivingCanvasProps = {
    * shimmer、不锁全屏（living-canvas design §5C），盖一层全纸遮罩会把它盖掉。
    */
   working?: boolean;
+  /** Resolves Workspace changes server-side and returns the canonical resume. */
+  onResolveWorkspace?: (
+    proposalId: string,
+    decisions: { accept?: string[]; reject?: string[] },
+  ) => Promise<WorkspaceResolution>;
 };
 
 type HighlightRect = {
@@ -171,6 +314,7 @@ function LivingCanvas({
   focusRequest,
   previewResume,
   working,
+  onResolveWorkspace,
 }: LivingCanvasProps) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<Record<string, PendingChange>>({});
@@ -519,6 +663,34 @@ function LivingCanvas({
     (path: string) => {
       const change = pendingRef.current[path];
       if (!change) return;
+      const workspaceProposalId = batchRequest?.workspaceProposalId;
+      if (change.workspaceChangeId && workspaceProposalId && onResolveWorkspace) {
+        setProcessing((prev) => [...new Set([...prev, path])]);
+        void onResolveWorkspace(workspaceProposalId, {
+          accept: [change.workspaceChangeId],
+        })
+          .then((result) => {
+            const conflicted = result.conflicts.some(
+              (conflict) => conflict.changeId === change.workspaceChangeId,
+            );
+            if (conflicted) {
+              setErrors((prev) => ({ ...prev, [path]: "此处已被其他编辑改动，请刷新后重新选择" }));
+              return;
+            }
+            onLog(`已应用 · ${change.target.label}`, path);
+            setPending((prev) => {
+              const next = { ...prev };
+              delete next[path];
+              return next;
+            });
+            dropFromOrder(path);
+          })
+          .catch((error) => {
+            setErrors((prev) => ({ ...prev, [path]: (error as Error)?.message || "应用失败，请重试" }));
+          })
+          .finally(() => setProcessing((prev) => prev.filter((item) => item !== path)));
+        return;
+      }
       // 同步更新 ref 而不只调 setter：同一 tick 内连按两次接受，否则两次都读到接受前的
       // 快照，第二次会把第一次的结果吃掉。
       if (change.target.sectionKey === "info") {
@@ -564,11 +736,39 @@ function LivingCanvas({
         // 与 globals.css `.lc-flash` 的时长成对：这里先摘掉,绿闪就播不完。
       }, 420);
     },
-    [onApplySections, onApplyInfo, onLog, onWarn, dropFromOrder],
+    [batchRequest?.workspaceProposalId, onResolveWorkspace, onApplySections, onApplyInfo, onLog, onWarn, dropFromOrder],
   );
 
   const discard = useCallback(
     (path: string) => {
+      const change = pendingRef.current[path];
+      const workspaceProposalId = batchRequest?.workspaceProposalId;
+      if (change?.workspaceChangeId && workspaceProposalId && onResolveWorkspace) {
+        setProcessing((prev) => [...new Set([...prev, path])]);
+        void onResolveWorkspace(workspaceProposalId, {
+          reject: [change.workspaceChangeId],
+        })
+          .then(() => {
+            setPending((prev) => {
+              const next = { ...prev };
+              delete next[path];
+              return next;
+            });
+            dropFromOrder(path);
+          })
+          .catch((error) => {
+            setErrors((prev) => ({ ...prev, [path]: (error as Error)?.message || "拒绝失败，请重试" }));
+          })
+          .finally(() => setProcessing((prev) => prev.filter((item) => item !== path)));
+        return;
+      }
+      // 拒绝一条提案是用户**唯一主动表达的改写偏好**——此前它说完就没了，下次 AI 原样
+      // 再提一遍。按动作记（不是按路径）：「他反复拒绝加量化」能泛化到整份简历。
+      //
+      // 不 await、失败不报：这是旁路记录，不该让一次「不要」卡在网络上。
+      const action = change?.action;
+      if (action) void memoryApi.recordRejection(action).catch(() => undefined);
+
       setPending((prev) => {
         const next = { ...prev };
         delete next[path];
@@ -576,7 +776,7 @@ function LivingCanvas({
       });
       dropFromOrder(path);
     },
-    [dropFromOrder],
+    [batchRequest?.workspaceProposalId, onResolveWorkspace, dropFromOrder],
   );
 
   // 「再来一版」：同一意图加一句换写法的提示重跑，只替换现有提案的文本，保留 id/target/path。
@@ -657,6 +857,43 @@ function LivingCanvas({
       .map((p) => pendingRef.current[p])
       .filter(Boolean) as PendingChange[];
     if (!changes.length) return;
+    const workspaceProposalId = batchRequest?.workspaceProposalId;
+    const workspaceIds = changes
+      .map((change) => change.workspaceChangeId)
+      .filter((id): id is string => Boolean(id));
+    if (workspaceProposalId && workspaceIds.length && onResolveWorkspace) {
+      setProcessing((prev) => [...new Set([...prev, ...order])]);
+      void onResolveWorkspace(workspaceProposalId, { accept: workspaceIds })
+        .then((result) => {
+          const conflicts = new Set(result.conflicts.map((conflict) => conflict.changeId));
+          const resolvedPaths = changes
+            .filter((change) => !change.workspaceChangeId || !conflicts.has(change.workspaceChangeId))
+            .map((change) => pathOf(change.target));
+          if (conflicts.size) {
+            setErrors((prev) => ({
+              ...prev,
+              ...Object.fromEntries(
+                changes
+                  .filter((change) => change.workspaceChangeId && conflicts.has(change.workspaceChangeId))
+                  .map((change) => [pathOf(change.target), "此处已被其他编辑改动，请刷新后重新选择"]),
+              ),
+            }));
+          }
+          if (resolvedPaths.length) {
+            appLifecycle.aiOptimizationApplied({ changes: resolvedPaths.length });
+            onLog(t("aiLab.living.acceptedChangesLog", { count: resolvedPaths.length }));
+            setPending((prev) => {
+              const next = { ...prev };
+              for (const path of resolvedPaths) delete next[path];
+              return next;
+            });
+            setOrder((prev) => prev.filter((path) => !resolvedPaths.includes(path)));
+          }
+        })
+        .catch((error) => onWarn((error as Error)?.message || "应用改动失败，请重试", "apply_failed"))
+        .finally(() => setProcessing((prev) => prev.filter((path) => !order.includes(path))));
+      return;
+    }
     // Suggestions were actually taken into the résumé. This is the outcome that
     // says whether the AI was useful; a run that merely finished does not.
     appLifecycle.aiOptimizationApplied({ changes: changes.length });
@@ -690,14 +927,34 @@ function LivingCanvas({
     setOrder([]);
     setCursor(0);
     setPanelOpen(false);
-  }, [order, onApplySections, onApplyInfo, onLog, onWarn, t]);
+  }, [order, batchRequest?.workspaceProposalId, onResolveWorkspace, onApplySections, onApplyInfo, onLog, onWarn, t]);
 
   const discardAll = useCallback(() => {
+    const changes = order
+      .map((path) => pendingRef.current[path])
+      .filter(Boolean) as PendingChange[];
+    const workspaceProposalId = batchRequest?.workspaceProposalId;
+    const workspaceIds = changes
+      .map((change) => change.workspaceChangeId)
+      .filter((id): id is string => Boolean(id));
+    if (workspaceProposalId && workspaceIds.length && onResolveWorkspace) {
+      setProcessing((prev) => [...new Set([...prev, ...order])]);
+      void onResolveWorkspace(workspaceProposalId, { reject: workspaceIds })
+        .then(() => {
+          setPending({});
+          setOrder([]);
+          setCursor(0);
+          setPanelOpen(false);
+        })
+        .catch((error) => onWarn((error as Error)?.message || "拒绝改动失败，请重试", "apply_failed"))
+        .finally(() => setProcessing((prev) => prev.filter((path) => !order.includes(path))));
+      return;
+    }
     setPending({});
     setOrder([]);
     setCursor(0);
     setPanelOpen(false);
-  }, []);
+  }, [order, batchRequest?.workspaceProposalId, onResolveWorkspace, onWarn]);
 
   const goTo = useCallback(
     (dir: 1 | -1) => {
@@ -751,7 +1008,7 @@ function LivingCanvas({
     if (!batchRequest) return;
     if (batchRequest.nonce === lastBatchNonce.current) return;
     const proposedSections = batchRequest.proposedSections;
-    if (!proposedSections) return;
+    if (!proposedSections && !batchRequest.workspaceChanges) return;
     let revealTimer: number | undefined;
     let anchorTimer: number | undefined;
     let processingPaths: string[] = [];
@@ -765,9 +1022,9 @@ function LivingCanvas({
       // 必须在 Strict Mode 探测结束后再提交 nonce；这样后续父组件重渲染不会重复处理同一批。
       lastBatchNonce.current = batchRequest.nonce;
       const diagnostics = { unmatchedItems: 0 };
-      const changes = diffResumeToChanges(
+      const changes = batchRequest.workspaceChanges ?? diffResumeToChanges(
         sectionsRef.current,
-        proposedSections,
+        proposedSections!,
         batchRequest.kind,
         batchRequest.lang,
         batchRequest.targetedSelection,
@@ -903,6 +1160,11 @@ function LivingCanvas({
   useEffect(() => {
     const current = pendingRef.current;
     const stale = Object.entries(current).filter(([, c]) => {
+      // Workspace proposals are checked against Platform's field hash at the
+      // moment of resolve. Local renderer anchors cannot represent every
+      // supported target (whole-item insert/remove, section order), so they
+      // must not silently discard a valid server-owned change here.
+      if (c.workspaceChangeId) return false;
       if (c.status === "accepted" || c.isInsert) return false;
       return fieldHtml(c.target) !== c.before;
     });
@@ -925,6 +1187,63 @@ function LivingCanvas({
   // 一份用户还没接受的东西上。
   const editable = !previewResume;
 
+  /**
+   * 双击画布直接手改。
+   *
+   * ## 与 AI 提案是两条路，但写回是同一条
+   *
+   * AI 那条是「提案 → 评审卡 → 接受」，这条是「双击 → 打字 → 提交」，
+   * 中间没有可评审的东西。但落到 store 的动作必须与 `accept` 完全一致——
+   * 包括**同步更新 ref 而不只调 setter**（同一 tick 内连改两处，否则第二次会
+   * 读到第一次之前的快照、把它吃掉），以及**写不进去就报错、绝不假装成功**。
+   * 那两条都是这个文件里已经用事故换来的教训，手改没有理由重犯。
+   *
+   * 复用 `applyInfoChange` / `applyChangeToSections` 而不是自己写一遍赋值，
+   * 也是同一个理由：写回规则只该有一份。
+   */
+  const commitManualEdit = useCallback(
+    (target: EditableTarget, value: string) => {
+      // 构造一条「已经定稿」的改动交给既有的写回函数。`before` 只用于日志。
+      const change: PendingChange = {
+        id: `manual-${pathOf(target)}`,
+        target,
+        before: "",
+        after: value,
+        rationale: "手动编辑",
+        // `action` 是给「再来一版」记住原意图用的，而手改没有可重来的意图。
+        // 用既有的 "free" 而不是造一个 "manual"——后者要动 ActionKind 联合类型，
+        // 而这条改动从不进 pending 表，那个字段对它没有任何消费方。
+        action: "free",
+        seed: 0,
+        // 手改一提交就是定稿，没有待评审阶段——这条改动从不进 pending 表。
+        status: "accepted",
+      };
+
+      if (target.sectionKey === "info") {
+        const nextInfo = applyInfoChange(infoRef.current, change);
+        infoRef.current = nextInfo;
+        onApplyInfo(nextInfo);
+        return;
+      }
+
+      const { sections: nextSections, applied } = applyChangeToSections(
+        sectionsRef.current,
+        change,
+      );
+      if (!applied) {
+        // 与 accept 同样的处理：让用户看见失败，而不是以为改上了。
+        onWarn(`这处修改没能写进简历 · ${target.label}`, "apply_failed", {
+          count: 1,
+          detail: target,
+        });
+        return;
+      }
+      sectionsRef.current = nextSections;
+      onApplySections(nextSections);
+    },
+    [onApplyInfo, onApplySections, onWarn],
+  );
+
   const ctxValue = useMemo<EditableCanvasContextValue>(
     () => ({
       enabled: editable,
@@ -938,9 +1257,13 @@ function LivingCanvas({
       onRegenerate: regenerate,
       onRetry: retry,
       onSectionHandleClick,
+      // 预览态（版本历史、整份改写的对照预览）不给这个能力：
+      // 那时画布上显示的不是当前简历，改它会写到错的地方。
+      onCommit: editable ? commitManualEdit : undefined,
     }),
     [
       editable,
+      commitManualEdit,
       pendingByPath,
       processing,
       errors,
@@ -1020,7 +1343,7 @@ function LivingCanvas({
       <div
         ref={scrollRef}
         onMouseUp={onResumeMouseUp}
-        className="relative flex-1 overflow-auto custom-scrollbar"
+        className="scrollbar-hide relative flex-1 overflow-auto"
       >
         <div className="flex justify-center pt-6 pb-24 px-12">
           <div style={{ width: PAGE_WIDTH * SCALE }}>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Check, MapPin } from 'lucide-react';
+import { ArrowUpRight, Check, MapPin } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { RingGauge } from '@/components/ui/ring-gauge';
 import { cn } from '@/lib/utils';
@@ -387,7 +387,7 @@ function ArtifactCanvas({
     >
       {open && skill && (
         <>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col">
+          <div className="scrollbar-hide flex flex-1 flex-col overflow-y-auto p-5">
             {view === 'preview' && (
               <div className="bg-white/95 rounded-lg p-2 flex justify-center overflow-hidden">
                 <div style={{ transform: 'scale(0.5)', transformOrigin: 'top center', minWidth: '600px' }}>

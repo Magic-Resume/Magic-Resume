@@ -20,7 +20,17 @@
 | `PromptBar` | `glimm@0.3.0` | WebGL 扫光过渡。我们的 Composer 已有 canvas 点阵，是否值得再上 WebGL 要单独判断 |
 | `SelectionActions` | `iconoir-react` + `@/components/atoms/{Shimmer,StreamText}` | 后两个是**他们未公开的内部组件**，不重写就跑不起来 |
 
-## 自演示状态
+## 产品化状态
 
-余下 16 个目前仍是**自演示 demo**：内置假数据、自己跑定时器。它们能独立渲染（这正是
-陈列页能立刻看到效果的原因），但接真实数据前必须把假数据剥成 props。
+**不要按「余下的都是 demo」来假设** —— 这份清单以前就是那么写的，然后一路过时。
+事实来源是陈列页 `apps/web/src/app/genui/page.tsx`，每个组件在那里标了档位；这里
+只是它的摘要，改动时两边一起改。
+
+| 档位 | 含义 | 组件 |
+|---|---|---|
+| `wired` | 已接进产品、跑真实数据 | `CodeBlock`（markdown 围栏）、`ApprovalCard`（HITL 中断）、`RecommendationCard`（ask_choice）、`ToolChips`、`Icon`、`TaskRows`（任务卡）、`RecordsTable`（投递面板）、`SidebarNav`（历史抽屉） |
+| `props` | 已剥成 props，但暂无调用点 | `ThinkingState`、`LoadingState`、`ContextCards`、`SearchList`、`FilterTable`（原本接在投递面板上，2026-08-24 被 `RecordsTable` 顶替） |
+| `demo` | 仍是自演示：内置假数据、自跑定时器 | `ChatComposer`、`DiffTable`、`StreamingText`、`FineTuneCard` |
+
+`demo` 档的接真实数据前必须先把假数据剥成 props——**剥的时候一并把英文写死文案
+提成调用方传入**：`i18n-check` 只认中文，英文硬编码它一个都拦不住。

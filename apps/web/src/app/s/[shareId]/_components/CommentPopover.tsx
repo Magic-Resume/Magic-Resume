@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Trash2, Loader2 } from 'lucide-react';
+import { Send, Trash2, Loader2 } from '@magic-resume/icons';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { formatCommentDate } from '@/lib/utils/dateTime';

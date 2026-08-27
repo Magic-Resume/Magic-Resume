@@ -9,7 +9,7 @@ import {
     Code2,
     Eye,
     X
-} from 'lucide-react';
+} from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -130,7 +130,6 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                                 </div>
                                 <div>
                                     <h2 className="text-[15px] font-semibold tracking-tight text-white">{t('modals.versionHistory.title')}</h2>
-                                    <p className="mt-0.5 text-[13px] text-neutral-500">{t('modals.versionHistory.subtitle')}</p>
                                 </div>
                             </div>
                             <button

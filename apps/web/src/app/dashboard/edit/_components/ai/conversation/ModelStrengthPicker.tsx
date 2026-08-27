@@ -7,7 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-} from "lucide-react";
+} from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useSettingStore, type Strength } from "@/store/useSettingStore";
@@ -124,9 +124,9 @@ export default function ModelStrengthPicker({
         // 控件行的第二档重量:无框。它是**状态显示**,只是恰好可点——给它一圈边框,
         // 就是在假装它和「添加文件 / 模式」那一档一样重。规格见 design-brief §4。
         className={cn(
-          "inline-flex h-[38px] max-w-[260px] items-center gap-2 rounded-full pl-1 pr-2.5 text-[14px] transition-colors",
-          "text-neutral-100 hover:bg-white/[0.05] disabled:opacity-40 cursor-pointer",
-          open && "bg-white/[0.06]",
+          "inline-flex h-[38px] max-w-[260px] items-center gap-1.5 rounded-full pl-1 pr-2 text-[14px] transition-colors",
+          "text-neutral-100 hover:bg-white/[0.06] hover:text-neutral-50 disabled:opacity-40 cursor-pointer",
+          open && "text-neutral-50",
         )}
       >
         {/* 当前模型所属厂商的标。"自动"由系统挑,没有具体模型 → 中性 sparkle。 */}
@@ -152,7 +152,7 @@ export default function ModelStrengthPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-72 origin-bottom rounded-2xl border border-white/[0.06] bg-neutral-900/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
+            className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-72 origin-bottom rounded-2xl border border-[var(--border-hairline)] bg-[var(--surface-overlay)] p-2 shadow-[var(--elev-3)] backdrop-blur-xl dark:border-white/[0.06] dark:bg-neutral-900/95 dark:shadow-2xl dark:shadow-black/60"
           >
             {view === "main" ? (
               <motion.div
@@ -387,10 +387,10 @@ function StrengthSlider({
         className="relative h-7 cursor-pointer touch-none select-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
       >
         {/* track */}
-        <div className="absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-white/[0.08]" />
+        <div className="absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-[var(--surface-sunk)] dark:bg-white/[0.08]" />
         {/* filled — from the left cap up to the thumb centre */}
         <div
-          className="absolute left-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-sky-400 transition-[width] duration-200 ease-out"
+          className="absolute left-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-[var(--fill-sky)] transition-[width] duration-200 ease-out dark:bg-sky-400"
           style={{ width: `calc(0.875rem + (100% - 1.75rem) * ${frac})` }}
         />
         {/* inner rail: dot stops + thumb centres live here (inset by the thumb radius) */}
@@ -404,7 +404,9 @@ function StrengthSlider({
                 key={s}
                 className={cn(
                   "absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors duration-200",
-                  i < index ? "bg-white/70" : "bg-white/25",
+                  i < index
+                    ? "bg-[#fff]/70 dark:bg-white/70"
+                    : "bg-[var(--border-strong)] dark:bg-white/25",
                 )}
                 style={{ left: `${(i / last) * 100}%` }}
               />
@@ -412,7 +414,7 @@ function StrengthSlider({
           )}
           {/* thumb */}
           <span
-            className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-md shadow-black/40 ring-1 ring-black/5 transition-[left] duration-200 ease-out"
+            className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#fff] shadow-[var(--elev-1)] ring-1 ring-[var(--border-hairline)] transition-[left] duration-200 ease-out dark:bg-white dark:shadow-md dark:shadow-black/40 dark:ring-black/5"
             style={{ left: `${frac * 100}%` }}
           />
         </div>

@@ -87,7 +87,13 @@ related: [specs/genui-systematization, specs/ai-lab-living-canvas, specs/ai-comp
 | **A** | TaskRows、ToolChips、ApprovalCard、LoadingState | 替换现有（见 §5） |
 | **B** | ThinkingState、StreamingText、ContextCards、RecommendationCard、CodeBlock | 对话流：思考过程、流式正文、RAG 来源、建议、代码 |
 | **C** | PromptBar、SelectionActions、SearchList | 输入区与选区操作。PromptBar 29KB 是最大的一个，要与现有 Composer 的语音 / 模式轴合并 |
-| **D** | DiffTable、InsightCards、RecordsTable、FilterTable、SidebarNav、FineTuneCard、ChatComposer | **存货：只入库，不接线、不进 registry** |
+| **D** | DiffTable、InsightCards、FineTuneCard、ChatComposer | **存货：只入库，不接线、不进 registry** |
+
+> **2026-08-24 修订**：`RecordsTable` / `FilterTable` / `SidebarNav` 三个已从 D 批提出来接线
+> —— `FilterTable` 先上了投递面板，随后 `RecordsTable` 接替它，`SidebarNav` 进了历史抽屉。
+> 原来把它们归进「存货」的判断是「AI Lab 里没有落点」，而投递面板与会话历史就是落点，
+> 当时没看见。三个都按 §4 的流程剥了假数据；`RecordsTable` 另需补 17 个 `records-*`
+> 结构类（`globals.css`），缺了它们表格照渲染但每行没有排版——又一处静默失败。
 
 D 批要在 `packages/genui/README` 里写明「已入库未接线」——否则下一个人会以为它们在跑。
 

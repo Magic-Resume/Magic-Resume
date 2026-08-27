@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Check, CornerDownRight } from 'lucide-react';
+import { X, Check, CornerDownRight } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 export type ChangeRow = {
@@ -62,7 +62,7 @@ export default function ChangesPanel({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-1.5">
+      <div className="scrollbar-hide flex-1 overflow-y-auto px-1.5">
         {rows.map((r) => (
           <div
             key={r.path}

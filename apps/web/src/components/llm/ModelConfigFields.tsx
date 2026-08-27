@@ -13,8 +13,8 @@ import {
   CheckCircle2,
   XCircle,
   Image as ImageGlyph,
-} from 'lucide-react';
-import { LockClosedIcon } from '@radix-ui/react-icons';
+} from '@magic-resume/icons';
+import { LockClosedIcon } from '@magic-resume/icons';
 import { useSettingStore } from '@/store/useSettingStore';
 import {
   MODEL_PROVIDERS,

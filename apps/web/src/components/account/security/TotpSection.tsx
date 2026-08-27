@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Download, Loader2, ShieldCheck } from 'lucide-react';
+import { Check, Copy, Download, Loader2, ShieldCheck } from '@magic-resume/icons';
 import QRCode from 'qrcode';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';

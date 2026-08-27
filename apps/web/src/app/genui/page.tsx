@@ -33,6 +33,85 @@ const STAGE_LABEL: Record<Stage, string> = {
   demo: '自演示 demo',
 };
 
+/* i18n-ignore：开发陈列页样例 */
+const RECORDS_DEMO_ROWS = [
+  { id: 'a', mark: 'B', sortValues: { date: 2 }, cells: { role: '前端开发实习生', date: '12-03', status: '面试中' } },
+  { id: 'b', mark: 'T', sortValues: { date: 1 }, cells: { role: '客户端开发', date: '11-18', status: '已投递' } },
+];
+
+/**
+ * RecordsTable 的「AI 属性列」演示。
+ *
+ * 组件本身**不会**自己跑计算：`onCalculate` 交给调用方，进度由 `calculating` 从外面推。
+ * 这里的定时器就是那个「调用方」——它是假的，所以这一条挂在 `demo` 档而不是 `wired`。
+ * 产品里要用这一列，得先有真的计算通道，否则就是个会转圈然后凭空填字的列。
+ */
+function RecordsAiColumnDemo() {
+  const base = [
+    { key: 'role', label: '岗位', sortable: true, meta: { type: 'Text', tool: '手动记录', toolKind: 'user' as const } },
+    { key: 'date', label: '日期', sortable: true, width: 'md' as const, meta: { type: 'Date', tool: '手动记录', toolKind: 'user' as const } },
+    { key: 'status', label: '状态', width: 'md' as const, meta: { type: 'Single select', tool: '手动记录', toolKind: 'user' as const } },
+  ]; /* i18n-ignore：开发陈列页样例 */
+  const [aiType, setAiType] = useState<string | null>(null);
+  const [calculating, setCalculating] = useState<{ key: string; resolved: number } | null>(null);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!calculating) return;
+    if (calculating.resolved > RECORDS_DEMO_ROWS.length) {
+      setDone(true);
+      setCalculating(null);
+      return;
+    }
+    const timer = setTimeout(
+      () => setCalculating((current) => (current ? { ...current, resolved: current.resolved + 1 } : current)),
+      420,
+    );
+    return () => clearTimeout(timer);
+  }, [calculating]);
+
+  const columns = aiType
+    ? [
+        ...base,
+        {
+          key: 'ai',
+          label: '公司规模', // i18n-ignore：开发陈列页样例
+          meta: {
+            type: aiType,
+            tool: '网页搜索', // i18n-ignore：开发陈列页样例
+            toolKind: 'web' as const,
+            inputs: ['岗位'], // i18n-ignore：开发陈列页样例
+            prompt: { before: '查一下 ', chip: '岗位', after: ' 所在公司的规模。' }, // i18n-ignore：开发陈列页样例
+          },
+        },
+      ]
+    : base;
+
+  return (
+    <Beautiful.RecordsTable
+      ariaLabel="AI 属性列样例" /* i18n-ignore：开发陈列页样例 */
+      selectable
+      columns={columns}
+      rows={RECORDS_DEMO_ROWS.map((row) => ({
+        ...row,
+        cells: { ...row.cells, ai: done ? '200–500 人' : '—' }, // i18n-ignore：开发陈列页样例
+      }))}
+      calculating={calculating}
+      propertyTypes={['Text', 'URL', 'Single select', 'JSON']}
+      modelOptions={['Sprinkles 5', 'Sprinkles 4.2']} /* i18n-ignore：开发陈列页样例 */
+      onAddColumn={(type) => {
+        setDone(false);
+        setAiType(type);
+      }}
+      onCalculate={(key) => setCalculating({ key, resolved: 0 })}
+      onHideColumn={() => {
+        setAiType(null);
+        setDone(false);
+      }}
+    />
+  );
+}
+
 const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
   [
     'ThinkingState',
@@ -92,7 +171,7 @@ const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
         ]}
       />
     ),
-    'props',
+    'wired',
   ],
   [
     'ApprovalCard',
@@ -109,7 +188,7 @@ const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
         ]} /* i18n-ignore：开发陈列页样例 */
       />
     ),
-    'props',
+    'wired',
   ],
   [
     'ContextCards',
@@ -159,13 +238,63 @@ const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
         }} /* i18n-ignore：开发陈列页样例 */
       />
     ),
-    'props',
+    'wired',
   ],
   ['ChatComposer', () => <Beautiful.ChatComposer />, 'demo'],
   ['DiffTable', () => <Beautiful.DiffTable />, 'demo'],
-  ['RecordsTable', () => <Beautiful.RecordsTable />, 'demo'],
-  ['FilterTable', () => <Beautiful.FilterTable />, 'demo'],
-  ['SidebarNav', () => <Beautiful.SidebarNav />, 'demo'],
+  [
+    'RecordsTable',
+    () => (
+      <Beautiful.RecordsTable
+        ariaLabel="投递记录样例" /* i18n-ignore：开发陈列页样例 */
+        selectable
+        columns={[
+          { key: 'role', label: '岗位', sortable: true },
+          { key: 'date', label: '日期', sortable: true, width: 'md' },
+          { key: 'status', label: '状态', width: 'md' },
+        ]} /* i18n-ignore：开发陈列页样例 */
+        rows={[
+          {
+            id: 'a',
+            mark: 'B',
+            sortValues: { date: 2 },
+            cells: { role: '前端开发实习生', date: '12-03', status: '面试中' },
+          },
+          {
+            id: 'b',
+            mark: 'T',
+            sortValues: { date: 1 },
+            cells: { role: '客户端开发', date: '11-18', status: '已投递' },
+          },
+        ]} /* i18n-ignore：开发陈列页样例 */
+      />
+    ),
+    'wired',
+  ],
+  ['RecordsTable · AI 列', () => <RecordsAiColumnDemo />, 'demo'],
+  ['FilterTable', () => <Beautiful.FilterTable />, 'props'],
+  [
+    'SidebarNav',
+    () => (
+      <Beautiful.SidebarNav
+        workspace={{ name: '我的简历', monogram: 'M' }} /* i18n-ignore：开发陈列页样例 */
+        action={{ label: '新对话', onClick: () => undefined }} /* i18n-ignore：开发陈列页样例 */
+        activeKey="a"
+        sections={[
+          {
+            key: 'today',
+            label: '今天',
+            items: [
+              { key: 'a', label: '帮我改一下项目经历' },
+              { key: 'b', label: '这份 JD 匹配度怎么样' },
+            ],
+          },
+          { key: 'week', label: '最近 7 天', items: [{ key: 'c', label: '模拟面试复盘' }] },
+        ]} /* i18n-ignore：开发陈列页样例 */
+      />
+    ),
+    'wired',
+  ],
   ['FineTuneCard', () => <Beautiful.FineTuneCard />, 'demo'],
 ];
 

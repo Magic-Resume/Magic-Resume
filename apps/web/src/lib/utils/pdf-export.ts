@@ -10,7 +10,19 @@ type PdfBrowserModule = {
     locale?: string;
   }) => Promise<Blob>;
   warmupMagicResumePdfExport?: (template?: MagicTemplateDSL) => Promise<void>;
+  inspectResumeFontPack?: (fontStack: string) => Promise<ResumeFontPack>;
+  downloadResumeFontPack?: (
+    fontStack: string,
+    onProgress?: (ratio: number) => void,
+  ) => Promise<void>;
 };
+
+/** 一档 CJK 字体的本地状态。`id` 是**档位**，多个字体共用一档。 */
+export interface ResumeFontPack {
+  id: string;
+  ready: boolean;
+  bytes: number;
+}
 
 const sanitizeFilename = (value: string): string => {
   const sanitized = value.trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-');
@@ -67,6 +79,31 @@ export const preloadResumePdfExport = async (resume: Resume): Promise<void> => {
   await pdfModule.warmupMagicResumePdfExport?.(template);
 };
 
+/**
+ * 这一档字体在本地了吗？
+ *
+ * **探测失败一律当成「已就绪」**：这个结果被用来拦住字体切换，宁可放过也不能把用户
+ * 关在一个坏掉的探测后面——真没下载的话，切换时仍走原来的加载路径，只是慢一点。
+ */
+export const inspectResumeFontPack = async (fontStack: string): Promise<ResumeFontPack> => {
+  try {
+    const pdfModule = await loadPdfBrowserModule();
+    const pack = await pdfModule.inspectResumeFontPack?.(fontStack);
+    return pack ?? { id: fontStack, ready: true, bytes: 0 };
+  } catch {
+    return { id: fontStack, ready: true, bytes: 0 };
+  }
+};
+
+/** 下载一整档字体，`onProgress` 收 0–1。失败会 reject，调用方据此显示重试。 */
+export const downloadResumeFontPack = async (
+  fontStack: string,
+  onProgress?: (ratio: number) => void,
+): Promise<void> => {
+  const pdfModule = await loadPdfBrowserModule();
+  await pdfModule.downloadResumeFontPack?.(fontStack, onProgress);
+};
+
 const getPdfCacheKey = (resume: Resume, locale?: string) => {
   return [
     PDF_RENDERER_VERSION,
@@ -95,13 +132,98 @@ const setCachedPdfBlobPromise = (resume: Resume, locale: string | undefined, pro
   localeCache.set(getPdfCacheKey(resume, locale), promise);
 };
 
+/**
+ * PDF 生成走 Web Worker，主线程只负责收尾。
+ *
+ * 实测 `pdf().toBlob()` 是一整段同步 CPU：普通编辑 57–80ms，**换字体那一次 340–820ms**
+ * （要现解析并子集化一款新 CJK 字体）。那段时间主线程停摆，预览层的交叉淡入根本播不出来。
+ *
+ * 降级分两种，不能混为一谈：
+ *  · **worker 本身跑不起来**（构造失败 / onerror / template 结构化克隆失败）→ 永久降级到
+ *    主线程。这类问题重试也没用，每重试一次就白卡一次。
+ *  · **文档渲染报错**（worker 回了 ok:false）→ 原样抛给调用方，**不降级**。那是数据问题，
+ *    在主线程重跑只会得到同一个错，还白白把 worker 关了。
+ */
+let pdfWorker: Worker | null = null;
+let pdfWorkerDisabled = false;
+let nextPdfRequestId = 0;
+
+interface PdfWorkerPending {
+  resolve: (blob: Blob) => void;
+  reject: (error: unknown) => void;
+}
+const pdfWorkerPending = new Map<number, PdfWorkerPending>();
+
+/** 标记「worker 这条路不通」，与文档本身的渲染错误区分开。 */
+class PdfWorkerUnavailable extends Error {}
+
+const disposePdfWorker = (reason: unknown) => {
+  pdfWorkerDisabled = true;
+  pdfWorker?.terminate();
+  pdfWorker = null;
+  for (const pending of pdfWorkerPending.values()) pending.reject(new PdfWorkerUnavailable(String(reason)));
+  pdfWorkerPending.clear();
+};
+
+const getPdfWorker = (): Worker | null => {
+  if (pdfWorkerDisabled || typeof window === 'undefined' || typeof Worker === 'undefined') return null;
+  if (pdfWorker) return pdfWorker;
+
+  try {
+    const worker = new Worker(new URL('./pdf.worker.ts', import.meta.url));
+    worker.onmessage = (event: MessageEvent<{ id: number; ok: boolean; buffer?: ArrayBuffer; message?: string }>) => {
+      const { id, ok, buffer, message } = event.data;
+      const pending = pdfWorkerPending.get(id);
+      if (!pending) return;
+      pdfWorkerPending.delete(id);
+      if (ok && buffer) pending.resolve(new Blob([buffer], { type: 'application/pdf' }));
+      else pending.reject(new Error(message || 'PDF worker failed.'));
+    };
+    worker.onerror = (event) => disposePdfWorker(event.message || 'worker error');
+    pdfWorker = worker;
+    return worker;
+  } catch (error) {
+    disposePdfWorker(error);
+    return null;
+  }
+};
+
+const renderPdfBlob = async (
+  resume: Resume,
+  template: MagicTemplateDSL,
+  locale?: string,
+): Promise<Blob> => {
+  const worker = getPdfWorker();
+  if (worker) {
+    try {
+      return await new Promise<Blob>((resolve, reject) => {
+        const id = ++nextPdfRequestId;
+        pdfWorkerPending.set(id, { resolve, reject });
+        try {
+          worker.postMessage({ id, resume, template, locale });
+        } catch (error) {
+          // 结构化克隆失败（模板里混进了不可克隆的东西）也算 worker 这条路不通。
+          pdfWorkerPending.delete(id);
+          reject(new PdfWorkerUnavailable(String(error)));
+        }
+      });
+    } catch (error) {
+      if (!(error instanceof PdfWorkerUnavailable)) throw error;
+      disposePdfWorker(error);
+      console.warn('PDF worker unavailable, falling back to the main thread.', error);
+    }
+  }
+
+  const { createMagicResumePdfBlob } = await loadPdfBrowserModule();
+  return createMagicResumePdfBlob({ data: resume, template, locale });
+};
+
 export const prepareResumePdfExport = async (resume: Resume, locale?: string): Promise<Blob> => {
   const cached = getCachedPdfBlobPromise(resume, locale);
   if (cached) return cached;
 
   const template = await loadResumeTemplate(resume);
-  const { createMagicResumePdfBlob } = await loadPdfBrowserModule();
-  const blobPromise = createMagicResumePdfBlob({ data: resume, template, locale });
+  const blobPromise = renderPdfBlob(resume, template, locale);
   setCachedPdfBlobPromise(resume, locale, blobPromise);
 
   try {

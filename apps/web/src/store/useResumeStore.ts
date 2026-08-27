@@ -106,6 +106,8 @@ type ResumeState = {
   isAiGenerating: boolean;
   setIsAiGenerating: (isGenerating: boolean) => void;
   applyFullResume: (resume: Resume) => void;
+  /** Apply Platform's already-committed Workspace result without re-syncing it. */
+  applyWorkspaceResolution: (document: Pick<Resume, 'info' | 'sections' | 'sectionOrder'>, revision: number) => void;
 };
 
 export const initialResume: Omit<Resume, 'id' | 'updatedAt' | 'name'> = {
@@ -147,6 +149,10 @@ export const getSanitizedResume = (resume: Resume): Omit<Resume, 'id' | 'updated
   if (r.isPublic !== undefined) sanitized.isPublic = r.isPublic;
   if (r.shareId !== undefined) sanitized.shareId = r.shareId;
   if (r.shareRole !== undefined) sanitized.shareRole = r.shareRole;
+  // The replica card writes a serialized template tree here. Keep it in the
+  // normal local/cloud document, otherwise a successful visual apply vanishes
+  // as soon as the resume is reloaded.
+  if (r.templateOverride !== undefined) sanitized.templateOverride = r.templateOverride;
 
   return sanitized;
 };
@@ -304,6 +310,27 @@ const useResumeStore = create<ResumeState>()(
     if (newResume.sectionOrder) {
       setSectionOrder(newResume.sectionOrder);
     }
+  },
+
+  applyWorkspaceResolution: (document, revision) => {
+    const active = get().activeResume;
+    if (!active) return;
+    const next = {
+      ...active,
+      info: document.info,
+      sections: document.sections,
+      sectionOrder: document.sectionOrder,
+      updatedAt: Date.now(),
+    };
+    set(state => {
+      state.activeResume = next;
+      const index = state.resumes.findIndex((resume) => resume.id === next.id);
+      if (index !== -1) state.resumes[index] = next;
+      // Platform already performed the authoritative CAS write. Marking this
+      // document modified would schedule a second PATCH and bump revision again.
+      state.syncStatus = useSettingStore.getState().cloudSync ? 'saved' : 'local';
+    });
+    setSyncBaseline(next.id, { revision, doc: buildSyncDoc(next) });
   },
 
   loadResumes: async () => {
@@ -979,16 +1006,25 @@ const useResumeStore = create<ResumeState>()(
 
   updateTemplate: (template) => {
     const { activeResume } = get();
-    if (!activeResume || activeResume.template === template) return;
+    if (
+      !activeResume ||
+      (activeResume.template === template && activeResume.templateOverride === undefined)
+    )
+      return;
 
     set(state => {
       if (!state.activeResume) return;
       state.activeResume.template = template;
+      // An explicitly selected stock template supersedes an AI replica. Without
+      // clearing this, the renderer correctly keeps prioritising the override
+      // and the template picker appears to do nothing.
+      state.activeResume.templateOverride = undefined;
       state.activeResume.updatedAt = Date.now();
 
       const resumeIndex = state.resumes.findIndex(r => r.id === state.activeResume?.id);
       if (resumeIndex !== -1) {
         state.resumes[resumeIndex].template = template;
+        state.resumes[resumeIndex].templateOverride = undefined;
         state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
       }
 

@@ -15,4 +15,6 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 patchedDependencies:
+  '@react-pdf/layout@4.6.1': patches/@react-pdf__layout@4.6.1.patch
+  '@react-pdf/render@4.5.1': patches/@react-pdf__render@4.5.1.patch
   '@react-pdf/textkit@6.3.0': patches/@react-pdf__textkit@6.3.0.patch

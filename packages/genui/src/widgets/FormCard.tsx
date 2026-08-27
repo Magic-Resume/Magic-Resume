@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, X, ClipboardList } from 'lucide-react';
+import { Check, X, ClipboardList } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@magic-resume/utils';
 import { WidgetItem, WidgetShell } from '../motion';

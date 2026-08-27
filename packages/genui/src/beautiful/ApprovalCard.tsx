@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import GlideMenu from "../primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * APPROVAL CARD (human-in-the-loop)
@@ -78,11 +79,18 @@ export default function ApprovalCard({
 
   if (!question) return null;
 
-  /** 这一页选中的东西，按调用方要的形状（自由输入优先）。 */
+  /**
+   * 这一页选中的东西。
+   *
+   * 单选：自由输入**替换**选项——一个问题只有一个答案，「选了 A 又写了 B」只能取后者。
+   * 多选：自由输入**追加**在选项后面。原来两种都是替换，于是勾了四项再补一句想法，
+   * 那四项就被悄悄丢了——用户根本不会知道。
+   */
   const answerOf = (index: number): string[] => {
     const typed = custom[index]?.trim();
-    if (typed) return [typed];
-    return (answers[index] ?? []).map((i) => QUESTIONS[index].options[i]).filter(Boolean);
+    const picked = (answers[index] ?? []).map((i) => QUESTIONS[index].options[i]).filter(Boolean);
+    if (!typed) return picked;
+    return QUESTIONS[index].type === "radio" ? [typed] : [...picked, typed];
   };
 
   const commit = (index: number) => {
@@ -134,17 +142,24 @@ export default function ApprovalCard({
               {question.answered}
             </div>
           ) : (
-            <div className="mt-2 flex flex-col gap-0.5">
+            // 选项包进 GlideMenu：一块共用的高亮在选项间**滑动**，而不是每项各自亮灭。
+            // 逐项 `hover:bg-*` 在切换时是「上一项灭、下一项亮」两次闪；共用高亮读作
+            // 同一个焦点在走——上游正是这么做的。
+            <GlideMenu
+              className="mt-2 flex flex-col gap-0.5"
+              highlightClassName="-inset-x-1.5 rounded-control bg-hover"
+            >
               {question.options.map((option, i) => {
                 const on = selected.includes(i);
                 return (
                   <button
                     key={option}
                     type="button"
+                    data-menu-row
                     aria-pressed={on}
                     disabled={locked}
                     onClick={() => toggle(i)}
-                    className="-mx-1.5 flex items-center gap-2 rounded-control px-1.5 py-1 text-left transition-colors duration-100 enabled:hover:bg-hover disabled:opacity-50"
+                    className="relative z-10 -mx-1.5 flex items-center gap-2 rounded-control px-1.5 py-1 text-left transition-colors duration-100 disabled:opacity-50"
                   >
                     <span
                       className={`flex size-4 shrink-0 items-center justify-center transition-colors duration-200
@@ -164,7 +179,10 @@ export default function ApprovalCard({
                 );
               })}
               {freeTextPlaceholder ? (
-                <label className="-mx-1.5 flex items-center gap-2 rounded-control px-1.5 py-1 transition-colors duration-100 focus-within:bg-hover hover:bg-hover">
+                <label
+                  data-menu-row
+                  className="relative z-10 -mx-1.5 flex items-center gap-2 rounded-control px-1.5 py-1 transition-colors duration-100"
+                >
                   <span aria-hidden="true" className="size-4 shrink-0" />
                   <input
                     value={custom[qi] ?? ""}
@@ -179,7 +197,7 @@ export default function ApprovalCard({
                   />
                 </label>
               ) : null}
-            </div>
+            </GlideMenu>
           )}
         </div>
 

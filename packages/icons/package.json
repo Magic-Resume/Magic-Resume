@@ -1,0 +1,33 @@
+{
+  "name": "@magic-resume/icons",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hugeicons/core-free-icons": "^1.1.10",
+    "@hugeicons/react": "^1.1.10"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "@magic-resume/tsconfig": "workspace:*",
+    "@types/react": "^19.1.6",
+    "typescript": "^5"
+  }
+}

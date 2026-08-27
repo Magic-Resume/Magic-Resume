@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Check, X, RotateCcw, Sparkles, Plus, AlertCircle, ChevronDown } from 'lucide-react';
+import { Check, X, RotateCcw, Sparkles, Plus, AlertCircle, ChevronDown } from '@magic-resume/icons';
+import DOMPurify from 'dompurify';
 import { WysiwygContent } from '../templateLayout/WysiwygContent';
 
 /**
@@ -58,6 +59,17 @@ export interface EditableCanvasContextValue {
   onRetry: (path: string) => void;
   /** a section-title handle was clicked (design §5B 段落标题/排序) */
   onSectionHandleClick: (sectionKey: string, title: string, anchor: HTMLElement) => void;
+  /**
+   * 双击直接手改这一处的内容。
+   *
+   * **不提供就没有手改能力**——与 `enabled` 一样是能力开关，而不是默认行为。
+   * 分享页、只读预览这些地方本来就不该能改，让调用方显式给才安全。
+   *
+   * `value` 对 `kind:'text'` 是纯文本，对 `kind:'html'` 是**已经净化过**的 HTML。
+   * 净化在提交那一刻做（用户能粘贴任意东西进 contentEditable），
+   * 不能指望调用方记得做。
+   */
+  onCommit?: (target: EditableTarget, value: string) => void;
 }
 
 /** Canonical path string — used both as the map key and the DOM `data-resume-path`. */
@@ -98,6 +110,14 @@ interface EditableProps {
   text?: string;
 }
 
+/** 纯文本进 `dangerouslySetInnerHTML` 前要转义，否则名字里一个 `<` 就成了标签。 */
+function escapeText(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function RawContent({ target, html, text }: EditableProps) {
   if (target.kind === 'html') return <WysiwygContent dirtyHtml={html || ''} />;
   return <>{text}</>;
@@ -113,7 +133,17 @@ export function Editable(props: EditableProps) {
   const ctx = useEditableCanvas();
   const path = pathOf(target);
   const [hovered, setHovered] = useState(false);
+  const [editing, setEditing] = useState(false);
   const handleRef = useRef<HTMLButtonElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  /*
+   * Esc 取消要靠 ref，不能靠 state。
+   *
+   * `setEditing(false)` 是异步的：调完立刻 `blur()`，`onBlur={commit}` 会在
+   * React 重渲染之前就跑起来，照样把改动写回去——用户按了取消，东西却存了。
+   * ref 是同步的，commit 读到就知道该丢弃。
+   */
+  const cancelledRef = useRef(false);
   // The handle floats 6px outside the field's left edge, so moving text → handle
   // crosses a gap that belongs to neither box and would fire onMouseLeave. Bridge
   // it with intent: open immediately, but defer the close so the handle (which
@@ -133,6 +163,21 @@ export function Editable(props: EditableProps) {
   useEffect(() => () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
+
+  // 进入编辑态后把焦点放进去，并把光标放到末尾——双击本来会选中一个词，
+  // 但那通常不是用户想要的起点（他多半是想接着写）。
+  useEffect(() => {
+    if (!editing) return;
+    const el = fieldRef.current;
+    if (!el) return;
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }, [editing]);
 
   // Default render path: identical to the pre-canvas behavior. Zero production impact.
   if (!ctx.enabled) {
@@ -156,11 +201,93 @@ export function Editable(props: EditableProps) {
     return <PendingChangeCard path={path} kind={target.kind} pending={pending} ctx={ctx} />;
   }
 
+  /*
+   * 双击直接改字。
+   *
+   * ## 为什么编辑中必须是「非受控」
+   *
+   * `contentEditable` 与 React 的经典冲突：每敲一个字都触发重渲染，React 重写
+   * innerHTML，光标就跳回开头。所以进入编辑态后**只在挂载时写一次初始内容**
+   * （`dangerouslySetInnerHTML` + `key`），之后完全交给浏览器，提交时再从 DOM 读回来。
+   *
+   * ## 为什么是双击不是单击
+   *
+   * 单击在这块画布上已经有主：手柄、选中、弹出层。双击是唯一没被占用、
+   * 而且在文档类产品里普遍意味着「进入编辑」的手势。
+   */
+  const startEditing = () => {
+    if (!ctx.onCommit) return;
+    cancelledRef.current = false;
+    setEditing(true);
+  };
+
+  const commit = () => {
+    const el = fieldRef.current;
+    setEditing(false);
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      return;
+    }
+    if (!el || !ctx.onCommit) return;
+    if (target.kind === 'html') {
+      // 用户能往 contentEditable 里粘贴任意东西，**净化必须在这里做**——
+      // 指望每个调用方记得做，就等于迟早有一个忘了。
+      const clean = typeof window === 'undefined' ? '' : DOMPurify.sanitize(el.innerHTML);
+      if (clean !== (props.html ?? '')) ctx.onCommit(target, clean);
+      return;
+    }
+    const next = el.innerText.replace(/\u00a0/g, ' ').trim();
+    if (next !== (props.text ?? '')) ctx.onCommit(target, next);
+  };
+
+  if (editing) {
+    return (
+      <div
+        ref={fieldRef}
+        data-resume-path={path}
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-label={`编辑${target.label}`}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            // 先立旗再失焦——顺序反了就等于没取消（见 cancelledRef 上的说明）。
+            cancelledRef.current = true;
+            fieldRef.current?.blur();
+            return;
+          }
+          // 纯文本字段里回车没有意义（它就一行），拿来当「提交」。
+          // 富文本里回车是换行，不能抢。
+          if (e.key === 'Enter' && target.kind === 'text' && !e.shiftKey) {
+            e.preventDefault();
+            fieldRef.current?.blur();
+          }
+        }}
+        // 只在挂载时写一次。之后 React 不再碰它，光标才不会跳。
+        dangerouslySetInnerHTML={{
+          __html: target.kind === 'html' ? props.html ?? '' : escapeText(props.text ?? ''),
+        }}
+        className={target.kind === 'html' ? 'wysiwyg' : undefined}
+        style={{
+          outline: `2px solid ${HANDLE_COLOR}`,
+          outlineOffset: 2,
+          borderRadius: 6,
+          minHeight: '1em',
+          minWidth: '2em',
+          color: 'inherit',
+        }}
+      />
+    );
+  }
+
   return (
     <div
       data-resume-path={path}
       onMouseEnter={openHover}
       onMouseLeave={closeHoverSoon}
+      onDoubleClick={startEditing}
       style={{
         position: 'relative',
         borderRadius: 6,

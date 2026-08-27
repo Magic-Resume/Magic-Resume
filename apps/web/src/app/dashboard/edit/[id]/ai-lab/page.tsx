@@ -18,6 +18,7 @@ export default function AIModalPage() {
     updateSections,
     updateInfo,
     applyFullResume,
+    applyWorkspaceResolution,
     isAiGenerating,
     setIsAiGenerating,
   } = useResumeStore();
@@ -50,6 +51,7 @@ export default function AIModalPage() {
           onApplySectionChanges={updateSections}
           onApplyInfo={updateInfo}
           onApplyFullResume={applyFullResume}
+          onApplyWorkspaceResolution={applyWorkspaceResolution}
           templateId={templateId}
           isAiJobRunning={isAiGenerating}
           setIsAiJobRunning={setIsAiGenerating}

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Download, Gift, Loader2, X } from 'lucide-react';
+import { Check, Copy, Download, Gift, Loader2, X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { isCloudMode } from '@/lib/config/app';

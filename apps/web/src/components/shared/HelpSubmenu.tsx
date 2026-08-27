@@ -10,7 +10,7 @@ import {
   HelpCircle,
   LifeBuoy,
   Shield,
-} from "lucide-react";
+} from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { SUPPORT_EMAIL } from "@/lib/extensions/legal";
 import { cn } from "@/lib/utils";

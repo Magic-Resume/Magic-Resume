@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { AlertCircle, RotateCcw, LayoutDashboard } from 'lucide-react';
+import { AlertCircle, RotateCcw, LayoutDashboard } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';

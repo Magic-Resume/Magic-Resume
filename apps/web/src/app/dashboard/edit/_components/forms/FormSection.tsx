@@ -4,7 +4,7 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, GripVertical } from "lucide-react";
+import { ChevronDown, GripVertical } from '@magic-resume/icons';
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,11 +66,11 @@ export default function FormSection({
           {...attributes}
           {...listeners}
           className={cn(
-            "flex h-7 w-5 shrink-0 items-center justify-center text-neutral-600 transition-colors duration-150",
-            disabled ? "invisible cursor-default" : "cursor-grab hover:text-neutral-300 active:cursor-grabbing",
+            "flex h-7 w-5 shrink-0 items-center justify-center text-neutral-400 transition-colors duration-150",
+            disabled ? "invisible cursor-default" : "cursor-grab hover:text-neutral-100 active:cursor-grabbing",
           )}
         >
-          <GripVertical size={13} />
+          <GripVertical size={15} />
         </button>
 
         <button

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { KeyRound, Loader2 } from 'lucide-react';
+import { KeyRound, Loader2 } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { clerkErrorMessage } from './clerkError';

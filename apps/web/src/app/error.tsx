@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RotateCcw, Home } from 'lucide-react';
+import { AlertCircle, RotateCcw, Home } from '@magic-resume/icons';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';

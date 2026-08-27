@@ -1,4 +1,4 @@
-import { MessageCircleQuestion, PenLine, Route, type LucideIcon } from 'lucide-react';
+import { Bot, MessageCircleQuestion, Route, type LucideIcon } from '@magic-resume/icons';
 
 /**
  * 输入框的「模式」——与技能正交的一根轴。
@@ -59,8 +59,8 @@ export const AGENT_MODES: Record<AgentMode, AgentModeMeta> = {
   cocreate: {
     id: 'cocreate',
     accentHex: '#38bdf8',
-    // 会动笔：一支笔比任何抽象图元都直白。
-    icon: PenLine,
+    // 共创由 AI 主动参与：机器人标识强调 AI 助手，而不是泛泛的多人协作。
+    icon: Bot,
     dots: { spacing: [5, 5], rgb: [56, 189, 248], stagger: false, flow: false },
     allowsResumeEdits: true,
     allowsResumeRead: true,

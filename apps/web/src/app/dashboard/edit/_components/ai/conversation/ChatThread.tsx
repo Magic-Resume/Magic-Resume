@@ -12,7 +12,7 @@ import {
   EyeOff,
   CornerUpLeft,
   ExternalLink,
-} from "lucide-react";
+} from "@magic-resume/icons";
 import { cn } from "@/lib/utils";
 import { SKILLS } from "../skills/registry";
 import Markdown from "./Markdown";
@@ -27,11 +27,11 @@ import type {
 } from "../types";
 import {
   Icon,
-  ToolChips,
   ApprovalCard as ApprovalPager,
   type ApprovalQuestion,
 } from "@magic-resume/genui/beautiful";
-import { toToolChipRows } from "./toolTrace";
+import ToolLine from "./ToolLine";
+import { splitTrajectoryBeats, visibleAssistantText } from "./trajectory";
 import TasksCard, {
   PLAN_DWELL_MS,
   isPlanFulfilled,
@@ -42,6 +42,8 @@ import ActivityOrb from "./ActivityOrb";
 import { activityLabelKey, type AgentActivity } from "./agentActivity";
 import { sourceDomain, visibleCitationSources } from "./citationSources";
 import SiteFavicon from "./SiteFavicon";
+import MessageNavigationRail from "./MessageNavigationRail";
+import ReasoningActivity from "./ReasoningActivity";
 
 /** 审批卡上的一页答完了。一次中断可以带多个动作，所以要带页号。 */
 type ApprovalDecision = (
@@ -49,29 +51,6 @@ type ApprovalDecision = (
   pageIndex: number,
   approved: boolean,
 ) => void;
-
-/**
- * 思维链 → 可读的行。
- *
- * 推理模型（gpt-5.6 一类）回传的是一串 `**Planning resume summary revision**` 这样的
- * 小标题，之间隔着空行。原来整段按 `whitespace-pre-wrap` 直出，于是屏幕上是一列带着
- * 星号、彼此隔开一大截的英文——星号是给 markdown 看的，不是给人看的。
- *
- * 不上 markdown 渲染器：思维链只有「标题行 + 普通行」两种形态，为它拖一整套解析器
- * 进来（还要处理列表、代码块、表格）不划算。空行丢掉，间距交给 CSS。
- */
-function reasoningLines(text: string): { text: string; strong: boolean }[] {
-  return text
-    .split("\n")
-    .map((raw) => raw.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const bold = /^\*\*(.+?)\*\*$/.exec(line);
-      return bold
-        ? { text: bold[1], strong: true }
-        : { text: line.replace(/\*\*(.+?)\*\*/g, "$1"), strong: false };
-    });
-}
 
 /**
  * Bot-side avatar. Consecutive bot messages share one avatar: only the first in a
@@ -105,6 +84,12 @@ function BreathGlyph({
  * shows nothing between send and first token — the gap the user reported. Sits at the
  * tail of the thread; hands off to the streaming bubble once text starts.
  */
+function formatDuration(seconds: number): string {
+  return seconds < 60
+    ? `${seconds}s`
+    : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
 /** 已等待的秒数，取自 Beautiful UI 的 LoadingState（等宽数字，避免逐秒抖动）。 */
 function Elapsed({ startedAt }: { startedAt?: number }) {
   const [, tick] = useState(0);
@@ -113,10 +98,9 @@ function Elapsed({ startedAt }: { startedAt?: number }) {
     return () => clearInterval(t);
   }, []);
   if (!startedAt) return null;
-  const s = Math.floor((Date.now() - startedAt) / 1000);
   return (
     <span className="font-mono text-[11px] tabular-nums text-neutral-500">
-      {s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`}
+      {formatDuration(Math.floor((Date.now() - startedAt) / 1000))}
     </span>
   );
 }
@@ -170,28 +154,104 @@ function ThinkingIndicator({
 }
 
 /**
- * 这一轮动过哪些工具。
+ * 老消息（`role === "tools"`，或没有 `timeline` 的历史助手消息）的工具列表。
  *
- * 此前除 `read_resume` 外的工具调用在界面上**完全不可见**——只改了那颗 orb 的形态，
- * 跑完就没了；用户回头看不出「它到底做了什么」。这张卡把一轮里的调用收成一组，
- * 可展开、可回看。
+ * 新消息走 `message.timeline`，工具行按真实顺序夹在文字之间；这里只保证旧数据也是
+ * 平铺、不折叠、不漏函数名的同一套观感。
  */
 function ToolTrace({ message }: { message: ChatMessage }) {
-  const { t } = useTranslation();
   const calls = message.toolCalls ?? [];
   if (calls.length === 0) return null;
-  // 工具是否还在跑由每次调用自己决定，不能借用整条助手回复的状态：工具完成后模型
-  // 往往还要继续写答案，那段时间不该让追踪列表一直保持展开。
-  const running =
-    message.status === "running" && calls.some((call) => !call.done);
   return (
     <div className="w-full max-w-lg">
-      <ToolChips
-        rows={toToolChipRows(calls, t)}
-        working={running}
-        title={t("aiLab.tools.count", { count: calls.length })}
-      />
+      {calls.map((call) => (
+        <ToolLine key={call.toolCallId} call={call} sources={message.sources} />
+      ))}
     </div>
+  );
+}
+
+/**
+ * 助手消息的正文：**按真实发生顺序**铺开的一段旁白。
+ *
+ * 此前是固定三桶（思考 → 工具 → 正文）。于是模型「我去查一下 JD」那句先说的话，会被
+ * 渲染到它所预告的那次工具调用**下面**——而那句话的全部价值就在于它出现在动手之前。
+ * 有 `timeline` 就按 `timeline` 走；没有（老的持久化消息）回落到原来的排法。
+ *
+ * 流式光标只挂最后一段文字：中间那些已经封段的话早就说完了，不该还在闪。
+ */
+function AssistantBody({
+  message,
+  onWidgetAction,
+}: {
+  message: ChatMessage;
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+}) {
+  const streaming = Boolean(
+    message.streamed &&
+    message.status === "running" &&
+    visibleAssistantText(message).trim(),
+  );
+  const orderedBeats = message.timeline;
+  const beats = message.trajectory
+    ? splitTrajectoryBeats(message).visible
+    : orderedBeats;
+
+  if (!beats?.length) {
+    // 轨迹页接管了完整历史；对话页在运行中只保留**最后一个**真实动作作为状态锚点。
+    // 否则工具一开始，刚才的旁白移入轨迹后气泡会变成空白，用户又回到“是不是挂了”。
+    if (message.trajectory && orderedBeats?.length) {
+      const latest = message.toolCalls?.at(-1);
+      return message.status === "running" && latest ? (
+        <ToolLine call={latest} sources={message.sources} />
+      ) : null;
+    }
+    return (
+      <>
+        {message.toolCalls?.length ? (
+          <div className={cn((message.content ?? "").trim() && "mb-2")}>
+            <ToolTrace message={message} />
+          </div>
+        ) : null}
+        <Markdown streaming={streaming} sources={message.sources}>
+          {message.content ?? ""}
+        </Markdown>
+      </>
+    );
+  }
+
+  const lastTextIndex = beats.reduce(
+    (found, beat, index) => (beat.kind === "text" ? index : found),
+    -1,
+  );
+
+  return (
+    <>
+      {beats.map((beat, index) =>
+        beat.kind === "tool" ? (
+          <div key={beat.id} className="my-1">
+            <ToolLine call={beat.call} sources={message.sources} />
+          </div>
+        ) : beat.kind === "widget" ? (
+          <div key={beat.id} className="my-2 flex items-start">
+            <WidgetHost
+              registry={WIDGETS}
+              instance={beat.widget}
+              context={{ sources: message.sources }}
+              onAction={onWidgetAction ?? (() => {})}
+            />
+          </div>
+        ) : (
+          <Markdown
+            key={beat.id}
+            streaming={streaming && index === lastTextIndex}
+            sources={message.sources}
+          >
+            {beat.text}
+          </Markdown>
+        ),
+      )}
+    </>
   );
 }
 
@@ -202,10 +262,18 @@ function ToolTrace({ message }: { message: ChatMessage }) {
  */
 function ActivityLine({ message }: { message: ChatMessage }) {
   const running = message.status === "running";
+  const failed = message.status === "failed";
   return (
-    <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+    <div
+      className={cn(
+        "flex items-center gap-2 text-[11px]",
+        failed ? "text-amber-300/80" : "text-neutral-500",
+      )}
+    >
       {running ? (
         <ActivityOrb activity="working" />
+      ) : failed ? (
+        <AlertCircle size={12} className="shrink-0" aria-hidden />
       ) : (
         <Check size={11} className="shrink-0 text-neutral-600" />
       )}
@@ -397,137 +465,6 @@ function LogLine({
   );
 }
 
-/**
- * 一轮的思考过程（推理模型回传的思维链）。
- *
- * **有就展示、没有就不展示**：不回传思维链的模型（OpenAI o 系列）这条通道天然为空，
- * 那时整块不渲染——不留一个点开是空的壳子。
- *
- * 默认收起：思考是过程，正文才是结论。想看的人点开，不想看的人不该被几百字的
- * 内心独白挡住答案。生成中标题带呼吸，读作「还在想」。
- */
-function ReasoningBlock({ text, running }: { text: string; running: boolean }) {
-  const { t } = useTranslation();
-  /**
-   * `null` = 跟随状态，布尔 = 用户手动钉住过。
-   *
-   * 展开与否不是一个常量，取决于此刻还有没有别的东西可看：思考进行中，思维链**就是
-   * 屏幕上唯一在发生的事**，收起来只剩一行「正在思考…」，等于把唯一的进展藏了；
-   * 正文一开始它就降级成过程，该让位给结论。所以默认值跟着 running 走。
-   *
-   * 但用户点过之后就以他的意思为准——自动行为可以有主张，不能推翻明确的操作。
-   */
-  const [pinned, setPinned] = useState<boolean | null>(null);
-  const open = pinned ?? running;
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 生成中让视口跟住最新一段思考。
-   *
-   * 只在**用户本来就贴着底部**时才跟——他往上翻是在读前面的内容，这时候把他拽回
-   * 底部是最讨嫌的一类"贴心"。48px 的容差覆盖行高抖动。
-   */
-  useEffect(() => {
-    if (!open || !running) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    if (nearBottom) el.scrollTop = el.scrollHeight;
-  }, [text, open, running]);
-  return (
-    <div className="mb-2">
-      {/* 思考中，这一行**就是**线程尾那个状态指示器——同一颗 orb、同一句文案、同一组
-          字号间距（见 ThinkingIndicator）。气泡是收到首个思考块才建的，那一刻指示器
-          退场、这里接上；两边长得不一样的话，交接就成了「换了个东西」而不是「同一个
-          东西长出了内容」。用户要的是并存：上面状态，下面思维链。
-
-          思考结束（正文开始）它降级为一个可展开的入口：orb 换成 chevron，链收起。
-          那时状态由正文自己承担，再留一颗球在这儿就是重复叙事。 */}
-      {/* 前导图元固定占 20px 见方，两态叠在同一个格子里交叉淡入淡出。
-          尺寸/间距/字号/字重四项在两态之间**全部不变**，只有颜色过渡——否则
-          「思考完」那一下是 orb 换 chevron(20→12)、gap(8→6)、字号(12→11) 一起跳，
-          标签会横向弹 10px，那才是真正扎眼的地方。
-          orb 只在 running 时挂载：留着一颗 opacity-0 的球，等于让每条读完的消息
-          都在后台跑一条 canvas RAF。 */}
-      <button
-        type="button"
-        onClick={() => setPinned(!open)}
-        aria-expanded={open}
-        className={cn(
-          "group inline-flex items-center gap-2 text-xs font-medium transition-colors duration-200 cursor-pointer",
-          running
-            ? "text-neutral-200"
-            : "text-neutral-500 hover:text-neutral-300",
-        )}
-      >
-        <span className="grid size-5 shrink-0 place-items-center">
-          {/* initial={false}：首次挂载时不演入场——这一刻它正接替尾部指示器那颗球，
-              淡入就等于原地闪一下。之后的两态互换才走 180ms 交叉淡。 */}
-          <AnimatePresence initial={false}>
-            {running ? (
-              <motion.span
-                key="orb"
-                className="col-start-1 row-start-1 flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                <ActivityOrb activity="thinking" />
-              </motion.span>
-            ) : (
-              <motion.span
-                key="chevron"
-                className="col-start-1 row-start-1 flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                <ChevronDown
-                  size={12}
-                  className={cn("transition-transform", open && "rotate-180")}
-                />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </span>
-        <span className={cn(running && "ai-narrate")}>
-          {running
-            ? t(activityLabelKey("thinking"))
-            : t("aiLab.reasoning.done")}
-        </span>
-      </button>
-      {/* 0fr → 1fr 收放：不动 height，交给 grid 自己算 */}
-      <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
-        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-      >
-        <div className="overflow-hidden">
-          {/* 封顶 + 自己滚。思维链可以很长，任其铺开会把结论顶出视野——而结论才是
-              用户要的。不用 scrollbar-hide：一个能滚的区域藏掉滚动条就等于没了可滚的提示。 */}
-          <div
-            ref={scrollRef}
-            className="mt-1.5 max-h-[200px] overflow-y-auto border-l border-white/[0.07] pl-3 text-[12px] leading-relaxed text-neutral-500"
-          >
-            {reasoningLines(text).map((line, i) => (
-              <p
-                key={i}
-                className={cn(
-                  "my-1 first:mt-0 last:mb-0",
-                  line.strong && "font-medium text-neutral-400",
-                )}
-              >
-                {line.text}
-              </p>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** 回答使用的外部网页来源。内部知识来源已进消息模型，但目前按产品决定不渲染。 */
 function SourcesBlock({
   sources = [],
@@ -633,20 +570,106 @@ function SourcesBlock({
   );
 }
 
+/** 折叠态最多显示几行。约等于一屏气泡的高度，再多就该由用户决定要不要看。 */
+const USER_MESSAGE_CLAMP_LINES = 10;
+
+/**
+ * 用户发出的正文。
+ *
+ * ## 为什么要折叠
+ *
+ * 用户会往对话里贴 URL、data URI、整段 JD。一条 base64 图片能撑出几十屏，把上下文里
+ * 真正在发生的事全顶出视野——而那条消息的内容用户自己最清楚，不需要一直看着。
+ *
+ * ## 为什么按渲染高度判断而不是字数
+ *
+ * 同样 200 个字符，一段中文是两行，一条 data URI 是十几行。字数阈值对这两种内容里的
+ * 一种必定是错的。量实际溢出没有这个问题，代价只是一次 layout 读。
+ *
+ * ## 为什么展开后不再测量
+ *
+ * 展开态下 `scrollHeight === clientHeight`，再测就会得出「没有溢出」，按钮当场消失、
+ * 用户再也收不回去。所以只在折叠态测，展开时沿用上一次的结论。
+ */
+function UserMessageText({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+
+  useEffect(() => {
+    if (expanded) return;
+    const el = ref.current;
+    if (!el) return;
+    // 1px 容差：亚像素行高会让 scrollHeight 比 clientHeight 大出零点几，
+    // 严格比较会给每条不该有按钮的消息都挂上按钮。
+    const measure = () => setOverflows(el.scrollHeight - el.clientHeight > 1);
+    measure();
+    // 面板可以拖宽拖窄，宽度一变行数就变。
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
+  return (
+    <>
+      {/*
+        `[overflow-wrap:anywhere]`：URL 和 data URI **一个断行机会都没有**，默认的
+        `overflow-wrap: normal` 不肯拆，整条会从气泡右边缘一路铺出去盖住页面。用
+        `anywhere` 而不是 `break-words`——只有前者参与 min-content 计算，在这个 flex
+        子项里 `break-words` 拆不动；`break-all` 又太狠，会把正常中英文拦腰截断。
+
+        `whitespace-pre-wrap`：用户按 Enter 敲的换行不保留就会被压成空格，
+        「这个是腾讯的」于是和上一行的 URL 挤成同一句。
+      */}
+      <div
+        ref={ref}
+        className="whitespace-pre-wrap [overflow-wrap:anywhere]"
+        style={
+          expanded
+            ? undefined
+            : {
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: USER_MESSAGE_CLAMP_LINES,
+                overflow: "hidden",
+              }
+        }
+      >
+        {text}
+      </div>
+      {overflows && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 cursor-pointer text-[13px] text-neutral-400 transition-colors hover:text-neutral-200"
+        >
+          {/* 用通用的那对，不借 `aiLab.chat.collapse`——那半个键归画布按钮
+              （「收起 / 查看」）所有，借来就是两个控件共用一份文案、一起被改。 */}
+          {expanded ? t("common.collapse") : t("common.expand")}
+        </button>
+      )}
+    </>
+  );
+}
+
 function Bubble({
   message,
   onRegenerate,
+  onWidgetAction,
 }: {
   message: ChatMessage;
   /** 只有最后一条助手回复拿得到，见 `MessageActions`。 */
   onRegenerate?: () => void;
+  /** 时间线里的非阻塞卡片要能把用户动作交回去。 */
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
 }) {
   if (message.role === "user") {
     const skill = message.skillId ? SKILLS[message.skillId] : null;
     const SkillIcon = skill?.icon;
     return (
       <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl bg-neutral-800 text-neutral-100 px-4 py-2.5 text-sm leading-relaxed">
+        <div className="min-w-0 max-w-[80%] rounded-2xl bg-neutral-800 px-4 py-2.5 text-[16px] leading-7 text-neutral-100">
           {skill && (
             <span className="inline-flex items-center gap-1 align-middle mr-2 rounded-md bg-neutral-700/70 px-1.5 py-0.5">
               {SkillIcon && <SkillIcon size={11} className={skill.accent} />}
@@ -655,13 +678,28 @@ function Bubble({
               </span>
             </span>
           )}
-          {message.attachment && (
+          {message.attachmentNames?.length ? (
+            <div className="mb-1.5 flex items-start gap-1.5 text-left text-[13px] leading-5 text-neutral-200">
+              <Icon
+                name="attach"
+                size={12}
+                className="mt-1 shrink-0 text-neutral-400"
+              />
+              <div className="min-w-0 space-y-1">
+                {message.attachmentNames.map((name) => (
+                  <div key={name} className="truncate" title={name}>
+                    {name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : message.attachment ? (
             <Icon
               name="attach"
               size={12}
               className="mr-1.5 inline-block align-[-1px] text-neutral-400"
             />
-          )}
+          ) : null}
           {message.quote && (
             <div className="mb-2 flex items-start gap-2 rounded-lg bg-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
               <CornerUpLeft
@@ -678,11 +716,12 @@ function Bubble({
               </div>
             </div>
           )}
-          {message.content}
+          <UserMessageText text={message.content ?? ""} />
         </div>
       </div>
     );
   }
+  const hasProcess = Boolean(message.reasoning);
   return (
     // `group/msg` 命名而不是裸 `group`：这棵树里已经有别的 group（技能卡、工具行），
     // 裸 group 会让最近的那个祖先赢，操作行于是跟着无关的元素亮起来。
@@ -692,47 +731,91 @@ function Bubble({
           给助手一个略宽于用户的上限：它是长文，但不该无边界。 */}
       {/* pt-1 是给正文做光学对齐的；有思考头时不能要——它会把那一行压低 4px，
           而这一行必须和它接替的尾部指示器落在同一条基线上。 */}
+      {/* 助手正文同样要能拆开无断点的长串——它现在正好会回显 logo 的 URL。
+          `overflow-wrap` 可继承，挂在容器上就覆盖了 markdown 的段落、列表与行内
+          `<code>`；代码块不受影响，`<pre>` 的 `white-space: pre` 本就不换行，
+          它的横向滚动照旧。 */}
       <div
         className={cn(
-          "min-w-0 max-w-[88%] text-sm text-neutral-200 leading-relaxed",
-          !message.reasoning && "pt-1",
+          // `text-ink`（oklch 0.93）而不是 `text-neutral-200`：数值几乎一样，但它跟着
+          // 主题令牌走，浅色主题切过去时不会留下一块亮灰。
+          "min-w-0 max-w-[88%] text-[16px] leading-7 text-ink [overflow-wrap:anywhere]",
+          !hasProcess && "pt-1",
         )}
       >
-        {message.reasoning && (
-          <ReasoningBlock
-            text={message.reasoning}
-            running={message.status === "running" && !message.content}
-          />
-        )}
-        {/* 工具是得出答案的过程，属于这条助手消息而不是时间线里的下一条消息。
-            放在正文前，最终答案写完后它会收成一行低层级摘要。 */}
-        {message.toolCalls?.length ? (
-          <div className={cn((message.content ?? "").trim() && "mb-2")}>
-            <ToolTrace message={message} />
-          </div>
-        ) : null}
-        {/* 一种渲染方式、一种手感。这里原来给非流式的助手台词加了 JS 定时器的伪打字
-            （24ms/字），跟真流式并存就是两种节奏；而 brief §3 明确要删掉这类假动效
-            ——它模拟的是并没有在发生的工作。光标同理挂回全局心跳。 */}
-        {/* 光标由 Markdown 自己发：放在这里它是块级 `<p>` 的兄弟节点，会掉到段落下面
-            单独占一行，而它该跟在最后一个字后面。 */}
-        <Markdown
-          streaming={message.streamed && message.status === "running"}
-          sources={message.sources}
-        >
-          {message.content ?? ""}
-        </Markdown>
-        <SourcesBlock sources={message.sources}>
-          {/* 取自 Beautiful UI 的 StreamingText：操作与来源共用一条低层级工具栏。 */}
-          {message.status === "done" && (message.content ?? "").trim() ? (
-            <MessageActions
-              text={message.content ?? ""}
-              onRegenerate={onRegenerate}
-            />
-          ) : null}
-        </SourcesBlock>
+        <AssistantResponse
+          message={message}
+          onRegenerate={onRegenerate}
+          onWidgetAction={onWidgetAction}
+        />
       </div>
     </div>
+  );
+}
+
+/**
+ * 思考视窗与正文的交接点。
+ *
+ * 首个正文 token 到达时，ReasoningActivity 先按原版 AgentDisclosure 收缩；只有它的
+ * 动画真实完成后才挂正文。不能用固定 timeout 猜时长，也不能让空 Markdown 提前发光标。
+ */
+function AssistantResponse({
+  message,
+  onRegenerate,
+  onWidgetAction,
+}: {
+  message: ChatMessage;
+  onRegenerate?: () => void;
+  onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+}) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const hasProcess = Boolean(message.reasoning);
+  const visibleText = visibleAssistantText(message);
+  const reasoningRunning =
+    hasProcess && message.status === "running" && !visibleText;
+  const reasoningRunningRef = useRef(reasoningRunning);
+  reasoningRunningRef.current = reasoningRunning;
+  const observedLiveReasoningRef = useRef(reasoningRunning);
+  const [answerReady, setAnswerReady] = useState(!reasoningRunning);
+
+  useEffect(() => {
+    if (reasoningRunning) {
+      observedLiveReasoningRef.current = true;
+      setAnswerReady(false);
+      return;
+    }
+    // 历史消息没有现场折叠过程，直接显示正文；减少动态效果时也不制造等待。
+    if (!observedLiveReasoningRef.current || reduceMotion) {
+      setAnswerReady(true);
+    }
+  }, [reasoningRunning, reduceMotion]);
+
+  return (
+    <>
+      {hasProcess && (
+        <ReasoningActivity
+          text={message.reasoning ?? ""}
+          running={reasoningRunning}
+          onCollapseComplete={() => {
+            if (reasoningRunningRef.current) return;
+            observedLiveReasoningRef.current = false;
+            setAnswerReady(true);
+          }}
+        />
+      )}
+      {answerReady ? (
+        <>
+          <AssistantBody message={message} onWidgetAction={onWidgetAction} />
+          {/* 来源和复制/重新生成属于完成态工具栏。搜索进行中只显示上面的搜索过程，
+              不提前挂一份重复来源；最终正文完成后再一起出现。 */}
+          {message.status === "done" && visibleText.trim() ? (
+            <SourcesBlock sources={message.sources}>
+              <MessageActions text={visibleText} onRegenerate={onRegenerate} />
+            </SourcesBlock>
+          ) : null}
+        </>
+      ) : null}
+    </>
   );
 }
 
@@ -795,6 +878,8 @@ function MessageActions({
 
 type ChatThreadProps = {
   messages: ChatMessage[];
+  /** 右侧画布/报告出现时隐藏消息导航，避免两个右侧表面争抢同一块空间。 */
+  navigationVisible?: boolean;
   onToggleCanvas: (id: SkillId) => void;
   openCanvasSkillId: SkillId | null;
   onLogClick?: (resumePath: string) => void;
@@ -848,6 +933,9 @@ const MessageRow = memo(function MessageRow({
 
   return (
     <motion.div
+      data-slot="message"
+      data-from={m.role}
+      data-message-id={m.id}
       initial={
         takesOverThinking
           ? false
@@ -890,9 +978,7 @@ const MessageRow = memo(function MessageRow({
           message={m}
           retired={retired}
           onToggleCanvas={onToggleCanvas}
-          isCanvasOpen={Boolean(
-            m.skillId && openCanvasSkillId === m.skillId,
-          )}
+          isCanvasOpen={Boolean(m.skillId && openCanvasSkillId === m.skillId)}
           activity={activity}
         />
       ) : m.role === "widget" ? (
@@ -901,6 +987,7 @@ const MessageRow = memo(function MessageRow({
             <WidgetHost
               registry={WIDGETS}
               instance={m.widget}
+              context={{ sources: m.sources }}
               onAction={onWidgetAction ?? (() => {})}
             />
           </div>
@@ -909,6 +996,7 @@ const MessageRow = memo(function MessageRow({
         <Bubble
           message={m}
           onRegenerate={regenerable ? onRegenerate : undefined}
+          onWidgetAction={onWidgetAction}
         />
       )}
     </motion.div>
@@ -919,6 +1007,7 @@ export { isPlanFulfilled, isRetirablePlan };
 
 export default function ChatThread({
   messages,
+  navigationVisible = true,
   onToggleCanvas,
   openCanvasSkillId,
   onLogClick,
@@ -949,6 +1038,7 @@ export default function ChatThread({
   }, [thinking]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
   const followOutputRef = useRef(true);
   const previousLastIdRef = useRef<string | null>(null);
@@ -1004,7 +1094,10 @@ export default function ChatThread({
    *
    * 先停一拍再收：不停的话最后一步打勾的同一帧卡就变了，用户根本没看到它完成。
    */
-  const [retired, setRetired] = useState<ReadonlySet<string>>(new Set());
+  const [retired, setRetired] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(messages.filter(isRetirablePlan).map((message) => message.id)),
+  );
   useEffect(() => {
     const pending = messages.filter(
       (m) => isRetirablePlan(m) && !retired.has(m.id),
@@ -1019,47 +1112,58 @@ export default function ChatThread({
   }, [messages, retired]);
 
   return (
-    <div
-      ref={scrollRef}
-      onScroll={handleScroll}
-      onWheel={(event) => {
-        if (event.deltaY < 0) pauseFollowing();
-      }}
-      onTouchMove={pauseFollowing}
-      className="flex-1 overflow-y-auto scrollbar-hide px-4 py-6"
-    >
-      <div className="max-w-3xl mx-auto flex flex-col gap-5">
-        {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
-            so only freshly-mounted turns animate, never re-renders of existing ones.
-            外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
-            替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
-        <AnimatePresence initial={false}>
-          {messages.map((m) => (
-            <MessageRow
-              key={m.id}
-              message={m}
-              reduceMotion={reduceMotion}
-              retired={retired.has(m.id)}
-              activity={m.role === "plan" ? activity : undefined}
-              openCanvasSkillId={openCanvasSkillId}
-              regenerable={m.id === regenerableId}
-              onToggleCanvas={onToggleCanvas}
-              onLogClick={onLogClick}
-              onApproval={onApproval}
-              onWidgetAction={onWidgetAction}
-              onRegenerate={onRegenerate}
-            />
-          ))}
-        </AnimatePresence>
-        <AnimatePresence>
-          {thinking && (
-            <ThinkingIndicator
-              activity={activity ?? null}
-              startedAt={thinkingSince}
-            />
-          )}
-        </AnimatePresence>
+    <div className="relative min-h-0 flex-1">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onWheel={(event) => {
+          if (event.deltaY < 0) pauseFollowing();
+        }}
+        onTouchMove={pauseFollowing}
+        className="h-full overflow-y-auto scrollbar-hide px-4 py-6"
+      >
+        <div ref={contentRef} className="max-w-3xl mx-auto flex flex-col gap-5">
+          {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
+              so only freshly-mounted turns animate, never re-renders of existing ones.
+              外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
+              替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
+          <AnimatePresence initial={false}>
+            {messages.map((m) => (
+              <MessageRow
+                key={m.id}
+                message={m}
+                reduceMotion={reduceMotion}
+                retired={retired.has(m.id)}
+                activity={m.role === "plan" ? activity : undefined}
+                openCanvasSkillId={openCanvasSkillId}
+                regenerable={m.id === regenerableId}
+                onToggleCanvas={onToggleCanvas}
+                onLogClick={onLogClick}
+                onApproval={onApproval}
+                onWidgetAction={onWidgetAction}
+                onRegenerate={onRegenerate}
+              />
+            ))}
+          </AnimatePresence>
+          <AnimatePresence>
+            {thinking && (
+              <ThinkingIndicator
+                activity={activity ?? null}
+                startedAt={thinkingSince}
+              />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
+      <MessageNavigationRail
+        messages={messages}
+        viewportRef={scrollRef}
+        contentRef={contentRef}
+        visible={navigationVisible}
+        onNavigate={(atLiveEdge) => {
+          followOutputRef.current = atLiveEdge;
+        }}
+      />
     </div>
   );
 }

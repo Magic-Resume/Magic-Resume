@@ -24,6 +24,7 @@ import { GlobalErrorListener } from "@/components/providers/GlobalErrorListener"
 import { CommercialRuntimeProvider } from "@/lib/commercial/runtime";
 import { RuntimeEnvScript } from "@/lib/commercial/runtime-env";
 import { CloudAuthBridge } from "@/lib/auth";
+import { NotificationRealtimeProvider } from "@/components/providers/NotificationRealtimeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://magic-resume.cn'),
@@ -73,9 +74,11 @@ export default function RootLayout({
               <CommercialRuntimeProvider>
                 <I18nProvider>
                   <ThemeProvider>
-                    {children}
-                    <Toaster />
-                    <PreloadOptimizer />
+                    <NotificationRealtimeProvider>
+                      {children}
+                      <Toaster />
+                      <PreloadOptimizer />
+                    </NotificationRealtimeProvider>
                   </ThemeProvider>
                 </I18nProvider>
               </CommercialRuntimeProvider>

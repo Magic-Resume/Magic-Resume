@@ -140,6 +140,13 @@ export async function* streamPdfParse(
 
 export interface ChatStreamParams {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  /** 私有 R2 对象的短期读取地址；后端渲染为页面图并放进同一条用户消息。 */
+  attachments?: Array<{
+    id: string;
+    name: string;
+    contentType: string;
+    sourceUrl: string;
+  }>;
   /**
    * 对话档位（共创 / 规划 / 问答）。只传枚举——契约文本在服务端，客户端传原文等于
    * 开放任意系统提示注入。服务端按档位注入到单次模型调用，不进会话历史，所以切

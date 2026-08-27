@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ChevronUp, ChevronDown, Check, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 type ReviewBarProps = {

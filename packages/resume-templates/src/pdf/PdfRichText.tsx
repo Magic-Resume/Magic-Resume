@@ -117,6 +117,30 @@ const unwrapSingleParagraphListItems = (root: HTMLElement) => {
   }
 };
 
+/**
+ * 这个 `li` 嵌在第几层列表里（最外层为 0）。
+ *
+ * 用来让符号随层级变化（实心点 → 空心圆 → 方块），与 CSS 的
+ * `disc / circle / square` 对齐。**两边必须一致**——只改一边等于制造新的漂移。
+ */
+// 结构化类型：`li` 渲染器拿到的是 react-pdf-html 的 HtmlElement，
+// 与 node-html-parser 的 HTMLElement 不是同一个类型，这里只取用到的两个字段。
+interface TagNode {
+  rawTagName?: string;
+  parentNode?: TagNode | null;
+}
+
+const listDepthOf = (element: TagNode): number => {
+  let depth = -1;
+  let node: TagNode | null | undefined = element;
+  while (node) {
+    const tag = node.rawTagName?.toLowerCase();
+    if (tag === 'ul' || tag === 'ol') depth += 1;
+    node = node.parentNode;
+  }
+  return Math.max(0, depth);
+};
+
 const normalizeRichTextHtml = (html: string): string => {
   const root = parse(html.trim(), { comment: false });
   sanitizeElements(root);
@@ -208,6 +232,18 @@ const createRenderers = (fontSize: number, lineHeight: number, color: string): H
     const ordered = parentTag === 'ol';
     const markerWidth = fontSize * 1.35;
     const bulletSize = Math.max(2.25, fontSize * 0.34);
+    // 嵌套层级决定符号形状，与 CSS 的 disc → circle → square 一一对应
+    // （`globals.css` 的 .wysiwyg 用同一套）。此前每一级都画同样的实心点，
+    // 于是三级嵌套读起来是三行一模一样的圆点，层级信息全丢了。
+    const depth = listDepthOf(element);
+    const markerColor = resolveStyleColor(style, color);
+    const bulletStyle =
+      depth === 0
+        ? { backgroundColor: markerColor, borderRadius: bulletSize / 2 }
+        : depth === 1
+          // 空心圆：react-pdf 没有 outline，用 1px 边框 + 无填充
+          ? { borderColor: markerColor, borderWidth: 0.6, borderRadius: bulletSize / 2 }
+          : { backgroundColor: markerColor };
     const marker = ordered ? (
       <Text style={{ flexShrink: 0, fontSize, lineHeight, width: markerWidth }}>
         {element.indexOfType + 1}.
@@ -222,14 +258,7 @@ const createRenderers = (fontSize: number, lineHeight: number, color: string): H
           width: markerWidth,
         }}
       >
-        <View
-          style={{
-            backgroundColor: resolveStyleColor(style, color),
-            borderRadius: bulletSize / 2,
-            height: bulletSize,
-            width: bulletSize,
-          }}
-        />
+        <View style={{ ...bulletStyle, height: bulletSize, width: bulletSize }} />
       </View>
     );
     return (
