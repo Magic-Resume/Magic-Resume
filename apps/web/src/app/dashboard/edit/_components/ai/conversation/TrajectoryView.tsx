@@ -65,7 +65,7 @@ export default function TrajectoryView({
 
   return (
     <div className="mt-2 overflow-hidden rounded-xl border border-white/[0.07] bg-black/20">
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-3 py-2 font-mono text-[10px] tabular-nums text-neutral-500">
+      <div className="flex items-center gap-3 border-b border-mr-line-soft px-3 py-2 font-mono text-mr-micro tabular-nums text-neutral-500">
         <span className="inline-flex items-center gap-1">
           <Clock size={10} />
           {durationLabel(totalMs)}
@@ -74,11 +74,11 @@ export default function TrajectoryView({
         <span>{t("aiLab.trajectory.calls", { count: calls })}</span>
       </div>
 
-      <div className="border-b border-white/[0.06] px-3 py-2">
+      <div className="border-b border-mr-line-soft px-3 py-2">
         <TimelineLane label={t("aiLab.trajectory.lanes.input")}>
           {firstModelAt ? (
             <span
-              className="absolute inset-y-0 rounded-[2px] bg-sky-400/75"
+              className="absolute inset-y-0 rounded-xs bg-sky-400/75"
               style={segmentStyle(trajectory.startedAt, firstModelAt)}
             />
           ) : null}
@@ -87,7 +87,7 @@ export default function TrajectoryView({
           {trajectory.steps.map((step) => (
             <span
               key={step.id}
-              className="absolute inset-y-0 rounded-[2px] bg-violet-400/75"
+              className="absolute inset-y-0 rounded-xs bg-violet-400/75"
               style={segmentStyle(step.startedAt, step.completedAt)}
             />
           ))}
@@ -98,8 +98,8 @@ export default function TrajectoryView({
               <span
                 key={beat.id}
                 className={cn(
-                  "absolute inset-y-0 rounded-[2px]",
-                  beat.call.error ? "bg-red-400/80" : "bg-amber-400/80",
+                  "absolute inset-y-0 rounded-xs",
+                  beat.call.error ? "bg-mr-danger-400/80" : "bg-amber-400/80",
                 )}
                 style={segmentStyle(
                   beat.call.startedAt,
@@ -165,7 +165,7 @@ export function TrajectoryRows({
             badge={t("aiLab.trajectory.actor.tool")}
             badgeClass={
               beat.call.error
-                ? "bg-red-400/10 text-red-300"
+                ? "bg-mr-danger-400/10 text-mr-danger-300"
                 : "bg-amber-400/10 text-amber-300"
             }
             duration={
@@ -184,7 +184,7 @@ export function TrajectoryRows({
             <span
               className={cn(
                 "min-w-0 truncate",
-                beat.call.error ? "text-red-300/80" : "text-neutral-500",
+                beat.call.error ? "text-mr-danger-300/80" : "text-neutral-500",
               )}
             >
               {output}
@@ -205,8 +205,8 @@ function TimelineLane({
 }) {
   return (
     <div className="grid grid-cols-[38px_1fr] items-center gap-2 py-0.5">
-      <span className="font-mono text-[9px] text-neutral-600">{label}</span>
-      <span className="relative h-1.5 overflow-hidden rounded-[2px] bg-white/[0.025]">
+      <span className="font-mono text-mr-tiny text-neutral-600">{label}</span>
+      <span className="relative h-1.5 overflow-hidden rounded-xs bg-white/[0.025]">
         {children}
       </span>
     </div>
@@ -229,18 +229,18 @@ function TrajectoryRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative grid min-w-0 grid-cols-[68px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-1.5 font-mono text-[10px] leading-4">
+    <div className="relative grid min-w-0 grid-cols-[68px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-1.5 font-mono text-mr-micro leading-4">
       {startsStep ? (
         <span
           className="absolute -left-px top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neutral-500 ring-2 ring-[#171717]"
           title={stepIndex ? `Step ${stepIndex}` : undefined}
         />
       ) : null}
-      <span className={cn("w-fit rounded px-1.5 py-0.5 text-[9px]", badgeClass)}>
+      <span className={cn("w-fit rounded px-1.5 py-0.5 text-mr-tiny", badgeClass)}>
         {badge}
       </span>
       <span className="flex min-w-0 items-center gap-2">{children}</span>
-      <span className="text-[9px] tabular-nums text-neutral-700">{duration}</span>
+      <span className="text-mr-tiny tabular-nums text-neutral-700">{duration}</span>
     </div>
   );
 }

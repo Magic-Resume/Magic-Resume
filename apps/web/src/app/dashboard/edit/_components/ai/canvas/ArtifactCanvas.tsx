@@ -134,7 +134,7 @@ function ScoreView({
       <div className="flex items-center gap-5">
         <RingGauge value={analysis.overall_score} />
         <div className="min-w-0">
-          <div className="text-[15px] font-medium text-white">{t(scoreBandKey(analysis.overall_score))}</div>
+          <div className="text-mr-subtitle font-medium text-white">{t(scoreBandKey(analysis.overall_score))}</div>
           <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
             {t('aiLab.artifact.summary')}
           </p>
@@ -243,14 +243,14 @@ function KeywordChips({
             onClick={() => onPick(k)}
             title={t('aiLab.artifact.match.useKeyword', { keyword: k })}
             className={cn(
-              'rounded-md border px-2 py-0.5 text-[11px] leading-tight transition-colors cursor-pointer hover:bg-amber-500/20',
+              'rounded-md border px-2 py-0.5 text-mr-label leading-tight transition-colors cursor-pointer hover:bg-amber-500/20',
               cls,
             )}
           >
             {k}
           </button>
         ) : (
-          <span key={k} className={cn('rounded-md border px-2 py-0.5 text-[11px] leading-tight', cls)}>
+          <span key={k} className={cn('rounded-md border px-2 py-0.5 text-mr-label leading-tight', cls)}>
             {k}
           </span>
         ),
@@ -284,10 +284,10 @@ function MatchView({
       <div className="flex items-center gap-5">
         <RingGauge value={overall} />
         <div className="min-w-0 space-y-1.5">
-          <div className="text-[15px] font-medium text-white">{t(`aiLab.artifact.match.band.${band}`)}</div>
+          <div className="text-mr-subtitle font-medium text-white">{t(`aiLab.artifact.match.band.${band}`)}</div>
           <span
             className={cn(
-              'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px]',
+              'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-mr-label',
               location_pass
                 ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
                 : 'bg-rose-500/10 text-rose-300 border-rose-500/20'
@@ -402,7 +402,7 @@ function ArtifactCanvas({
             )}
 
             {view === 'json' && (
-              <pre className="text-[11px] leading-relaxed text-neutral-400 font-mono whitespace-pre-wrap bg-neutral-900/70 rounded-xl p-4">
+              <pre className="text-mr-label leading-relaxed text-neutral-400 font-mono whitespace-pre-wrap bg-neutral-900/70 rounded-xl p-4">
                 {JSON.stringify({ info: resumeData.info, sections: resumeData.sections }, null, 2)}
               </pre>
             )}

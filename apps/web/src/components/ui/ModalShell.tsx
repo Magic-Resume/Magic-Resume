@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from '@magic-resume/icons';
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
+import { surfaceVariants } from '@magic-resume/design-system';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 interface ModalShellProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,7 +33,15 @@ interface ModalShellProps {
  * top-seam is the instrument-signature detail (see design spec). Body is a flex
  * column that fills remaining height — callers own the inner layout.
  */
-export function ModalShell({ open, onOpenChange, title, className, headerRight, mark, children }: ModalShellProps) {
+export function ModalShell({
+  open,
+  onOpenChange,
+  title,
+  className,
+  headerRight,
+  mark,
+  children,
+}: ModalShellProps) {
   const reduce = useReducedMotion();
 
   return (
@@ -48,7 +58,11 @@ export function ModalShell({ open, onOpenChange, title, className, headerRight, 
                 className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
               />
             </DialogPrimitive.Overlay>
-            <DialogPrimitive.Content asChild forceMount aria-describedby={undefined}>
+            <DialogPrimitive.Content
+              asChild
+              forceMount
+              aria-describedby={undefined}
+            >
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center p-4"
                 onMouseDown={(e) => {
@@ -56,12 +70,19 @@ export function ModalShell({ open, onOpenChange, title, className, headerRight, 
                 }}
               >
                 <motion.div
-                  initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 8 }}
-                  animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-                  exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 8 }}
-                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  initial={
+                    reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 8 }
+                  }
+                  animate={
+                    reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }
+                  }
+                  exit={
+                    reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 8 }
+                  }
+                  transition={{ duration: 0.16, ease: EASE_ENTER }}
                   className={cn(
-                    "relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-desk shadow-2xl shadow-black/60",
+                    'relative flex min-h-0 min-w-0 flex-col overflow-hidden',
+                    surfaceVariants({ tone: 'default', padding: 'none' }),
                     className,
                   )}
                   {...(mark ? { [`data-magic-${mark}`]: '' } : {})}
@@ -69,15 +90,13 @@ export function ModalShell({ open, onOpenChange, title, className, headerRight, 
                   {/* sky top-seam — reuses the via-sky rule motif from the settings page */}
                   <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
 
-                  <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-6 py-4">
+                  <div className="flex shrink-0 items-center justify-between border-b border-mr-line-soft px-6 py-4">
                     <DialogPrimitive.Title className="text-xl font-semibold tracking-tight text-neutral-100">
                       {title}
                     </DialogPrimitive.Title>
                     <div className="flex items-center gap-2">
                       {headerRight}
-                      <DialogPrimitive.Close
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
-                      >
+                      <DialogPrimitive.Close className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50">
                         <X size={18} />
                       </DialogPrimitive.Close>
                     </div>

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { hexToRgb } from '@/lib/utils/color';
 import PolarisMark from '../ai/PolarisMark';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 interface AiThinkingOverlayProps {
   isVisible: boolean;
   themeColor?: string;
@@ -69,7 +70,7 @@ const AiThinkingOverlay: React.FC<AiThinkingOverlayProps> = ({
         <span className="ai-thinking-overlay__beam ai-thinking-overlay__beam--left" />
       </span>
 
-      <div className="ai-thinking-overlay__orb ai-breath">
+      <div className="ai-thinking-overlay__orb mr-motion-breathe">
         <PolarisMark size={20} className="ai-thinking-overlay__mark" />
       </div>
 
@@ -80,8 +81,8 @@ const AiThinkingOverlay: React.FC<AiThinkingOverlayProps> = ({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="ai-narrate text-[13px] font-medium tracking-wide"
+            transition={{ duration: 0.18, ease: EASE_ENTER }}
+            className="ai-narrate text-mr-caption font-medium tracking-wide"
           >
             {text}
           </motion.span>

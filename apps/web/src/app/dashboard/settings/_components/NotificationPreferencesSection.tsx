@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Switch } from '@/components/ui/switch';
+import { Switch } from '@/components/ui/product-switch';
+import {
+  SettingsCard,
+  SettingsRow,
+} from '@/components/application/settings/settings-rows';
 import { notificationsApi, type NotificationPreference } from '@/lib/api/notifications';
 
 const CATEGORIES: NotificationPreference['category'][] = [
@@ -48,22 +52,24 @@ export function NotificationPreferencesSection() {
   };
 
   return (
-    <div className="mt-6 divide-y divide-white/[0.06]">
-      {CATEGORIES.map((category) => (
-        <div key={category} className="flex items-center justify-between gap-5 py-4 first:pt-0">
-          <div>
-            <p className="text-sm font-medium text-neutral-100">{t(`settings.notificationPreferences.${category}.label`)}</p>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-400">{t(`settings.notificationPreferences.${category}.description`)}</p>
-          </div>
+    <div className="mt-5 flex flex-col gap-3">
+      <SettingsCard>
+        {CATEGORIES.map((category) => (
+          <SettingsRow
+            key={category}
+            label={t(`settings.notificationPreferences.${category}.label`)}
+            description={t(`settings.notificationPreferences.${category}.description`)}
+          >
           <Switch
-            checked={isEnabled(category)}
-            disabled={saving !== null}
-            onCheckedChange={(checked) => void update(category, checked)}
             aria-label={t(`settings.notificationPreferences.${category}.label`)}
+            isSelected={isEnabled(category)}
+            isDisabled={saving !== null}
+            onChange={(checked) => void update(category, checked)}
           />
-        </div>
-      ))}
-      <p className="pt-4 text-xs leading-relaxed text-neutral-500">
+          </SettingsRow>
+        ))}
+      </SettingsCard>
+      <p className="px-3 text-body-2-regular text-text-tertiary">
         {t('settings.notificationPreferences.requiredNote')}
       </p>
     </div>

@@ -4,7 +4,7 @@ import React from 'react';
 import { ShieldAlert } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetItem, WidgetShell } from '@magic-resume/genui';
-import type { WidgetProps } from '@magic-resume/genui/contract';
+import type { WidgetProps } from '@magic-resume/genui';
 
 /**
  * 反捏造闸门（确定性校验）标出的、简历改动里新冒出来的专有名词。
@@ -25,11 +25,11 @@ export default function FabricationNotice({ instance }: WidgetProps) {
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/12">
           <ShieldAlert size={14} className="text-amber-400" />
         </div>
-        <span className="text-[13px] font-medium text-primary">
+        <span className="text-mr-caption font-medium text-mr-ink">
           {props.title || t('aiLab.widgets.verification.title')}
         </span>
       </div>
-      <WidgetItem className="mt-2 text-xs leading-relaxed text-secondary">
+      <WidgetItem className="mt-2 text-xs leading-relaxed text-mr-ink-secondary">
         {props.body || t('aiLab.widgets.verification.body')}
       </WidgetItem>
       {items.length ? (
@@ -37,7 +37,7 @@ export default function FabricationNotice({ instance }: WidgetProps) {
           {items.map((item) => (
             <span
               key={item}
-              className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300"
+              className="rounded-md bg-amber-500/10 px-2 py-0.5 text-mr-label text-amber-300"
             >
               {item}
             </span>

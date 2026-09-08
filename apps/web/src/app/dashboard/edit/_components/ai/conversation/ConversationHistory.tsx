@@ -6,12 +6,13 @@ import { FolderOpen, Trash2 } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { MaskIcon } from '@/components/icons/MaskIcon';
-import { SidebarNav } from '@magic-resume/genui/beautiful';
+import { SidebarNav } from '@magic-resume/genui';
 import {
   conversationApi,
   type ConversationSummary,
 } from '@/lib/api/conversationApi';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 历史对话抽屉。
  *
@@ -194,7 +195,7 @@ export default function ConversationHistory({
                 event.stopPropagation();
                 setConfirmDelete(null);
               }}
-              className="rounded-md px-1.5 py-0.5 text-[12px] text-neutral-400 transition-colors hover:text-white"
+              className="rounded-md px-1.5 py-0.5 text-mr-overline text-neutral-400 transition-colors hover:text-white"
             >
               {t('common.cancel')}
             </span>
@@ -205,7 +206,7 @@ export default function ConversationHistory({
                 event.stopPropagation();
                 void remove(item.id);
               }}
-              className="rounded-md px-1.5 py-0.5 text-[12px] text-rose-400 transition-colors hover:text-rose-300"
+              className="rounded-md px-1.5 py-0.5 text-mr-overline text-rose-400 transition-colors hover:text-rose-300"
             >
               {t('aiLab.history.delete')}
             </span>
@@ -272,10 +273,10 @@ export default function ConversationHistory({
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -24 }}
             animate={{ opacity: 1, x: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -24 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.2, ease: EASE_ENTER }}
             onPointerEnter={cancelClose}
             onPointerLeave={scheduleClose}
-            className="absolute inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-white/[0.06] bg-neutral-900/95 shadow-2xl shadow-black/60 backdrop-blur-xl"
+            className="absolute inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-mr-line-soft bg-neutral-900/95 shadow-2xl shadow-black/60 backdrop-blur-xl"
           >
             {/* 抽屉外壳（左缘窥视 / 钉住 / 遮罩）留在这一层，只有内容换成 SidebarNav：
                 窥视是这个面板最好用的地方，而常驻左导航壳里没有这个概念。 */}
@@ -329,7 +330,7 @@ export default function ConversationHistory({
                 items === null ? (
                   <SkeletonRows />
                 ) : sections.length === 0 ? (
-                  <p className="px-2.5 py-2 text-[12px] text-neutral-500">
+                  <p className="px-2.5 py-2 text-mr-overline text-neutral-500">
                     {query
                       ? t('aiLab.history.searchEmpty')
                       : t('aiLab.history.empty')}
@@ -349,16 +350,16 @@ export default function ConversationHistory({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: 0.16 }}
-                  className="border-t border-white/[0.06] p-3"
+                  className="border-t border-mr-line-soft p-3"
                 >
-                  <p className="text-[12px] leading-relaxed text-neutral-300">
+                  <p className="text-mr-overline leading-relaxed text-neutral-300">
                     {t('aiLab.history.switchWhileBusy')}
                   </p>
                   <div className="mt-2.5 flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setPendingPick(null)}
-                      className="rounded-lg px-2.5 py-1.5 text-[12px] text-neutral-400 transition-colors hover:text-white cursor-pointer"
+                      className="rounded-lg px-2.5 py-1.5 text-mr-overline text-neutral-400 transition-colors hover:text-white cursor-pointer"
                     >
                       {t('common.cancel')}
                     </button>
@@ -369,7 +370,7 @@ export default function ConversationHistory({
                         close();
                         onPick(id);
                       }}
-                      className="rounded-lg bg-white/[0.08] px-2.5 py-1.5 text-[12px] text-white transition-colors hover:bg-white/[0.12] cursor-pointer"
+                      className="rounded-lg bg-mr-line px-2.5 py-1.5 text-mr-overline text-white transition-colors hover:bg-white/[0.12] cursor-pointer"
                     >
                       {t('aiLab.history.switchAnyway')}
                     </button>
@@ -391,7 +392,7 @@ function SkeletonRows() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="h-7 animate-pulse rounded-xl bg-white/[0.04]"
+          className="h-7 animate-pulse rounded-xl bg-mr-surface-subtle"
           style={{ width: `${88 - i * 14}%` }}
         />
       ))}

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { hexToRgb, rgbToHex } from "@/lib/utils/color";
 import { inspectResumeFontPack, downloadResumeFontPack } from '@/lib/utils/pdf-export';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /* ------------------------------------------------------------------ *
  * 右侧自定义面板的统一控件原语 —— 深色工作台 + sky 点缀、少 border。
  * 仅用 transform / opacity 动效,克制不抢戏(对齐 .impeccable.md)。
@@ -37,7 +38,7 @@ export function AccordionSection({
     <div
       ref={registerRef}
       data-section={sectionId}
-      className="scroll-mt-4 border-b border-white/[0.06] last:border-b-0"
+      className="scroll-mt-4 border-b border-mr-line-soft last:border-b-0"
     >
       <button
         type="button"
@@ -50,14 +51,14 @@ export function AccordionSection({
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
             open
               ? "bg-sky-400/10 text-sky-300"
-              : "bg-white/[0.04] text-neutral-400 group-hover:text-neutral-200",
+              : "bg-mr-surface-subtle text-neutral-400 group-hover:text-neutral-200",
           )}
         >
           {icon}
         </span>
         <span
           className={cn(
-            "flex-1 text-[15px] font-semibold tracking-tight transition-colors duration-150",
+            "flex-1 text-mr-subtitle font-semibold tracking-tight transition-colors duration-150",
             open ? "text-white" : "text-neutral-300 group-hover:text-white",
           )}
         >
@@ -79,7 +80,7 @@ export function AccordionSection({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.22, ease: EASE_ENTER }}
             className="overflow-hidden"
           >
             <div className="space-y-5 px-1 pb-5 pt-0.5">{children}</div>
@@ -94,9 +95,9 @@ export function AccordionSection({
 function LabelRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[13px] font-medium text-neutral-300">{label}</span>
+      <span className="text-mr-caption font-medium text-neutral-300">{label}</span>
       {value !== undefined && (
-        <span className="rounded-md bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] tabular-nums text-neutral-300">
+        <span className="rounded-md bg-mr-surface-muted px-2 py-0.5 font-mono text-mr-label tabular-nums text-neutral-300">
           {value}
         </span>
       )}
@@ -107,7 +108,7 @@ function LabelRow({ label, value }: { label: string; value?: React.ReactNode }) 
 /** 区块小标题(分组用) */
 export function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+    <h4 className="text-mr-label font-semibold uppercase tracking-[0.12em] text-neutral-500">
       {children}
     </h4>
   );
@@ -166,9 +167,9 @@ export function ToggleField({
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <p className="text-[13px] font-medium text-neutral-300">{label}</p>
+        <p className="text-mr-caption font-medium text-neutral-300">{label}</p>
         {description && (
-          <p className="mt-0.5 text-[11px] leading-snug text-neutral-500">{description}</p>
+          <p className="mt-0.5 text-mr-label leading-snug text-neutral-500">{description}</p>
         )}
       </div>
       <button
@@ -207,7 +208,7 @@ export function SegmentedField<T extends string | number>({
   return (
     <div className="space-y-2.5">
       {label && <LabelRow label={label} />}
-      <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
+      <div className="flex gap-1 rounded-xl bg-mr-surface-subtle p-1">
         {options.map((opt) => {
           const active = opt.value === value;
           return (
@@ -216,7 +217,7 @@ export function SegmentedField<T extends string | number>({
               type="button"
               onClick={() => onChange(opt.value)}
               className={cn(
-                "relative flex-1 rounded-lg px-2 py-1.5 text-[12.5px] font-medium transition-colors duration-150",
+                "relative flex-1 rounded-lg px-2 py-1.5 text-mr-ui font-medium transition-colors duration-150",
                 active ? "text-white" : "text-neutral-400 hover:text-neutral-200",
               )}
             >
@@ -340,7 +341,7 @@ function AnchoredPopover({
       ref={panelRef}
       initial={{ opacity: 0, scale: 0.96, y: -4 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.14, ease: EASE_ENTER }}
       style={{ position: "fixed", top: pos.top, left: pos.left, width: 236, zIndex: 70 }}
       className="rounded-xl border border-white/10 bg-neutral-900/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-md"
     >
@@ -424,7 +425,7 @@ export function ColorField({
           value={text.toUpperCase()}
           onChange={(e) => commitText(e.target.value)}
           spellCheck={false}
-          className="h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 font-mono text-[12.5px] tracking-wide text-neutral-100 outline-none transition-colors duration-150 placeholder:text-neutral-600 hover:border-white/20 focus:border-sky-400/60 focus:bg-white/[0.06]"
+          className="h-9 w-full rounded-lg border border-white/10 bg-mr-surface-subtle px-3 font-mono text-mr-ui tracking-wide text-neutral-100 outline-none transition-colors duration-150 placeholder:text-neutral-600 hover:border-white/20 focus:border-sky-400/60 focus:bg-mr-surface-soft"
           placeholder="#000000"
         />
       </div>
@@ -488,7 +489,7 @@ export function ColorField({
             value={text.toUpperCase()}
             onChange={(e) => commitText(e.target.value)}
             spellCheck={false}
-            className="h-8 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 font-mono text-[12.5px] tracking-wide text-neutral-100 outline-none transition-colors duration-150 hover:border-white/20 focus:border-sky-400/60"
+            className="h-8 w-full rounded-lg border border-white/10 bg-mr-surface-subtle px-3 font-mono text-mr-ui tracking-wide text-neutral-100 outline-none transition-colors duration-150 hover:border-white/20 focus:border-sky-400/60"
             placeholder="#000000"
           />
         </div>
@@ -647,7 +648,7 @@ export function FontField({
           setOpen(next);
         }}
       >
-        <SelectPrimitive.Trigger className="group relative flex h-10 w-full items-center gap-2.5 overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] px-3 text-left text-[13px] text-neutral-100 outline-none transition-colors duration-150 hover:border-white/20 focus:border-sky-400/60 data-[state=open]:border-sky-400/60">
+        <SelectPrimitive.Trigger className="group relative flex h-10 w-full items-center gap-2.5 overflow-hidden rounded-lg border border-white/10 bg-mr-surface-subtle px-3 text-left text-mr-caption text-neutral-100 outline-none transition-colors duration-150 hover:border-white/20 focus:border-sky-400/60 data-[state=open]:border-sky-400/60">
           <span className="text-lg leading-none text-neutral-200" style={{ fontFamily: selected.value }}>
             {selected.preview}
           </span>
@@ -688,10 +689,10 @@ export function FontField({
                   <SelectPrimitive.Item
                     key={f.value}
                     value={f.value}
-                    className="relative flex cursor-pointer select-none items-center gap-3 overflow-hidden rounded-lg px-2.5 py-2 text-[13px] text-neutral-300 outline-none transition-colors duration-100 data-[highlighted]:bg-white/[0.07] data-[highlighted]:text-white data-[state=checked]:text-sky-300"
+                    className="relative flex cursor-pointer select-none items-center gap-3 overflow-hidden rounded-lg px-2.5 py-2 text-mr-caption text-neutral-300 outline-none transition-colors duration-100 data-[highlighted]:bg-white/[0.07] data-[highlighted]:text-white data-[state=checked]:text-sky-300"
                   >
                     <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/[0.05] text-base text-neutral-200"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-mr-surface-muted text-base text-neutral-200"
                       /*
                         没下载的字体**不能用它自己预览**——@font-face 会为了画这个字
                         把整包拉下来，而那正是下载按钮要拦的东西。未就绪时改用只含
@@ -727,12 +728,12 @@ export function FontField({
                           if (!busy) startDownload(f.value);
                         }}
                         className={cn(
-                          'relative ml-auto flex h-6 shrink-0 items-center gap-1 overflow-hidden rounded-md px-1.5 text-[11px] transition-colors duration-150',
+                          'relative ml-auto flex h-6 shrink-0 items-center gap-1 overflow-hidden rounded-md px-1.5 text-mr-label transition-colors duration-150',
                           busy
                             ? 'cursor-default bg-sky-400/10 text-sky-300'
                             : pack.failed
                               ? 'bg-amber-400/10 text-amber-300 hover:bg-amber-400/20'
-                              : 'bg-white/[0.06] text-neutral-300 hover:bg-sky-400/15 hover:text-sky-200',
+                              : 'bg-mr-surface-soft text-neutral-300 hover:bg-sky-400/15 hover:text-sky-200',
                         )}
                       >
                         {/* 进度直接填在按钮里,不另起一条进度条——它本身就是这次下载的载体 */}

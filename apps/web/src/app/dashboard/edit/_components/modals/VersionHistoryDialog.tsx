@@ -24,6 +24,7 @@ import ResumePreview from '../preview/ResumePreview';
 import { workbenchJsonTheme, workbenchJsonThemeLight } from './jsonTheme';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const ReactJsonView = EditorComponents.JsonViewer;
 
 // Natural width every template renders at (A4 @ 96dpi); the render preview
@@ -120,7 +121,7 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                         initial={{ opacity: 0, scale: 0.98, y: 12 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.98, y: 12 }}
-                        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.2, ease: EASE_ENTER }}
                         className="flex h-[80vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-desk shadow-[0_24px_70px_-20px_rgb(0_0_0/0.8)] ring-1 ring-white/[0.07] focus:outline-none pointer-events-auto"
                     >
                         <div className="flex items-center justify-between px-6 py-4">
@@ -129,7 +130,7 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                                     <History size={18} />
                                 </div>
                                 <div>
-                                    <h2 className="text-[15px] font-semibold tracking-tight text-white">{t('modals.versionHistory.title')}</h2>
+                                    <h2 className="text-mr-subtitle font-semibold tracking-tight text-white">{t('modals.versionHistory.title')}</h2>
                                 </div>
                             </div>
                             <button
@@ -141,9 +142,9 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                             </button>
                         </div>
 
-                        <div className="flex flex-1 overflow-hidden border-t border-white/[0.06]">
+                        <div className="flex flex-1 overflow-hidden border-t border-mr-line-soft">
                             {/* Left: Timeline List */}
-                            <div className="w-1/3 overflow-y-auto custom-scrollbar border-r border-white/[0.06]">
+                            <div className="w-1/3 overflow-y-auto custom-scrollbar border-r border-mr-line-soft">
                                 <div className="p-4 space-y-2">
                                     {isLoading ? (
                                         <div className="h-full flex flex-col items-center justify-center p-8 text-neutral-500 space-y-3">
@@ -228,13 +229,13 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                                         {/* Preview toolbar: identity · mode toggle · restore */}
                                         <div className="flex shrink-0 items-center justify-between gap-3 px-5 py-3">
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <span className="font-mono text-[11px] text-neutral-500">{formatCompactDateTime(selectedVersion.updatedAt)}</span>
-                                                <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] font-medium text-neutral-400 ring-1 ring-white/[0.06]">
+                                                <span className="font-mono text-mr-label text-neutral-500">{formatCompactDateTime(selectedVersion.updatedAt)}</span>
+                                                <span className="rounded bg-mr-surface-muted px-1.5 py-0.5 font-mono text-mr-micro font-medium text-neutral-400 ring-1 ring-mr-line-soft">
                                                     {generateShortHash(selectedVersion.id + selectedVersion.updatedAt)}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-0.5 rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-white/[0.06]">
+                                                <div className="flex items-center gap-0.5 rounded-lg bg-mr-surface-subtle p-0.5 ring-1 ring-mr-line-soft">
                                                     {([
                                                         { id: 'render' as const, icon: Eye, label: t('modals.versionHistory.viewRender') },
                                                         { id: 'json' as const, icon: Code2, label: t('modals.versionHistory.viewJson') },
@@ -278,7 +279,7 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                                                     transition={{ duration: 0.15 }}
                                                     className="h-full overflow-hidden"
                                                 >
-                                                    <div className="h-full overflow-y-auto p-5 font-mono text-[11px] leading-relaxed [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                                    <div className="h-full overflow-y-auto p-5 font-mono text-mr-label leading-relaxed [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                                         {resolvedResume && (
                                                             <ReactJsonView
                                                                 src={resolvedResume}

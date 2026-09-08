@@ -28,7 +28,7 @@ export function LegalConsent() {
 
   return (
     <>
-      <p className="mt-1 text-center text-[12px] leading-relaxed text-[color:var(--text-muted)]">
+      <p className="mt-1 text-center text-mr-overline leading-relaxed text-muted">
         {t("auth.legalConsent")}{" "}
         <button type="button" onClick={() => setDoc("terms")} className={linkClass}>
           {t("auth.legalTerms")}

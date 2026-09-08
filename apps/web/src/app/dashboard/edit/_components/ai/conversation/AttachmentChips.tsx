@@ -55,8 +55,8 @@ function Card({
         'group relative flex h-[54px] w-[228px] shrink-0 items-center gap-2.5 rounded-2xl border px-2.5',
         'transition-colors',
         failed
-          ? 'border-red-500/25 bg-red-500/[0.06]'
-          : 'border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.06]',
+          ? 'border-mr-danger-500/25 bg-mr-danger-500/[0.06]'
+          : 'border-mr-line bg-mr-surface-subtle hover:bg-mr-surface-soft',
       )}
     >
       <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center">
@@ -74,8 +74,8 @@ function Card({
         ) : (
           <div
             className={cn(
-              'flex h-full w-full items-center justify-center rounded-[7px]',
-              failed ? 'bg-red-500/15 text-red-300' : 'bg-white/[0.06] text-neutral-400',
+              'flex h-full w-full items-center justify-center rounded-mr-compact-plus',
+              failed ? 'bg-mr-danger-500/15 text-mr-danger-300' : 'bg-mr-surface-soft text-neutral-400',
             )}
           >
             {attachment.kind === 'pdf' ? (
@@ -89,15 +89,15 @@ function Card({
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
         <span
-          className="truncate text-[13px] leading-tight text-neutral-100"
+          className="truncate text-mr-caption leading-tight text-neutral-100"
           title={attachment.file.name}
         >
           {middleTruncate(attachment.file.name)}
         </span>
 
-        <span className="flex min-w-0 items-center gap-1 text-[11px] leading-tight">
+        <span className="flex min-w-0 items-center gap-1 text-mr-label leading-tight">
           {failed ? (
-            <span className="truncate text-red-300/90" title={attachment.error}>
+            <span className="truncate text-mr-danger-300/90" title={attachment.error}>
               {attachment.error}
             </span>
           ) : (
@@ -158,7 +158,7 @@ export default function AttachmentChips({
           ))}
         </ul>
       )}
-      {notice && <div className="text-[11px] text-amber-300/80">{notice}</div>}
+      {notice && <div className="text-mr-label text-amber-300/80">{notice}</div>}
     </div>
   );
 }

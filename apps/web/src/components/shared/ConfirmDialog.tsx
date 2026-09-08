@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import {
@@ -10,8 +10,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import { useTranslation } from 'react-i18next';
+import { cx, modalContent, modalOverlay } from '@magic-resume/design-system';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -32,26 +33,28 @@ export default function ConfirmDialog({
   description,
   confirmText,
   cancelText,
-  variant = 'danger'
+  variant = 'danger',
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       {/* Custom overlay carries a higher z-index so the dialog floats above the AI Lab. */}
-      <div className={`fixed inset-0 z-150 ${isOpen ? 'block' : 'hidden'}`}>
+      <div className={`z-150 fixed inset-0 ${isOpen ? 'block' : 'hidden'}`}>
         {/* Slightly deeper scrim + soft blur to focus the dialog over the dark workbench. */}
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-[2px] cursor-pointer"
-          onClick={onClose}
-        />
-        <AlertDialogContent className="fixed top-1/2 left-1/2 z-150 grid w-full max-w-[calc(100%-2rem)] sm:max-w-md -translate-x-1/2 -translate-y-1/2 gap-3.5 rounded-2xl border border-white/[0.06] bg-neutral-950 p-6 text-white shadow-2xl shadow-black/60">
+        <div className={cx(modalOverlay, 'cursor-pointer')} onClick={onClose} />
+        <AlertDialogContent
+          className={cx(
+            modalContent,
+            'text-mr-ink grid max-w-[calc(100%-2rem)] gap-3.5 p-6 sm:max-w-md',
+          )}
+        >
           <AlertDialogHeader className="gap-2">
             <AlertDialogTitle className="text-lg font-semibold tracking-tight text-neutral-50">
               {title}
             </AlertDialogTitle>
             {description && (
-              <AlertDialogDescription className="text-[13px] leading-relaxed text-neutral-400">
+              <AlertDialogDescription className="text-mr-caption leading-relaxed text-neutral-400">
                 {description}
               </AlertDialogDescription>
             )}
@@ -59,7 +62,7 @@ export default function ConfirmDialog({
           <AlertDialogFooter className="mt-3 gap-2">
             <AlertDialogCancel
               onClick={onClose}
-              className="rounded-lg border border-white/[0.08] bg-transparent px-4 text-neutral-300 hover:bg-white/[0.04] hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-white/15 focus-visible:ring-offset-0"
+              className="rounded-lg border border-mr-line bg-transparent px-4 text-neutral-300 hover:bg-mr-surface-subtle hover:text-neutral-100 focus-visible:ring-2 focus-visible:ring-white/15 focus-visible:ring-offset-0"
             >
               {cancelText || t('common.cancel')}
             </AlertDialogCancel>

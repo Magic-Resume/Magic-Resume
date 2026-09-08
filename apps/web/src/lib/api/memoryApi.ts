@@ -8,8 +8,12 @@ export interface MemoryEntry {
   key: string;
   kind: MemoryKind;
   fact: string;
+  /** 用户可见的记忆槽位；缺席表示服务端未分类。 */
+  slot?: string;
   /** 抽取那一刻有多确信。此后不变。 */
   confidence: number;
+  /** 当前记忆强度，衰减前的置信度与确认次数共同决定。 */
+  strength: number;
   /**
    * 衰减后的当前分量。低于 0.25 的不再进 prompt（AI「想不起来」了），
    * 但仍然列在这里——用户要能看到它正在被忘掉，也还来得及纠正。

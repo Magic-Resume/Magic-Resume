@@ -15,6 +15,7 @@ import { readLastMethod, writeLastMethod, type AuthMethod } from "./lastMethod";
 import { afterAuthUrl } from "./afterAuthUrl";
 import { isSessionExistsError, useRedirectIfSignedIn } from "./useSignedInRedirect";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const SSO_CALLBACK_URL = "/sso-callback";
 
 /** 从 hook 推出来，省得为一个类型把 `@clerk/types` 加成直接依赖。 */
@@ -228,7 +229,7 @@ export default function SignInCard() {
     initial: { opacity: reduce ? 1 : 0 },
     animate: { opacity: 1 },
     exit: { opacity: 0 },
-    transition: { duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: reduce ? 0 : 0.18, ease: EASE_ENTER },
   };
 
   // 已登录：`useRedirectIfSignedIn` 正在跳走，这一帧不要再把登录表单画出来——它上面的
@@ -320,7 +321,7 @@ export default function SignInCard() {
                 label={t("auth.back")}
                 onBack={() => goTo(passwordAvailable ? "password" : "email")}
               />
-              <p className="text-[13.5px] text-[color:var(--text-secondary)]">
+              <p className="text-mr-body-tight text-secondary">
                 {t("auth.codeSentTo", { email })}
               </p>
               <OtpField
@@ -339,7 +340,7 @@ export default function SignInCard() {
           {step === "forgot" && (
             <form onSubmit={sendResetCode} className="flex flex-col gap-4">
               <BackRow label={t("auth.back")} onBack={() => goTo("password")} />
-              <p className="text-[13.5px] text-[color:var(--text-secondary)]">
+              <p className="text-mr-body-tight text-secondary">
                 {t("auth.forgot.hint")}
               </p>
               <AuthField
@@ -360,7 +361,7 @@ export default function SignInCard() {
           {step === "reset" && (
             <form onSubmit={submitReset} className="flex flex-col gap-4">
               <BackRow label={t("auth.back")} onBack={() => goTo("forgot")} />
-              <p className="text-[13.5px] text-[color:var(--text-secondary)]">
+              <p className="text-mr-body-tight text-secondary">
                 {t("auth.codeSentTo", { email })}
               </p>
               <OtpField
@@ -399,7 +400,7 @@ function BackRow({ label, onBack }: { label: string; onBack: () => void }) {
     <button
       type="button"
       onClick={onBack}
-      className="inline-flex items-center gap-1.5 self-start text-[13px] text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-secondary)]"
+      className="inline-flex items-center gap-1.5 self-start text-mr-caption text-muted transition-colors hover:text-secondary"
     >
       <ArrowLeft className="h-3.5 w-3.5" />
       <span className="max-w-[240px] truncate">{label}</span>

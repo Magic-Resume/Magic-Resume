@@ -15,6 +15,7 @@ import {
   rememberInviteCode,
 } from '@/lib/utils/invite-poster';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 邀请海报弹窗——**分享这件事的唯一入口**。
  *
@@ -123,7 +124,7 @@ export default function InvitePosterModal() {
               initial={{ opacity: 0, scale: 0.98, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: 12 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.2, ease: EASE_ENTER }}
               /* 单栏竖版：弹窗取海报自己的比例。上一版是左右分栏——一个 9:16 的物件
                  配一栏矮内容，短的那边必然漂在空里（实测右栏只占 43% 高度，空出 320px）。
                  那不是间距能救的，是形制选错了。没有第二栏，就不存在两栏不等高。 */
@@ -142,7 +143,7 @@ export default function InvitePosterModal() {
                       就该叫什么。长标题（「一起把简历改到能投」）是给账户里那一页当
                       章节标题的——那儿有副标题托着；这里紧挨图标，而且宣传语海报自己
                       已经在讲了，再说一遍是复述。 */}
-                  <h2 className="min-w-0 truncate text-[14px] font-semibold tracking-tight text-white">
+                  <h2 className="min-w-0 truncate text-mr-body font-semibold tracking-tight text-white">
                     {t('account.invite.headerAction')}
                   </h2>
                 </div>
@@ -175,7 +176,7 @@ export default function InvitePosterModal() {
                 type="button"
                 onClick={savePoster}
                 disabled={!poster}
-                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2.5 text-[13px] font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
+                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2.5 text-mr-caption font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
               >
                 {poster ? <Download size={14} /> : <Loader2 size={14} className="animate-spin" />}
                 {t('account.invite.savePoster')}
@@ -195,24 +196,24 @@ export default function InvitePosterModal() {
                   'mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 transition-colors disabled:opacity-40 cursor-pointer',
                   copied
                     ? 'bg-emerald-500/15 text-emerald-300'
-                    : 'bg-white/[0.05] text-neutral-400 hover:bg-white/[0.09] hover:text-neutral-100'
+                    : 'bg-mr-surface-muted text-neutral-400 hover:bg-white/[0.09] hover:text-neutral-100'
                 )}
               >
                 {copied ? (
                   <>
                     <Check size={14} className="shrink-0" />
-                    <span className="text-[13px]">{t('account.invite.copied')}</span>
+                    <span className="text-mr-caption">{t('account.invite.copied')}</span>
                   </>
                 ) : (
                   <>
                     <Copy size={14} className="shrink-0" />
-                    <span className="min-w-0 truncate font-mono text-[13px]">{inviteUrl}</span>
+                    <span className="min-w-0 truncate font-mono text-mr-caption">{inviteUrl}</span>
                   </>
                 )}
               </button>
 
               {failed && (
-                <p className="mt-2 text-center text-[12px] text-rose-300">
+                <p className="mt-2 text-center text-mr-overline text-rose-300">
                   {t('account.invite.posterError')}
                 </p>
               )}

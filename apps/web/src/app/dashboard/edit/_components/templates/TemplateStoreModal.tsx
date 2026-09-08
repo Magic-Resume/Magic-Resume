@@ -46,13 +46,13 @@ export default function TemplateStoreModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-white/10 bg-desk p-0">
-        <DialogHeader className="space-y-3 border-b border-white/[0.06] px-6 py-5 text-left">
+        <DialogHeader className="space-y-3 border-b border-mr-line-soft px-6 py-5 text-left">
           <div className="flex items-end justify-between gap-4">
             <div>
               <DialogTitle className="text-xl font-semibold tracking-tight text-white">
                 {t("templateStore.title")}
               </DialogTitle>
-              <DialogDescription className="mt-1 text-[13px] text-neutral-400">
+              <DialogDescription className="mt-1 text-mr-caption text-neutral-400">
                 {t("templateStore.subtitle")}
               </DialogDescription>
             </div>
@@ -62,7 +62,7 @@ export default function TemplateStoreModal({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("templateStore.search")}
-                className="h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-9 pr-3 text-[13px] text-neutral-100 outline-none transition-colors duration-150 placeholder:text-neutral-600 hover:border-white/20 focus:border-sky-400/60"
+                className="h-9 w-full rounded-lg border border-white/10 bg-mr-surface-subtle pl-9 pr-3 text-mr-caption text-neutral-100 outline-none transition-colors duration-150 placeholder:text-neutral-600 hover:border-white/20 focus:border-sky-400/60"
               />
             </div>
           </div>
@@ -99,14 +99,14 @@ export default function TemplateStoreModal({
                 </div>
                 <p
                   className={cn(
-                    "mt-2.5 truncate text-[13px] font-semibold tracking-tight transition-colors",
+                    "mt-2.5 truncate text-mr-caption font-semibold tracking-tight transition-colors",
                     selected ? "text-sky-300" : "text-neutral-200 group-hover:text-white",
                   )}
                 >
                   {tpl.name}
                 </p>
                 {tpl.description && (
-                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-neutral-500">
+                  <p className="mt-0.5 line-clamp-2 text-mr-label leading-snug text-neutral-500">
                     {tpl.description}
                   </p>
                 )}

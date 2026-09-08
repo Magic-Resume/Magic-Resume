@@ -7,6 +7,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Check } from '@magic-resume/icons';
 import { LegalDocDialog, type LegalDocId } from './LegalDocDialog';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 服务条款门禁。
  *
@@ -57,7 +58,7 @@ export function takePendingConsent(): string | null {
  */
 function TermsLinks({ onOpen }: { onOpen: (doc: LegalDocId) => void }) {
   const linkClass =
-    'text-[color:var(--text-secondary)] underline underline-offset-2 transition-colors hover:text-[color:var(--text-primary)]';
+    'text-secondary underline underline-offset-2 transition-colors hover:text-primary';
   return (
     <Trans
       i18nKey="auth.terms.agree"
@@ -116,20 +117,20 @@ export function useTermsGate() {
             <motion.div
               initial={{ opacity: 0, y: 8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.2, ease: [0.22, 0.61, 0.25, 1] }}
-              className="fixed left-1/2 top-1/2 z-[201] w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-hairline bg-raised p-5 shadow-overlay outline-none"
+              transition={{ duration: 0.2, ease: EASE_ENTER }}
+              className="fixed left-1/2 top-1/2 z-[201] w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-mr-panel border border-hairline bg-raised p-5 shadow-overlay outline-none"
             >
-              <Dialog.Title className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+              <Dialog.Title className="text-mr-subtitle font-semibold text-primary">
                 {t('auth.terms.confirmTitle')}
               </Dialog.Title>
-              <Dialog.Description className="mt-2.5 text-[13.5px] leading-relaxed text-[color:var(--text-secondary)]">
+              <Dialog.Description className="mt-2.5 text-mr-body-tight leading-relaxed text-secondary">
                 <TermsLinks onOpen={setDoc} />
               </Dialog.Description>
               <div className="mt-5 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setPendingAction(null)}
-                  className="rounded-[9px] px-3.5 py-2 text-[13px] text-[color:var(--text-secondary)] transition-colors hover:bg-sunk"
+                  className="rounded-[9px] px-3.5 py-2 text-mr-caption text-secondary transition-colors hover:bg-sunk"
                 >
                   {t('common.cancel')}
                 </button>
@@ -144,7 +145,7 @@ export function useTermsGate() {
                   }}
                   // 原来是纯白底黑字。深色下没问题，浅色下那是白纸上贴白纸——按钮整个消失。
                   // 换成产品既有的主 CTA（sky 填充），两种主题下都是同一颗按钮。
-                  className="rounded-[9px] bg-fill-sky px-3.5 py-2 text-[13px] font-medium text-white transition-[filter] hover:brightness-110"
+                  className="rounded-[9px] bg-fill-sky px-3.5 py-2 text-mr-caption font-medium text-white transition-[filter] hover:brightness-110"
                 >
                   {t('auth.terms.agreeAndContinue')}
                 </button>
@@ -164,7 +165,7 @@ export function useTermsGate() {
   // 既不合法、行为也错——点「服务条款」会顺带把同意框勾上，等于替他做了决定。
   // 于是 label 只包那个方框（`aria-label` 给它一个可读的名字），文字独立成一段。
   const checkbox = (
-    <div className="flex select-none items-start gap-2 text-[12.5px] leading-relaxed text-[color:var(--text-muted)]">
+    <div className="flex select-none items-start gap-2 text-mr-ui leading-relaxed text-muted">
       <input
         id={checkboxId}
         type="checkbox"
@@ -177,7 +178,7 @@ export function useTermsGate() {
         aria-label={t('auth.terms.checkboxLabel')}
         // `after` 把命中区从 16px 撑到 28px：方框本身是可点的最小尺寸，光标却不该
         // 需要那么准。
-        className={`relative mt-px grid size-4 shrink-0 cursor-pointer place-items-center rounded-[5px] transition-colors duration-150 after:absolute after:-inset-1.5 after:content-[''] peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--accent)] ${
+        className={`relative mt-px grid size-4 shrink-0 cursor-pointer place-items-center rounded-mr-compact transition-colors duration-150 after:absolute after:-inset-1.5 after:content-[''] peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--accent)] ${
           accepted
             ? 'bg-[color:var(--accent)] text-white'
             : 'ring-1 ring-inset ring-[color:var(--border-strong)]'
@@ -235,17 +236,17 @@ export function TermsReconsentDialog({
             <motion.div
               initial={{ opacity: 0, y: 8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.2, ease: [0.22, 0.61, 0.25, 1] }}
-              className="fixed left-1/2 top-1/2 z-[201] w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-hairline bg-raised p-5 shadow-overlay outline-none"
+              transition={{ duration: 0.2, ease: EASE_ENTER }}
+              className="fixed left-1/2 top-1/2 z-[201] w-[min(420px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-mr-panel border border-hairline bg-raised p-5 shadow-overlay outline-none"
             >
-              <Dialog.Title className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+              <Dialog.Title className="text-mr-subtitle font-semibold text-primary">
                 {t(
                   reconsent
                     ? 'auth.terms.updatedTitle'
                     : 'auth.terms.confirmTitle',
                 )}
               </Dialog.Title>
-              <Dialog.Description className="mt-2.5 text-[13.5px] leading-relaxed text-[color:var(--text-secondary)]">
+              <Dialog.Description className="mt-2.5 text-mr-body-tight leading-relaxed text-secondary">
                 {reconsent ? (
                   <>
                     {t('auth.terms.updatedHint')}{' '}
@@ -259,7 +260,7 @@ export function TermsReconsentDialog({
                 <button
                   type="button"
                   onClick={onSignOut}
-                  className="rounded-[9px] px-3.5 py-2 text-[13px] text-[color:var(--text-secondary)] transition-colors hover:bg-sunk"
+                  className="rounded-[9px] px-3.5 py-2 text-mr-caption text-secondary transition-colors hover:bg-sunk"
                 >
                   {t('account.menu.signOut')}
                 </button>
@@ -270,7 +271,7 @@ export function TermsReconsentDialog({
                     setBusy(true);
                     onAccept();
                   }}
-                  className="rounded-[9px] bg-fill-sky px-3.5 py-2 text-[13px] font-medium text-white transition-[filter] hover:brightness-110 disabled:opacity-60"
+                  className="rounded-[9px] bg-fill-sky px-3.5 py-2 text-mr-caption font-medium text-white transition-[filter] hover:brightness-110 disabled:opacity-60"
                 >
                   {t('auth.terms.agreeAndContinue')}
                 </button>

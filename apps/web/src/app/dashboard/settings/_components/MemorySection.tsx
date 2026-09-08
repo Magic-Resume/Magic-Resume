@@ -2,9 +2,11 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Trash2 } from '@magic-resume/icons';
+import { RiDeleteBinLine } from "@remixicon/react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/product-button";
+import { Switch } from "@/components/ui/product-switch";
 import { memoryApi, type MemoryEntry, type MemoryKind } from "@/lib/api/memoryApi";
 
 /**
@@ -68,54 +70,35 @@ export function MemorySection() {
 
   return (
     <div className="mt-7">
-      <div className="flex items-start gap-6 border-y border-white/[0.06] py-4">
+      <div className="flex items-start gap-6 border-y border-mr-line-soft py-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] text-neutral-200">
+          <p className="text-mr-body-tight text-neutral-200">
             {t("settings.memory.enabled")}
           </p>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-neutral-500">
+          <p className="mt-1 text-mr-ui leading-relaxed text-neutral-500">
             {t("settings.memory.enabledDescription")}
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
+        <Switch
           aria-label={t("settings.memory.enabled")}
-          onClick={() => void toggle(!enabled)}
-          className={cn(
-            "mt-1 h-[22px] w-[38px] shrink-0 rounded-full p-[3px] transition-colors cursor-pointer",
-            enabled ? "bg-sky-500/80" : "bg-white/[0.12]",
-          )}
-        >
-          <motion.span
-            layout
-            transition={{ type: "spring", stiffness: 500, damping: 34 }}
-            className={cn(
-              "block h-4 w-4 rounded-full bg-white",
-              enabled ? "ml-auto" : "mr-auto",
-            )}
-          />
-        </button>
+          isSelected={enabled}
+          onChange={(next) => void toggle(next)}
+        />
       </div>
 
       {failed && (
-        <div className="mt-6 flex items-center gap-3 text-[13px] text-neutral-400">
+        <div className="mt-6 flex items-center gap-3 text-mr-caption text-neutral-400">
           {t("settings.memory.loadFailed")}
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="text-sky-400 transition-colors hover:text-sky-300 cursor-pointer"
-          >
+          <Button variant="secondary" size="xs" onClick={() => void load()}>
             {t("common.retry")}
-          </button>
+          </Button>
         </div>
       )}
 
       {!failed && entries === null && <Skeleton />}
 
       {!failed && entries?.length === 0 && (
-        <p className="mt-8 text-[13px] leading-relaxed text-neutral-500">
+        <p className="mt-8 text-mr-caption leading-relaxed text-neutral-500">
           {t("settings.memory.empty")}
         </p>
       )}
@@ -125,7 +108,7 @@ export function MemorySection() {
       {!!entries?.length && (
         <div className={cn("mt-2", !enabled && "opacity-45")}>
           {!enabled && (
-            <p className="mt-6 text-[12.5px] leading-relaxed text-neutral-500">
+            <p className="mt-6 text-mr-ui leading-relaxed text-neutral-500">
               {t("settings.memory.disabledNotice")}
             </p>
           )}
@@ -135,7 +118,7 @@ export function MemorySection() {
             if (group.length === 0) return null;
             return (
               <section key={kind} className="mt-7">
-                <h4 className="text-[12px] font-medium text-neutral-400">
+                <h4 className="text-mr-overline font-medium text-neutral-400">
                   {t(`settings.memory.group.${kind}`)}
                 </h4>
                 <ul className="mt-2 space-y-0.5">
@@ -159,35 +142,23 @@ export function MemorySection() {
           <div className="mt-8 flex justify-end">
             {confirmingAll ? (
               <div className="flex items-center gap-3">
-                <span className="text-[12.5px] text-neutral-400">
+                <span className="text-mr-ui text-neutral-400">
                   {t("settings.memory.confirmForgetAll", {
                     count: entries.length,
                   })}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setConfirmingAll(false)}
-                  className="text-[12.5px] text-neutral-400 transition-colors hover:text-white cursor-pointer"
-                >
+                <Button variant="secondary" size="xs" onClick={() => setConfirmingAll(false)}>
                   {t("common.cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void forgetAll()}
-                  className="text-[12.5px] text-rose-400 transition-colors hover:text-rose-300 cursor-pointer"
-                >
+                </Button>
+                <Button variant="danger" size="xs" onClick={() => void forgetAll()}>
                   {t("settings.memory.forgetAll")}
-                </button>
+                </Button>
               </div>
             ) : (
               // 低强调：它不该是这一页上最显眼的东西。
-              <button
-                type="button"
-                onClick={() => setConfirmingAll(true)}
-                className="text-[12.5px] text-neutral-500 transition-colors hover:text-rose-400 cursor-pointer"
-              >
+              <Button variant="secondary" size="xs" onClick={() => setConfirmingAll(true)}>
                 {t("settings.memory.forgetAll")}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -224,30 +195,22 @@ function MemoryRow({
     >
       {confirming ? (
         <div className="flex items-center gap-3">
-          <span className="flex-1 truncate text-[12.5px] text-neutral-400">
+          <span className="flex-1 truncate text-mr-ui text-neutral-400">
             {t("settings.memory.confirmDelete")}
           </span>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-[12.5px] text-neutral-400 transition-colors hover:text-white cursor-pointer"
-          >
+          <Button variant="secondary" size="xs" onClick={onCancel}>
             {t("common.cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="text-[12.5px] text-rose-400 transition-colors hover:text-rose-300 cursor-pointer"
-          >
+          </Button>
+          <Button variant="danger" size="xs" onClick={onConfirm}>
             {t("settings.memory.delete")}
-          </button>
+          </Button>
         </div>
       ) : (
         <>
           <div className="flex items-start gap-2 pr-7">
             <p
               className={cn(
-                "min-w-0 flex-1 text-[13.5px] leading-relaxed",
+                "min-w-0 flex-1 text-mr-body-tight leading-relaxed",
                 faded ? "text-neutral-500" : "text-neutral-200",
               )}
             >
@@ -256,14 +219,14 @@ function MemoryRow({
             {faded && (
               <span
                 title={t("settings.memory.fadedHint")}
-                className="mt-[3px] shrink-0 rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[11px] text-neutral-500"
+                className="mt-[3px] shrink-0 rounded-full bg-mr-surface-soft px-1.5 py-0.5 text-mr-label text-neutral-500"
               >
                 {t("settings.memory.faded")}
               </span>
             )}
           </div>
           {/* 溯源不是装饰：判断「这条记错没有」的唯一依据就是回去看证据。 */}
-          <p className="mt-0.5 text-[11.5px] text-neutral-600">
+          <p className="mt-0.5 text-mr-label-tight text-neutral-600">
             {fromInterview ? (
               <a
                 href={`/dashboard/interview/${entry.source.id}`}
@@ -278,14 +241,15 @@ function MemoryRow({
               t("settings.memory.sourceCanvas")
             )}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="xs"
+            iconOnly
+            leadingIcon={RiDeleteBinLine}
             aria-label={t("settings.memory.delete")}
             onClick={onAsk}
-            className="absolute right-1 top-2 rounded-md p-1 text-neutral-600 opacity-0 transition-opacity hover:text-rose-400 focus-visible:opacity-100 group-hover:opacity-100 cursor-pointer"
-          >
-            <Trash2 size={13} />
-          </button>
+            className="absolute right-1 top-2 border-transparent bg-transparent text-text-tertiary opacity-0 shadow-none hover:border-border-button-hover hover:text-text-error-primary focus-visible:opacity-100 group-hover:opacity-100"
+          />
         </>
       )}
     </motion.li>
@@ -298,7 +262,7 @@ function Skeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="h-4 animate-pulse rounded bg-white/[0.04]"
+          className="h-4 animate-pulse rounded bg-mr-surface-subtle"
           style={{ width: `${82 - i * 16}%` }}
         />
       ))}

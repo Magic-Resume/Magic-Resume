@@ -23,14 +23,14 @@ export const AuthButton = React.forwardRef<HTMLButtonElement, AuthButtonProps>(
       ref={ref}
       disabled={loading || disabled}
       className={cn(
-        "relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[14px] font-medium",
+        "relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-mr-body font-medium",
         "transition-[transform,background-color,border-color,opacity] duration-150 active:scale-[0.99]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ink-sky/50 focus-visible:ring-offset-desk",
         "disabled:pointer-events-none disabled:opacity-60",
         variant === "primary"
           ? // 与产品既有主 CTA 一致:sky 填充 + 浅色文字(不用 on-fill-sky,那是深色)。
             "bg-fill-sky text-white hover:brightness-110"
-          : "border border-hairline bg-raised text-[color:var(--text-primary)] hover:border-strong",
+          : "border border-hairline bg-raised text-primary hover:border-strong",
         className,
       )}
       {...props}
@@ -77,7 +77,7 @@ export function ProviderButton({
         {label}
       </AuthButton>
       {hint ? (
-        <p className="text-center text-[12px] text-[color:var(--text-muted)]">{hint}</p>
+        <p className="text-center text-mr-overline text-muted">{hint}</p>
       ) : null}
     </div>
   );
@@ -105,7 +105,7 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
     return (
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
-          <label htmlFor={inputId} className="text-[13px] font-medium text-[color:var(--text-secondary)]">
+          <label htmlFor={inputId} className="text-mr-caption font-medium text-secondary">
             {label}
           </label>
           {trailing}
@@ -117,11 +117,11 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             type={resolvedType}
             aria-invalid={Boolean(error)}
             className={cn(
-              "h-11 w-full rounded-xl border bg-sunk px-3.5 text-[14px] text-[color:var(--text-primary)]",
-              "placeholder:text-[color:var(--text-muted)] transition-colors duration-150",
+              "h-11 w-full rounded-xl border bg-sunk px-3.5 text-mr-body text-primary",
+              "placeholder:text-muted transition-colors duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-sky/25",
               isPassword && "pr-11",
-              error ? "border-[color:var(--rev-del)]" : "border-hairline focus-visible:border-ink-sky",
+              error ? "border-rev-del" : "border-hairline focus-visible:border-ink-sky",
               className,
             )}
             {...props}
@@ -131,7 +131,7 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
               type="button"
               tabIndex={-1}
               onClick={() => setReveal((v) => !v)}
-              className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-secondary)]"
+              className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-muted transition-colors hover:text-secondary"
               aria-label={reveal ? "Hide" : "Show"}
             >
               {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -158,9 +158,9 @@ export const OtpField = React.forwardRef<
       maxLength={6}
       className={cn(
         "h-14 w-full rounded-xl border bg-sunk text-center text-[22px] font-semibold tracking-[0.5em]",
-        "text-[color:var(--text-primary)] transition-colors duration-150",
+        "text-primary transition-colors duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-sky/25",
-        error ? "border-[color:var(--rev-del)]" : "border-hairline focus-visible:border-ink-sky",
+        error ? "border-rev-del" : "border-hairline focus-visible:border-ink-sky",
         className,
       )}
       {...props}
@@ -175,7 +175,7 @@ OtpField.displayName = "OtpField";
 
 export function FieldError({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="text-[12.5px] text-[color:var(--rev-del)]">
+    <p role="alert" className="text-mr-ui text-rev-del">
       {children}
     </p>
   );
@@ -189,7 +189,7 @@ export function AuthTextLink({
     <button
       type="button"
       className={cn(
-        "text-[13px] font-medium text-ink-sky transition-colors hover:text-ink-sky-hover",
+        "text-mr-caption font-medium text-ink-sky transition-colors hover:text-ink-sky-hover",
         "focus-visible:outline-none focus-visible:underline underline-offset-2",
         className,
       )}

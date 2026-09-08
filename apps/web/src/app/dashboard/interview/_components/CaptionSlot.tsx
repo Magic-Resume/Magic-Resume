@@ -3,6 +3,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 球下方那块文字。
  *
@@ -71,7 +72,7 @@ export default function CaptionSlot({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.28, ease: EASE_ENTER }}
             style={{
               maxHeight: SLOT_HEIGHT,
               // 超出部分顶部淡出。用遮罩而不是截断，读起来是「上面还有」，
@@ -79,7 +80,7 @@ export default function CaptionSlot({
               maskImage: mask,
               WebkitMaskImage: mask,
             }}
-            className={`max-w-2xl overflow-hidden text-center text-[14px] leading-relaxed ${
+            className={`max-w-2xl overflow-hidden text-center text-mr-body leading-relaxed ${
               tone === 'error'
                 ? 'text-rev-del'
                 : tone === 'mine'

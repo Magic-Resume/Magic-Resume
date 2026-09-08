@@ -16,6 +16,7 @@ import { isSessionExistsError, useRedirectIfSignedIn } from "./useSignedInRedire
 import { LegalConsent } from "./LegalConsent";
 import { useTermsGate } from "./TermsGate";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const SSO_CALLBACK_URL = "/sso-callback";
 
 
@@ -129,7 +130,7 @@ export default function SignUpCard() {
     initial: { opacity: reduce ? 1 : 0 },
     animate: { opacity: 1 },
     exit: { opacity: 0 },
-    transition: { duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: reduce ? 0 : 0.18, ease: EASE_ENTER },
   };
 
   // 见 SignInCard：已登录时正在跳走，别再渲染注册表单。
@@ -183,7 +184,7 @@ export default function SignUpCard() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="-mt-1 text-[12px] text-[color:var(--text-muted)]">
+              <p className="-mt-1 text-mr-overline text-muted">
                 {t("auth.passwordHint")}
               </p>
               {/* Clerk 智能验证码挂载点(若实例开启 bot 防护) */}
@@ -204,7 +205,7 @@ export default function SignUpCard() {
           {step === "verify" && (
             <form onSubmit={submitVerify} className="flex flex-col gap-4">
               <BackRow label={t("auth.back")} onBack={() => goTo("email")} />
-              <p className="text-[13.5px] text-[color:var(--text-secondary)]">
+              <p className="text-mr-body-tight text-secondary">
                 {t("auth.codeSentTo", { email })}
               </p>
               <OtpField
@@ -221,7 +222,7 @@ export default function SignUpCard() {
                 <button
                   type="button"
                   onClick={resendCode}
-                  className="text-[13px] font-medium text-ink-sky transition-colors hover:text-ink-sky-hover"
+                  className="text-mr-caption font-medium text-ink-sky transition-colors hover:text-ink-sky-hover"
                 >
                   {t("auth.resend")}
                 </button>
@@ -240,7 +241,7 @@ function BackRow({ label, onBack }: { label: string; onBack: () => void }) {
     <button
       type="button"
       onClick={onBack}
-      className="inline-flex items-center gap-1.5 self-start text-[13px] text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-secondary)]"
+      className="inline-flex items-center gap-1.5 self-start text-mr-caption text-muted transition-colors hover:text-secondary"
     >
       <ArrowLeft className="h-3.5 w-3.5" />
       <span className="max-w-[240px] truncate">{label}</span>

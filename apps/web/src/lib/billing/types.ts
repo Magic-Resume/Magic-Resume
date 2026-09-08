@@ -45,6 +45,8 @@ export interface PlanSummary {
   priceCents: number;
   currency: string;
   modelAllowlist: string[];
+  /** 计划默认模型；旧 Core 响应缺席时仍按模型白名单回落。 */
+  defaultModel?: string | null;
   interval?: string | null;
   isDefault: boolean;
   /** 每分钟请求数——各档之间唯一真正拉开差距的字段。 */
@@ -58,7 +60,7 @@ export interface PlanSummary {
 
 export interface OrderSummary {
   id: string;
-  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  status: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
   amountCents: number;
   currency: string;
   channel: string;

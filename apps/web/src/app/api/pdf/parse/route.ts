@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUserId } from '@/lib/auth/server';
 import { serverFetchBackend } from '@/lib/auth/serverFetchBackend';
+import { proxySseResponse } from '@/lib/api/streamProxy';
+import { projectUpstreamError } from '@/lib/api/errorProjection';
 
 // Cap parse time and upload size so a huge/crafted file can't buffer unbounded into
 // memory here and get amplified onto the agent backend (DoS). 10 MB comfortably
@@ -18,21 +20,31 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024;
  * 仍然保留白名单而不是全放：这条路由把文件原样转发给一个会调模型的后端，
  * 受理面越大，能塞进来的东西越多。
  */
-const ACCEPTED_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'docx', 'md', 'txt'];
-const ACCEPTED_MIME_PREFIXES = ['image/'];
+const ACCEPTED_EXTENSIONS = [
+  'pdf',
+  'png',
+  'jpg',
+  'jpeg',
+  'webp',
+  'docx',
+  'md',
+  'txt',
+];
 const ACCEPTED_MIME_EXACT = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/markdown',
   'text/plain',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
 ];
 
 function isAccepted(file: File): boolean {
   if (ACCEPTED_MIME_EXACT.includes(file.type)) return true;
-  if (ACCEPTED_MIME_PREFIXES.some((p) => file.type.startsWith(p))) return true;
   // 扩展名兜底：某些系统对 docx / markdown 报的 MIME 不全，甚至是空串。
   const ext = file.name.toLowerCase().split('.').pop() ?? '';
-  return ACCEPTED_EXTENSIONS.includes(ext);
+  return !file.type && ACCEPTED_EXTENSIONS.includes(ext);
 }
 
 export async function POST(req: NextRequest) {
@@ -79,89 +91,25 @@ export async function POST(req: NextRequest) {
       signal: req.signal,
     });
 
-    const contentType = backendResponse.headers.get('content-type');
-
     // Success path: agent-service streams parse progress + the final resume as SSE.
-    // Forward it line-by-line so the stream reaches the browser unbuffered (mirror
-    // of app/api/chat-agent/route.ts).
-    if (contentType && contentType.includes('text/event-stream')) {
-      if (!backendResponse.body) {
-        throw new Error('No response body');
-      }
-
-      let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-      const readable = new ReadableStream({
-        async start(controller) {
-          reader = backendResponse.body!.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                if (line.trim()) {
-                  controller.enqueue(new TextEncoder().encode(line + '\n'));
-                }
-              }
-            }
-
-            if (buffer.trim()) {
-              controller.enqueue(new TextEncoder().encode(buffer));
-            }
-            controller.close();
-          } catch (error) {
-            // Client/upstream abort (dialog closed) surfaces as AbortError — an
-            // expected cancel, not a stream failure.
-            if ((error as Error)?.name === 'AbortError') {
-              controller.close();
-            } else {
-              console.error('[PDF_PARSE] Stream error:', error);
-              controller.error(error);
-            }
-          }
-        },
-        cancel(reason) {
-          reader?.cancel(reason).catch(() => {});
-        },
-      });
-
-      return new Response(readable, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          // no-transform stops any intermediary (nginx/CDN) from gzipping the
-          // stream (gzip batches chunks and defeats SSE).
-          'Cache-Control': 'no-cache, no-transform',
-          Connection: 'keep-alive',
-          // Disable nginx buffering for THIS stream even if proxy_buffering is on
-          // globally (host BaoTa reverse proxy defaults to on).
-          'X-Accel-Buffering': 'no',
-        },
-      });
-    }
+    // Keep it unbuffered so progress reaches the browser immediately.
+    const streamResponse = proxySseResponse(backendResponse, '[PDF_PARSE]');
+    if (streamResponse) return streamResponse;
 
     // Non-stream path: the backend rejected before it started streaming (bad file,
     // over-budget, no LLM config, …) — surface the human-readable message.
     const errorBody = await backendResponse.text();
     if (!backendResponse.ok) {
-      console.error(`[PDF_PARSE] Backend error: ${backendResponse.status} ${errorBody}`);
-      let message = errorBody;
-      try {
-        const parsed = JSON.parse(errorBody);
-        message = parsed?.message ?? parsed?.error ?? errorBody;
-      } catch {
-        /* not JSON — use the raw text */
-      }
-      return new Response(JSON.stringify({ error: message }), {
-        status: backendResponse.status,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      console.error(
+        `[PDF_PARSE] Backend error: ${backendResponse.status} ${errorBody}`,
+      );
+      return new Response(
+        JSON.stringify(projectUpstreamError(backendResponse.status, errorBody)),
+        {
+          status: backendResponse.status,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     // Unexpected: a 2xx that isn't SSE. Forward the body as-is rather than guess.
@@ -169,9 +117,17 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('[PDF_PARSE_API_ERROR]', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error(
+      '[PDF_PARSE_API_ERROR]',
+      error instanceof Error ? error.message : error,
+    );
+    return NextResponse.json(
+      {
+        errorCode: 'upstream_unavailable',
+        error: 'upstream_unavailable',
+        retryable: true,
+      },
+      { status: 502 },
+    );
   }
 }

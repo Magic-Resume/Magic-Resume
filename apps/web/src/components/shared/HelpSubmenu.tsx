@@ -14,6 +14,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { SUPPORT_EMAIL } from "@/lib/extensions/legal";
 import { cn } from "@/lib/utils";
+import {
+  HoverSurface,
+  useHoverSurface,
+  type HoverSurfaceBinding,
+} from '@/components/ui/hover-surface';
 
 /**
  * 账户菜单里的帮助浮层——法务文档归在这里，和「帮助中心」「报告问题」同一个抽屉。
@@ -38,6 +43,9 @@ export function HelpSubmenu({
   menuOpen: boolean;
   onNavigate: () => void;
 }) {
+  /* 子菜单三行共用一块滑动的底。 */
+  const rowSurface = useHoverSurface();
+
   const { t } = useTranslation();
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -128,8 +136,8 @@ export function HelpSubmenu({
         className={cn(
           "group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40",
           open
-            ? "bg-white/[0.06] text-white"
-            : "text-neutral-300 hover:bg-white/[0.06] hover:text-white",
+            ? "bg-mr-surface-soft text-white"
+            : "text-neutral-300 hover:bg-mr-surface-soft hover:text-white",
         )}
       >
         <span className="shrink-0 text-neutral-500 transition-colors group-hover:text-neutral-300">
@@ -148,7 +156,16 @@ export function HelpSubmenu({
       {open &&
         createPortal(
           <div
-            ref={panelRef}
+            // 面板自己已经挂了 ref（要测位置），一个元素挂不了两个——手动把共享面
+            // 的容器也指过去。`onMouseLeave` 是这个面板自己的关闭排程，和下面
+            // `onPointerLeave` 是两个事件，互不覆盖。
+            ref={(el: HTMLDivElement | null) => {
+              panelRef.current = el;
+              rowSurface.setContainer(el);
+            }}
+            onPointerMove={rowSurface.containerProps.onPointerMove}
+            onPointerLeave={rowSurface.containerProps.onPointerLeave}
+            onBlur={rowSurface.containerProps.onBlur}
             role="menu"
             // Marks this portaled node as part of the account menu, so the
             // menu's own outside-click handler does not treat a click in here
@@ -165,11 +182,16 @@ export function HelpSubmenu({
               // and must never render behind it.
               zIndex: 10000,
             }}
-            className="rounded-xl border border-white/[0.08] bg-desk/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
+            className="rounded-xl border border-mr-line bg-desk/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
           >
+            <HoverSurface
+              {...rowSurface.surfaceProps}
+              className="rounded-lg bg-mr-surface-soft"
+            />
             {DOCS_URL && (
               <HelpLink
                 href={DOCS_URL}
+                surface={rowSurface.bind('docs')}
                 icon={<HelpCircle size={15} />}
                 label={t("account.menu.helpCenter")}
                 onNavigate={onNavigate}
@@ -177,20 +199,23 @@ export function HelpSubmenu({
             )}
             <HelpLink
               href="/legal/terms"
+              surface={rowSurface.bind('terms')}
               icon={<FileText size={15} />}
               label={t("account.menu.terms")}
               onNavigate={onNavigate}
             />
             <HelpLink
               href="/legal/privacy"
+              surface={rowSurface.bind('privacy')}
               icon={<Shield size={15} />}
               label={t("account.menu.privacy")}
               onNavigate={onNavigate}
             />
-            <div className="mx-1 my-1 h-px bg-white/[0.06]" />
+            <div className="mx-1 my-1 h-px bg-mr-surface-soft" />
             {SUPPORT_EMAIL && (
               <HelpLink
                 href={`mailto:${SUPPORT_EMAIL}`}
+                surface={rowSurface.bind('support')}
                 icon={<Bug size={15} />}
                 label={t("account.menu.reportBug")}
                 onNavigate={onNavigate}
@@ -208,11 +233,13 @@ function HelpLink({
   icon,
   label,
   onNavigate,
+  surface,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   onNavigate: () => void;
+  surface?: HoverSurfaceBinding;
 }) {
   // Reference material opens in a new tab: someone checking the refund policy
   // mid-edit should not lose what they were doing.
@@ -222,8 +249,9 @@ function HelpLink({
       role="menuitem"
       target="_blank"
       rel="noreferrer"
+      {...surface}
       onClick={onNavigate}
-      className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+      className="group relative z-[1] flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-mr-caption text-neutral-300 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
     >
       <span className="shrink-0 text-neutral-500 transition-colors group-hover:text-neutral-300">
         {icon}

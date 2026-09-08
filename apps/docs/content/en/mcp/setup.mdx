@@ -13,11 +13,11 @@ In the web app: **Settings → Personal Access Tokens → Create**. Copy the `mr
 <Step title="Configure the MCP server">
 ```bash
 npx -y @magic-resume/mcp config set \
-  --api-url "https://api.magic-resume.cn" \
+  --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 ```
 
-This writes `~/.magic-resume/mcp.json`. If you're running the Core API locally, point `--api-url` at it (default dev URL is `http://localhost:3111`).
+This writes `~/.magic-resume/mcp.json`. If you're running the Core gateway locally, point `--api-url` at `http://localhost:3110/api`.
 </Step>
 
 <Step title="Register with your AI tool">

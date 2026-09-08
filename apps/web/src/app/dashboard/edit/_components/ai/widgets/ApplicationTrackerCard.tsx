@@ -4,11 +4,11 @@ import React, { useMemo, useState } from 'react';
 import { BriefcaseBusiness, ExternalLink } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetShell } from '@magic-resume/genui';
-import { RecordsTable } from '@magic-resume/genui/beautiful';
+import { RecordsTable } from '@magic-resume/genui';
 import type {
   RecordsRow,
-} from '@magic-resume/genui/beautiful';
-import type { WidgetProps } from '@magic-resume/genui/contract';
+} from '@magic-resume/genui';
+import type { WidgetProps } from '@magic-resume/genui';
 
 export const APPLICATION_STATUSES = [
   'SAVED',
@@ -101,18 +101,18 @@ const STATUS_DOTS: Record<ApplicationStatus, string> = {
 };
 
 const STATUS_CLASSES: Record<ApplicationStatus, string> = {
-  SAVED: 'bg-sunk text-muted',
-  APPLIED: 'bg-tint-sky text-ink-sky',
-  SCREENING: 'bg-tint-sky text-ink-sky',
-  INTERVIEW: 'bg-orange-tint text-orange',
-  OFFER: 'bg-green-tint text-green',
-  ACCEPTED: 'bg-green-tint text-green',
-  REJECTED: 'bg-red-tint text-red',
-  WITHDRAWN: 'bg-sunk text-muted',
+  SAVED: 'bg-mr-sunk text-mr-muted',
+  APPLIED: 'bg-mr-accent-tint text-mr-accent',
+  SCREENING: 'bg-mr-accent-tint text-mr-accent',
+  INTERVIEW: 'bg-mr-warning-tint text-mr-warning',
+  OFFER: 'bg-mr-success-tint text-mr-success-ink',
+  ACCEPTED: 'bg-mr-success-tint text-mr-success-ink',
+  REJECTED: 'bg-mr-danger-tint text-mr-danger',
+  WITHDRAWN: 'bg-mr-sunk text-mr-muted',
 };
 
 /**
- * 投递列表用 Beautiful UI 的 Records Table：粘性首列 + 排序 + 页脚统计。
+ * 投递列表用 GenUI 的 RecordsTable：粘性首列 + 排序 + 页脚统计。
  *
  * 筛选 chips 留在这一层自己渲染，没有跟着表格一起换掉——它既是统计也是即时筛选，
  * 是这张卡最好用的部分，而 `RecordsTable` 里没有这个概念。
@@ -268,20 +268,20 @@ export default function ApplicationTrackerCard({ instance, onAction }: WidgetPro
       // 还没算过的格子交给 RecordsTable 画脉冲（见下面的 calculating），这里不占位。
       if (!field?.computed) return undefined;
       return field.value ? (
-        <span className="truncate text-secondary">{field.value}</span>
+        <span className="truncate text-mr-ink-secondary">{field.value}</span>
       ) : (
         <span className="records-muted">—</span>
       );
     }
     switch (column.key) {
       case 'company':
-        return <span className="truncate font-medium text-primary">{application.company}</span>;
+        return <span className="truncate font-medium text-mr-ink">{application.company}</span>;
       case 'role':
-        return <span className="truncate text-secondary">{application.role}</span>;
+        return <span className="truncate text-mr-ink-secondary">{application.role}</span>;
       case 'status':
         return (
           <span
-            className={`inline-flex h-5 items-center rounded-[5px] px-1.5 text-[11px] font-medium ${STATUS_CLASSES[application.status]}`}
+            className={`inline-flex h-5 items-center rounded-mr-compact px-1.5 text-mr-label font-medium ${STATUS_CLASSES[application.status]}`}
           >
             {t(`aiLab.widgets.applicationTracker.status.${application.status}`)}
           </span>
@@ -294,7 +294,7 @@ export default function ApplicationTrackerCard({ instance, onAction }: WidgetPro
         return application.location ?? <span className="records-muted">—</span>;
       case 'notes':
         return application.notes ? (
-          <span className="truncate text-secondary" title={application.notes}>
+          <span className="truncate text-mr-ink-secondary" title={application.notes}>
             {application.notes}
           </span>
         ) : (
@@ -429,16 +429,16 @@ export default function ApplicationTrackerCard({ instance, onAction }: WidgetPro
   const emptyState = (
     <div
       role="status"
-      className="flex min-h-24 items-center gap-3 rounded-card bg-surface px-4 shadow-card"
+      className="flex min-h-24 items-center gap-3 rounded-card bg-mr-surface px-4 shadow-mr-panel"
     >
-      <div className="grid size-9 shrink-0 place-items-center rounded-full bg-sunk ring-1 ring-inset ring-line">
-        <BriefcaseBusiness size={15} className="text-muted" />
+      <div className="grid size-9 shrink-0 place-items-center rounded-full bg-mr-sunk ring-1 ring-inset ring-line">
+        <BriefcaseBusiness size={15} className="text-mr-muted" />
       </div>
       <div className="min-w-0">
-        <p className="text-[12.5px] font-medium text-primary">
+        <p className="text-mr-ui font-medium text-mr-ink">
           {t('aiLab.widgets.applicationTracker.emptyTitle')}
         </p>
-        <p className="mt-0.5 max-w-[42ch] text-[11px] leading-relaxed text-muted">
+        <p className="mt-0.5 max-w-[42ch] text-mr-label leading-relaxed text-mr-muted">
           {t('aiLab.widgets.applicationTracker.emptyDescription')}
         </p>
       </div>
@@ -446,7 +446,7 @@ export default function ApplicationTrackerCard({ instance, onAction }: WidgetPro
   );
 
   return (
-    // `surface={false}`：`beautiful/*` 自带 `rounded-card bg-surface shadow-card`，
+    // `surface={false}`：GenUI 生产卡片自带 `rounded-card bg-mr-surface shadow-mr-panel`，
     // 再套一层默认外壳就是卡中卡。标题行也去掉——表格自己已经说清楚这是什么了。
     <WidgetShell density="block" width="wide" surface={false}>
       {applications.length ? (
@@ -461,19 +461,19 @@ export default function ApplicationTrackerCard({ instance, onAction }: WidgetPro
                   type="button"
                   aria-pressed={active}
                   onClick={() => setFilter(entry.key)}
-                  /* 类名与 beautiful-ui 的 FilterTable 逐字一致，不要换成本仓的别名——
-                     `bg-raised`/`bg-sunk` 虽然指向同一批变量，但改写过一次就再难对回去。 */
-                  className={`flex h-6.5 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium transition-[background-color,box-shadow,color] duration-200 ${
-                    active ? 'bg-surface text-ink shadow-btn' : 'text-ink-2 hover:bg-hover'
+                  /* 这里沿用表格的稳定视觉 token，不要在业务卡片里重复造一份——
+                     `bg-mr-surface`/`bg-mr-sunk` 虽然指向同一批变量，但改写过一次就再难对回去。 */
+                  className={`flex h-6.5 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-mr-overline font-medium transition-[background-color,box-shadow,color] duration-200 ${
+                    active ? 'bg-mr-surface text-mr-ink shadow-mr-control' : 'text-mr-ink-secondary hover:bg-mr-surface-soft'
                   }`}
                 >
                   {entry.dot && <span className="size-1.5 rounded-full" style={{ background: entry.dot }} />}
                   {entry.label}
-                  {/* 计数就是个数字，不加任何底色。原来照搬了 `bg-field`，而本仓它指向
+                  {/* 计数就是个数字，不加任何底色。原来照搬了 `bg-mr-sunk`，而本仓它指向
                       `--surface-sunk`（暗色下接近纯黑），于是数字被裱进一个黑块里。
                       层级用字色区分就够：选中态稍亮，未选中更淡。 */}
                   <span
-                    className={`text-[10.5px] tabular-nums ${active ? 'text-ink-2' : 'text-ink-3'}`}
+                    className={`text-mr-micro-plus tabular-nums ${active ? 'text-mr-ink-secondary' : 'text-mr-muted'}`}
                   >
                     {entry.count}
                   </span>

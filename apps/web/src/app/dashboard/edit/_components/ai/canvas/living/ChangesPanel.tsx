@@ -51,7 +51,7 @@ export default function ChangesPanel({
     >
       <div className="flex items-center gap-2 px-3.5 py-2.5 shrink-0">
         <span className="text-xs font-medium text-white">{t('aiLab.living.allChanges')}</span>
-        <span className="text-[11px] text-neutral-500">{t('aiLab.living.changeCountShort', { count: rows.length })}</span>
+        <span className="text-mr-label text-neutral-500">{t('aiLab.living.changeCountShort', { count: rows.length })}</span>
         <button
           type="button"
           onClick={onClose}
@@ -77,9 +77,9 @@ export default function ChangesPanel({
               <div className="min-w-0">
                 <div className="text-xs text-neutral-200 truncate">
                   {r.label}
-                  {r.isInsert && <span className="ml-1.5 text-[10px] text-emerald-400">{t('aiLab.living.inserted')}</span>}
+                  {r.isInsert && <span className="ml-1.5 text-mr-micro text-emerald-400">{t('aiLab.living.inserted')}</span>}
                 </div>
-                <div className="text-[11px] text-neutral-500 truncate">{r.rationale}</div>
+                <div className="text-mr-label text-neutral-500 truncate">{r.rationale}</div>
               </div>
             </button>
             {/* 逐条采纳/丢弃。就地卡片上有同样的一对；这里是它们在列表里的等价物，
@@ -107,7 +107,7 @@ export default function ChangesPanel({
           </div>
         ))}
         {rows.length === 0 && (
-          <div className="px-3 py-6 text-center text-[11px] text-neutral-600">{t('aiLab.living.emptyChanges')}</div>
+          <div className="px-3 py-6 text-center text-mr-label text-neutral-600">{t('aiLab.living.emptyChanges')}</div>
         )}
       </div>
 

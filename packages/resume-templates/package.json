@@ -69,10 +69,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/fix-esm-extensions.mjs",
     "dev": "tsc -p tsconfig.json --watch",
     "lint": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
-    "test": "npm run lint && npm run freeze && npm run test:unit",
+    "test": "npm run lint && npm run freeze && npm run test:unit && npm run test:import",
+    "test:import": "npm run build && node scripts/import-smoke.mjs",
     "test:pdf": "npm run build && tsx scripts/render-pdf-smoke.mjs",
     "test:unit": "tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
     "freeze": "node scripts/check-legacy-freeze.mjs",

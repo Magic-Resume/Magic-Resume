@@ -4,14 +4,14 @@ import React, { useMemo } from 'react';
 import { Check, LayoutTemplate, TriangleAlert } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetItem, WidgetPanel, WidgetShell } from '@magic-resume/genui';
-import type { WidgetProps } from '@magic-resume/genui/contract';
+import type { WidgetProps } from '@magic-resume/genui';
 import {
   compile,
   renderTreeNodeDom,
   validateTemplate,
   type TemplateDocument,
 } from '@magic-resume/resume-templates';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 
 type ReplicaProps = {
   template: TemplateDocument;
@@ -26,8 +26,8 @@ type ReplicaProps = {
  */
 export default function TemplateReplicaCard({ instance, onAction }: WidgetProps) {
   const { t } = useTranslation();
-  const activeResume = useResumeStore((state) => state.activeResume);
-  const updateResume = useResumeStore((state) => state.updateResume);
+  const activeResume = useResumeDocumentStore((state) => state.activeResume);
+  const updateResume = useResumeDocumentStore((state) => state.updateResume);
   const { template, note } = instance.props as ReplicaProps;
 
   const preview = useMemo(() => {
@@ -67,14 +67,14 @@ export default function TemplateReplicaCard({ instance, onAction }: WidgetProps)
   return (
     <WidgetShell density="block" width="wide">
       <div className="flex items-start gap-2.5">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-tint-sky">
-          <LayoutTemplate size={14} className="text-ink-sky" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-mr-accent-tint">
+          <LayoutTemplate size={14} className="text-mr-accent" />
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] font-medium leading-snug text-primary">
+          <p className="text-mr-caption font-medium leading-snug text-mr-ink">
             {t('aiLab.widgets.templateReplica.title')}
           </p>
-          {note ? <p className="mt-0.5 text-xs leading-relaxed text-secondary">{note}</p> : null}
+          {note ? <p className="mt-0.5 text-xs leading-relaxed text-mr-ink-secondary">{note}</p> : null}
         </div>
       </div>
 
@@ -90,14 +90,14 @@ export default function TemplateReplicaCard({ instance, onAction }: WidgetProps)
           </div>
         </WidgetItem>
       ) : (
-        <WidgetPanel className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-secondary">
+        <WidgetPanel className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-mr-ink-secondary">
           <TriangleAlert size={14} className="mt-0.5 shrink-0 text-amber-400" />
           <span>{preview.diagnostics[0] ?? t('aiLab.widgets.templateReplica.previewFailed')}</span>
         </WidgetPanel>
       )}
 
       {preview.diagnostics.length > 0 && preview.root ? (
-        <WidgetItem className="mt-2 text-[11px] leading-relaxed text-secondary">
+        <WidgetItem className="mt-2 text-mr-label leading-relaxed text-mr-ink-secondary">
           {t('aiLab.widgets.templateReplica.diagnostics', {
             count: preview.diagnostics.length,
           })}
@@ -115,7 +115,7 @@ export default function TemplateReplicaCard({ instance, onAction }: WidgetProps)
             type="button"
             disabled={!canApply}
             onClick={apply}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-tint-sky px-3 py-1.5 text-xs font-medium text-ink-sky transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-45"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-mr-accent-tint px-3 py-1.5 text-xs font-medium text-mr-accent transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Check size={13} />
             {t('aiLab.widgets.templateReplica.apply')}

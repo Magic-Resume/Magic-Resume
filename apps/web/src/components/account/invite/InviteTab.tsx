@@ -61,7 +61,7 @@ export default function InviteTab() {
             <div className="text-[26px] font-semibold leading-none tabular-nums text-white">
               {v}
             </div>
-            <div className="mt-1.5 text-[12px] text-neutral-500">
+            <div className="mt-1.5 text-mr-overline text-neutral-500">
               {t(`account.invite.stats.${k}`)}
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function InviteTab() {
       {data.invited === 0 && (
         <div className="flex items-start gap-3 rounded-xl bg-sky-400/[0.06] px-4 py-3.5 ring-1 ring-sky-400/[0.14]">
           <Users size={16} className="mt-0.5 shrink-0 text-sky-400" />
-          <p className="text-[13px] leading-relaxed text-sky-100/90">
+          <p className="text-mr-caption leading-relaxed text-sky-100/90">
             {t('account.invite.emptyHint')}
           </p>
         </div>
@@ -82,17 +82,17 @@ export default function InviteTab() {
         <button
           type="button"
           onClick={openPoster}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-[13px] font-semibold text-[#fff] transition-colors hover:bg-sky-400 cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-mr-caption font-semibold text-[#fff] transition-colors hover:bg-sky-400 cursor-pointer"
         >
           <Gift size={14} />
           {t('account.invite.headerAction')}
         </button>
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-mr-overline text-neutral-500">
           {t('account.invite.remaining', { count: data.remainingRewards })}
         </span>
       </div>
 
-      <p className="text-[12px] leading-relaxed text-neutral-500">{t('account.invite.rule')}</p>
+      <p className="text-mr-overline leading-relaxed text-neutral-500">{t('account.invite.rule')}</p>
     </div>
   );
 }

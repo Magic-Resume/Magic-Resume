@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ApprovalCard } from '@magic-resume/genui/beautiful';
-import type { WidgetProps } from '@magic-resume/genui/contract';
+import { ApprovalCard } from '@magic-resume/genui';
+import type { WidgetProps } from '@magic-resume/genui';
 
 /**
  * 建面板前问一句：这块板子要盯哪几件事。

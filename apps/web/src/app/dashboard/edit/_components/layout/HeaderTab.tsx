@@ -9,6 +9,8 @@ import { isCloudMode } from '@/lib/config/app';
 import { formatCompactDateTime } from '@/lib/utils/dateTime';
 import ResumeSwitcher from './ResumeSwitcher';
 
+import { EASE_ENTER } from '@magic-resume/utils';
+import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
 export type SyncStatus = 'saved' | 'syncing' | 'modified' | 'local' | 'error';
 
 interface HeaderTabProps {
@@ -25,6 +27,10 @@ interface HeaderTabProps {
  */
 export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionClick, onFeedbackClick }: HeaderTabProps) {
     const { t } = useTranslation();
+    /* 右侧那簇文档动作共用一块滑动的底。三颗按钮的 hover 文字色各不相同（中性 /
+       sky），互不影响——面只负责底。 */
+    const toolSurface = useHoverSurface();
+
     const openInvitePoster = useAccountUiStore((state) => state.openInvitePoster);
     const cloudSync = useSettingStore((state) => state.cloudSync);
     const reduce = useReducedMotion();
@@ -49,7 +55,7 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
         <motion.header
             initial={{ y: -16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.45, ease: EASE_ENTER }}
             className="pointer-events-none absolute inset-x-0 top-0 z-50 flex h-16 min-w-0 items-center gap-4 overflow-visible bg-gradient-to-b from-desk via-desk/70 to-transparent px-6"
         >
             {/* 左:返回工作台 + 标题(主角) */}
@@ -58,7 +64,7 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
                     href="/dashboard"
                     aria-label={t('header.backToDashboard')}
                     title={t('header.backToDashboard')}
-                    className="group -ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200"
+                    className="group -ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200"
                 >
                     <ChevronLeft size={18} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
                 </Link>
@@ -70,13 +76,21 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
             {/* 右:文档动作(按需浮现)+ 紧凑同步状态 */}
             {(cloudSync || isCloudMode) && (
                 <div className="pointer-events-auto flex shrink-0 items-center gap-3">
-                    <div className="flex items-center gap-0.5 opacity-70 transition-opacity duration-200 hover:opacity-100">
+                    <div
+                        className="relative flex items-center gap-0.5 opacity-70 transition-opacity duration-200 hover:opacity-100"
+                        {...toolSurface.containerProps}
+                    >
+                        <HoverSurface
+                            {...toolSurface.surfaceProps}
+                            className="rounded-lg bg-mr-surface-soft"
+                        />
                         {cloudSync && (
                             <button
+                                {...toolSurface.bind('version')}
                                 onClick={onVersionClick}
                                 aria-label={t('header.versionHistory')}
                                 type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:bg-white/[0.06] hover:text-neutral-100"
+                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-neutral-100"
                             >
                                 <History size={16} />
                                 <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
@@ -88,12 +102,20 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
                             不能等人主动去翻第五个 tab。 */}
                         {isCloudMode && (
                             <button
+                                {...toolSurface.bind('invite')}
                                 onClick={openInvitePoster}
-                                onPointerEnter={() => void warmInvitePoster()}
-                                onFocus={() => void warmInvitePoster()}
+                                // 覆盖绑定里的同名接管点，把这一颗自己的预热并进去。
+                                onPointerEnter={() => {
+                                    toolSurface.bind('invite').onPointerEnter();
+                                    void warmInvitePoster();
+                                }}
+                                onFocus={() => {
+                                    toolSurface.bind('invite').onFocus();
+                                    void warmInvitePoster();
+                                }}
                                 aria-label={t('account.invite.headerAction')}
                                 type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:bg-white/[0.06] hover:text-sky-300"
+                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-sky-300"
                             >
                                 <Gift size={16} />
                                 <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
@@ -103,10 +125,11 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
                         )}
                         {isCloudMode && (
                             <button
+                                {...toolSurface.bind('feedback')}
                                 onClick={onFeedbackClick}
                                 aria-label={t('tools.feedback')}
                                 type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:bg-white/[0.06] hover:text-neutral-100"
+                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-neutral-100"
                             >
                                 <Bug size={16} />
                                 <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">

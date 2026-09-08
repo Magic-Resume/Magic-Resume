@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, GripVertical } from '@magic-resume/icons';
 import { cn } from "@/lib/utils";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 左侧表单的折叠分区 —— 与右侧 AccordionSection 视觉一致,
  * 但把拖拽手柄(useSortable)并进分区头,避免「点头展开」与「拖拽排序」冲突。
@@ -57,7 +58,7 @@ export default function FormSection({
       }}
       style={style}
       data-section={sectionId}
-      className="scroll-mt-4 border-b border-white/[0.06] last:border-b-0"
+      className="scroll-mt-4 border-b border-mr-line-soft last:border-b-0"
     >
       <div className="group flex items-center gap-1.5 py-3">
         <button
@@ -82,14 +83,14 @@ export default function FormSection({
           <span
             className={cn(
               "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
-              open ? "bg-sky-400/10 text-sky-300" : "bg-white/[0.04] text-neutral-400 group-hover:text-neutral-200",
+              open ? "bg-sky-400/10 text-sky-300" : "bg-mr-surface-subtle text-neutral-400 group-hover:text-neutral-200",
             )}
           >
             {icon}
           </span>
           <span
             className={cn(
-              "flex-1 truncate text-[14px] font-semibold tracking-tight transition-colors duration-150",
+              "flex-1 truncate text-mr-body font-semibold tracking-tight transition-colors duration-150",
               open ? "text-white" : "text-neutral-300 group-hover:text-white",
             )}
           >
@@ -116,7 +117,7 @@ export default function FormSection({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.22, ease: EASE_ENTER }}
             className="overflow-hidden"
           >
             <div className="pb-5 pl-[26px] pr-1 pt-0.5">{children}</div>

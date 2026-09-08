@@ -7,11 +7,10 @@ import {
   AlertCircle,
   Check,
   Info,
-  ChevronDown,
   Eye,
   EyeOff,
   CornerUpLeft,
-  ExternalLink,
+  Files,
 } from "@magic-resume/icons";
 import { cn } from "@/lib/utils";
 import { SKILLS } from "../skills/registry";
@@ -22,14 +21,13 @@ import { WIDGETS } from "../widgets/registry";
 import type {
   ApprovalRequest,
   ChatMessage,
-  CitationSource,
   SkillId,
 } from "../types";
 import {
   Icon,
   ApprovalCard as ApprovalPager,
   type ApprovalQuestion,
-} from "@magic-resume/genui/beautiful";
+} from "@magic-resume/genui";
 import ToolLine from "./ToolLine";
 import { splitTrajectoryBeats, visibleAssistantText } from "./trajectory";
 import TasksCard, {
@@ -37,14 +35,18 @@ import TasksCard, {
   isPlanFulfilled,
   isRetirablePlan,
 } from "./TasksCard";
-import type { WidgetActionResult } from "@magic-resume/genui/contract";
-import ActivityOrb from "./ActivityOrb";
+import type { WidgetActionResult } from "@magic-resume/genui";
+import ActivityOrb, { ThinkingStars } from "./ActivityOrb";
 import { activityLabelKey, type AgentActivity } from "./agentActivity";
-import { sourceDomain, visibleCitationSources } from "./citationSources";
+import {
+  internalCitationSources,
+  visibleCitationSources,
+} from "./citationSources";
 import SiteFavicon from "./SiteFavicon";
 import MessageNavigationRail from "./MessageNavigationRail";
 import ReasoningActivity from "./ReasoningActivity";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /** 审批卡上的一页答完了。一次中断可以带多个动作，所以要带页号。 */
 type ApprovalDecision = (
   msgId: string,
@@ -70,7 +72,7 @@ function BreathGlyph({
 }) {
   return (
     <span
-      className={cn("ai-breath inline-flex shrink-0", className)}
+      className={cn("mr-motion-breathe inline-flex shrink-0", className)}
       aria-hidden="true"
     >
       <PolarisGlyph size={size} />
@@ -90,7 +92,7 @@ function formatDuration(seconds: number): string {
     : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-/** 已等待的秒数，取自 Beautiful UI 的 LoadingState（等宽数字，避免逐秒抖动）。 */
+/** 已等待的秒数，使用 GenUI LoadingState 的等宽数字规则。 */
 function Elapsed({ startedAt }: { startedAt?: number }) {
   const [, tick] = useState(0);
   useEffect(() => {
@@ -99,7 +101,7 @@ function Elapsed({ startedAt }: { startedAt?: number }) {
   }, []);
   if (!startedAt) return null;
   return (
-    <span className="font-mono text-[11px] tabular-nums text-neutral-500">
+    <span className="font-mono text-mr-label tabular-nums text-neutral-500">
       {formatDuration(Math.floor((Date.now() - startedAt) / 1000))}
     </span>
   );
@@ -128,18 +130,20 @@ function ThinkingIndicator({
       exit={{ opacity: 0, transition: { duration: 0 } }}
       // 不写 transition 就吃 framer-motion 默认的 spring，跟全局那条 180ms 缓动
       // 对不上——而这正是「思考中 → 开始落笔」的交接点，最不该是另一种手感。
-      transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: reduce ? 0 : 0.18, ease: EASE_ENTER }}
       className="flex items-center gap-2.5 text-neutral-200"
     >
-      {/* 形态随真实活动走：读取简历和汇总评分不再长一个样。
-          **不换成 Beautiful UI 的点阵**——那颗球是品牌锚点（.impeccable.md），且它
-          还额外承载「在做什么」；点阵只表示「在忙」。 */}
-      <ActivityOrb activity={state} />
+      {/* 形态随真实活动走：读取简历和汇总评分不再长一个样。这层区分要留住——
+          球是品牌锚点（.impeccable.md），且它额外承载「在做什么」。
+
+          唯独 `thinking` 换成星点：它是「已开始生成、首个 token 还没到」，球在这里
+          也只是通用呼吸，没有多余信息可丢。其余活动一律仍走球。 */}
+      {state === "thinking" ? <ThinkingStars /> : <ActivityOrb activity={state} />}
       <span
         className="bg-clip-text text-xs font-medium text-transparent"
         style={{
           backgroundImage:
-            "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
+            "linear-gradient(90deg, var(--mr-muted) 35%, var(--mr-ink) 50%, var(--mr-muted) 65%)",
           backgroundSize: "200% 100%",
           animation: "shimmer-text 1.4s linear infinite",
         }}
@@ -266,7 +270,7 @@ function ActivityLine({ message }: { message: ChatMessage }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 text-[11px]",
+        "flex items-center gap-2 text-mr-label",
         failed ? "text-amber-300/80" : "text-neutral-500",
       )}
     >
@@ -309,11 +313,11 @@ function ExecCard({
         >
           <Icon size={14} className={skill.accent} />
         </div>
-        <span className="text-[13px] font-medium text-white">{skill.name}</span>
+        <span className="text-mr-caption font-medium text-white">{skill.name}</span>
         {running ? (
           <BreathGlyph size={13} className="ml-auto text-sky-400/80" />
         ) : (
-          <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+          <span className="ml-auto inline-flex items-center gap-1 text-mr-label text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
             <Check size={12} />
             {t("aiLab.chat.done")}
           </span>
@@ -329,7 +333,7 @@ function ExecCard({
           {running ? t("aiLab.chat.running") : skill.doneSummary}
         </span>
         {clickable && (
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sky-400 bg-sky-500/10 group-hover:bg-sky-500/20 rounded-full px-2.5 py-1 shrink-0 transition-colors">
+          <span className="inline-flex items-center gap-1.5 text-mr-label font-medium text-sky-400 bg-sky-500/10 group-hover:bg-sky-500/20 rounded-full px-2.5 py-1 shrink-0 transition-colors">
             {isCanvasOpen ? <EyeOff size={12} /> : <Eye size={12} />}
             {isCanvasOpen ? t("aiLab.chat.collapse") : t("aiLab.chat.view")}
           </span>
@@ -445,7 +449,7 @@ function LogLine({
     },
   }[tone];
   const { Icon } = toneStyle;
-  const className = `flex items-center gap-2 text-[11px] ${toneStyle.text}`;
+  const className = `flex items-center gap-2 text-mr-label ${toneStyle.text}`;
   const body = (
     <>
       <Icon size={12} className={`${toneStyle.icon} shrink-0`} />
@@ -465,106 +469,66 @@ function LogLine({
   );
 }
 
-/** 回答使用的外部网页来源。内部知识来源已进消息模型，但目前按产品决定不渲染。 */
-function SourcesBlock({
-  sources = [],
-  children,
+/**
+ * 一条回答写完之后的页脚：动作在左，来源在右。
+ *
+ * 来源**不再就地展开**。同一份清单原来既能在这里摊开、又能进右舷面板，两个入口就是两处
+ * 要各自维护的观感；面板有地方放摘要和日期，这里放不下。点胶囊 = 开面板。
+ */
+function MessageFooter({
+  message,
+  text,
+  onRegenerate,
+  onToggleSources,
+  sourcesOpen,
 }: {
-  sources?: CitationSource[];
-  children?: React.ReactNode;
+  message: ChatMessage;
+  text: string;
+  onRegenerate?: () => void;
+  onToggleSources?: (messageId: string) => void;
+  sourcesOpen?: boolean;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const visible = visibleCitationSources(sources);
-  if (!visible.length && !children) return null;
+  const visible = visibleCitationSources(message.sources);
+  const memory = internalCitationSources(message.sources);
+  const total = visible.length + memory.length;
+  const canOpen = Boolean(onToggleSources) && total > 0;
 
   return (
-    <div className="mt-1.5">
-      <div className="flex min-h-7 flex-wrap items-center gap-1">
-        {children}
-        {visible.length ? (
-          <button
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            aria-expanded={open}
-            aria-label={t("aiLab.sources.toggle", { count: visible.length })}
-            className="inline-flex h-7 items-center gap-2 rounded-[7px] px-2 text-[12px] text-ink-2 transition-[background-color,color,transform] duration-150 hover:bg-hover hover:text-ink active:scale-[0.98]"
-          >
+    <div className="mt-1.5 flex min-h-7 flex-wrap items-center gap-1">
+      <MessageActions text={text} onRegenerate={onRegenerate} />
+      {canOpen ? (
+        <button
+          type="button"
+          onClick={() => onToggleSources?.(message.id)}
+          aria-expanded={Boolean(sourcesOpen)}
+          aria-label={t("aiLab.sources.panel.toggle")}
+          className={cn(
+            "inline-flex h-7 items-center gap-2 rounded-mr-compact-plus px-2 text-mr-overline transition-[background-color,color,transform] duration-150 active:scale-[0.98]",
+            sourcesOpen
+              ? "bg-mr-accent-tint text-mr-accent-ink"
+              : "text-mr-ink-secondary hover:bg-mr-surface-soft hover:text-mr-ink",
+          )}
+        >
+          {/* 只有记忆来源时没有 favicon 可叠，给一枚库图标——空的图标位比没有更奇怪。 */}
+          {visible.length ? (
             <span className="flex -space-x-1" aria-hidden="true">
               {visible.slice(0, 3).map((source) => (
                 <SiteFavicon
                   key={source.id}
                   source={source}
-                  className="size-[18px] rounded-full border border-raised"
+                  className="size-[18px] rounded-full border border-mr-line-strong"
                   iconSize={9}
                 />
               ))}
             </span>
-            <span>{t("aiLab.sources.count", { count: visible.length })}</span>
-            <ChevronDown
-              size={11}
-              className={cn(
-                "transition-transform duration-200",
-                open && "rotate-180",
-              )}
-            />
-          </button>
-        ) : null}
-      </div>
-
-      {visible.length ? (
-        <div
-          className="grid transition-[grid-template-rows,opacity] duration-200"
-          style={{
-            gridTemplateRows: open ? "1fr" : "0fr",
-            opacity: open ? 1 : 0,
-          }}
-        >
-          <div className="overflow-hidden">
-            {/*
-              每条来源固定为 44px；250px = 5 行 + 4 个间距 + 内边距 + 边框。
-              因而前五条完整可见，第六条起只在来源面板内滚动。
-            */}
-            <div className="mt-1.5 grid max-h-[250px] auto-rows-[44px] gap-1 overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-line bg-inset p-1.5 shadow-hairline">
-              {visible.map((source) => {
-                const domain = source.url ? sourceDomain(source.url) : "";
-                return (
-                  <a
-                    key={source.id}
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group/source flex h-11 min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-hover"
-                  >
-                    <SiteFavicon
-                      source={source}
-                      className="size-5 rounded-md border border-line"
-                      iconSize={10}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[11.5px] text-ink-2 group-hover/source:text-ink">
-                        {source.title}
-                      </span>
-                      <span className="block truncate text-[10px] text-ink-3">
-                        {domain}
-                        {source.publishedDate
-                          ? ` · ${source.publishedDate}`
-                          : ""}
-                      </span>
-                    </span>
-                    <span className="font-mono text-[10px] tabular-nums text-ink-3">
-                      {source.citationId}
-                    </span>
-                    <ExternalLink
-                      size={11}
-                      className="shrink-0 text-ink-3 group-hover/source:text-accent-ink"
-                    />
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+          ) : (
+            <span className="grid size-4 place-items-center" aria-hidden="true">
+              <Files size={12} />
+            </span>
+          )}
+          <span>{t("aiLab.sources.count", { count: total })}</span>
+        </button>
       ) : null}
     </div>
   );
@@ -642,7 +606,7 @@ function UserMessageText({ text }: { text: string }) {
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="mt-1 cursor-pointer text-[13px] text-neutral-400 transition-colors hover:text-neutral-200"
+          className="mt-1 cursor-pointer text-mr-caption text-neutral-400 transition-colors hover:text-neutral-200"
         >
           {/* 用通用的那对，不借 `aiLab.chat.collapse`——那半个键归画布按钮
               （「收起 / 查看」）所有，借来就是两个控件共用一份文案、一起被改。 */}
@@ -657,29 +621,34 @@ function Bubble({
   message,
   onRegenerate,
   onWidgetAction,
+  onToggleSources,
+  sourcesOpen,
 }: {
   message: ChatMessage;
   /** 只有最后一条助手回复拿得到，见 `MessageActions`。 */
   onRegenerate?: () => void;
   /** 时间线里的非阻塞卡片要能把用户动作交回去。 */
   onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+  /** 打开这条回答的来源面板（右舷）。 */
+  onToggleSources?: (messageId: string) => void;
+  sourcesOpen?: boolean;
 }) {
   if (message.role === "user") {
     const skill = message.skillId ? SKILLS[message.skillId] : null;
     const SkillIcon = skill?.icon;
     return (
       <div className="flex justify-end">
-        <div className="min-w-0 max-w-[80%] rounded-2xl bg-neutral-800 px-4 py-2.5 text-[16px] leading-7 text-neutral-100">
+        <div className="min-w-0 max-w-[80%] rounded-2xl bg-neutral-800 px-4 py-2.5 text-base leading-7 text-neutral-100">
           {skill && (
             <span className="inline-flex items-center gap-1 align-middle mr-2 rounded-md bg-neutral-700/70 px-1.5 py-0.5">
               {SkillIcon && <SkillIcon size={11} className={skill.accent} />}
-              <span className={cn("text-[11px] font-medium", skill.accent)}>
+              <span className={cn("text-mr-label font-medium", skill.accent)}>
                 {skill.name}
               </span>
             </span>
           )}
           {message.attachmentNames?.length ? (
-            <div className="mb-1.5 flex items-start gap-1.5 text-left text-[13px] leading-5 text-neutral-200">
+            <div className="mb-1.5 flex items-start gap-1.5 text-left text-mr-caption leading-5 text-neutral-200">
               <Icon
                 name="attach"
                 size={12}
@@ -701,16 +670,16 @@ function Bubble({
             />
           ) : null}
           {message.quote && (
-            <div className="mb-2 flex items-start gap-2 rounded-lg bg-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
+            <div className="mb-2 flex items-start gap-2 rounded-lg bg-mr-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
               <CornerUpLeft
                 size={12}
                 className="mt-0.5 shrink-0 text-sky-400/80"
               />
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-medium text-neutral-500">
+                <div className="text-mr-micro font-medium text-neutral-500">
                   {message.quote.label}
                 </div>
-                <div className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug text-neutral-300">
+                <div className="mt-0.5 line-clamp-2 text-mr-label-tight leading-snug text-neutral-300">
                   {message.quote.text}
                 </div>
               </div>
@@ -737,9 +706,9 @@ function Bubble({
           它的横向滚动照旧。 */}
       <div
         className={cn(
-          // `text-ink`（oklch 0.93）而不是 `text-neutral-200`：数值几乎一样，但它跟着
+          // `text-mr-ink`（oklch 0.93）而不是 `text-neutral-200`：数值几乎一样，但它跟着
           // 主题令牌走，浅色主题切过去时不会留下一块亮灰。
-          "min-w-0 max-w-[88%] text-[16px] leading-7 text-ink [overflow-wrap:anywhere]",
+          "min-w-0 max-w-[88%] text-base leading-7 text-mr-ink [overflow-wrap:anywhere]",
           !hasProcess && "pt-1",
         )}
       >
@@ -747,6 +716,8 @@ function Bubble({
           message={message}
           onRegenerate={onRegenerate}
           onWidgetAction={onWidgetAction}
+          onToggleSources={onToggleSources}
+          sourcesOpen={sourcesOpen}
         />
       </div>
     </div>
@@ -763,10 +734,14 @@ function AssistantResponse({
   message,
   onRegenerate,
   onWidgetAction,
+  onToggleSources,
+  sourcesOpen,
 }: {
   message: ChatMessage;
   onRegenerate?: () => void;
   onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
+  onToggleSources?: (messageId: string) => void;
+  sourcesOpen?: boolean;
 }) {
   const reduceMotion = useReducedMotion() ?? false;
   const hasProcess = Boolean(message.reasoning);
@@ -809,9 +784,13 @@ function AssistantResponse({
           {/* 来源和复制/重新生成属于完成态工具栏。搜索进行中只显示上面的搜索过程，
               不提前挂一份重复来源；最终正文完成后再一起出现。 */}
           {message.status === "done" && visibleText.trim() ? (
-            <SourcesBlock sources={message.sources}>
-              <MessageActions text={visibleText} onRegenerate={onRegenerate} />
-            </SourcesBlock>
+            <MessageFooter
+              message={message}
+              text={visibleText}
+              onRegenerate={onRegenerate}
+              onToggleSources={onToggleSources}
+              sourcesOpen={sourcesOpen}
+            />
           ) : null}
         </>
       ) : null}
@@ -822,7 +801,7 @@ function AssistantResponse({
 /**
  * 一条助手回复写完之后的操作行。
  *
- * 形态取自 Beautiful UI 的 StreamingText——但**只保留复制**：重试要重发这一轮（会
+ * 形态遵循 GenUI 的 StreamingText——但**只保留复制**：重试要重发这一轮（会
  * 二次计费且可能覆盖已接受的改动），赞踩要有反馈通道，两者都还没有。做一个点了没反应
  * 的按钮，比没有这个按钮更糟。
  */
@@ -852,8 +831,8 @@ function MessageActions({
           });
         }}
         className={cn(
-          "flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] transition-colors",
-          copied ? "text-green" : "text-ink-3 hover:bg-hover hover:text-ink-2",
+          "flex items-center gap-1 rounded-md px-1.5 py-1 text-mr-label transition-colors",
+          copied ? "text-mr-success-ink" : "text-mr-muted hover:bg-mr-surface-soft hover:text-mr-ink-secondary",
         )}
       >
         {copied ? <Check size={12} /> : <Icon name="copy" size={12} />}
@@ -866,7 +845,7 @@ function MessageActions({
           type="button"
           aria-label={t("aiLab.chat.regenerate")}
           onClick={onRegenerate}
-          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-mr-label text-mr-muted transition-colors hover:bg-mr-surface-soft hover:text-mr-ink-secondary"
         >
           <Icon name="retry" size={12} />
           {t("aiLab.chat.regenerate")}
@@ -893,6 +872,10 @@ type ChatThreadProps = {
   activity?: AgentActivity | null;
   /** 重答最后一轮。不给就不渲染那个按钮。 */
   onRegenerate?: () => void;
+  /** 开/关某条回答的来源面板（右舷第三位住客）。 */
+  onToggleSources?: (messageId: string) => void;
+  /** 当前正开着来源面板的那条消息。 */
+  openSourcesMessageId?: string | null;
 };
 
 type MessageRowProps = {
@@ -907,6 +890,8 @@ type MessageRowProps = {
   onApproval?: ApprovalDecision;
   onWidgetAction?: (widgetId: string, result: WidgetActionResult) => void;
   onRegenerate?: () => void;
+  onToggleSources?: (messageId: string) => void;
+  sourcesOpen?: boolean;
 };
 
 /**
@@ -926,6 +911,8 @@ const MessageRow = memo(function MessageRow({
   onApproval,
   onWidgetAction,
   onRegenerate,
+  onToggleSources,
+  sourcesOpen,
 }: MessageRowProps) {
   const takesOverThinking =
     m.role === "assistant" && !!m.reasoning && !m.content;
@@ -955,7 +942,7 @@ const MessageRow = memo(function MessageRow({
       exit={{ opacity: 0, transition: { duration: 0.12 } }}
       transition={{
         duration: reduceMotion ? 0 : isUser ? 0.26 : 0.3,
-        ease: [0.22, 1, 0.36, 1],
+        ease: EASE_ENTER,
       }}
       style={isUser ? { transformOrigin: "100% 100%" } : undefined}
     >
@@ -997,6 +984,8 @@ const MessageRow = memo(function MessageRow({
           message={m}
           onRegenerate={regenerable ? onRegenerate : undefined}
           onWidgetAction={onWidgetAction}
+          onToggleSources={onToggleSources}
+          sourcesOpen={sourcesOpen}
         />
       )}
     </motion.div>
@@ -1016,6 +1005,8 @@ export default function ChatThread({
   thinking,
   activity,
   onRegenerate,
+  onToggleSources,
+  openSourcesMessageId,
 }: ChatThreadProps) {
   // 只有最后一条写完的助手回复能重答。这一轮还在跑的时候不给——重答会把它顶掉，
   // 而用户此刻看到的正是它在写。
@@ -1142,6 +1133,8 @@ export default function ChatThread({
                 onApproval={onApproval}
                 onWidgetAction={onWidgetAction}
                 onRegenerate={onRegenerate}
+                onToggleSources={onToggleSources}
+                sourcesOpen={openSourcesMessageId === m.id}
               />
             ))}
           </AnimatePresence>

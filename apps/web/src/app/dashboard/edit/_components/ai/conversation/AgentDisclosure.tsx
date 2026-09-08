@@ -5,7 +5,9 @@ import {
   type HTMLMotionProps,
   useReducedMotion,
 } from "framer-motion";
-import type { CSSProperties } from "react";
+// 显式引入 React：本仓的 `jsx: preserve` 下，测试用的 tsx 走经典变换，缺它会在
+// 渲染期报 `React is not defined`——而这个组件正是搜索行展开区的载体。
+import React, { type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -17,7 +19,7 @@ export interface AgentDisclosureProps
 }
 
 /**
- * beUI AgentDisclosure. Only the motion package import was adapted to the one
+ * Agent disclosure. Only the motion package import was adapted to the one
  * already installed by this project.
  */
 export default function AgentDisclosure({

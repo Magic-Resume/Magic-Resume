@@ -32,7 +32,7 @@ export function BrandMark({ size = 34, className }: { size?: number; className?:
 export function BrandWordmark({ className }: { className?: string }) {
   return (
     <span
-      className={cn('select-none whitespace-nowrap text-[15px] leading-none tracking-[-0.01em]', className)}
+      className={cn('select-none whitespace-nowrap text-mr-subtitle leading-none tracking-[-0.01em]', className)}
       style={{ fontFamily: 'var(--font-brand), system-ui, sans-serif' }}
     >
       <span className="font-bold text-neutral-50">{'Magic'}</span>

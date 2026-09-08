@@ -36,7 +36,7 @@ export default function WidgetHost({
 
   if (!descriptor || !normalized) {
     return (
-      <div className="text-[11px] text-muted">
+      <div className="text-mr-label text-mr-muted">
         <span className="truncate">
           {t("aiLab.widgets.unsupported", { kind: instance.kind })}
         </span>

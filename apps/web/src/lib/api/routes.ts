@@ -57,9 +57,8 @@ export const API_ROUTES = {
     workspaceArtifactKeep: (id: string, artifactId: string) => `/api/resumes/${id}/workspace/artifacts/${artifactId}/keep`,
     shared:          (shareId: string) => `/api/resumes/shared/${shareId}`,
     sharedComments:  (shareId: string) => `/api/resumes/shared/${shareId}/comments`,
-    sharedComment:   (shareId: string, commentId: string) => `/api/resumes/shared/${shareId}/comments/${commentId}`,
-    sharedReplies:   (shareId: string, commentId: string) => `/api/resumes/shared/${shareId}/comments/${commentId}/replies`,
-    sharedReply:     (shareId: string, commentId: string, replyId: string) => `/api/resumes/shared/${shareId}/comments/${commentId}/replies/${replyId}`,
+    /** 评论删除走带 resumeId 的鉴权路由；shared 只提供公开读取和新增。 */
+    comment:         (resumeId: string, commentId: string) => `/api/resumes/${resumeId}/comments/${commentId}`,
   },
   users: {
     feedback:  '/api/users/feedback',
@@ -128,7 +127,7 @@ export const AGENT_ROUTES = {
    * 用户亲口说的、一直生效的一份文档。
    */
   jobProfile: {
-    /** 读。没有画像回 404——那正是「要不要弹引导」的信号。 */
+    /** 读。没有画像回 200 + status:none——那正是「要不要弹引导」的信号。 */
     get:        '/api/job-profile',
     /** 引导交卷：答案 → markdown 画像。 */
     generate:   '/api/job-profile/generate',

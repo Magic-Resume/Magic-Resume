@@ -299,7 +299,7 @@ export default function AssetLibrary({
             onChange={(event) => setQuery(event.target.value)}
             /* 占位符必须说清只搜标题：搜正文里的词搜不到，用户会以为坏了。 */
             placeholder={t('aiLab.assets.searchPlaceholder')}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+            className="min-w-0 flex-1 bg-transparent text-mr-caption text-ink outline-none placeholder:text-ink-3"
           />
         </label>
       </div>
@@ -308,14 +308,14 @@ export default function AssetLibrary({
         <button
           type="button"
           onClick={() => setScoped(false)}
-          className="mx-6 mb-2 self-start text-[12px] text-accent-ink hover:underline"
+          className="mx-6 mb-2 self-start text-mr-overline text-accent-ink hover:underline"
         >
           {t('aiLab.assets.seeAll', { count: assets.length })}
         </button>
       )}
 
       {assets.length >= NEAR_LIMIT && (
-        <p role="status" className="mx-6 mb-2 text-[12px] text-orange">
+        <p role="status" className="mx-6 mb-2 text-mr-overline text-orange">
           {t('aiLab.assets.nearLimit', { count: assets.length })}
         </p>
       )}
@@ -323,16 +323,16 @@ export default function AssetLibrary({
       {loading ? (
         <div className="flex-1 space-y-2 px-6" aria-busy="true">
           {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-[10px] bg-white/[0.04]" />
+            <div key={i} className="h-14 animate-pulse rounded-mr-card bg-mr-surface-subtle" />
           ))}
         </div>
       ) : failed ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <p className="text-[13px] text-ink-2">{t('aiLab.assets.loadFailed')}</p>
+          <p className="text-mr-caption text-ink-2">{t('aiLab.assets.loadFailed')}</p>
           <button
             type="button"
             onClick={load}
-            className="rounded-full bg-surface px-3 py-1.5 text-[12.5px] text-ink shadow-btn hover:bg-hover"
+            className="rounded-full bg-surface px-3 py-1.5 text-mr-ui text-ink shadow-btn hover:bg-hover"
           >
             {t('aiLab.assets.retry')}
           </button>
@@ -343,7 +343,7 @@ export default function AssetLibrary({
           <div className="grid size-11 place-items-center rounded-full bg-sunk ring-1 ring-inset ring-line">
             <Sparkles size={17} className="text-muted" />
           </div>
-          <p className="text-[13.5px] font-medium text-ink">{t('aiLab.assets.emptyTitle')}</p>
+          <p className="text-mr-body-tight font-medium text-ink">{t('aiLab.assets.emptyTitle')}</p>
         </div>
       ) : (
         <div className="flex min-h-0 flex-1">
@@ -355,11 +355,11 @@ export default function AssetLibrary({
             {visible.length === 0 ? (
               // 筛空必须和真空分开：同一句话会让用户以为东西没了。
               <div className="px-3 py-8 text-center">
-                <p className="text-[12.5px] text-ink-3">{t('aiLab.assets.filteredEmpty')}</p>
+                <p className="text-mr-ui text-ink-3">{t('aiLab.assets.filteredEmpty')}</p>
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  className="mt-2 text-[12.5px] text-accent-ink hover:underline"
+                  className="mt-2 text-mr-ui text-accent-ink hover:underline"
                 >
                   {t('aiLab.assets.clearFilter')}
                 </button>
@@ -374,7 +374,7 @@ export default function AssetLibrary({
                   <section key={group.key} className="mb-4">
                     {/* 组头是**标签不是按钮**：它说明这一段是什么，不承担交互。
                         真正可点的是下面那行「还有 N 场」，指向明确。 */}
-                    <p className="flex items-baseline gap-2 px-3 pb-1.5 pt-2 text-[11.5px] font-medium text-ink-3">
+                    <p className="flex items-baseline gap-2 px-3 pb-1.5 pt-2 text-mr-label-tight font-medium text-ink-3">
                       <span className="truncate">{group.label}</span>
                       <span className="tabular-nums text-ink-3/70">{group.items.length}</span>
                     </p>
@@ -391,19 +391,16 @@ export default function AssetLibrary({
                             setSelectedId(asset.id);
                             setMobileReading(true);
                           }}
-                          /* 选中态是左边 2px sky 线 + 底色微亮，不用整块蓝底——少 border、
-                             不割裂是这套语言的基调。 */
-                          className={`relative w-full rounded-[8px] px-3 py-2.5 text-left transition-colors duration-150 ${
+                          /* 选中态只靠底色抬一档。装饰性的彩色左边条是最容易辨认的
+                             模板化痕迹，而这一行本来就已经比同伴亮，边条是多余的第二层。 */
+                          className={`relative w-full rounded-mr-control px-3 py-2.5 text-left transition-colors duration-150 ${
                             active ? 'bg-hover-2' : 'hover:bg-hover'
                           }`}
                         >
-                          {active && (
-                            <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" />
-                          )}
-                          <span className="block truncate text-[13px] font-medium text-ink">
+                          <span className="block truncate text-mr-caption font-medium text-ink">
                             {labelOf(asset)}
                           </span>
-                          <span className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-ink-3">
+                          <span className="mt-0.5 flex items-center gap-1.5 text-mr-label-tight text-ink-3">
                             {subtitleOf(asset).map((part, i) => (
                               <React.Fragment key={i}>
                                 {i > 0 && <span aria-hidden>·</span>}
@@ -414,7 +411,7 @@ export default function AssetLibrary({
                             ))}
                           </span>
                           {expiry && (
-                            <span className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-3">
+                            <span className="mt-1 flex items-center gap-1.5 text-mr-label text-ink-3">
                               <span
                                 className="size-1.5 shrink-0 rounded-full"
                                 style={{ background: expiry.urgent ? 'var(--orange)' : 'var(--ink-3)' }}
@@ -437,7 +434,7 @@ export default function AssetLibrary({
                             return next;
                           })
                         }
-                        className="mt-0.5 w-full rounded-[8px] px-3 py-1.5 text-left text-[12px] text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
+                        className="mt-0.5 w-full rounded-mr-control px-3 py-1.5 text-left text-mr-overline text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
                       >
                         {open
                           ? t('aiLab.assets.collapse')
@@ -460,18 +457,18 @@ export default function AssetLibrary({
               <button
                 type="button"
                 onClick={() => setMobileReading(false)}
-                className="mb-3 flex items-center gap-1.5 text-[12.5px] text-ink-2 md:hidden"
+                className="mb-3 flex items-center gap-1.5 text-mr-ui text-ink-2 md:hidden"
               >
                 <ArrowLeft size={14} />
                 {t('aiLab.assets.title')}
               </button>
 
-              <h2 className="text-[16px] font-semibold leading-snug text-ink">
+              <h2 className="text-base font-semibold leading-snug text-ink">
                 {labelOf(selected)}
               </h2>
               {/* 「哪份简历 · 第几版」是产物的元信息。面板是活的、面试记录不属于任何
                   一份简历，硬套这句话只会写出「 · 第 1 版」这种没有意义的字。 */}
-              <p className="mt-1 text-[12px] text-ink-3">
+              <p className="mt-1 text-mr-overline text-ink-3">
                 {selected.extra
                   ? relative(selected.updatedAt)
                   : t('aiLab.assets.meta', {
@@ -485,7 +482,7 @@ export default function AssetLibrary({
               <div className={`mt-2 flex items-center gap-2 ${selected.extra ? 'hidden' : ''}`}>
                 {selected.expiresAt ? (
                   <>
-                    <span className="flex items-center gap-1.5 text-[12px] text-ink-2">
+                    <span className="flex items-center gap-1.5 text-mr-overline text-ink-2">
                       <span
                         className="size-1.5 rounded-full"
                         style={{
@@ -499,7 +496,7 @@ export default function AssetLibrary({
                     <button
                       type="button"
                       onClick={() => handleKeep(selected)}
-                      className="flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-[12px] text-ink shadow-btn transition-colors hover:bg-hover"
+                      className="flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-mr-overline text-ink shadow-btn transition-colors hover:bg-hover"
                     >
                       <Bookmark size={12} />
                       {t('aiLab.assets.keep')}
@@ -507,7 +504,7 @@ export default function AssetLibrary({
                   </>
                 ) : (
                   // 已留住是**状态**不是按钮，别让人以为还能再点一次。
-                  <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+                  <span className="flex items-center gap-1.5 text-mr-overline text-ink-3">
                     <Bookmark size={12} />
                     {t('aiLab.assets.kept')}
                   </span>
@@ -530,7 +527,7 @@ export default function AssetLibrary({
                     <button
                       type="button"
                       onClick={() => handleUse(selected)}
-                      className="rounded-full bg-ink px-3.5 py-2 text-[12.5px] font-medium text-canvas transition-opacity hover:opacity-90"
+                      className="rounded-full bg-ink px-3.5 py-2 text-mr-ui font-medium text-canvas transition-opacity hover:opacity-90"
                     >
                       {t('aiLab.assets.use')}
                     </button>
@@ -541,7 +538,7 @@ export default function AssetLibrary({
                         setCopied(true);
                         window.setTimeout(() => setCopied(false), 1600);
                       }}
-                      className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-2 text-[12.5px] text-ink shadow-btn hover:bg-hover"
+                      className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-2 text-mr-ui text-ink shadow-btn hover:bg-hover"
                     >
                       <Copy size={13} />
                       {copied ? t('aiLab.assets.copied') : t('aiLab.assets.copy')}
@@ -556,7 +553,7 @@ export default function AssetLibrary({
                     href={`/dashboard/interview/${
                       (selected.payload as ArchivedInterview | undefined)?.id ?? ''
                     }`}
-                    className="rounded-full bg-ink px-3.5 py-2 text-[12.5px] font-medium text-canvas transition-opacity hover:opacity-90"
+                    className="rounded-full bg-ink px-3.5 py-2 text-mr-ui font-medium text-canvas transition-opacity hover:opacity-90"
                   >
                     {t('aiLab.assets.openInterview')}
                   </a>
@@ -566,7 +563,7 @@ export default function AssetLibrary({
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(selected)}
-                    className="ml-auto rounded-full px-3 py-2 text-[12.5px] text-ink-3 transition-colors hover:bg-hover hover:text-[color:var(--rev-del)]"
+                    className="ml-auto rounded-full px-3 py-2 text-mr-ui text-ink-3 transition-colors hover:bg-hover hover:text-rev-del"
                   >
                     {t('aiLab.assets.delete')}
                   </button>
@@ -577,7 +574,7 @@ export default function AssetLibrary({
                     <button
                       type="button"
                       onClick={() => handleUse(selected)}
-                      className="rounded-full bg-ink px-3.5 py-2 text-[12.5px] font-medium text-canvas transition-opacity hover:opacity-90"
+                      className="rounded-full bg-ink px-3.5 py-2 text-mr-ui font-medium text-canvas transition-opacity hover:opacity-90"
                     >
                       {t('aiLab.assets.discussBoard')}
                     </button>
@@ -586,7 +583,7 @@ export default function AssetLibrary({
                     <button
                       type="button"
                       onClick={() => setConfirmClear(true)}
-                      className="ml-auto rounded-full px-3 py-2 text-[12.5px] text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
+                      className="ml-auto rounded-full px-3 py-2 text-mr-ui text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
                     >
                       {t('aiLab.assets.clearBoard')}
                     </button>
@@ -606,7 +603,7 @@ export default function AssetLibrary({
                           : setConfirmArchive(selected.id)
                       }
                       onBlur={() => setConfirmArchive(null)}
-                      className="ml-auto rounded-full px-3 py-2 text-[12.5px] text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
+                      className="ml-auto rounded-full px-3 py-2 text-mr-ui text-ink-3 transition-colors hover:bg-hover hover:text-ink-2"
                     >
                       {confirmArchive === selected.id
                         ? t('aiLab.assets.archiveConfirm')
@@ -618,7 +615,7 @@ export default function AssetLibrary({
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(selected)}
-                      className="rounded-full px-3 py-2 text-[12.5px] text-ink-3 transition-colors hover:bg-hover hover:text-[color:var(--rev-del)]"
+                      className="rounded-full px-3 py-2 text-mr-ui text-ink-3 transition-colors hover:bg-hover hover:text-rev-del"
                     >
                       {t('aiLab.assets.delete')}
                     </button>

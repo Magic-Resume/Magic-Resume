@@ -1,0 +1,52 @@
+{
+  "name": "@magic-resume/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles/tokens.css": "./styles/tokens.css",
+    "./styles/utilities.css": "./styles/utilities.css",
+    "./styles/motion.css": "./styles/motion.css",
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    },
+    "./recipes": {
+      "types": "./dist/recipes/index.d.ts",
+      "default": "./dist/recipes/index.js"
+    },
+    "./cx": {
+      "types": "./dist/cx.d.ts",
+      "default": "./dist/cx.js"
+    }
+  },
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/smoke.test.mjs"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.0"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "@magic-resume/tsconfig": "workspace:*",
+    "@types/react": "^19.1.6",
+    "typescript": "^5"
+  }
+}

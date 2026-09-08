@@ -118,15 +118,15 @@ export function SearchPick({
         autoComplete="off"
       />
       <Popover anchorRef={inputRef} open={open && Boolean(dataSource)} onClose={() => setOpen(false)}>
-        <div className="max-h-60 overflow-y-auto rounded-xl bg-overlay border border-hairline backdrop-blur py-1 shadow-lg">
+        <div className="max-h-60 overflow-y-auto rounded-xl bg-mr-overlay border border-mr-line backdrop-blur py-1 shadow-lg">
           {loading && (
-            <div className="ai-breath--soft px-3 py-2 space-y-2">
-              <div className="h-3 w-2/3 rounded bg-sunk" />
-              <div className="h-3 w-1/2 rounded bg-sunk" />
+            <div className="mr-motion-breathe-soft px-3 py-2 space-y-2">
+              <div className="h-3 w-2/3 rounded bg-mr-sunk" />
+              <div className="h-3 w-1/2 rounded bg-mr-sunk" />
             </div>
           )}
           {!loading && !matches.length && (
-            <div className="px-3 py-2 text-xs text-muted">
+            <div className="px-3 py-2 text-xs text-mr-muted">
               {t('aiLab.widgets.field.noMatch')}
             </div>
           )}
@@ -138,11 +138,11 @@ export function SearchPick({
               onClick={() => commit(o)}
               className={cn(
                 'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm cursor-pointer',
-                i === highlight ? 'bg-tint-sky text-ink-sky' : 'text-primary',
+                i === highlight ? 'bg-mr-accent-tint text-mr-accent' : 'text-mr-ink',
               )}
             >
               <span className="truncate">{o.label}</span>
-              {o.hint && <span className="ml-auto shrink-0 text-[11px] text-muted">{o.hint}</span>}
+              {o.hint && <span className="ml-auto shrink-0 text-mr-label text-mr-muted">{o.hint}</span>}
             </button>
           ))}
         </div>

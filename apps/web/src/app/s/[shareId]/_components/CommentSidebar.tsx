@@ -68,7 +68,7 @@ const CommentItem = React.memo(({
                                         {comment.user.firstName || comment.user.username || t('sharedPage.comments.anonymous')}
                                     </span>
                                     {comment.isOwner && (
-                                        <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-[8px] font-bold uppercase tracking-wider border border-amber-500/20">
+                                        <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-mr-micro-small font-bold uppercase tracking-wider border border-amber-500/20">
                                             {t('sharedPage.comments.owner')}
                                         </span>
                                     )}
@@ -77,13 +77,13 @@ const CommentItem = React.memo(({
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                            <div className="w-6 h-6 rounded-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-mr-micro font-bold text-white uppercase">
                                 {comment.author?.[0] || 'A'}
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium text-neutral-200">{comment.author || t('sharedPage.comments.anonymous')}</span>
                                 {comment.isOwner && (
-                                    <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-[8px] font-bold uppercase tracking-wider border border-amber-500/20">
+                                    <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-mr-micro-small font-bold uppercase tracking-wider border border-amber-500/20">
                                         {t('sharedPage.comments.owner')}
                                     </span>
                                 )}
@@ -91,11 +91,11 @@ const CommentItem = React.memo(({
                         </div>
                     )}
                 </div>
-                <span className="text-[10px] text-neutral-500">{formatCommentDate(comment.createdAt, t)}</span>
+                <span className="text-mr-micro text-neutral-500">{formatCommentDate(comment.createdAt, t)}</span>
             </div>
 
             {comment.selectedText && (
-                <div className="mb-2 px-2 py-1 bg-white/5 border-l-2 border-indigo-500/50 rounded-r text-[11px] text-neutral-400 italic line-clamp-2">
+                <div className="mb-2 px-2 py-1 bg-white/5 border-l-2 border-indigo-500/50 rounded-r text-mr-label text-neutral-400 italic line-clamp-2">
                     {`"${comment.selectedText}"`}
                 </div>
             )}
@@ -120,11 +120,11 @@ const CommentItem = React.memo(({
                                                 className="w-5 h-5 rounded-full border border-white/10" 
                                             />
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-[12px] font-medium text-neutral-300">
+                                                <span className="text-mr-overline font-medium text-neutral-300">
                                                     {reply.user.firstName || reply.user.username}
                                                 </span>
                                                 {reply.isOwner && (
-                                                    <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-[7px] font-bold uppercase tracking-wider border border-amber-500/20">
+                                                    <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-mr-nano font-bold uppercase tracking-wider border border-amber-500/20">
                                                         {t('sharedPage.comments.owner')}
                                                     </span>
                                                 )}
@@ -132,13 +132,13 @@ const CommentItem = React.memo(({
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-neutral-700 flex items-center justify-center text-[9px] font-bold text-white uppercase">
+                                            <div className="w-5 h-5 rounded-full bg-neutral-700 flex items-center justify-center text-mr-tiny font-bold text-white uppercase">
                                                 {reply.author?.[0] || 'A'}
                                             </div>
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-[12px] font-medium text-neutral-300">{reply.author}</span>
+                                                <span className="text-mr-overline font-medium text-neutral-300">{reply.author}</span>
                                                 {reply.isOwner && (
-                                                    <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-[7px] font-bold uppercase tracking-wider border border-amber-500/20">
+                                                    <span className="px-1 py-0.25 rounded bg-amber-100/10 text-amber-500 text-mr-nano font-bold uppercase tracking-wider border border-amber-500/20">
                                                         {t('sharedPage.comments.owner')}
                                                     </span>
                                                 )}
@@ -146,9 +146,9 @@ const CommentItem = React.memo(({
                                         </div>
                                     )}
                                 </div>
-                                <span className="text-[9px] text-neutral-500">{formatCommentDate(reply.createdAt, t)}</span>
+                                <span className="text-mr-tiny text-neutral-500">{formatCommentDate(reply.createdAt, t)}</span>
                             </div>
-                            <p className="text-[12px] text-neutral-400 leading-relaxed">
+                            <p className="text-mr-overline text-neutral-400 leading-relaxed">
                                 {reply.content}
                             </p>
                         </div>
@@ -252,7 +252,7 @@ export const CommentSidebar = React.memo(({
                             <div className="flex items-center gap-2">
                                 <MessageSquare size={18} className="text-indigo-400" />
                                 <h2 className="text-lg font-semibold text-white">{t('sharedPage.comments.title')}</h2>
-                                <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-neutral-400 font-medium">
+                                <span className="px-2 py-0.5 rounded-full bg-white/5 text-mr-micro text-neutral-400 font-medium">
                                     {comments.length}
                                 </span>
                             </div>

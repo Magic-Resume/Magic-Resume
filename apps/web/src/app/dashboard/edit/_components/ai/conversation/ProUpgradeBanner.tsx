@@ -8,6 +8,7 @@ import { useEntitlement } from '@/lib/extensions/billing-client';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
 import { isCloudMode } from '@/lib/config/app';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const DISMISS_KEY = 'magic:composer-pro-banner-dismissed-at';
 const DISMISS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -68,7 +69,7 @@ export default function ProUpgradeBanner({ retired }: { retired?: boolean }) {
       className="grid"
       style={{
         gridTemplateRows: visible ? '1fr' : '0fr',
-        transition: reduce ? undefined : 'grid-template-rows 260ms cubic-bezier(0.22,1,0.36,1)',
+        transition: reduce ? undefined : 'grid-template-rows 260ms var(--narrate-ease)',
       }}
     >
       <div className="overflow-hidden">
@@ -80,14 +81,14 @@ export default function ProUpgradeBanner({ retired }: { retired?: boolean }) {
               // 往左滑走，而不是原地淡掉：它是被**这次发送**推走的，方向上要读得出
               // 「让开」而不是「消失」。入场仍是从上方落下——那是它自己出现的动作。
               exit={{ opacity: 0, x: reduce ? 0 : -32 }}
-              transition={{ duration: reduce ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reduce ? 0 : 0.26, ease: EASE_ENTER }}
               aria-label={t('aiLab.pro.regionLabel')}
               className="relative mt-2.5 flex min-h-[60px] items-center gap-3 overflow-hidden rounded-[30px] border border-sky-400/[0.14] bg-neutral-800/60 py-3 pl-5 pr-3.5"
             >
               {/* 辉光独立成层：渐变数学留在 CSS 里，浅色态在 globals.css 统一降透明 */}
               <span aria-hidden className="composer-pro-glow absolute inset-0" />
 
-              <p className="relative min-w-0 flex-1 text-[15px] leading-snug text-neutral-100">
+              <p className="relative min-w-0 flex-1 text-mr-subtitle leading-snug text-neutral-100">
                 {t('aiLab.pro.title')}
                 <button
                   type="button"
@@ -101,7 +102,7 @@ export default function ProUpgradeBanner({ retired }: { retired?: boolean }) {
               <button
                 type="button"
                 onClick={openPricing}
-                className="relative inline-flex h-8 shrink-0 items-center rounded-full border border-sky-300/30 bg-sky-400/20 px-3.5 text-[14px] text-neutral-50 transition-colors hover:bg-sky-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 cursor-pointer"
+                className="relative inline-flex h-8 shrink-0 items-center rounded-full border border-sky-300/30 bg-sky-400/20 px-3.5 text-mr-body text-neutral-50 transition-colors hover:bg-sky-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 cursor-pointer"
               >
                 {t('aiLab.pro.cta')}
               </button>

@@ -1,4 +1,4 @@
-import type { GenUIDataSource, WidgetOption } from '@magic-resume/genui/contract';
+import type { GenUIDataSource, WidgetOption } from '@magic-resume/genui';
 import { fetchTimelines } from '@/lib/api/knowledge';
 
 /**

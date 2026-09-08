@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Plus } from '@magic-resume/icons';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 向导里的选择控件。
  *
@@ -26,7 +27,7 @@ const STAGGER_MS = 40;
  * 用户得先猜哪些字能点。可点的必须看起来可点。
  */
 const chipBase =
-  'relative inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium ' +
+  'relative inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-mr-caption font-medium ' +
   'ring-1 ring-inset ring-line transition-[color,box-shadow] duration-200 outline-none ' +
   'hover:ring-line-strong ' +
   'focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface';
@@ -60,7 +61,7 @@ function Chip({
     <motion.span
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, delay: (index * STAGGER_MS) / 1000, ease: [0.22, 0.61, 0.25, 1] }}
+      transition={{ duration: 0.28, delay: (index * STAGGER_MS) / 1000, ease: EASE_ENTER }}
       className="contents"
     >
       {selected && <Selected layoutId={layoutId} />}
@@ -130,7 +131,7 @@ export default function ChipGroup({
           }}
           placeholder={t('onboarding.customPlaceholder')}
           aria-label={t('onboarding.customPlaceholder')}
-          className="h-9 w-36 rounded-full bg-field px-3.5 text-[13px] text-ink outline-none ring-1 ring-inset ring-line-strong placeholder:text-ink-3 focus:ring-accent"
+          className="h-9 w-36 rounded-full bg-field px-3.5 text-mr-caption text-ink outline-none ring-1 ring-inset ring-line-strong placeholder:text-ink-3 focus:ring-accent"
         />
       ) : (
         <button

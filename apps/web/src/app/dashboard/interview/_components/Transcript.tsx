@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { VoiceTurn } from './useVoiceInterview';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 对话记录。
  *
@@ -36,11 +37,11 @@ export default function Transcript({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
-      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.34, ease: EASE_ENTER }}
       className="absolute inset-0 overflow-y-auto px-5 pb-44 pt-2"
     >
       {turns.length === 0 && !live && !liveReply ? (
-        <p className="pt-10 text-center text-[13px] text-muted">
+        <p className="pt-10 text-center text-mr-caption text-muted">
           {t('aiLab.interview.transcriptEmpty')}
         </p>
       ) : (
@@ -70,7 +71,7 @@ function Line({
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] text-muted">
+      <span className="text-mr-label text-muted">
         {t(
           role === 'interviewer'
             ? 'aiLab.interview.interviewer'
@@ -78,7 +79,7 @@ function Line({
         )}
       </span>
       <p
-        className={`text-[13px] leading-relaxed ${
+        className={`text-mr-caption leading-relaxed ${
           pending
             ? 'text-muted'
             : role === 'interviewer'

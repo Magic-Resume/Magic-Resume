@@ -17,6 +17,11 @@ import { sectionIconByName } from "@magic-resume/resume-templates";
 import { cn } from "@/lib/utils";
 import { MaskIcon } from "@/components/icons/MaskIcon";
 import AccountMenu from "@/components/shared/AccountMenu";
+import {
+  HoverSurface,
+  useHoverSurface,
+  type HoverSurfaceBinding,
+} from '@/components/ui/hover-surface';
 
 export const LEFT_RAIL_WIDTH = 52;
 // 与右侧自定义面板等宽(rail 52 + panel 360 = 412),保证展开时左右对称
@@ -75,11 +80,15 @@ export default function OutlineRail({
   onJump,
   onToggleCollapse,
 }: OutlineRailProps) {
+  /* 章节栏高亮：一块共享的面在按钮之间滑动。选中项另有右侧那条竖杠，所以面
+     滑走时「现在停在哪一节」不会丢。 */
+  const railSurface = useHoverSurface({ activeKey: collapsed ? null : activeSection });
+
   const { t } = useTranslation();
 
   return (
     <div
-      className="flex h-full shrink-0 flex-col items-center gap-1 border-r border-white/[0.06] bg-desk py-3"
+      className="flex h-full shrink-0 flex-col items-center gap-1 border-r border-mr-line-soft bg-desk py-3"
       style={{ width: LEFT_RAIL_WIDTH }}
     >
       <RailButton
@@ -89,9 +98,16 @@ export default function OutlineRail({
         <MaskIcon src="/marks/sidebar.svg" size={20} className="block" />
       </RailButton>
 
-      <div className="my-1.5 h-px w-6 bg-white/[0.08]" />
+      <div className="my-1.5 h-px w-6 bg-mr-line" />
 
-      <div className="flex flex-1 flex-col items-center gap-1 overflow-y-auto scrollbar-hide">
+      <div
+        className="relative flex flex-1 flex-col items-center gap-1 overflow-y-auto scrollbar-hide"
+        {...railSurface.containerProps}
+      >
+        <HoverSurface
+          {...railSurface.surfaceProps}
+          className="rounded-xl bg-mr-surface-soft data-[on-active]:bg-sky-400/10"
+        />
         {sectionOrder.map(({ key, label, icon: iconName }) => {
           const meta = sectionMeta(key, iconName);
           const Icon = meta.icon;
@@ -99,6 +115,7 @@ export default function OutlineRail({
           return (
             <RailButton
               key={key}
+              surface={railSurface.bind(key)}
               label={name}
               active={!collapsed && activeSection === key}
               onClick={() => onJump(key)}
@@ -110,7 +127,7 @@ export default function OutlineRail({
       </div>
 
       <div className="mt-2 flex shrink-0 flex-col items-center gap-2.5 pt-2">
-        <div className="h-px w-6 bg-white/[0.08]" />
+        <div className="h-px w-6 bg-mr-line" />
         <AccountMenu placement="right" />
       </div>
     </div>
@@ -122,28 +139,33 @@ function RailButton({
   active = false,
   onClick,
   children,
+  surface,
 }: {
   label: string;
   active?: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  /** `useHoverSurface().bind(key)`。底交给共享面。 */
+  surface?: HoverSurfaceBinding;
 }) {
   return (
     <button
       type="button"
+      {...surface}
       onClick={onClick}
       title={label}
       aria-label={label}
       className={cn(
+        // 底由共享面承担，这里只留文字/图标色。
         "group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-150",
-        active ? "bg-sky-400/10 text-sky-300" : "text-neutral-500 hover:bg-white/[0.06] hover:text-neutral-200",
+        active ? "text-sky-300" : "text-neutral-500 hover:text-neutral-200",
       )}
     >
       {children}
       {active && (
         <span className="absolute -right-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-sky-400" />
       )}
-      <span className="pointer-events-none absolute left-11 top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-neutral-900 px-2 py-1 text-[11px] text-neutral-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+      <span className="pointer-events-none absolute left-11 top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-neutral-900 px-2 py-1 text-mr-label text-neutral-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
         {label}
       </span>
     </button>

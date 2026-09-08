@@ -74,7 +74,7 @@ export default function SharedResumeClient() {
             <div className="relative w-full h-full flex items-center justify-center">
                 <MessageSquare className="h-full w-full text-neutral-500 dark:text-neutral-300" />
                 {comments.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full text-[10px] flex items-center justify-center text-[#fff] border-2 border-hairline">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full text-mr-micro flex items-center justify-center text-[#fff] border-2 border-hairline">
                         {comments.length}
                     </span>
                 )}

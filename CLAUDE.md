@@ -57,10 +57,10 @@ Mode is auto-detected in `src/lib/config/app.ts`: if `NEXT_PUBLIC_CLERK_PUBLISHA
 
 Two Axios instances share a single auth interceptor (Clerk JWT via `configureHttpClient`):
 
-- `httpClient.api` → NestJS Core API (`NEXT_PUBLIC_CLOUD_API_URL`, default `localhost:3111`)
-- `httpClient.agent` → Python agent backend (`BACKEND_URL`, default `localhost:8000`)
+- `httpClient.api` → NestJS Core gateway (`NEXT_PUBLIC_API_URL`, default `http://localhost:3110`)
+- `httpClient.agent` → the same gateway (`NEXT_PUBLIC_API_URL`, default `http://localhost:3110`); path routing is owned by the gateway
 
-All Core API paths are centralized in `src/lib/api/routes.ts` (`API_ROUTES`). Python agent paths are in `AGENT_ROUTES`.
+All Core API paths are centralized in `src/lib/api/routes.ts` (`API_ROUTES`/`AGENT_ROUTES`). AI Lab Next route handlers (`app/api/chat-agent/*`) proxy streaming calls through the gateway.
 
 ### State management (`apps/web`)
 
@@ -107,8 +107,7 @@ Copy `apps/web/.env.example` to `apps/web/.env.local`.
 | `NEXT_PUBLIC_APP_MODE` | Both | `self-hosted` or `cloud`; auto-detected if omitted |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Cloud | Triggers cloud mode auto-detection |
 | `CLERK_SECRET_KEY` | Cloud | Server-side Clerk key |
-| `NEXT_PUBLIC_CLOUD_API_URL` | Cloud | Browser-facing NestJS Core API |
-| `BACKEND_URL` | AI features | Python agent server (interview, translate, AI optimize) |
+| `NEXT_PUBLIC_API_URL` | Cloud | Gateway origin for all browser/server Core and agent calls (default `http://localhost:3110`) |
 
 ## Commit messages
 

@@ -1,27 +1,11 @@
-import { isCloudMode } from '@/lib/config/app'
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://magic-resume.cn'
-  
-  const staticPages = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 1,
-    },
-  ]
+  // The app is globally noindex; exposing a sitemap would invite crawlers to
+  // treat the authenticated shell as the canonical marketing page. Keep this
+  // route valid for tooling, but return no URLs until a genuinely public app
+  // surface is deliberately added.
+  const staticPages: MetadataRoute.Sitemap = []
 
-  // 仅云端模式：自建版 /legal/* 是 404，英文版正文未写也是 404，都不该进 sitemap。
-  const legalPages = isCloudMode
-    ? ['terms', 'privacy', 'refund'].map((slug) => ({
-        url: `${baseUrl}/legal/${slug}`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.3,
-      }))
-    : []
-
-  return [...staticPages, ...legalPages]
-} 
+  return staticPages
+}

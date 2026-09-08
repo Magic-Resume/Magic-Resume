@@ -31,6 +31,7 @@ import {
   type AgentMode,
 } from './modes';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 文本区的高度区间。
  *
@@ -408,10 +409,10 @@ function Composer({
               initial={{ opacity: 0, y: 8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute left-0 right-0 bottom-[calc(100%+10px)] rounded-[20px] bg-neutral-900/95 backdrop-blur-xl border border-white/[0.06] p-2 z-20 shadow-2xl shadow-black/60 origin-bottom"
+              transition={{ duration: 0.16, ease: EASE_ENTER }}
+              className="absolute left-0 right-0 bottom-[calc(100%+10px)] rounded-[20px] bg-neutral-900/95 backdrop-blur-xl border border-mr-line-soft p-2 z-20 shadow-2xl shadow-black/60 origin-bottom"
             >
-              <div className="px-2.5 pb-2 pt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">
+              <div className="px-2.5 pb-2 pt-1 text-mr-micro font-medium uppercase tracking-[0.14em] text-neutral-600">
                 {t('aiLab.composer.skills')}
               </div>
               {matches.map((s, i) => {
@@ -446,13 +447,13 @@ function Composer({
                     <span className="min-w-0 flex-1 flex items-baseline gap-2">
                       <span
                         className={cn(
-                          'shrink-0 text-[13px] font-medium transition-colors',
+                          'shrink-0 text-mr-caption font-medium transition-colors',
                           active ? 'text-neutral-50' : 'text-neutral-200'
                         )}
                       >
                         {s.name}
                       </span>
-                      <span className="min-w-0 truncate text-[12px] text-neutral-500">{s.tagline}</span>
+                      <span className="min-w-0 truncate text-mr-overline text-neutral-500">{s.tagline}</span>
                     </span>
                   </button>
                 );
@@ -467,15 +468,15 @@ function Composer({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.16, ease: EASE_ENTER }}
               className="mb-2 flex items-start gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5"
             >
               <CornerUpLeft size={13} className="mt-0.5 shrink-0 text-sky-400" />
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+                <div className="text-mr-micro font-medium uppercase tracking-wide text-neutral-500">
                   {quotedContext.label}
                 </div>
-                <div className="truncate text-[12px] text-neutral-300">{quotedContext.text}</div>
+                <div className="truncate text-mr-overline text-neutral-300">{quotedContext.text}</div>
               </div>
               <button
                 type="button"
@@ -493,10 +494,10 @@ function Composer({
             设计稿的绝对值不能照搬——它的页面底是中灰紫 oklch(0.251)，输入井 oklch(0.134)
             比页底更暗；我们的桌面底是 #0A0A0A(0.145)，照搬会让输入井沉进背景里看不见。
             这里保留「逐层向内变暗」的相对关系，整体抬到 desk 之上。 */}
-        <div className="rounded-[30px] border border-[var(--border-hairline)] bg-[var(--surface-sunk)] p-1 shadow-[var(--elev-3)] dark:border-white/[0.06] dark:bg-gradient-to-b dark:from-neutral-800/65 dark:to-neutral-800/45 dark:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.7)]">
+        <div className="rounded-[30px] border border-mr-line bg-mr-sunk p-1 shadow-[var(--elev-3)] dark:border-mr-line-soft dark:bg-gradient-to-b dark:from-neutral-800/65 dark:to-neutral-800/45 dark:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.7)]">
           {/* 这一层**不能**加 overflow-hidden：模式 / 模型菜单都是向上展开的，会被裁掉。
               点阵 canvas 的圆角裁剪交给模式条自己（它本来就要 overflow-hidden）。 */}
-          <div className="relative rounded-[26px] bg-[var(--surface-raised)] dark:bg-neutral-900/70">
+          <div className="relative rounded-[26px] bg-mr-surface dark:bg-neutral-900/70">
             {/* 点阵层。刻意铺得比模式条高（48 > 30）：模式条底边与输入井顶部圆角之间
                 那两个夹角，原先是 overflow-hidden 把 canvas 裁在模式条里够不到的死角。
                 多出来的部分由 cutout 按输入井的形状挖空，井本身的观感一点不受影响。
@@ -528,8 +529,8 @@ function Composer({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                      className="block min-w-0 truncate text-[11px] font-medium tracking-[0.01em]"
+                      transition={{ duration: 0.2, ease: EASE_ENTER }}
+                      className="block min-w-0 truncate text-mr-label font-medium tracking-[0.01em]"
                     >
                       {headerLabel}
                     </motion.span>
@@ -540,7 +541,7 @@ function Composer({
 
             {/* 凹槽输入井。@container 挂在这儿：标签的收放该看输入区自己有多宽，
                 不是看视口——AI 面板宽度是可变的。 */}
-            <div className="@container relative z-10 rounded-[13px_13px_26px_26px] border border-[var(--border-strong)] bg-[var(--surface-raised)] p-2.5 shadow-[inset_0_1px_2px_oklch(0.2_0.02_85_/_0.06)] dark:border-white/[0.05] dark:bg-neutral-950/55 dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.34)]">
+            <div className="@container relative z-10 rounded-[13px_13px_26px_26px] border border-[var(--mr-line-strong)] bg-mr-surface p-2.5 shadow-[inset_0_1px_2px_oklch(0.2_0.02_85_/_0.06)] dark:border-white/[0.05] dark:bg-neutral-950/55 dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.34)]">
               {/* 技能 chip 行内摆在文字前面，占位符 / 正文接着它往下写。
                   accent 色回来了：它已经不在控件行里，不再和模式胶囊争「这一行唯一
                   有颜色的东西」，而技能本身有颜色恰恰是最快认出「现在要跑什么」的方式。 */}
@@ -560,9 +561,9 @@ function Composer({
                       // 一百多毫秒后整段文字再向左弹一下。那两拍就是看到的"卡顿"。
                       // 归零后换文案与让位发生在同一帧，只剩一次干净的位移。
                       exit={{ opacity: 0, transition: { duration: 0 } }}
-                      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 0.16, ease: EASE_ENTER }}
                       // mt-1 让 28px 的 chip 垂直居中对齐首行文字的中线（6px 上内边距 + 12px 半行高）
-                      className="group mt-1 inline-flex h-[28px] shrink-0 items-center gap-1.5 rounded-full pl-2.5 pr-2 text-[14px] transition-colors cursor-pointer"
+                      className="group mt-1 inline-flex h-[28px] shrink-0 items-center gap-1.5 rounded-full pl-2.5 pr-2 text-mr-body transition-colors cursor-pointer"
                       style={{
                         color: activeMeta.accentHex,
                         background: `color-mix(in oklab, ${activeMeta.accentHex} 12%, transparent)`,
@@ -596,7 +597,7 @@ function Composer({
                       ? t('aiLab.composer.placeholderSkill', { skill: activeMeta.name })
                       : t(modePlaceholderKey(mode))
                 }
-                className="block min-h-[66px] min-w-0 flex-1 resize-none overflow-y-hidden bg-transparent px-1.5 pt-1.5 text-[16px] leading-[1.5] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-50 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+                className="block min-h-[66px] min-w-0 flex-1 resize-none overflow-y-hidden bg-transparent px-1.5 pt-1.5 text-base leading-normal text-mr-ink placeholder:text-mr-muted transition-[height] duration-150 ease-out focus:outline-none disabled:opacity-50 dark:text-neutral-100 dark:placeholder:text-neutral-500"
               />
               </div>
 
@@ -635,7 +636,7 @@ function Composer({
                         onClick={() => fileRef.current?.click()}
                         aria-label={t('aiLab.composer.attachPdf')}
                         title={t('aiLab.composer.attachPdf')}
-                        className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-transparent text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-100 disabled:opacity-40 cursor-pointer"
+                        className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-transparent text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-neutral-100 disabled:opacity-40 cursor-pointer"
                       >
                         <Plus size={21} strokeWidth={2.25} className="shrink-0" />
                       </button>
@@ -666,7 +667,7 @@ function Composer({
                         'grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border transition-colors disabled:opacity-40 cursor-pointer',
                         speech.listening
                           ? 'border-transparent bg-sky-500 text-[#fff]'
-                          : 'border-white/[0.08] bg-white/[0.045] text-neutral-300 hover:bg-white/[0.075]'
+                          : 'border-mr-line bg-white/[0.045] text-neutral-300 hover:bg-white/[0.075]'
                       )}
                     >
                       <Mic size={17} className={cn(speech.listening && 'animate-pulse')} />
@@ -684,7 +685,7 @@ function Composer({
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
-                        transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.14, ease: EASE_ENTER }}
                         className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border border-transparent bg-sky-500 text-[#fff] transition-colors hover:bg-sky-400 cursor-pointer"
                       >
                         <Square size={12} fill="currentColor" />
@@ -699,7 +700,7 @@ function Composer({
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
-                        transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.14, ease: EASE_ENTER }}
                         className={cn(
                           'grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border transition-colors duration-150',
                           // 可发送时沿用蓝底白色上箭头，和深色输入框形成明确但不过分刺眼的主操作。

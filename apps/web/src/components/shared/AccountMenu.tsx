@@ -19,6 +19,12 @@ import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/userDisplay";
 import { HelpSubmenu } from "./HelpSubmenu";
 
+import { EASE_ENTER } from '@magic-resume/utils';
+import {
+  HoverSurface,
+  useHoverSurface,
+  type HoverSurfaceBinding,
+} from '@/components/ui/hover-surface';
 interface AccountMenuProps {
   /** `up` → opens above (sidebar footer); `right` → opens to the right (editor rail). */
   placement?: "up" | "right";
@@ -38,6 +44,10 @@ const GAP = 8;
  * clip it. Cloud-aware: self-hosted shows only personalize / settings / language.
  */
 export default function AccountMenu({ placement = "up", label }: AccountMenuProps) {
+  /* 菜单行共用一块滑动的底。「升级到 Pro」和「退出登录」各自有自己的色调，
+     所以走 bind 的第二个参数让面跟着换色——参考那边高亮滑到「删除」行时
+     整块转红，也是这么做的，而不是让那一行自己另画一个底。 */
+  const rowSurface = useHoverSurface();
   const { t, i18n } = useTranslation();
   const { user } = useAppUser();
   const { signOut } = useAppAuth();
@@ -131,7 +141,15 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
 
   const panel = (
     <motion.div
-      ref={panelRef}
+      // 面板自己已经挂了 ref（要测位置），一个元素挂不了两个——所以这里手动把
+      // 共享面的容器也指过去，其余三个接管点单独摊。
+      ref={(el: HTMLDivElement | null) => {
+        panelRef.current = el;
+        rowSurface.setContainer(el);
+      }}
+      onPointerMove={rowSurface.containerProps.onPointerMove}
+      onPointerLeave={rowSurface.containerProps.onPointerLeave}
+      onBlur={rowSurface.containerProps.onBlur}
       role="menu"
       aria-hidden={!open}
       initial={{ opacity: 0, scale: reduce ? 1 : 0.96, y: reduce ? 0 : 6, visibility: "hidden" }}
@@ -145,7 +163,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
               transitionEnd: { visibility: "hidden" },
             }
       }
-      transition={reduce ? { duration: 0.01 } : { duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+      transition={reduce ? { duration: 0.01 } : { duration: 0.14, ease: EASE_ENTER }}
       style={{
         position: "fixed",
         left: coords.left,
@@ -155,7 +173,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
         transformOrigin: "bottom left",
         pointerEvents: open ? "auto" : "none",
       }}
-      className="rounded-2xl border border-white/[0.06] bg-desk/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl will-change-transform"
+      className="rounded-2xl border border-mr-line-soft bg-desk/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl will-change-transform"
     >
       {/* sky top-seam signature */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
@@ -168,51 +186,68 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.imageUrl} alt={name ?? ""} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
               ) : (
-                <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-[11px] font-semibold text-neutral-300">
+                <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-mr-label font-semibold text-neutral-300">
                   {initials}
                 </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
               {name && <p className="truncate text-sm font-semibold text-neutral-100">{name}</p>}
-              {email && <p className="truncate text-[11px] text-neutral-500">{email}</p>}
+              {email && <p className="truncate text-mr-label text-neutral-500">{email}</p>}
             </div>
           </div>
           <Divider />
         </>
       )}
 
+      <HoverSurface
+        {...rowSurface.surfaceProps}
+        className="rounded-lg bg-mr-surface-soft data-[surface-variant=accent]:rounded-xl data-[surface-variant=accent]:bg-sky-400/10 data-[surface-variant=danger]:bg-red-500/10"
+      />
       {isCloudMode && (
         <button
           type="button"
           role="menuitem"
+          {...rowSurface.bind('upgrade', 'accent')}
           onClick={() => run(openPricing)}
-          className="mb-1 flex w-full items-center gap-2.5 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2.5 text-left transition-colors hover:border-sky-400/30 hover:bg-sky-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+          className="relative z-[1] mb-1 flex w-full items-center gap-2.5 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2.5 text-left transition-colors hover:border-sky-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
         >
           <Sparkles size={16} className="shrink-0 text-sky-300" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium text-sky-100">{t("account.menu.upgrade")}</p>
-            <p className="truncate text-[11px] text-sky-300/50">{t("account.menu.upgradeHint")}</p>
+            <p className="truncate text-mr-caption font-medium text-sky-100">{t("account.menu.upgrade")}</p>
+            <p className="truncate text-mr-label text-sky-300/50">{t("account.menu.upgradeHint")}</p>
           </div>
           <ChevronRight size={16} className="shrink-0 text-sky-300/70" />
         </button>
       )}
 
-      {isCloudMode && <MenuRow icon={<UserIcon size={16} />} label={t("account.menu.profile")} onClick={() => run(openAccount)} />}
-      <MenuRow icon={<Settings size={16} />} label={t("account.menu.settings")} onClick={() => run(() => openSettings())} />
+      {isCloudMode && (
+        <MenuRow
+          surface={rowSurface.bind('profile')}
+          icon={<UserIcon size={16} />}
+          label={t("account.menu.profile")}
+          onClick={() => run(openAccount)}
+        />
+      )}
+      <MenuRow
+        surface={rowSurface.bind('settings')}
+        icon={<Settings size={16} />}
+        label={t("account.menu.settings")}
+        onClick={() => run(() => openSettings())}
+      />
       <HelpSubmenu menuOpen={open} onNavigate={() => setOpen(false)} />
 
       {/* in-place language switch */}
       <div className="flex items-center justify-between gap-2 px-2.5 py-2">
         <span className="text-sm text-neutral-400">{t("account.menu.language")}</span>
-        <div className="inline-flex rounded-lg bg-white/[0.04] p-0.5">
+        <div className="inline-flex rounded-lg bg-mr-surface-subtle p-0.5">
           {(["en", "zh"] as const).map((code) => (
             <button
               key={code}
               type="button"
               onClick={() => setPreferredLanguage(code)}
               className={cn(
-                "rounded-md px-2 py-0.5 text-[12px] transition-colors",
+                "rounded-md px-2 py-0.5 text-mr-overline transition-colors",
                 currentLang === code ? "bg-sky-400/15 text-sky-200" : "text-neutral-500 hover:text-neutral-300",
               )}
             >
@@ -228,8 +263,9 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
           <button
             type="button"
             role="menuitem"
+            {...rowSurface.bind('signOut', 'danger')}
             onClick={() => run(() => void signOut())}
-            className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-neutral-400 transition-colors hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
+            className="group relative z-[1] flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-neutral-400 transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
           >
             <LogOut size={16} className="shrink-0 text-neutral-500 transition-colors group-hover:text-red-400" />
             {t("account.menu.signOut")}
@@ -256,7 +292,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
         className={cn(
           "group/acct flex items-center outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50",
           label
-            ? "w-full rounded-xl px-2 py-1.5 transition-colors hover:bg-white/[0.05]"
+            ? "w-full rounded-xl px-2 py-1.5 transition-colors hover:bg-mr-surface-muted"
             : "rounded-full",
         )}
       >
@@ -271,7 +307,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.imageUrl} alt={name ?? t("account.menu.title")} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
             ) : isCloudMode && initials ? (
-              <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-[11px] font-semibold text-neutral-300">
+              <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-mr-label font-semibold text-neutral-300">
                 {initials}
               </span>
             ) : (
@@ -288,13 +324,24 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
   );
 }
 
-function MenuRow({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function MenuRow({
+  icon,
+  label,
+  onClick,
+  surface,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  surface?: HoverSurfaceBinding;
+}) {
   return (
     <button
       type="button"
       role="menuitem"
+      {...surface}
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+      className="group relative z-[1] flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-neutral-300 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
     >
       <span className="shrink-0 text-neutral-500 transition-colors group-hover:text-neutral-300">{icon}</span>
       {label}
@@ -303,5 +350,5 @@ function MenuRow({ icon, label, onClick }: { icon: React.ReactNode; label: strin
 }
 
 function Divider() {
-  return <div className="mx-1 my-1 h-px bg-white/[0.06]" />;
+  return <div className="mx-1 my-1 h-px bg-mr-surface-soft" />;
 }

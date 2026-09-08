@@ -149,6 +149,19 @@ const nextConfig: NextConfig = {
    */
   distDir: process.env.NEXT_DIST_DIR || ".next",
 
+  /**
+   * 开发期陈列 / 验收页（`src/app/mock/**`）用 `page.dev.tsx`，生产构建里**根本不是路由**。
+   *
+   * 此前它们叫 `page.tsx`，靠组件里一行 `NODE_ENV === 'production' 时 return null`
+   * 兜底——那是渲染时返回空，不是路由不存在：线上访问拿到的是 200 空白页，而整页
+   * 的假数据和依赖照样打进 chunk 发出去了。挡住一个页面要在构建这一层挡，不能靠
+   * 页面自己客气。
+   */
+  pageExtensions:
+    process.env.NODE_ENV === 'production'
+      ? ['tsx', 'ts', 'jsx', 'js']
+      : ['tsx', 'ts', 'jsx', 'js', 'dev.tsx', 'dev.ts'],
+
   // Magic-Resume commercial overlay alias. Roots are provided only by private commercial builds.
   webpack: (config, { webpack }) => {
     const runtimeRoot = process.env.MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT;
@@ -323,7 +336,7 @@ const nextConfig: NextConfig = {
   // SWC minification 现在是默认启用的，无需显式配置
 
   // 后端统一走单一 origin（NEXT_PUBLIC_API_URL）+ 本地网关；
-  // 不再用 next.config 注入 BACKEND_URL，也不再做 interview 路径转发。
+  // 不再注入独立 agent 地址，也不再做 interview 路径转发；所有请求交给网关按路径路由。
 };
 
 export default nextConfig;

@@ -72,7 +72,7 @@ GEO = SEO（让 AI 搜得到你）+ RAG（让 AI 愿意引用你）
 | `apps/landing` i18n | **AI 简历工作台** — AI 就地提议修改，由你决定采纳 |
 | `apps/web` metaConfig | **免费的 AI 智能简历制作器** — 精美模板、一键生成 |
 | README | **AI 原生简历平台** — 还能让 AI 编程工具直接编辑 |
-| `apps/web` StructuredData | **AI驱动的智能简历制作器** / **专业的AI简历制作平台**（同文件内两处又不一致） |
+| `apps/web` metaConfig | **AI驱动的智能简历制作器** / **专业的AI简历制作平台**（历史配置曾经不一致，现已统一） |
 
 ### 2.3 ⚠ 正在踩红线：不实声明清单
 
@@ -85,15 +85,11 @@ GEO = SEO（让 AI 搜得到你）+ RAG（让 AI 愿意引用你）
 | `metaConfig.ts:19` | `提供50+精美模板` | **19 套**（`packages/resume-schema` `templateIds` 已核实） | 极高，仓库可数 |
 | `metaConfig.ts:19` | `已帮助10万+用户成功求职` | 量级存疑，**需业务方核对** | 高，外部可质疑 |
 | `metaConfig.ts:10` | `免费的AI驱动智能简历制作器` | 与 Free/Pro 双档订阅矛盾 | 高，价格页可查 |
-| `StructuredData.tsx:95-101` | `aggregateRating 4.8 / reviewCount 500` | **无评价体系，纯编造** | 极高，且违反 Google 结构化数据政策 |
-| `StructuredData.tsx:88-94` | `price: "0"` / `priceValidUntil: "2025-12-31"` | 与订阅矛盾；日期已过期 | 高 |
-| `StructuredData.tsx:39-43,62-65` | `sameAs` 指向 `github.com/magic-resume` 等 | 真实仓库是 `LinMoQC/Magic-Resume` | 极高，链接可点 |
-| `StructuredData.tsx:131` | `准确率达到90%以上` | 无依据 | 中 |
-| `StructuredData.tsx:139` | `所有简历数据采用本地存储，我们不会收集或存储您的个人信息` | 与默认开启的云同步矛盾 | **高，且属对用户的实质性陈述** |
+| 旧 web JSON-LD 实现（已删除） | 虚构评分、过期价格、未经核实链接与隐私声明 | 已从活动源码移除，避免继续输出失实内容 | 已关闭 |
 | `metaConfig.ts:51-54` | `google: "your-google-verification-code"` | 占位符被发布到生产 | — |
 | `metaConfig.ts:38` | `creator: '@MagicResume'` | handle 真实性存疑 | 高 |
 
-**影响面被低估了**：`metaConfig.Landing` 被 spread 进 `app/layout.tsx` 的根 metadata，`StructuredData` 的 website / organization / product 三段也渲染在根 layout —— 即上述内容出现在 **`apps/web` 的每一个页面上**，不是只在首页。
+**影响面被低估了**：`metaConfig.Landing` 被 spread 进 `app/layout.tsx` 的根 metadata；旧 JSON-LD 实现曾经渲染在根 layout，影响 **`apps/web` 的每一个页面**，目前已移除。
 
 ### 2.4 另一处需修正：web 的 canonical 指向 landing
 
@@ -126,7 +122,7 @@ GEO = SEO（让 AI 搜得到你）+ RAG（让 AI 愿意引用你）
 
 1. `apps/landing/src/i18n/{en,zh}.json` → `meta.description`
 2. `apps/web/src/lib/constants/metaConfig.ts` → `description` / `openGraph.description`
-3. `apps/web/src/components/shared/StructuredData.tsx` → 各 `description`
+3. `apps/landing/src/components/Seo.astro` → 各 `description`
 4. `apps/landing/src/components/Seo.astro` → SoftwareApplication `description`（已自动取 `meta.description`，改 1 即可）
 5. `README.md` / `README.zh-CN.md` 首段
 6. GitHub 仓库 About 字段（**需你手动改，代码改不到**）
@@ -233,11 +229,11 @@ GEO = SEO（让 AI 搜得到你）+ RAG（让 AI 愿意引用你）
 
 ### 8.3 结构化数据引用了 6 张不存在的图片 + 1 个不存在的路由
 
-`StructuredData.tsx` 的 `howto` / `article` 分支引用了 `/howto-guide.png`、`/step1-template.png` 等 6 张图，`apps/web/public` 里**一张都没有**；`website` 分支的 `SearchAction` 指向 `/search`，该路由不存在。均已删除或改指真实资产。
+旧 web JSON-LD 的 `howto` / `article` 分支曾引用 `/howto-guide.png`、`/step1-template.png` 等 6 张不存在的图片，`website` 分支也曾指向不存在的 `/search` 路由。旧实现已删除，landing 的 `Seo.astro` 只引用现有资产。
 
 ### 8.4 上一轮删掉 landing 的 preview.png，连带打断了 web 的 schema 引用
 
-`StructuredData.tsx` 的 `screenshot` 指向 `https://magic-resume.cn/magic-resume-preview.png`——那是 landing 域名下的资产，而 landing 优化时该文件已被 `magic-resume-og.jpg` 取代。若不修，schema 会指向一个 404。
+旧 web JSON-LD 的 `screenshot` 曾指向已被替换的 landing 资产；旧实现已删除，当前 schema 使用现有的 `magic-resume-og.jpg`。
 
 **教训**：跨 app 的资产引用（web 的 schema 指向 landing 域名下的文件）没有任何静态检查能发现。建议此类引用集中登记，或改由构建期校验。
 

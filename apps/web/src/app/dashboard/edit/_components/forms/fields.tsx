@@ -14,7 +14,7 @@ import { ACCEPTED_IMAGE_ACCEPT_ATTR } from "@/lib/utils/image";
  * ------------------------------------------------------------------ */
 
 export const fieldInputClass =
-  "h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] text-neutral-100 outline-none transition-colors duration-150 placeholder:text-neutral-600 hover:border-white/20 focus:border-sky-400/60 focus:bg-white/[0.06]";
+  "h-9 w-full rounded-lg border border-white/10 bg-mr-surface-subtle px-3 text-mr-caption text-neutral-100 outline-none transition-colors duration-150 placeholder:text-neutral-600 hover:border-white/20 focus:border-sky-400/60 focus:bg-mr-surface-soft";
 
 export function FieldLabel({
   htmlFor,
@@ -28,7 +28,7 @@ export function FieldLabel({
   return (
     <label
       htmlFor={htmlFor}
-      className={cn("text-[12px] font-medium text-neutral-400", className)}
+      className={cn("text-mr-overline font-medium text-neutral-400", className)}
     >
       {children}
     </label>
@@ -116,7 +116,7 @@ export function AvatarField({
         disabled={uploading}
         aria-label={t("basicForm.avatarUpload.button")}
         title={t("basicForm.avatarUpload.button")}
-        className="group relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.04] outline-none transition-colors hover:border-sky-400/60 focus-visible:border-sky-400/60"
+        className="group relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-mr-surface-subtle outline-none transition-colors hover:border-sky-400/60 focus-visible:border-sky-400/60"
       >
         {value ? (
           // 用原生 img:头像可能是 data:URL(self-hosted 内嵌),与简历模板保持一致渲染。

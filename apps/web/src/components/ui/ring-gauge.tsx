@@ -40,7 +40,7 @@ export function RingGauge({
       <div className="absolute rounded-full bg-neutral-950" style={{ inset: stroke }} />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-[26px] font-semibold leading-none text-white tabular-nums">{roundedValue}</span>
-        <span className="mt-0.5 text-[10px] text-neutral-500">{label}</span>
+        <span className="mt-0.5 text-mr-micro text-neutral-500">{label}</span>
       </div>
     </div>
   );

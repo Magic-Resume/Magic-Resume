@@ -124,17 +124,17 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
   };
 
   return (
-    <div className="rounded-lg bg-white/[0.04] p-3">
+    <div className="rounded-lg bg-mr-surface-subtle p-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2 text-[13px] text-neutral-100">
+        <div className="flex min-w-0 items-center gap-2 text-mr-caption text-neutral-100">
           <ShieldCheck size={16} className="shrink-0 text-neutral-500" />
           <span className="truncate">{t('account.security.totp.label')}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span
             className={cn(
-              'rounded px-1.5 py-0.5 text-[11px]',
-              on ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.06] text-neutral-500'
+              'rounded px-1.5 py-0.5 text-mr-label',
+              on ? 'bg-emerald-500/15 text-emerald-300' : 'bg-mr-surface-soft text-neutral-500'
             )}
           >
             {t(on ? 'account.security.on' : 'account.security.off')}
@@ -149,7 +149,7 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
               }}
               disabled={busy}
               className={cn(
-                'rounded px-2 py-1 text-[12px] transition-colors disabled:opacity-40 cursor-pointer',
+                'rounded px-2 py-1 text-mr-overline transition-colors disabled:opacity-40 cursor-pointer',
                 on
                   ? 'text-rose-300 hover:bg-rose-400/10'
                   : 'text-sky-300 hover:bg-sky-400/10 hover:text-sky-200'
@@ -164,8 +164,8 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
       </div>
 
       {step === 'scan' && (
-        <form onSubmit={verify} className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
-          <p className="text-[12px] leading-relaxed text-neutral-400">
+        <form onSubmit={verify} className="mt-3 space-y-3 border-t border-mr-line-soft pt-3">
+          <p className="text-mr-overline leading-relaxed text-neutral-400">
             {t('account.security.totp.scanHint')}
           </p>
           <div className="flex items-start gap-3">
@@ -173,15 +173,15 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
             <div className="min-w-0 flex-1 space-y-2">
               {/* 相机不可用、或用桌面验证器的人需要手输，密钥必须给得出来。 */}
               <div>
-                <span className="mb-1 block text-[11px] text-neutral-500">
+                <span className="mb-1 block text-mr-label text-neutral-500">
                   {t('account.security.totp.manualKey')}
                 </span>
-                <code className="block select-all break-all rounded bg-neutral-950/60 px-2 py-1 font-mono text-[11.5px] text-neutral-300">
+                <code className="block select-all break-all rounded bg-neutral-950/60 px-2 py-1 font-mono text-mr-label-tight text-neutral-300">
                   {secret}
                 </code>
               </div>
               <label className="block">
-                <span className="mb-1 block text-[11px] text-neutral-500">
+                <span className="mb-1 block text-mr-label text-neutral-500">
                   {t('account.security.totp.enterCode')}
                 </span>
                 <input
@@ -190,16 +190,16 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   placeholder="000000"
-                  className="w-full rounded-lg border border-white/[0.08] bg-neutral-950/60 px-3 py-1.5 font-mono text-[14px] tracking-[0.3em] text-neutral-100 outline-none transition-colors focus:border-sky-400/40"
+                  className="w-full rounded-lg border border-mr-line bg-neutral-950/60 px-3 py-1.5 font-mono text-mr-body tracking-[0.3em] text-neutral-100 outline-none transition-colors focus:border-sky-400/40"
                 />
               </label>
             </div>
           </div>
-          {error && <p className="text-[12px] text-rose-300">{error}</p>}
+          {error && <p className="text-mr-overline text-rose-300">{error}</p>}
           <button
             type="submit"
             disabled={busy || code.length !== 6}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-3.5 py-1.5 text-[12.5px] font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-3.5 py-1.5 text-mr-ui font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-40 cursor-pointer"
           >
             {busy && <Loader2 size={13} className="animate-spin" />}
             {t('account.security.totp.verify')}
@@ -208,11 +208,11 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
       )}
 
       {step === 'codes' && (
-        <div className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
-          <p className="text-[12px] font-medium leading-relaxed text-amber-200/90">
+        <div className="mt-3 space-y-3 border-t border-mr-line-soft pt-3">
+          <p className="text-mr-overline font-medium leading-relaxed text-amber-200/90">
             {t('account.security.totp.codesWarning')}
           </p>
-          <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-neutral-950/60 p-2.5 font-mono text-[12px] text-neutral-200">
+          <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-neutral-950/60 p-2.5 font-mono text-mr-overline text-neutral-200">
             {codes.map((c) => (
               <span key={c} className="select-all">
                 {c}
@@ -224,10 +224,10 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
               type="button"
               onClick={copyCodes}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] transition-colors cursor-pointer',
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-mr-ui transition-colors cursor-pointer',
                 copied
                   ? 'bg-emerald-500/15 text-emerald-300'
-                  : 'bg-white/[0.06] text-neutral-200 hover:bg-white/[0.1]'
+                  : 'bg-mr-surface-soft text-neutral-200 hover:bg-white/[0.1]'
               )}
             >
               {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -236,14 +236,14 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
             <button
               type="button"
               onClick={downloadCodes}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1.5 text-[12.5px] text-neutral-200 transition-colors hover:bg-white/[0.1] cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-mr-surface-soft px-3 py-1.5 text-mr-ui text-neutral-200 transition-colors hover:bg-white/[0.1] cursor-pointer"
             >
               <Download size={13} />
               {t('account.security.totp.download')}
             </button>
           </div>
           {/* 这道闸是硬的：没勾就没有出口。 */}
-          <label className="flex items-start gap-2 text-[12px] text-neutral-300">
+          <label className="flex items-start gap-2 text-mr-overline text-neutral-300">
             <input
               type="checkbox"
               checked={saved}
@@ -256,7 +256,7 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
             type="button"
             onClick={finish}
             disabled={!saved}
-            className="inline-flex items-center rounded-lg bg-sky-500 px-3.5 py-1.5 text-[12.5px] font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center rounded-lg bg-sky-500 px-3.5 py-1.5 text-mr-ui font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-40 cursor-pointer"
           >
             {t('account.security.done')}
           </button>
@@ -264,16 +264,16 @@ export default function TotpSection({ user }: { user: ClerkUser }) {
       )}
 
       {step === 'confirmDisable' && (
-        <div className="mt-3 space-y-2 border-t border-white/[0.06] pt-3">
-          <p className="text-[12px] leading-relaxed text-neutral-400">
+        <div className="mt-3 space-y-2 border-t border-mr-line-soft pt-3">
+          <p className="text-mr-overline leading-relaxed text-neutral-400">
             {t('account.security.totp.disableWarning')}
           </p>
-          {error && <p className="text-[12px] text-rose-300">{error}</p>}
+          {error && <p className="text-mr-overline text-rose-300">{error}</p>}
           <button
             type="button"
             onClick={disable}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/90 px-3.5 py-1.5 text-[12.5px] font-semibold text-[#fff] transition-colors hover:bg-rose-500 disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/90 px-3.5 py-1.5 text-mr-ui font-semibold text-[#fff] transition-colors hover:bg-rose-500 disabled:opacity-40 cursor-pointer"
           >
             {busy && <Loader2 size={13} className="animate-spin" />}
             {t('account.security.totp.confirmDisable')}

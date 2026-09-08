@@ -28,7 +28,8 @@ function parsedToolOutput(value: unknown): Record<string, unknown> | undefined {
   }
   const direct = recordOf(value);
   if (!direct) return undefined;
-  if (Array.isArray(direct.results)) return direct;
+  if (Array.isArray(direct.results) || typeof direct.status === "string")
+    return direct;
   if (typeof direct.content === "string") {
     return parsedToolOutput(direct.content);
   }
@@ -105,6 +106,19 @@ export function normalizeCitationSources(value: unknown): CitationSource[] {
  * validated web-search payload here prevents old/mixed deployments from
  * leaving naked [n] markers in a new frontend.
  */
+/**
+ * 工具自报的结果状态（`ok` / `empty` / `daily_limit_exhausted` …）。
+ *
+ * 它一直躺在 `web_search` 的 JSON 里没人读，于是「今天额度用完了」在用户眼里是一行
+ * 「正在搜索网页」然后什么都没有——最伤信任的那种失败，静默的。
+ */
+export function webSearchStatusFromToolResult(
+  value: unknown,
+): string | undefined {
+  const status = parsedToolOutput(value)?.status;
+  return typeof status === "string" && status.trim() ? status : undefined;
+}
+
 export function citationSourcesFromWebSearchToolResult(
   value: unknown,
 ): CitationSource[] {
@@ -164,6 +178,65 @@ export function visibleCitationSources(
         source.citationId,
     )
     .sort((a, b) => (a.citationId ?? 0) - (b.citationId ?? 0));
+}
+
+/**
+ * 这**一次**搜索带回的来源。
+ *
+ * 三种「没有 citationIds」要分开处理，否则会以另一种方式犯回原来那个错：
+ *
+ * 1. **还在跑**——`source_update` 没到。此刻退回整轮合并，第二次搜索会当场显示第一次的
+ *    数字和图标，正是这次要修掉的东西。所以宁可先说「正在搜索网页」。
+ * 2. **跑完了、但有 `searchStatus`**——这个部署会按次报账，没 id 就是真的没有。
+ * 3. **跑完了、两样都没有**——老部署或老的持久化消息，这时才退回整轮合并；降级要不声
+ *    不响，不能报错。
+ */
+export function sourcesForToolCall(
+  sources: CitationSource[] = [],
+  call: { citationIds?: number[]; searchStatus?: string; done?: boolean } = {},
+): CitationSource[] {
+  const visible = visibleCitationSources(sources);
+  if (call.citationIds?.length) {
+    const wanted = new Set(call.citationIds);
+    return visible.filter(
+      (source) =>
+        source.citationId !== undefined && wanted.has(source.citationId),
+    );
+  }
+  if (!call.done || call.searchStatus) return [];
+  return visible;
+}
+
+/**
+ * 内部来源（知识库 / 面经 / 简历范式库）。
+ *
+ * 它们**不进正文行内引用**：没有可公开的 URL，一个点不开的引用胶囊是个兽不兽的承诺。
+ * 但「这条建议还靠了一库面经」值得说，所以它们在来源面板里单独成区。
+ */
+export function internalCitationSources(
+  sources: CitationSource[] = [],
+): CitationSource[] {
+  return sources.filter((source) => source.kind === "internal");
+}
+
+/**
+ * 这条来源在界面上叫什么：**用它自己的标题**。
+ *
+ * 不另造一层「站点名」。曾经有过一张域名→站点名的手写映射表，那是错的：它只覆盖写表时
+ * 想到的那些站，结果一半胶囊说「牛客网」、一半说 `jobs.bytedance.com`，区别只在于当时有
+ * 没有想到那个域名。而 provider 本来就返回了 `title`（「字节跳动招聘官网」），那是真数据。
+ *
+ * `sourceName` 是 provider 给的权威站点名，今天没有任何一家返回它；给了就以它为准。
+ * 域名不在这里，它降为归属行（见浮层卡与来源面板），和标题分工。
+ */
+export function sourceHeadline(
+  source: Partial<Pick<CitationSource, "title" | "url" | "sourceName">>,
+): string {
+  const title = source.title?.trim();
+  if (title) return title;
+  const supplied = source.sourceName?.trim();
+  if (supplied) return supplied;
+  return source.url ? sourceDomain(source.url) : "";
 }
 
 export function sourceDomain(url: string): string {

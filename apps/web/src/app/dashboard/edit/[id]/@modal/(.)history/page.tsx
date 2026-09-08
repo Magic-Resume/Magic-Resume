@@ -1,6 +1,7 @@
 'use client';
 
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
+import { useResumeVersionsStore } from '@/store/resume/versions';
 import VersionHistoryDialog from '@/app/dashboard/edit/_components/modals/VersionHistoryDialog';
 import { useEffect, useState } from 'react';
 import { useSettingStore } from '@/store/useSettingStore';
@@ -8,8 +9,10 @@ import { useInterceptModalRoute } from '@/hooks/useInterceptModalRoute';
 
 export default function HistoryModalPage() {
   const { open, close } = useInterceptModalRoute();
-  const cloudSync = useSettingStore(state => state.cloudSync);
-  const { activeResume, refreshCloudVersions, restoreVersion, deleteVersion } = useResumeStore();
+  const cloudSync = useSettingStore((state) => state.cloudSync);
+  const { activeResume } = useResumeDocumentStore();
+  const { refreshCloudVersions, restoreVersion, deleteVersion } =
+    useResumeVersionsStore();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {

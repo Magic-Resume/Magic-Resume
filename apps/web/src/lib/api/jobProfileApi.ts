@@ -20,7 +20,8 @@ export interface JobProfile {
   answers: Record<string, string[]>;
   /** 每次落库 +1。画像变得不对时，它是「哪一步改坏的」唯一线索。 */
   revision: number;
-  updatedAt: string;
+  /** `null` is returned for the explicit `status: 'none'` projection. */
+  updatedAt: string | null;
   /** 停用 ≠ 删除：关掉只是不再注进 prompt，内容还在。 */
   enabled: boolean;
 }

@@ -13,6 +13,7 @@ import {
   type AgentMode,
 } from './modes';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 模式控件只借当前模式的 accent 着色文字——「AI 现在能不能动我的简历」
  * 是这一行里唯一有后果的选择，但不需要靠背景色抢占注意力。
@@ -57,9 +58,9 @@ export default function ModePicker({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full px-2 text-[14px] transition-colors hover:bg-white/[0.06] disabled:opacity-40 cursor-pointer"
+        className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full px-2 text-mr-body transition-colors hover:bg-mr-surface-soft disabled:opacity-40 cursor-pointer"
         style={{
-          color: `color-mix(in oklab, ${accent} 78%, var(--text-primary))`,
+          color: `color-mix(in oklab, ${accent} 78%, var(--text-mr-ink))`,
         }}
       >
         <ActiveIcon size={14} className="shrink-0" />
@@ -77,8 +78,8 @@ export default function ModePicker({
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-64 origin-bottom rounded-[17px] border border-white/[0.06] bg-neutral-900/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
+            transition={{ duration: 0.16, ease: EASE_ENTER }}
+            className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-64 origin-bottom rounded-[17px] border border-mr-line-soft bg-neutral-900/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl"
           >
             {AGENT_MODE_LIST.map((id) => {
               const active = id === mode;
@@ -96,7 +97,7 @@ export default function ModePicker({
                   }}
                   className={cn(
                     'flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-left transition-colors cursor-pointer',
-                    active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.035]'
+                    active ? 'bg-mr-surface-soft' : 'hover:bg-white/[0.035]'
                   )}
                 >
                   {/* 图元始终着本档的色，选中与否只改文字与背景——否则三行图标全是灰的，
@@ -108,12 +109,12 @@ export default function ModePicker({
                   />
                   <span className="min-w-0 flex-1">
                     <span
-                      className="block text-[14px] font-medium"
-                      style={active ? { color: itemAccent } : { color: 'var(--text-primary)' }}
+                      className="block text-mr-body font-medium"
+                      style={active ? { color: itemAccent } : { color: 'var(--text-mr-ink)' }}
                     >
                       {t(modeNameKey(id))}
                     </span>
-                    <span className="mt-0.5 block text-[12px] leading-snug text-neutral-500">
+                    <span className="mt-0.5 block text-mr-overline leading-snug text-neutral-500">
                       {t(modeHintKey(id))}
                     </span>
                   </span>

@@ -1,5 +1,5 @@
 import type { LucideIcon } from '@magic-resume/icons';
-import type { WidgetInstance } from "@magic-resume/genui/contract";
+import type { WidgetInstance } from "@magic-resume/genui";
 import type { AgentActivity } from "./conversation/agentActivity";
 
 export type SkillId =
@@ -103,6 +103,16 @@ export interface ToolCall {
    * 这样的开发者词汇给求职者看，而且不报错、只在截图里被发现。
    */
   summary?: ToolCallSummary;
+  /**
+   * `web_search` 专用：这一次搜索带回的来源编号，以及工具自报的结果状态。
+   *
+   * 来源必须**按次**记账。此前搜索行读的是整条消息合并后的 sources，于是一轮里两次搜索
+   * 显示同一个数字、同一批图标——「搜了 9 个网站 / 又搜了 3 个」这件真实发生过的事，
+   * 界面上完全看不出来。
+   */
+  citationIds?: number[];
+  /** 工具返回的 `status`（ok / empty / quota_exceeded…）。缺席按老结果处理。 */
+  searchStatus?: string;
 }
 
 /** @see ToolCall.summary */
@@ -115,7 +125,7 @@ export interface ToolCallSummary {
   kind?: string;
   /** 动作词的 i18n key 后缀（`read` / `write` / `search` / `track`…）。 */
   verb?: string;
-  /** 芯片图标键，见 `genui/beautiful/icons.tsx`。 */
+  /** 芯片图标键，见 GenUI 的 icons。 */
   icon?: string;
   /** 这次作用在什么上——后端比前端更清楚（它知道「投递面板」，前端只能猜路径片段）。 */
   subject?: string;

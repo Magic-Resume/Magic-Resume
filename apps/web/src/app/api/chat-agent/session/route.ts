@@ -31,8 +31,12 @@ export async function DELETE(req: NextRequest) {
     );
     return NextResponse.json(
       // 只回码：`errorMessage` 会把 undici 内部与内网 host 泄漏出去。
-      { errorCode: 'upstream_unavailable', error: 'upstream_unavailable', retryable: true },
-      { status: 500 }
+      {
+        errorCode: 'upstream_unavailable',
+        error: 'upstream_unavailable',
+        retryable: true,
+      },
+      { status: 500 },
     );
   }
 }

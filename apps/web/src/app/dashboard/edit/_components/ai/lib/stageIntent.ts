@@ -43,12 +43,42 @@ export const STAGE_WIDTH: Record<StageIntent, string> = {
   immerse: '58%',
 };
 
+/**
+ * 右舷此刻装着谁。**互斥**——右舞台只有一块地方。
+ *
+ * 是判别联合而不是几个布尔：三个布尔能组合出 8 种状态而只有 4 种合法，多出来的那些
+ * 迟早会被某条路径写出来，而且不会报错，只会同时渲染两位住客。
+ */
+export type StageOccupant =
+  | { kind: 'none' }
+  /** 活画布：逐段审阅改动 */
+  | { kind: 'living' }
+  /** 工件画布：分析、报告 */
+  | { kind: 'artifact' }
+  /** 来源面板：某一条回答用到的网页与记忆 */
+  | { kind: 'sources'; messageId: string };
+
 /** 由「右舷此刻装着谁」推出意图。**这是唯一允许内容影响宽度的地方。** */
-export function stageIntentOf(input: {
-  livingOpen: boolean;
-  canvasOpen: boolean;
-}): StageIntent {
-  if (input.livingOpen) return 'immerse';
-  if (input.canvasOpen) return 'assist';
+export function stageIntentOf(occupant: StageOccupant): StageIntent {
+  if (occupant.kind === 'living') return 'immerse';
+  if (occupant.kind === 'artifact' || occupant.kind === 'sources')
+    return 'assist';
   return 'hidden';
+}
+
+/**
+ * 低于这个视口宽度，44% 的右舷只剩一条缝，来源面板改为**整幅接管**（沿用轨迹页整列
+ * 替换对话的那套做法）。
+ *
+ * 只作用于来源面板：活画布和报告画布的窄屏行为是另一件事，不在这次范围里顺手改掉。
+ *
+ * 阈值仍是估计值——真正的分界要拿窄窗口实测（见
+ * `docs/specs/search-and-citations/design-brief.md` §11-3）。
+ */
+export const STAGE_TAKEOVER_BREAKPOINT = 1024;
+
+/** 右舷此刻该多宽。宽度仍只由意图决定，窄屏只是多一条接管规则。 */
+export function stageWidthOf(occupant: StageOccupant, narrow = false): string {
+  if (narrow && occupant.kind === 'sources') return '100%';
+  return STAGE_WIDTH[stageIntentOf(occupant)];
 }

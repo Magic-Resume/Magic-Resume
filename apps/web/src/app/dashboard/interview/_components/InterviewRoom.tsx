@@ -26,6 +26,7 @@ import InterviewComposer from './InterviewComposer';
 import Transcript from './Transcript';
 import LeaveConfirm from './LeaveConfirm';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 模拟面试的整场：**一屏、两种输入、一种回应**。
  *
@@ -478,7 +479,7 @@ export default function InterviewRoom({
             <button
               type="button"
               onClick={leave}
-              className="cursor-pointer rounded-full bg-sunk px-5 py-2 text-[12px] text-primary transition-colors hover:bg-raised"
+              className="cursor-pointer rounded-full bg-sunk px-5 py-2 text-mr-overline text-primary transition-colors hover:bg-raised"
             >
               {t('aiLab.interview.backToDashboard')}
             </button>
@@ -498,7 +499,7 @@ export default function InterviewRoom({
             <button
               type="button"
               onClick={leave}
-              className="cursor-pointer rounded-full bg-sunk px-5 py-2.5 text-[13px] text-primary transition-colors hover:bg-raised"
+              className="cursor-pointer rounded-full bg-sunk px-5 py-2.5 text-mr-caption text-primary transition-colors hover:bg-raised"
             >
               {t('aiLab.interview.backToDashboard')}
             </button>
@@ -524,12 +525,12 @@ export default function InterviewRoom({
             {report ? (
               <InterviewReportView report={report} />
             ) : (
-              <div className="flex items-center justify-center gap-2 pt-16 text-[13px] text-secondary">
+              <div className="flex items-center justify-center gap-2 pt-16 text-mr-caption text-secondary">
                 <Loader2 size={14} className="animate-spin" />
                 {t('aiLab.interview.report.generating')}
               </div>
             )}
-            {error && <p className="mt-4 text-[12px] text-rev-del">{error}</p>}
+            {error && <p className="mt-4 text-mr-overline text-rev-del">{error}</p>}
           </div>
         )}
       </OrbStage>
@@ -589,9 +590,9 @@ function Header({
       <span className="text-sm font-medium text-primary">
         {t('aiLab.interview.title')}
       </span>
-      {role && <span className="text-[12px] text-secondary">{role}</span>}
+      {role && <span className="text-mr-overline text-secondary">{role}</span>}
       {stage && (
-        <span className="rounded-full bg-sunk px-2.5 py-1 text-[11px] text-secondary">
+        <span className="rounded-full bg-sunk px-2.5 py-1 text-mr-label text-secondary">
           {t(`aiLab.interview.stage.${stage}`)}
         </span>
       )}
@@ -648,7 +649,7 @@ function OrbStage({
         <motion.div
           initial={{ scale: 0.35, opacity: 0 }}
           animate={{ scale, opacity: 1, y }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, ease: EASE_ENTER }}
           style={{ width: 'min(38vh, 300px)', height: 'min(38vh, 300px)' }}
           className={onToggle ? 'pointer-events-auto cursor-pointer' : ''}
           onClick={onToggle}

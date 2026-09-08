@@ -11,6 +11,7 @@
  */
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type { TemplateId } from '@magic-resume/resume-schema';
 import { Font, renderToBuffer } from '@react-pdf/renderer';
 import type { DocumentProps } from '@react-pdf/renderer';
 import { join } from 'node:path';
@@ -42,19 +43,29 @@ const resume = {
   },
   sections: {
     experience: [
-      { id: 'e1', visible: true, company: '某公司', position: '前端', date: '2021 - 2024', summary: '<p>正文</p>' },
+      {
+        id: 'e1',
+        visible: true,
+        company: '某公司',
+        position: '前端',
+        date: '2021 - 2024',
+        summary: '<p>正文</p>',
+      },
     ],
     // Built-ins many templates render in their SIDEBAR — the case that made
     // every one of them look undeclared and get duplicated into the main column.
     skills: [{ id: 's1', visible: true, name: SKILL_NAME, level: '熟练' }],
-    languages: [{ id: 'l1', visible: true, name: LANGUAGE_NAME, level: 'CET-6' }],
+    languages: [
+      { id: 'l1', visible: true, name: LANGUAGE_NAME, level: 'CET-6' },
+    ],
     // The section the app never defined.
     personalStrengths: [
       {
         id: 'ps1',
         visible: true,
         name: ITEM_NAME,
-        summary: '<ul><li>熟练使用 Claude Code、Cursor、Codex</li><li>英语 CET-4、CET-6</li></ul>',
+        summary:
+          '<ul><li>熟练使用 Claude Code、Cursor、Codex</li><li>英语 CET-4、CET-6</li></ul>',
         customFields: [
           { id: 'cf1', name: CUSTOM_FIELD_NAME, value: CUSTOM_FIELD_VALUE },
         ],
@@ -92,7 +103,7 @@ async function main() {
     const html = renderToStaticMarkup(
       React.createElement(MagicResumeRenderer, {
         template: manifest.template,
-        data: { ...resume, template: id },
+        data: { ...resume, template: id as TemplateId },
         locale: 'zh-CN',
       }),
     );
@@ -153,9 +164,13 @@ async function main() {
   let pdfText = '';
   for (let i = 1; i <= doc.numPages; i += 1) {
     const content = await (await doc.getPage(i)).getTextContent();
-    pdfText += content.items.map((item: unknown) =>
-    item && typeof item === 'object' && 'str' in item ? String((item as { str: unknown }).str) : '',
-  ).join('');
+    pdfText += content.items
+      .map((item: unknown) =>
+        item && typeof item === 'object' && 'str' in item
+          ? String((item as { str: unknown }).str)
+          : '',
+      )
+      .join('');
   }
   pdfText = pdfText.replace(/\s/g, '');
 
@@ -167,13 +182,8 @@ async function main() {
   );
   check('built-in sections still export', pdfText.includes('某公司'));
 
-  console.log(
-    failures === 0
-      ? '\n全部通过'
-      : `\n${failures} 项失败`,
-  );
+  console.log(failures === 0 ? '\n全部通过' : `\n${failures} 项失败`);
   process.exit(failures === 0 ? 0 : 1);
-
 }
 
 main().catch((error) => {

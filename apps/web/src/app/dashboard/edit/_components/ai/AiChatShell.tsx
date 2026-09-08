@@ -39,7 +39,7 @@ import type {
   WidgetActionResult,
   WidgetEnvelope,
   WidgetKind,
-} from "@magic-resume/genui/contract";
+} from "@magic-resume/genui";
 import type {
   CanvasState,
   AgentTrajectory,
@@ -71,6 +71,7 @@ import {
 import {
   citationSourcesFromWebSearchToolResult,
   mergeCitationSources,
+  webSearchStatusFromToolResult,
   normalizeCitationSources,
 } from "./conversation/citationSources";
 import {
@@ -91,7 +92,13 @@ import LivingCanvas, {
   workspaceChangesToPending,
 } from "./canvas/living/LivingCanvas";
 import { type BatchKind, type TargetedSelectionDiff } from "./lib/diffResume";
-import { STAGE_WIDTH, stageIntentOf } from "./lib/stageIntent";
+import {
+  STAGE_TAKEOVER_BREAKPOINT,
+  stageWidthOf,
+  type StageOccupant,
+} from "./lib/stageIntent";
+import SourcesPanel from "./conversation/SourcesPanel";
+import useMobile from "@/hooks/useMobile";
 import type {
   AnalysisImprovementAction,
   MultiPersonaResumeAnalysis,
@@ -141,6 +148,8 @@ import {
   type WorkspaceResolution,
 } from "@/lib/api/workspace";
 
+import { EASE_ENTER } from '@magic-resume/utils';
+import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
 type AiChatShellProps = {
   resumeData: Resume;
   templateId: string;
@@ -276,6 +285,12 @@ export default function AiChatShell({
   setIsAiJobRunning,
 }: AiChatShellProps) {
   const { t } = useTranslation();
+  /*
+    头部控制组共用一块滑动的底。这里**不给 activeKey**：轨迹和实时画布是两个各自
+    独立的开关，可能同时亮着，一块面停不到两个地方去——所以面只承担 hover，
+    两颗开关自己的 sky 底照旧。
+  */
+  const headerSurface = useHoverSurface();
   const resumeId = resumeData.id;
   // 从资产库「拿它优化简历」跳过来时带的引用。只播种一次，不自动发送。
   const seededPrompt = useSearchParams()?.get("prompt") ?? undefined;
@@ -1227,7 +1242,27 @@ export default function AiChatShell({
               );
             }
             if (p?.toolName === "web_search") {
-              attachSources(citationSourcesFromWebSearchToolResult(p.result));
+              const searched =
+                citationSourcesFromWebSearchToolResult(p.result);
+              attachSources(searched);
+              // 状态和归属都按**这一次**调用记账：一轮里的第二次搜索有自己的结果数，
+              // 额度耗尽这类「正常返回但没搜到」也只属于它自己。
+              const searchStatus = webSearchStatusFromToolResult(p.result);
+              const citationIds = searched.flatMap((source) =>
+                source.citationId ? [source.citationId] : [],
+              );
+              if (p.toolCallId && (searchStatus || citationIds.length)) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === aiId
+                      ? patchToolCall(m, p.toolCallId, {
+                          ...(searchStatus ? { searchStatus } : {}),
+                          ...(citationIds.length ? { citationIds } : {}),
+                        })
+                      : m,
+                  ),
+                );
+              }
             }
             if (p?.toolName === "read_resume") {
               if (readApprovalRef.current) {
@@ -1238,11 +1273,30 @@ export default function AiChatShell({
               }
             }
           } else if (ev.type === "source_update") {
-            const sources = normalizeCitationSources(
-              (ev.payload as { sources?: unknown } | undefined)?.sources,
-            );
+            const payload = ev.payload as
+              | { sources?: unknown; toolCallId?: unknown }
+              | undefined;
+            const sources = normalizeCitationSources(payload?.sources);
             // 来源属于最终回答，跟助手气泡一起持久化；内部来源也保留，但渲染层会隐藏。
             attachSources(sources);
+            // 这条事件比 tool_result 先到，是按次归属的权威来源。没有 toolCallId
+            // 的旧部署照旧只合并进整轮。
+            const sourceToolCallId =
+              typeof payload?.toolCallId === "string"
+                ? payload.toolCallId
+                : undefined;
+            const citationIds = sources.flatMap((source) =>
+              source.citationId ? [source.citationId] : [],
+            );
+            if (sourceToolCallId && citationIds.length) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiId
+                    ? patchToolCall(m, sourceToolCallId, { citationIds })
+                    : m,
+                ),
+              );
+            }
           } else if (ev.type === "plan_update") {
             // 有子代理在跑就路由到它的卡，否则走主卡——两者不能撞在一起。
             const payload = ev.payload as
@@ -2438,6 +2492,18 @@ export default function AiChatShell({
     continuePendingRun();
   }, [saveSettings, continuePendingRun]);
 
+  const [sourcesMessageId, setSourcesMessageId] = useState<string | null>(null);
+
+  const sourcesMessage = useMemo(
+    () =>
+      sourcesMessageId
+        ? (displayMessages.find(
+            (message) => message.id === sourcesMessageId,
+          ) ?? null)
+        : null,
+    [displayMessages, sourcesMessageId],
+  );
+
   const toggleCanvas = useCallback(
     (id: SkillId) => {
       // 重跑 optimize/translate 需要参数（JD / 语言），所以这个开关只显示/隐藏上次结果的画布。
@@ -2467,6 +2533,39 @@ export default function AiChatShell({
   const closeArtifactCanvas = useCallback(() => {
     setCanvas(CLOSED_CANVAS);
   }, [setCanvas]);
+
+  /**
+   * 来源面板是右舷的第三位住客，和活画布 / 报告画布**互斥**。
+   *
+   * 互斥由 `stageOccupant` 的优先级结构性保证（画布赢），这里再清一次是为了「关掉画布后
+   * 旧的来源面板不该自己冒出来」——两处都要，缺哪个都会有一种别扭。
+   */
+  useEffect(() => {
+    if (livingOpen || canvas.open) setSourcesMessageId(null);
+  }, [livingOpen, canvas.open]);
+  // 窄窗里 44% 的右舷只剩一条缝，来源面板改为整幅接管（见 `stageIntent`）。
+  const { isMobile: narrowStage } = useMobile(STAGE_TAKEOVER_BREAKPOINT);
+  /**
+   * 右舷此刻装着谁。画布优先——用户点开简历或报告，来源面板就该让位（`stageIntent`）。
+   */
+  const stageOccupant: StageOccupant = livingOpen
+    ? { kind: "living" }
+    : canvas.open
+      ? { kind: "artifact" }
+      : sourcesMessageId
+        ? { kind: "sources", messageId: sourcesMessageId }
+        : { kind: "none" };
+
+  const toggleSources = useCallback(
+    (messageId: string) => {
+      setLivingOpen(false);
+      setCanvas(CLOSED_CANVAS);
+      setSourcesMessageId((current) =>
+        current === messageId ? null : messageId,
+      );
+    },
+    [setCanvas, setLivingOpen],
+  );
 
   const resetSession = useCallback(() => {
     activeStreamCommitRef.current?.();
@@ -2715,12 +2814,12 @@ export default function AiChatShell({
               <button
                 type="button"
                 onClick={() => setAssetsOpen(false)}
-                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-mr-caption text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-white"
               >
                 <ChevronLeft size={16} />
                 {t("common.back")}
               </button>
-              <span className="text-[15px] font-semibold text-ink">
+              <span className="text-mr-subtitle font-semibold text-mr-ink">
                 {t("aiLab.assets.title")}
               </span>
             </div>
@@ -2752,45 +2851,68 @@ export default function AiChatShell({
             </span>
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-1 text-neutral-500">
-            <button
-              type="button"
-              onClick={toggleTrajectory}
-              aria-pressed={conversationView === "trajectory"}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer active:scale-[0.98]",
-                conversationView === "trajectory"
-                  ? "bg-sky-500/12 text-sky-300"
-                  : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
-              )}
+            {/*
+              共享面**只能**罩住这几颗按钮，不能罩到 ConversationHistory 上：它的
+              抽屉是 `absolute inset-y-0 left-0 w-[280px]`，靠的是更外层那个定位祖先。
+              一旦这一行变成 `relative`，抽屉就会改贴这条 32px 高的控制组，整个塌掉。
+            */}
+            <div
+              className="relative flex items-center gap-1"
+              {...headerSurface.containerProps}
             >
-              <TrajectoryGlyph />
-              {t("aiLab.trajectory.run")}
-            </button>
-            <HeaderQuota />
-            <button
-              type="button"
-              onClick={toggleLiving}
-              aria-label={t("aiLab.header.liveCanvas")}
-              title={t("aiLab.header.liveCanvasTitle")}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer",
-                livingOpen
-                  ? "bg-sky-500/12 text-sky-300"
-                  : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
-              )}
-            >
-              <AiGenerateIcon size={13} />
-              {t("aiLab.header.liveCanvas")}
-            </button>
-            <button
-              type="button"
-              onClick={requestResetSession}
-              aria-label={t("aiLab.header.newChat")}
-              title={t("aiLab.header.newChat")}
-              className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-white/[0.06] hover:text-white cursor-pointer"
-            >
-              <MaskIcon src="/marks/compose.svg" size={20} />
-            </button>
+              {/* 放在按钮之前：两颗开关的 sky 底是半透明的，面垫在下面正好透出来叠加，
+                  压在上面则会把它盖住。 */}
+              <HoverSurface
+                {...headerSurface.surfaceProps}
+                className="rounded-lg bg-mr-surface-soft"
+              />
+              <button
+                type="button"
+                {...headerSurface.bind('trajectory')}
+                onClick={toggleTrajectory}
+                aria-pressed={conversationView === "trajectory"}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer active:scale-[0.98]",
+                  conversationView === "trajectory"
+                    ? "bg-sky-500/12 text-sky-300"
+                    : "text-neutral-400 hover:text-white",
+                )}
+              >
+                <TrajectoryGlyph />
+                {t("aiLab.trajectory.run")}
+              </button>
+              {/* 自带触发器的组件，包一层薄壳只为让共享面量得到它的盒子
+                  （`display:contents` 不行——那样量出来是 0）。 */}
+              <span className="inline-flex" {...headerSurface.bind('quota')}>
+                <HeaderQuota />
+              </span>
+              <button
+                type="button"
+                {...headerSurface.bind('living')}
+                onClick={toggleLiving}
+                aria-label={t("aiLab.header.liveCanvas")}
+                title={t("aiLab.header.liveCanvasTitle")}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer",
+                  livingOpen
+                    ? "bg-sky-500/12 text-sky-300"
+                    : "text-neutral-400 hover:text-white",
+                )}
+              >
+                <AiGenerateIcon size={13} />
+                {t("aiLab.header.liveCanvas")}
+              </button>
+              <button
+                type="button"
+                {...headerSurface.bind('newChat')}
+                onClick={requestResetSession}
+                aria-label={t("aiLab.header.newChat")}
+                title={t("aiLab.header.newChat")}
+                className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:text-white cursor-pointer"
+              >
+                <MaskIcon src="/marks/compose.svg" size={20} />
+              </button>
+            </div>
             {/* 历史放在控制组：标题从左缘开始，仍保留一键展开左侧抽屉的入口。 */}
             <ConversationHistory
               onOpenAssets={() => setAssetsOpen(true)}
@@ -2805,7 +2927,7 @@ export default function AiChatShell({
               type="button"
               onClick={handleClose}
               aria-label="关闭"
-              className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-white/[0.06] hover:text-white cursor-pointer active:scale-90"
+              className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-mr-surface-soft hover:text-white cursor-pointer active:scale-90"
             >
               <X size={20} />
             </button>
@@ -2931,7 +3053,7 @@ export default function AiChatShell({
                 >
                   <ChatThread
                     messages={displayMessages}
-                    navigationVisible={!livingOpen && !canvas.open}
+                    navigationVisible={stageOccupant.kind === "none"}
                     onToggleCanvas={toggleCanvas}
                     onLogClick={focusOnCanvas}
                     onApproval={handleApproval}
@@ -2939,6 +3061,8 @@ export default function AiChatShell({
                     thinking={awaitingReply}
                     activity={activity}
                     onRegenerate={handleRegenerate}
+                    onToggleSources={toggleSources}
+                    openSourcesMessageId={sourcesMessageId}
                     openCanvasSkillId={
                       canvas.open
                         ? canvas.skillId
@@ -2990,22 +3114,31 @@ export default function AiChatShell({
           <motion.div
             className="shrink-0 min-w-0 overflow-hidden"
             initial={false}
-            animate={{
-              width:
-                STAGE_WIDTH[
-                  stageIntentOf({ livingOpen, canvasOpen: canvas.open })
-                ],
-            }}
-            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            animate={{ width: stageWidthOf(stageOccupant, narrowStage) }}
+            transition={{ duration: 0.34, ease: EASE_ENTER }}
           >
             <AnimatePresence mode="wait" initial={false}>
-              {livingOpen ? (
+              {stageOccupant.kind === "sources" && sourcesMessage ? (
+                <motion.div
+                  key="sources-panel"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16, ease: EASE_ENTER }}
+                  className="h-full"
+                >
+                  <SourcesPanel
+                    message={sourcesMessage}
+                    onClose={() => setSourcesMessageId(null)}
+                  />
+                </motion.div>
+              ) : livingOpen ? (
                 <motion.div
                   key="living-canvas"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.16, ease: EASE_ENTER }}
                   className="h-full"
                 >
                   <LivingCanvas
@@ -3029,7 +3162,7 @@ export default function AiChatShell({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.16, ease: EASE_ENTER }}
                   className="h-full"
                 >
                   <ArtifactCanvas
@@ -3086,7 +3219,7 @@ function HeaderQuota() {
           "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer",
           open
             ? "bg-sky-500/12 text-sky-300"
-            : "text-neutral-400 hover:bg-white/[0.06] hover:text-white",
+            : "text-neutral-400 hover:bg-mr-surface-soft hover:text-white",
         )}
       >
         <Gauge size={13} />
@@ -3108,8 +3241,8 @@ function HeaderQuota() {
             >
               {!data && loading ? (
                 <div className="space-y-2">
-                  <div className="h-4 animate-pulse rounded bg-white/[0.06]" />
-                  <div className="h-4 animate-pulse rounded bg-white/[0.06]" />
+                  <div className="h-4 animate-pulse rounded bg-mr-surface-soft" />
+                  <div className="h-4 animate-pulse rounded bg-mr-surface-soft" />
                 </div>
               ) : !data ? (
                 <p className="text-xs text-neutral-500">
@@ -3118,16 +3251,16 @@ function HeaderQuota() {
               ) : (
                 <>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-neutral-500">
+                    <span className="text-mr-label text-neutral-500">
                       {t("account.subscription.currentPlan")}
                     </span>
-                    <span className="inline-flex h-5 items-center rounded-md border border-sky-400/25 bg-sky-400/10 px-1.5 text-[11px] font-semibold text-sky-300">
+                    <span className="inline-flex h-5 items-center rounded-md border border-sky-400/25 bg-sky-400/10 px-1.5 text-mr-label font-semibold text-sky-300">
                       {data.currentPlan?.name ?? "—"}
                     </span>
                   </div>
                   {credit && (
                     <div className="mt-3">
-                      <div className="flex items-center justify-between gap-3 text-[11px]">
+                      <div className="flex items-center justify-between gap-3 text-mr-label">
                         <span className="text-neutral-400">
                           {t("account.subscription.monthly")}
                         </span>
@@ -3137,7 +3270,7 @@ function HeaderQuota() {
                             : `${credit.percent}%`}
                         </span>
                       </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-mr-surface-soft">
                         <div
                           className={cn(
                             "h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400",
@@ -3149,7 +3282,7 @@ function HeaderQuota() {
                         />
                       </div>
                       {credit.resetAt && (
-                        <div className="mt-1 text-[10px] text-neutral-600">
+                        <div className="mt-1 text-mr-micro text-neutral-600">
                           {t("account.subscription.resetAt", {
                             time: fmtReset(credit.resetAt),
                           })}

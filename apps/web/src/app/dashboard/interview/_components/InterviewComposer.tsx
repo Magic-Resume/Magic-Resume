@@ -46,7 +46,7 @@ export default function InterviewComposer({
       className="shrink-0 px-5 pb-6"
     >
       {micDenied && (
-        <p className="mx-auto mb-2 max-w-2xl text-center text-[12px] text-secondary">
+        <p className="mx-auto mb-2 max-w-2xl text-center text-mr-overline text-secondary">
           {t('aiLab.interview.micDeniedHint')}
         </p>
       )}
@@ -61,7 +61,7 @@ export default function InterviewComposer({
             }
           }}
           placeholder={t('aiLab.interview.composerPlaceholder')}
-          className="min-w-0 flex-1 bg-transparent py-2 text-[13px] text-primary outline-none placeholder:text-muted"
+          className="min-w-0 flex-1 bg-transparent py-2 text-mr-caption text-primary outline-none placeholder:text-muted"
         />
 
         {canSend || busy ? (

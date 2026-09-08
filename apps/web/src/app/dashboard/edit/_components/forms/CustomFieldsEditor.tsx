@@ -59,7 +59,7 @@ export default function CustomFieldsEditor({ fields, onChange, title, enableIcon
                     className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
                       Icon
                         ? 'border-sky-400/50 bg-sky-400/10 text-sky-300'
-                        : 'border-white/10 bg-white/[0.04] text-neutral-500 hover:border-white/20 hover:text-neutral-200'
+                        : 'border-white/10 bg-mr-surface-subtle text-neutral-500 hover:border-white/20 hover:text-neutral-200'
                     }`}
                   >
                     {Icon ? <Icon size={16} /> : <CircleDot size={16} />}
@@ -83,7 +83,7 @@ export default function CustomFieldsEditor({ fields, onChange, title, enableIcon
                 onClick={() => onChange(fields.filter((f) => f.id !== field.id))}
                 aria-label={t('common.delete')}
                 title={t('common.delete')}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors duration-150 hover:border-red-500/40 hover:text-red-400"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-mr-surface-subtle text-neutral-400 transition-colors duration-150 hover:border-red-500/40 hover:text-red-400"
               >
                 <Trash2 size={14} />
               </button>
@@ -91,7 +91,7 @@ export default function CustomFieldsEditor({ fields, onChange, title, enableIcon
 
             {enableIcons && pickerFor === field.id ? (
               <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2">
-                <p className="mb-2 text-[11px] text-neutral-500">
+                <p className="mb-2 text-mr-label text-neutral-500">
                   {t('basicForm.customFields.iconLabel')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -128,7 +128,7 @@ export default function CustomFieldsEditor({ fields, onChange, title, enableIcon
       <button
         type="button"
         onClick={() => onChange([...fields, { id: nanoid(), name: '', value: '' }])}
-        className="flex w-fit items-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] px-3 py-2 text-[12.5px] font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
+        className="flex w-fit items-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] px-3 py-2 text-mr-ui font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
       >
         <Plus size={14} />
         {t('basicForm.customFields.addButton')}

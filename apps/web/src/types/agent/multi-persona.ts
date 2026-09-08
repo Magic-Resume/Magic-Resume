@@ -21,7 +21,7 @@ export interface AnalysisEvidenceRef {
 export interface AnalysisImprovementAction {
   id: string;
   problem: string;
-  suggestion: string;
+  suggestion?: string;
   evidence: AnalysisEvidenceRef[];
   missingEvidence: string[];
 }
@@ -34,4 +34,3 @@ export interface MultiPersonaResumeAnalysis {
   hrbp_analysis: PersonaAnalysis;
   improvement_actions?: AnalysisImprovementAction[];
 }
-

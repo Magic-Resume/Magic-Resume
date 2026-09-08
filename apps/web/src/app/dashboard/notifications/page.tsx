@@ -34,7 +34,7 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => void markAllRead()}
-              className="rounded-full px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-sky-200"
+              className="rounded-full px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-sky-200"
             >
               {t('notificationsPage.markAllRead')}
             </button>
@@ -48,7 +48,7 @@ export default function NotificationsPage() {
             <button
               type="button"
               onClick={() => void loadMore()}
-              className="mt-5 rounded-full border border-white/[0.08] px-3.5 py-1.5 text-xs text-neutral-400 transition-colors hover:border-sky-400/30 hover:text-sky-200"
+              className="mt-5 rounded-full border border-mr-line px-3.5 py-1.5 text-xs text-neutral-400 transition-colors hover:border-sky-400/30 hover:text-sky-200"
             >
               {t('notificationsPage.loadMore')}
             </button>

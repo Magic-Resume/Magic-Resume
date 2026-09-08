@@ -78,7 +78,7 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
     return (
       // 呼吸挂在容器上跑全局心跳（2.4s），而不是每根条自己 animate-pulse（2s）：
       // 后者既与心跳不同频，各条相位还互相独立，一屏骨架看起来是在各闪各的。
-      <div className="ai-breath--soft w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
+      <div className="mr-motion-breathe-soft w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
         {/* 简化的头部骨架 */}
         <div className="p-8 border-b border-gray-200">
           <div className="h-6 bg-gray-200 rounded w-48 mb-4" />

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Mic, Clock } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetItem, WidgetShell } from '@magic-resume/genui';
-import type { WidgetProps } from '@magic-resume/genui/contract';
-import { useResumeStore } from '@/store/useResumeStore';
+import type { WidgetProps } from '@magic-resume/genui';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import { buildResumeContext } from '@/lib/interview/resumeContext';
 import {
   useInterviewUiStore,
@@ -32,7 +32,7 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const setLaunch = useInterviewUiStore((s) => s.setLaunch);
-  const activeResume = useResumeStore((s) => s.activeResume);
+  const activeResume = useResumeDocumentStore((s) => s.activeResume);
 
   const props = instance.props as {
     role: string;
@@ -46,17 +46,17 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
   return (
     <WidgetShell density="block">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-tint-sky">
-          <Mic size={14} className="text-ink-sky" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-mr-accent-tint">
+          <Mic size={14} className="text-mr-accent" />
         </div>
-        <span className="text-[13px] leading-snug text-primary">
+        <span className="text-mr-caption leading-snug text-mr-ink">
           {t('aiLab.widgets.interviewRoom.title')}
         </span>
       </div>
 
       <WidgetItem className="mt-2.5">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-secondary">
-          <span className="font-medium text-primary">{props.role}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-mr-overline text-mr-ink-secondary">
+          <span className="font-medium text-mr-ink">{props.role}</span>
           <span className="inline-flex items-center gap-1">
             <Clock size={11} />
             {t('aiLab.widgets.interviewRoom.duration', {
@@ -102,7 +102,7 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
             );
             router.push('/dashboard/interview/new');
           }}
-          className="w-full cursor-pointer rounded-xl bg-tint-sky px-4 py-2 text-[13px] font-medium text-ink-sky transition-colors hover:bg-tint-sky/80"
+          className="w-full cursor-pointer rounded-xl bg-mr-accent-tint px-4 py-2 text-mr-caption font-medium text-mr-accent transition-colors hover:bg-mr-accent-tint/80"
         >
           {t('aiLab.widgets.interviewRoom.enter')}
         </button>

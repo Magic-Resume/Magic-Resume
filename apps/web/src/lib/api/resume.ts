@@ -172,19 +172,14 @@ export const resumeApi = {
   /** 回复指定评论 */
   addReply: async (shareId: string, commentId: string, payload: AddReplyRequest) => {
     const response = await httpClient.api.post(
-      API_ROUTES.resumes.sharedReplies(shareId, commentId),
-      payload,
+      API_ROUTES.resumes.sharedComments(shareId),
+      { ...payload, parentId: commentId },
     );
     return response.data.data;
   },
 
   /** 删除指定评论（仅评论作者或简历所有者可操作） */
-  deleteComment: async (shareId: string, commentId: string): Promise<void> => {
-    await httpClient.api.delete(API_ROUTES.resumes.sharedComment(shareId, commentId));
-  },
-
-  /** 删除指定评论的某条回复 */
-  deleteReply: async (shareId: string, commentId: string, replyId: string): Promise<void> => {
-    await httpClient.api.delete(API_ROUTES.resumes.sharedReply(shareId, commentId, replyId));
+  deleteComment: async (resumeId: string, commentId: string): Promise<void> => {
+    await httpClient.api.delete(API_ROUTES.resumes.comment(resumeId, commentId));
   },
 };

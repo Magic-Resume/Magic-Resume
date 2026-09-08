@@ -15,6 +15,7 @@ import {
   type TimelineListParams,
 } from '@/lib/api/knowledge';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const PAGE_SIZE = 20;
 
 /** 季节选项按当前年份生成（去年秋 → 明年秋），不硬编码具体年份。 */
@@ -136,10 +137,10 @@ function DeadlineLabel({ item }: { item: PublicTimeline }) {
   const { t, i18n } = useTranslation();
   const d = daysUntil(item.deadlineAt);
   if (d === null)
-    return <span className="text-[var(--text-secondary)]">{t('knowledge.timelines.groups.evergreen')}</span>;
+    return <span className="text-secondary">{t('knowledge.timelines.groups.evergreen')}</span>;
   if (d < 0)
     return (
-      <span className="text-[var(--text-secondary)]/70 line-through">
+      <span className="text-secondary/70 line-through">
         {t('knowledge.timelines.deadline.past')}
       </span>
     );
@@ -152,7 +153,7 @@ function DeadlineLabel({ item }: { item: PublicTimeline }) {
       </span>
     );
   return (
-    <span className="text-[var(--text-secondary)]">
+    <span className="text-secondary">
       {t('knowledge.timelines.deadline.on', { date: shortDate(item.deadlineAt!, i18n.language) })}
     </span>
   );
@@ -203,7 +204,7 @@ function CompanyAvatar({
   return (
     <span
       aria-hidden
-      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold"
+      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-mr-caption font-semibold"
       style={{
         backgroundColor: `oklch(0.33 0.045 ${hue})`,
         color: `oklch(0.86 0.07 ${hue})`,
@@ -228,7 +229,7 @@ function EntryRow({ item, tone, index }: { item: PublicTimeline; tone: EntryTone
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, delay: Math.min(index, 8) * 0.03, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.28, delay: Math.min(index, 8) * 0.03, ease: EASE_ENTER }}
       className={`relative pl-9 pb-6 ${tone === 'past' ? 'opacity-55' : ''}`}
     >
       <span
@@ -240,11 +241,11 @@ function EntryRow({ item, tone, index }: { item: PublicTimeline; tone: EntryTone
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
             <div className="flex min-w-0 items-baseline gap-2">
-              <span className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
+              <span className="truncate text-mr-subtitle font-semibold text-primary">
                 {item.company}
               </span>
               {item.stage ? (
-                <span className="shrink-0 text-xs text-[var(--text-secondary)]">
+                <span className="shrink-0 text-xs text-secondary">
                   · {item.stage}
                 </span>
               ) : null}
@@ -254,10 +255,10 @@ function EntryRow({ item, tone, index }: { item: PublicTimeline; tone: EntryTone
             </span>
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[var(--text-secondary)]">
+          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-secondary">
             {meta.map((m, i) => (
               <span key={`${m}-${i}`} className="inline-flex items-center gap-1.5">
-                {i > 0 ? <span className="text-[var(--text-secondary)]/40">·</span> : null}
+                {i > 0 ? <span className="text-secondary/40">·</span> : null}
                 {m}
               </span>
             ))}
@@ -268,7 +269,7 @@ function EntryRow({ item, tone, index }: { item: PublicTimeline; tone: EntryTone
             ))}
           </div>
 
-          <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[var(--text-secondary)]/70">
+          <div className="mt-1.5 flex items-center gap-2 text-mr-label text-secondary/70">
             {item.openAt || item.deadlineAt ? (
               <span>
                 {item.openAt ? shortDate(item.openAt, i18n.language) : ''}
@@ -323,10 +324,10 @@ function MarkerRow({ label, tone }: { label: string; tone: 'month' | 'evergreen'
         className="absolute left-[4px] top-[9px] z-10 h-1.5 w-1.5 rounded-full bg-white/25"
       />
       <div className="flex items-center gap-3">
-        <span className="text-[11px] font-medium tracking-wide text-[var(--text-secondary)]/80">
+        <span className="text-mr-label font-medium tracking-wide text-secondary/80">
           {label}
         </span>
-        <span className="h-px flex-1 bg-white/[0.06]" />
+        <span className="h-px flex-1 bg-mr-surface-soft" />
       </div>
     </div>
   );
@@ -368,7 +369,7 @@ function Timeline({ items }: { items: PublicTimeline[] }) {
 function TimelineSkeleton() {
   return (
     <div className="relative">
-      <span aria-hidden className="absolute left-[7px] top-4 bottom-4 w-px bg-white/[0.06]" />
+      <span aria-hidden className="absolute left-[7px] top-4 bottom-4 w-px bg-mr-surface-soft" />
       <div className="flex flex-col gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="relative pl-9">
@@ -383,7 +384,7 @@ function TimelineSkeleton() {
 }
 
 const SELECT_ITEM_CLASS =
-  'relative flex cursor-pointer select-none items-center rounded-md py-1.5 pl-2.5 pr-8 text-sm text-[var(--text-secondary)] outline-none transition-colors data-[highlighted]:bg-sky-400/10 data-[highlighted]:text-[var(--text-primary)] data-[state=checked]:text-sky-300 data-[state=checked]:font-medium';
+  'relative flex cursor-pointer select-none items-center rounded-md py-1.5 pl-2.5 pr-8 text-sm text-secondary outline-none transition-colors data-[highlighted]:bg-sky-400/10 data-[highlighted]:text-primary data-[state=checked]:text-sky-300 data-[state=checked]:font-medium';
 
 function SelectOption({ value, label }: { value: string; label: string }) {
   return (
@@ -415,12 +416,12 @@ function FilterSelect({
       value={value || '__all__'}
       onValueChange={(v) => onChange(v === '__all__' ? '' : v)}
     >
-      <SelectPrimitive.Trigger className="group flex h-9 min-w-[6.5rem] items-center justify-between gap-2 rounded-md border border-white/[0.08] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors hover:border-white/[0.16] focus:border-sky-400/50 data-[state=open]:border-sky-400/50">
+      <SelectPrimitive.Trigger className="group flex h-9 min-w-[6.5rem] items-center justify-between gap-2 rounded-md border border-mr-line bg-raised px-2.5 text-sm text-primary outline-none transition-colors hover:border-mr-line-strong focus:border-sky-400/50 data-[state=open]:border-sky-400/50">
         <SelectPrimitive.Value />
         <SelectPrimitive.Icon asChild>
           <ChevronDown
             size={14}
-            className="text-[var(--text-secondary)] transition-transform duration-200 group-data-[state=open]:rotate-180"
+            className="text-secondary transition-transform duration-200 group-data-[state=open]:rotate-180"
           />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
@@ -428,7 +429,7 @@ function FilterSelect({
         <SelectPrimitive.Content
           position="popper"
           sideOffset={6}
-          className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-white/[0.08] bg-[var(--surface-raised)] p-1 shadow-xl shadow-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+          className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-mr-line bg-raised p-1 shadow-xl shadow-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
         >
           <SelectPrimitive.Viewport>
             <SelectOption value="__all__" label={allLabel} />
@@ -497,7 +498,7 @@ function TimelinesPageInner() {
             if (e.key === 'Enter') setParam('region', e.currentTarget.value.trim());
           }}
           onBlur={(e) => setParam('region', e.currentTarget.value.trim())}
-          className="h-9 w-32 rounded-md border border-white/[0.08] bg-[var(--surface-raised)] px-2.5 text-sm outline-none transition-colors placeholder:text-[var(--text-secondary)]/60 hover:border-white/[0.16] focus:border-sky-400/50"
+          className="h-9 w-32 rounded-md border border-mr-line bg-raised px-2.5 text-sm outline-none transition-colors placeholder:text-secondary/60 hover:border-mr-line-strong focus:border-sky-400/50"
         />
         <input
           defaultValue={params.role ?? ''}
@@ -506,14 +507,14 @@ function TimelinesPageInner() {
             if (e.key === 'Enter') setParam('role', e.currentTarget.value.trim());
           }}
           onBlur={(e) => setParam('role', e.currentTarget.value.trim())}
-          className="h-9 w-32 rounded-md border border-white/[0.08] bg-[var(--surface-raised)] px-2.5 text-sm outline-none transition-colors placeholder:text-[var(--text-secondary)]/60 hover:border-white/[0.16] focus:border-sky-400/50"
+          className="h-9 w-32 rounded-md border border-mr-line bg-raised px-2.5 text-sm outline-none transition-colors placeholder:text-secondary/60 hover:border-mr-line-strong focus:border-sky-400/50"
         />
       </div>
 
       {isLoading ? (
         <TimelineSkeleton />
       ) : error ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-white/[0.08] py-16 text-sm text-[var(--text-secondary)]">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-mr-line py-16 text-sm text-secondary">
           <p>{t('knowledge.common.error')}</p>
           <Button variant="outline" size="sm" onClick={() => void mutate()}>
             <RefreshCw size={14} className="mr-1.5" />
@@ -521,14 +522,14 @@ function TimelinesPageInner() {
           </Button>
         </div>
       ) : !data || data.items.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 rounded-lg border border-white/[0.08] py-16 text-sm text-[var(--text-secondary)]">
+        <div className="flex flex-col items-center gap-1 rounded-lg border border-mr-line py-16 text-sm text-secondary">
           <p className="text-base">{t('knowledge.timelines.empty.title')}</p>
           <p className="text-xs">{t('knowledge.timelines.empty.hint')}</p>
         </div>
       ) : (
         <>
           <Timeline items={data.items} />
-          <div className="flex items-center justify-between text-sm text-[var(--text-secondary)]">
+          <div className="flex items-center justify-between text-sm text-secondary">
             <span>{t('knowledge.common.total', { count: data.total })}</span>
             <div className="flex items-center gap-2">
               <Button

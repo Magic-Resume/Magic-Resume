@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 /**
  * 中途离开的确认。
  *
@@ -34,27 +35,27 @@ export default function LeaveConfirm({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.22, ease: EASE_ENTER }}
             className="w-full max-w-sm rounded-2xl bg-raised p-5"
           >
             <p className="text-sm leading-relaxed text-primary">
               {t('aiLab.interview.leaveTitle')}
             </p>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-secondary">
+            <p className="mt-1.5 text-mr-overline leading-relaxed text-secondary">
               {t('aiLab.interview.leaveHint')}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={onCancel}
-                className="cursor-pointer rounded-xl px-4 py-2 text-[13px] text-secondary transition-colors hover:text-primary"
+                className="cursor-pointer rounded-xl px-4 py-2 text-mr-caption text-secondary transition-colors hover:text-primary"
               >
                 {t('aiLab.interview.leaveCancel')}
               </button>
               <button
                 type="button"
                 onClick={onConfirm}
-                className="cursor-pointer rounded-xl bg-sunk px-4 py-2 text-[13px] text-rev-del transition-colors hover:bg-desk"
+                className="cursor-pointer rounded-xl bg-sunk px-4 py-2 text-mr-caption text-rev-del transition-colors hover:bg-desk"
               >
                 {t('aiLab.interview.leaveConfirm')}
               </button>

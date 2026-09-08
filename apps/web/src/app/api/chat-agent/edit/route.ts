@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUserId } from '@/lib/auth/server';
 import { serverFetchBackend } from '@/lib/auth/serverFetchBackend';
-import { projectUpstreamError } from '../errorProjection';
+import { projectUpstreamError } from '@/lib/api/errorProjection';
 
 /**
  * Snippet/element-scoped edit — the living canvas' fast, in-place quick actions
@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
     if (!backendResponse.ok) {
       // Log the upstream body server-side only; never surface it to the client.
       const errorText = await backendResponse.text();
-      console.error(`[AGENT_EDIT] Backend error ${backendResponse.status}: ${errorText}`);
+      console.error(
+        `[AGENT_EDIT] Backend error ${backendResponse.status}: ${errorText}`,
+      );
       // 投影而非代理：只放行契约里那五个键，`message` 一律不转发——上游的 4xx 原文
       // 可能是写给运营的英文，甚至说出这个部署配了哪些渠道（见 errorProjection.ts）。
       return NextResponse.json(
@@ -55,8 +57,12 @@ export async function POST(req: NextRequest) {
     );
     return NextResponse.json(
       // 只回码：`errorMessage` 会把 undici 内部与内网 host 泄漏出去。
-      { errorCode: 'upstream_unavailable', error: 'upstream_unavailable', retryable: true },
-      { status: 500 }
+      {
+        errorCode: 'upstream_unavailable',
+        error: 'upstream_unavailable',
+        retryable: true,
+      },
+      { status: 500 },
     );
   }
 }

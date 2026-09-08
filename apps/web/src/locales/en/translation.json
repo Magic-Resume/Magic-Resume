@@ -185,7 +185,9 @@
         "appearanceSystem": "System",
         "comingSoon": "Coming soon",
         "language": "Language",
-        "languageDescription": "Change the interface language without changing resume content."
+        "languageDescription": "Change the interface language without changing resume content.",
+        "languageEnglish": "English",
+        "languageChinese": "中文"
       }
     },
     "billing": {
@@ -212,7 +214,8 @@
         "paid": "Paid",
         "pending": "Pending",
         "failed": "Failed",
-        "refunded": "Refunded"
+        "refunded": "Refunded",
+        "partially_refunded": "Partially refunded"
       },
       "channel": {
         "alipay": "Alipay",
@@ -1636,6 +1639,7 @@
     "autoSave": "Auto Save",
     "expand": "Expand",
     "collapse": "Collapse",
+    "close": "Close",
     "notifications": {
       "copySuccess": "JSON data copied to clipboard",
       "copyFailed": "Copy failed, please try again",
@@ -1700,6 +1704,8 @@
       "failedDetail": "The payment channel marked this order as failed and you were not charged. You can go back and order again.",
       "refundedTitle": "Order refunded",
       "refundedDetail": "This order has been refunded. The money returns by the payment channel’s own schedule.",
+      "partially_refundedTitle": "Order partially refunded",
+      "partially_refundedDetail": "Part of this order has been refunded. The money returns by the payment channel’s own schedule.",
       "timeoutTitle": "No confirmation yet",
       "timeoutDetail": "If you completed the payment, nothing is lost — the payment provider retries its notification for several hours. Check your balance from the dashboard shortly.",
       "errorTitle": "Could not confirm this order",
@@ -1776,7 +1782,7 @@
       "thought": "Thought for {{duration}}"
     },
     "activity": {
-      "thinking": "Thinking…",
+      "thinking": "Thinking",
       "reading": "Reading your resume…",
       "analyzing": "Evaluating…",
       "working": "Working…",
@@ -1900,7 +1906,19 @@
       "count": "{{count}} sources",
       "toggle": "Show or hide {{count}} external sources",
       "missing": "Source {{id}} is not available yet",
-      "unavailable": "Source unavailable"
+      "unavailable": "Source unavailable",
+      "open": "Open",
+      "prev": "Previous source",
+      "next": "Next source",
+      "position": "{{index}}/{{total}}",
+      "panel": {
+        "title": "Sources",
+        "web": "Web · {{count}}",
+        "memory": "Memory · {{count}}",
+        "memoryHint": "From Magic's own interview and resume libraries — no public link.",
+        "close": "Close sources",
+        "toggle": "See the sources behind this answer"
+      }
     },
     "composer": {
       "skills": "Skills",
@@ -2324,7 +2342,8 @@
       "verify": "Verify",
       "show": "Show",
       "explain": "Explain changes",
-      "ask": "Ask"
+      "ask": "Ask",
+      "searchedSites": "Searched {{count}} sites"
     },
     "canvas": {
       "action": {
@@ -2432,6 +2451,16 @@
       "clearBoard": "Clear board",
       "clearBoardConfirmTitle": "Clear the application board?",
       "clearBoardConfirmBody": "This deletes {{count}} applications and any custom columns you set up. It cannot be undone. The board itself stays — it will be here next time you log an application."
+    },
+    "search": {
+      "empty": "No results found",
+      "unavailable": "Search is unavailable",
+      "quota": "Daily search limit reached",
+      "failed": "That search didn't go through",
+      "deepDone": "Researched {{count}} sites",
+      "partial": "(partial results)",
+      "toggle": "Show or hide this search's sources",
+      "queryQuoted": "“{{query}}”"
     }
   },
   "report": {
@@ -2464,19 +2493,43 @@
     "roadmapSubtitle": "High-level insights from the panel"
   },
   "errorPage": {
-    "title": "Something went wrong!",
-    "description": "We apologize for the inconvenience. An unexpected error has occurred. You can try refreshing the page or navigating back home.",
-    "buttons": {
-      "tryAgain": "Try again",
-      "backHome": "Back to Home"
-    }
+    "fault": {
+      "section": {
+        "title": "This section didn't load",
+        "promise": "Your resume is saved — this crash didn't touch it."
+      },
+      "app": {
+        "title": "The page didn't load",
+        "promise": "Your resumes are saved and untouched."
+      }
+    },
+    "note": "We've been alerted and we're on it.",
+    "recovery": {
+      "countdown": "Retrying in {{seconds}}s",
+      "cancel": "Cancel",
+      "retryNow": "Retry now",
+      "retry": "Retry",
+      "retrying": "Retrying…",
+      "exhausted": "That retry didn't work — a full refresh has a better shot.",
+      "reload": "Reload page"
+    },
+    "actions": {
+      "backToResumes": "Back to resumes",
+      "backHome": "Back home"
+    },
+    "code": {
+      "copy": "Copy error code",
+      "copied": "Copied"
+    },
+    "support": "Send us this code",
+    "detail": "Technical details"
   },
   "notFoundPage": {
-    "title": "Page not found",
-    "description": "Sorry, we couldn't find the page you're looking for. It might have been moved or deleted.",
+    "title": "This page isn't here",
+    "description": "The link may have expired, or the content moved somewhere else.",
     "buttons": {
-      "backHome": "Back to Home",
-      "goBack": "Go Back"
+      "backHome": "Back home",
+      "goBack": "Go back"
     }
   },
   "loading": {

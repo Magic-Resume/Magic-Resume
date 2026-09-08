@@ -12,11 +12,12 @@
  * No spring, no bounce, no elastic; transform and opacity only.
  */
 
-/** The one "entering / expanding" curve. Mirrors `--narrate-ease`. */
-export const EASE_ENTER: [number, number, number, number] = [0.22, 1, 0.36, 1];
-
-/** The one "leaving" curve. Mirrors `--exit-ease`. */
-export const EASE_EXIT: [number, number, number, number] = [0.4, 0, 1, 1];
+/**
+ * 曲线本身已经不住在这里了——它们是全项目共用的，收在 `@magic-resume/utils`
+ * （`motion.ts`），CSS 侧对应 `--narrate-ease` / `--exit-ease`。这里转出去，
+ * 是为了让 genui 已有的引用点不用改。
+ */
+export { EASE_ENTER, EASE_EXIT, EASE_STATE, EASE_OVERSHOOT } from '@magic-resume/utils';
 
 /** Seconds, because that is what framer-motion wants. */
 export const DURATION = {

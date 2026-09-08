@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ExternalLink, Loader2, X } from "@magic-resume/icons";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 export type LegalDocId = "terms" | "privacy";
 
 /**
@@ -50,25 +51,25 @@ export function LegalDocDialog({
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.2, ease: [0.22, 0.61, 0.25, 1] }}
-            className="fixed left-1/2 top-1/2 z-[211] flex h-[min(78vh,760px)] w-[min(720px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[14px] border border-hairline bg-raised shadow-overlay outline-none"
+            transition={{ duration: 0.2, ease: EASE_ENTER }}
+            className="fixed left-1/2 top-1/2 z-[211] flex h-[min(78vh,760px)] w-[min(720px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-mr-panel border border-hairline bg-raised shadow-overlay outline-none"
           >
             <div className="flex shrink-0 items-center gap-3 border-b border-hairline px-5 py-3.5">
-              <Dialog.Title className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[color:var(--text-primary)]">
+              <Dialog.Title className="min-w-0 flex-1 truncate text-mr-body font-semibold text-primary">
                 {title}
               </Dialog.Title>
               <a
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[12.5px] text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-secondary)]"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-mr-ui text-muted transition-colors hover:text-secondary"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 {t("auth.terms.openInNewTab")}
               </a>
               <Dialog.Close
                 aria-label={t("auth.terms.close")}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[color:var(--text-muted)] transition-colors hover:bg-sunk hover:text-[color:var(--text-secondary)]"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-sunk hover:text-secondary"
               >
                 <X className="h-4 w-4" />
               </Dialog.Close>
@@ -86,7 +87,7 @@ export function LegalDocDialog({
               ) : null}
               {!loaded ? (
                 <div className="absolute inset-0 grid place-items-center bg-raised">
-                  <Loader2 className="h-5 w-5 animate-spin text-[color:var(--text-muted)]" />
+                  <Loader2 className="h-5 w-5 animate-spin text-muted" />
                 </div>
               ) : null}
             </div>

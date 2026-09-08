@@ -2,11 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { RiDeleteBinLine } from '@remixicon/react';
 import { useAppAuth } from '@/lib/auth';
-import { Check, Copy, KeyRound, RefreshCw, Terminal, Trash2 } from '@magic-resume/icons';
+import { Check, Copy, KeyRound, RefreshCw, Terminal } from '@magic-resume/icons';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/product-button';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   type CloudResumeOption,
 } from '@/lib/settings/mcpAccess';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 export function McpAccessSection({ showHeader = true }: { showHeader?: boolean } = {}) {
   const { t } = useTranslation();
   const reduce = useReducedMotion();
@@ -130,14 +132,14 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
       {showHeader && (
         <header className="mb-8">
           <h2 className="text-[22px] font-semibold tracking-tight text-neutral-50">{t('settings.mcp.title')}</h2>
-          <p className="mt-2 max-w-[58ch] text-[13px] leading-relaxed text-neutral-500">
+          <p className="mt-2 max-w-[58ch] text-mr-caption leading-relaxed text-neutral-500">
             {t('settings.mcp.description')}
           </p>
         </header>
       )}
 
       {/* Connect console — name + default resume + create, one focused surface */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+      <div className="rounded-2xl border border-mr-line-soft bg-white/[0.02] p-4 sm:p-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,190px)_auto]">
           <Input
             value={newTokenName}
@@ -149,9 +151,9 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
             <SelectTrigger className="h-10 w-full rounded-lg border border-white/[0.07] bg-sunk px-3.5 text-neutral-100 transition-colors data-[size=default]:h-10 data-[placeholder]:text-neutral-500 focus-visible:border-sky-500/40 focus-visible:ring-1 focus-visible:ring-sky-500/25">
               <SelectValue placeholder={t('settings.mcp.defaultResumePlaceholder')} />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-white/[0.08] bg-neutral-950 text-white shadow-2xl shadow-black/50">
+            <SelectContent className="z-[110] rounded-xl border-mr-line bg-neutral-950 text-white shadow-2xl shadow-black/50">
               {resumes.map((resume) => (
-                <SelectItem key={resume.id} value={resume.id} className="rounded-lg focus:bg-white/[0.06] focus:text-sky-300">
+                <SelectItem key={resume.id} value={resume.id} className="rounded-lg focus:bg-mr-surface-soft focus:text-sky-300">
                   {resume.title}
                 </SelectItem>
               ))}
@@ -159,16 +161,17 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
           </Select>
           <Button
             type="button"
+            variant="primary"
             onClick={handleCreateToken}
-            loading={isCreating}
             disabled={!isSignedIn}
-            className="h-10 rounded-lg bg-sky-500 px-5 text-sm font-medium text-[#fff] transition-colors hover:bg-sky-400 focus-visible:ring-sky-400/50"
+            className="h-10 self-start px-4"
           >
+            {isCreating && <RefreshCw className="mr-1 animate-spin" />}
             {t('settings.mcp.enable')}
           </Button>
         </div>
         {!plainToken && (
-          <p className="mt-3.5 flex items-center gap-2 text-[12px] leading-relaxed text-neutral-500">
+          <p className="mt-3.5 flex items-center gap-2 text-mr-overline leading-relaxed text-neutral-500">
             <Terminal className="h-3.5 w-3.5 shrink-0 text-neutral-600" />
             {t('settings.mcp.commandEmpty')}
           </p>
@@ -183,7 +186,7 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.22, ease: EASE_ENTER }}
             className="mt-4 space-y-5 rounded-2xl border border-sky-400/25 bg-sky-400/[0.05] p-4 sm:p-5"
           >
             <div>
@@ -194,9 +197,10 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
                 </div>
                 <Button
                   type="button"
-                  size="sm"
+                  variant="secondary"
+                  size="small"
                   onClick={() => copyText(plainToken, 'token')}
-                  className="shrink-0 rounded-lg bg-sky-500 text-[#fff] hover:bg-sky-400"
+                  className="shrink-0"
                 >
                   {copiedKey === 'token' ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
                   {t('settings.mcp.copyToken')}
@@ -211,18 +215,19 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-neutral-200">
                   <Terminal className="h-4 w-4 text-sky-300" />
-                  <p className="text-[13px] font-medium">{t('settings.mcp.commandTitle')}</p>
+                  <p className="text-mr-caption font-medium">{t('settings.mcp.commandTitle')}</p>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="xs"
                   onClick={() => copyText(mcpCommand, 'command')}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                  className="shrink-0"
                 >
                   {copiedKey === 'command' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   {t('settings.mcp.copyCommand')}
-                </button>
+                </Button>
               </div>
-              <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-white/[0.06] bg-sunk p-3.5 font-mono text-xs leading-relaxed text-neutral-300">
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-mr-line-soft bg-sunk p-3.5 font-mono text-xs leading-relaxed text-neutral-300">
                 {mcpCommand}
               </pre>
             </div>
@@ -234,18 +239,19 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
       <div className="mt-8">
         <div className="mb-1 flex items-center justify-between gap-3">
           <div className="flex items-baseline gap-2">
-            <p className="text-[13px] font-medium text-neutral-300">{t('settings.mcp.activeTokens')}</p>
+            <p className="text-mr-caption font-medium text-neutral-300">{t('settings.mcp.activeTokens')}</p>
             <span className="font-mono text-xs tabular-nums text-neutral-600">{activeCount}</span>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={loadMcpAccess}
             disabled={isLoading}
-            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] text-neutral-400 transition-colors hover:bg-white/[0.05] hover:text-neutral-100 disabled:opacity-50"
+            className="shrink-0"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             {t('settings.mcp.refresh')}
-          </button>
+          </Button>
         </div>
         {tokens.length === 0 ? (
           <div className="flex items-center gap-2.5 py-5 text-sm text-neutral-500">
@@ -253,7 +259,7 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
             {t('settings.mcp.emptyTokens')}
           </div>
         ) : (
-          <div className="divide-y divide-white/[0.06] border-t border-white/[0.06]">
+          <div className="divide-y divide-white/[0.06] border-t border-mr-line-soft">
             {tokens.map((token) => (
               <div
                 key={token.id}
@@ -265,8 +271,8 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
                     <span
                       className={
                         token.revokedAt
-                          ? 'rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] text-red-300'
-                          : 'rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300'
+                          ? 'rounded-full bg-red-500/10 px-2 py-0.5 text-mr-label text-red-300'
+                          : 'rounded-full bg-emerald-500/10 px-2 py-0.5 text-mr-label text-emerald-300'
                       }
                     >
                       {token.revokedAt ? t('settings.mcp.revoked') : t('settings.mcp.active')}
@@ -279,15 +285,15 @@ export function McpAccessSection({ showHeader = true }: { showHeader?: boolean }
                     {token.lastUsedAt ? t('settings.mcp.lastUsed', { date: formatMcpDate(token.lastUsedAt) }) : t('settings.mcp.neverUsed')}
                   </p>
                   <Button
-                    type="button"
-                    size="icon"
+                    variant="secondary"
+                    size="small"
+                    iconOnly
+                    leadingIcon={RiDeleteBinLine}
                     disabled={Boolean(token.revokedAt)}
                     onClick={() => handleRevokeToken(token.id)}
-                    className="h-9 w-9 rounded-full bg-white/[0.04] text-neutral-400 hover:bg-red-500/15 hover:text-red-200"
+                    className="text-text-secondary hover:border-border-error-default hover:bg-background-tertiary-error hover:text-text-error-primary"
                     aria-label={t('settings.mcp.revoke')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  />
                 </div>
               </div>
             ))}

@@ -72,18 +72,18 @@ export function NotificationDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-xl gap-0 overflow-hidden border-white/[0.08] bg-neutral-950 p-0 text-neutral-100 shadow-2xl shadow-black/40">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-xl gap-0 overflow-hidden border-mr-line bg-neutral-950 p-0 text-neutral-100 shadow-2xl shadow-black/40">
         <button
           type="button"
           aria-label={t('notificationsPage.detail.close')}
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 z-[1] grid h-8 w-8 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-100 active:scale-[0.98]"
+          className="absolute right-4 top-4 z-[1] grid h-8 w-8 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-100 active:scale-[0.98]"
         >
           <X size={16} />
         </button>
 
-        <DialogHeader className="border-b border-white/[0.06] px-6 pb-5 pt-6 pr-16 text-left">
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-neutral-500">
+        <DialogHeader className="border-b border-mr-line-soft px-6 pb-5 pt-6 pr-16 text-left">
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-mr-label text-neutral-500">
             <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.07] px-2 py-0.5 text-sky-300">
               {t(`notificationsPage.category.${notification.category}`)}
             </span>
@@ -100,9 +100,9 @@ export function NotificationDetailDialog({
         <div className="max-h-[65vh] overflow-y-auto px-6 py-6">
           {announcementLoading ? (
             <div className="grid gap-3" aria-label={t('notificationsPage.detail.loading')}>
-              <span className="h-3 w-full animate-pulse rounded bg-white/[0.06]" />
-              <span className="h-3 w-5/6 animate-pulse rounded bg-white/[0.06]" />
-              <span className="h-3 w-3/5 animate-pulse rounded bg-white/[0.06]" />
+              <span className="h-3 w-full animate-pulse rounded bg-mr-surface-soft" />
+              <span className="h-3 w-5/6 animate-pulse rounded bg-mr-surface-soft" />
+              <span className="h-3 w-3/5 animate-pulse rounded bg-mr-surface-soft" />
             </div>
           ) : announcementError ? (
             <div className="rounded-xl border border-red-400/15 bg-red-400/[0.05] p-4">
@@ -118,7 +118,7 @@ export function NotificationDetailDialog({
           ) : announcement ? (
             <div>
               <p className="mb-5 text-sm leading-7 text-neutral-400">{announcement.summary}</p>
-              <div className="border-t border-white/[0.06] pt-5 text-sm leading-7 text-neutral-300 [&_a]:text-sky-300 [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-sky-400/30 [&_blockquote]:pl-4 [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-4 [&_strong]:font-semibold [&_strong]:text-neutral-100">
+              <div className="border-t border-mr-line-soft pt-5 text-sm leading-7 text-neutral-300 [&_a]:text-sky-300 [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-sky-400/30 [&_blockquote]:pl-4 [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-4 [&_strong]:font-semibold [&_strong]:text-neutral-100">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{announcement.content}</ReactMarkdown>
               </div>
             </div>
@@ -129,7 +129,7 @@ export function NotificationDetailDialog({
           )}
 
           {!notification.campaignId && (actorName || notification.resume) ? (
-            <dl className="mt-6 grid gap-3 border-t border-white/[0.06] pt-5 text-xs">
+            <dl className="mt-6 grid gap-3 border-t border-mr-line-soft pt-5 text-xs">
               {actorName ? (
                 <div className="grid grid-cols-[76px_1fr] gap-3">
                   <dt className="text-neutral-600">{t('notificationsPage.detail.sender')}</dt>
@@ -146,11 +146,11 @@ export function NotificationDetailDialog({
           ) : null}
         </div>
 
-        <DialogFooter className="flex-row justify-end gap-2 border-t border-white/[0.06] bg-white/[0.015] px-6 py-4 sm:space-x-0">
+        <DialogFooter className="flex-row justify-end gap-2 border-t border-mr-line-soft bg-white/[0.015] px-6 py-4 sm:space-x-0">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-full px-3.5 py-2 text-xs text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-100 active:scale-[0.98]"
+            className="rounded-full px-3.5 py-2 text-xs text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-neutral-100 active:scale-[0.98]"
           >
             {t('notificationsPage.detail.close')}
           </button>

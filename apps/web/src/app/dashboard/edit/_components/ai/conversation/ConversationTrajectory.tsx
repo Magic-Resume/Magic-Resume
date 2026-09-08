@@ -88,7 +88,7 @@ export default function ConversationTrajectory({
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-neutral-950/35">
       <div className="shrink-0 bg-white/[0.018] px-4">
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-4 py-2.5 font-mono text-[11px] tabular-nums text-neutral-500">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-4 py-2.5 font-mono text-mr-label tabular-nums text-neutral-500">
           <span className="inline-flex items-center gap-1.5">
             <Clock size={11} />
             {formatDuration(totalActiveMs)}
@@ -96,13 +96,13 @@ export default function ConversationTrajectory({
           <span>{t("aiLab.trajectory.turns", { count: turns.length })}</span>
           <span>{t("aiLab.trajectory.steps", { count: steps })}</span>
           <span>{t("aiLab.trajectory.calls", { count: calls })}</span>
-          <label className="ml-auto flex h-7 w-48 items-center gap-2 rounded-md border border-white/[0.09] bg-white/[0.035] px-2 text-neutral-500 focus-within:border-white/[0.16]">
+          <label className="ml-auto flex h-7 w-48 items-center gap-2 rounded-md border border-white/[0.09] bg-white/[0.035] px-2 text-neutral-500 focus-within:border-mr-line-strong">
             <Search size={12} />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("aiLab.trajectory.search")}
-              className="min-w-0 flex-1 bg-transparent font-sans text-[12px] text-neutral-300 outline-none placeholder:text-neutral-600"
+              className="min-w-0 flex-1 bg-transparent font-sans text-mr-overline text-neutral-300 outline-none placeholder:text-neutral-600"
             />
           </label>
         </div>
@@ -119,7 +119,7 @@ export default function ConversationTrajectory({
                   return firstModelAt ? (
                     <span
                       key={`input:${message.id}`}
-                      className="absolute inset-y-0 rounded-[2px] bg-sky-400/80"
+                      className="absolute inset-y-0 rounded-xs bg-sky-400/80"
                       style={segmentStyle(
                         turnIndex,
                         trajectory.startedAt,
@@ -134,7 +134,7 @@ export default function ConversationTrajectory({
                   (message.trajectory?.steps ?? []).map((step) => (
                     <span
                       key={`${message.id}:${step.id}`}
-                      className="absolute inset-y-0 rounded-[2px] bg-violet-400/80"
+                      className="absolute inset-y-0 rounded-xs bg-violet-400/80"
                       style={segmentStyle(
                         turnIndex,
                         step.startedAt,
@@ -151,8 +151,8 @@ export default function ConversationTrajectory({
                       <span
                         key={`${message.id}:${beat.id}`}
                         className={cn(
-                          "absolute inset-y-0 rounded-[2px]",
-                          beat.call.error ? "bg-red-400/85" : "bg-amber-400/85",
+                          "absolute inset-y-0 rounded-xs",
+                          beat.call.error ? "bg-mr-danger-400/85" : "bg-amber-400/85",
                         )}
                         style={segmentStyle(
                           turnIndex,
@@ -184,12 +184,12 @@ export default function ConversationTrajectory({
               if (!beats.length && !userMatches) return null;
               return (
                 <section key={message.id} className="relative pt-5">
-                  <div className="absolute left-0 top-1 rounded-sm bg-white/[0.045] px-1.5 py-0.5 font-mono text-[9px] leading-none text-neutral-600">
+                  <div className="absolute left-0 top-1 rounded-sm bg-white/[0.045] px-1.5 py-0.5 font-mono text-mr-tiny leading-none text-neutral-600">
                     {t("aiLab.trajectory.turn", { count: turnIndex + 1 })}
                   </div>
                   {previousUser?.content && userMatches ? (
-                    <div className="grid min-w-0 grid-cols-[68px_minmax(0,1fr)] items-center gap-2 border-b border-white/[0.045] px-3 py-1.5 font-mono text-[10px] leading-4">
-                      <span className="w-fit rounded bg-sky-400/10 px-1.5 py-0.5 text-[9px] text-sky-300">
+                    <div className="grid min-w-0 grid-cols-[68px_minmax(0,1fr)] items-center gap-2 border-b border-white/[0.045] px-3 py-1.5 font-mono text-mr-micro leading-4">
+                      <span className="w-fit rounded bg-sky-400/10 px-1.5 py-0.5 text-mr-tiny text-sky-300">
                         {t("aiLab.trajectory.actor.user")}
                       </span>
                       <span className="truncate text-neutral-400">
@@ -232,8 +232,8 @@ function GlobalLane({
 }) {
   return (
     <div className="grid grid-cols-[44px_1fr] items-center gap-2 py-0.5">
-      <span className="font-mono text-[10px] text-neutral-600">{label}</span>
-      <span className="relative h-1.5 overflow-hidden rounded-[2px] bg-white/[0.025]">
+      <span className="font-mono text-mr-micro text-neutral-600">{label}</span>
+      <span className="relative h-1.5 overflow-hidden rounded-xs bg-white/[0.025]">
         {children}
       </span>
     </div>

@@ -4,16 +4,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AnimatePresence, motion } from "framer-motion";
+import { RiArrowUpLine, RiCloseLine, RiMore2Line } from "@remixicon/react";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowUp,
-  DotsHorizontalIcon,
-  Loader2,
-  RotateCcw,
-  Trash2,
-  X,
-} from "@magic-resume/icons";
+import { RotateCcw, Trash2 } from "@magic-resume/icons";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/product-button";
 import Markdown from "@/app/dashboard/edit/_components/ai/conversation/Markdown";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { jobProfileApi, type JobProfile } from "@/lib/api/jobProfileApi";
@@ -118,43 +113,47 @@ export function JobProfilePanel({
             initial={{ opacity: 0, y: 8, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.2, ease: EASE }}
-            className="fixed left-1/2 top-1/2 z-[201] flex h-[min(76vh,720px)] w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[14px] border border-hairline bg-raised shadow-overlay outline-none"
+            className="fixed left-1/2 top-1/2 z-[201] flex h-[min(76vh,720px)] w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-mr-panel border border-hairline bg-raised shadow-overlay outline-none"
           >
             {/* ── 抬头：标题 · 更新时间 · 更多 · 关闭 ─────────── */}
             <div className="flex shrink-0 items-center gap-2.5 border-b border-hairline px-5 py-3.5">
-              <Dialog.Title className="text-[14px] font-semibold text-[color:var(--text-primary)]">
+              <Dialog.Title className="text-mr-body font-semibold text-primary">
                 {t("settings.jobProfile.title")}
               </Dialog.Title>
               {/* 「多久之前更新」是用户唯一能据以判断「AI 现在到底懂不懂我」的线索。 */}
-              <span className="truncate text-[12px] text-[color:var(--text-muted)]">
+              <span className="truncate text-mr-overline text-muted">
                 {updatedLabel(profile.updatedAt, locale, t)}
               </span>
 
               <div className="ml-auto flex items-center gap-1">
                 <DropdownMenu.Root>
-                  <DropdownMenu.Trigger
-                    aria-label={t("settings.jobProfile.more")}
-                    className="grid h-7 w-7 place-items-center rounded-lg text-[color:var(--text-muted)] transition-colors hover:bg-sunk hover:text-[color:var(--text-secondary)]"
-                  >
-                    <DotsHorizontalIcon className="h-4 w-4" />
+                  <DropdownMenu.Trigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      iconOnly
+                      leadingIcon={RiMore2Line}
+                      aria-label={t("settings.jobProfile.more")}
+                      className="border-transparent bg-transparent text-text-secondary shadow-none hover:border-border-button-hover"
+                    />
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Portal>
                     {/* 重新生成与删除都低频且不可逆，收进菜单——不该和日常动作同一层。 */}
                     <DropdownMenu.Content
                       align="end"
                       sideOffset={6}
-                      className="z-[202] min-w-[176px] rounded-[10px] border border-hairline bg-raised p-1 shadow-overlay"
+                      className="z-[202] min-w-[176px] rounded-mr-card border border-hairline bg-raised p-1 shadow-overlay"
                     >
                       <DropdownMenu.Item
                         onSelect={() => void regenerate()}
-                        className="flex cursor-pointer items-center gap-2 rounded-[7px] px-2.5 py-2 text-[13px] text-[color:var(--text-secondary)] outline-none transition-colors data-[highlighted]:bg-sunk data-[highlighted]:text-[color:var(--text-primary)]"
+                        className="flex cursor-pointer items-center gap-2 rounded-mr-compact-plus px-2.5 py-2 text-mr-caption text-secondary outline-none transition-colors data-[highlighted]:bg-sunk data-[highlighted]:text-primary"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         {t("settings.jobProfile.regenerate")}
                       </DropdownMenu.Item>
                       <DropdownMenu.Item
                         onSelect={() => setConfirmDelete(true)}
-                        className="flex cursor-pointer items-center gap-2 rounded-[7px] px-2.5 py-2 text-[13px] text-[color:var(--rev-del)] outline-none transition-colors data-[highlighted]:bg-sunk"
+                        className="flex cursor-pointer items-center gap-2 rounded-mr-compact-plus px-2.5 py-2 text-mr-caption text-rev-del outline-none transition-colors data-[highlighted]:bg-sunk"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         {t("settings.jobProfile.delete")}
@@ -163,11 +162,15 @@ export function JobProfilePanel({
                   </DropdownMenu.Portal>
                 </DropdownMenu.Root>
 
-                <Dialog.Close
-                  aria-label={t("auth.terms.close")}
-                  className="grid h-7 w-7 place-items-center rounded-lg text-[color:var(--text-muted)] transition-colors hover:bg-sunk hover:text-[color:var(--text-secondary)]"
-                >
-                  <X className="h-4 w-4" />
+                <Dialog.Close asChild>
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    iconOnly
+                    leadingIcon={RiCloseLine}
+                    aria-label={t("auth.terms.close")}
+                    className="border-transparent bg-transparent text-text-secondary shadow-none hover:border-border-button-hover"
+                  />
                 </Dialog.Close>
               </div>
             </div>
@@ -175,17 +178,17 @@ export function JobProfilePanel({
             {/* ── 正文 / diff ───────────────────────────────── */}
             <div className="min-h-0 flex-auto overflow-y-auto px-5 py-4">
               {rows ? (
-                <div className="font-mono text-[12.5px] leading-relaxed">
+                <div className="font-mono text-mr-ui leading-relaxed">
                   {rows.map((row, index) => (
                     <div
                       key={index}
                       className={cn(
                         "whitespace-pre-wrap rounded px-2 py-0.5",
                         row.kind === "add" &&
-                          "bg-[color:var(--rev-add)]/12 text-[color:var(--rev-add)]",
+                          "bg-rev-add/12 text-rev-add",
                         row.kind === "del" &&
-                          "bg-[color:var(--rev-del)]/12 text-[color:var(--rev-del)] line-through",
-                        row.kind === "same" && "text-[color:var(--text-muted)]",
+                          "bg-[color:var(--rev-del)]/12 text-rev-del line-through",
+                        row.kind === "same" && "text-muted",
                       )}
                     >
                       {row.text || " "}
@@ -200,7 +203,7 @@ export function JobProfilePanel({
             {/* ── 底栏：说一句话改它 / 应用·放弃 ──────────────── */}
             <div className="shrink-0 border-t border-hairline px-5 py-3.5">
               {error && (
-                <p role="alert" className="mb-2 text-[12.5px] text-[color:var(--rev-del)]">
+                <p role="alert" className="mb-2 text-mr-ui text-rev-del">
                   {t("settings.jobProfile.failed")}
                 </p>
               )}
@@ -217,21 +220,21 @@ export function JobProfilePanel({
                     // 已经看到的事再说一遍。
                     className="flex items-center justify-end gap-2"
                   >
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="small"
                       onClick={() => setDraft(null)}
-                      className="rounded-[9px] px-3 py-1.5 text-[13px] text-[color:var(--text-secondary)] transition-colors hover:bg-sunk"
                     >
                       {t("settings.jobProfile.discard")}
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="small"
                       disabled={busy === "save"}
                       onClick={() => void apply()}
-                      className="rounded-[9px] bg-fill-sky px-3 py-1.5 text-[13px] font-medium text-white transition-[filter] hover:brightness-110 disabled:opacity-60"
                     >
                       {t("settings.jobProfile.apply")}
-                    </button>
+                    </Button>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -254,21 +257,18 @@ export function JobProfilePanel({
                       // 占位符写「说一句话改它」而不是「提问」：旁边就是 Polaris，
                       // 再放一个会话入口是两个对话框打架。这个框只改画像。
                       placeholder={t("settings.jobProfile.revisePlaceholder")}
-                      className="h-10 w-full rounded-[10px] border border-hairline bg-sunk pl-3.5 pr-11 text-[13px] text-[color:var(--text-primary)] outline-none transition-colors placeholder:text-[color:var(--text-muted)] focus:border-ink-sky"
+                      className="h-10 w-full rounded-mr-card border border-hairline bg-sunk pl-3.5 pr-11 text-mr-caption text-primary outline-none transition-colors placeholder:text-muted focus:border-ink-sky"
                     />
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      iconOnly
+                      leadingIcon={RiArrowUpLine}
                       aria-label={t("settings.jobProfile.revise")}
                       disabled={!instruction.trim() || busy !== null}
                       onClick={() => void requestDraft()}
-                      className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-fill-sky text-white transition-[filter,opacity] hover:brightness-110 disabled:opacity-40"
-                    >
-                      {busy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ArrowUp className="h-3.5 w-3.5" />
-                      )}
-                    </button>
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 disabled:opacity-40"
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -285,26 +285,31 @@ export function JobProfilePanel({
               initial={{ opacity: 0, y: 8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.18, ease: EASE }}
-              className="fixed left-1/2 top-1/2 z-[211] w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-hairline bg-raised p-5 shadow-overlay outline-none"
+              className="fixed left-1/2 top-1/2 z-[211] w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-mr-panel border border-hairline bg-raised p-5 shadow-overlay outline-none"
             >
-              <AlertDialog.Title className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+              <AlertDialog.Title className="text-mr-subtitle font-semibold text-primary">
                 {t("settings.jobProfile.deleteConfirmTitle")}
               </AlertDialog.Title>
-              <AlertDialog.Description className="mt-2.5 text-[13.5px] leading-relaxed text-[color:var(--text-secondary)]">
+              <AlertDialog.Description className="mt-2.5 text-mr-body-tight leading-relaxed text-secondary">
                 {t("settings.jobProfile.deleteConfirmBody")}
               </AlertDialog.Description>
               <div className="mt-5 flex justify-end gap-2">
-                <AlertDialog.Cancel className="rounded-[9px] px-3.5 py-2 text-[13px] text-[color:var(--text-secondary)] transition-colors hover:bg-sunk">
-                  {t("common.cancel")}
+                <AlertDialog.Cancel asChild>
+                  <Button variant="secondary" size="small">
+                    {t("common.cancel")}
+                  </Button>
                 </AlertDialog.Cancel>
-                <AlertDialog.Action
-                  onClick={() => {
-                    void jobProfileApi.remove().catch(() => undefined);
-                    onDeleted();
-                  }}
-                  className="rounded-[9px] bg-[color:var(--rev-del)] px-3.5 py-2 text-[13px] font-medium text-white transition-[filter] hover:brightness-110"
-                >
-                  {t("settings.jobProfile.delete")}
+                <AlertDialog.Action asChild>
+                  <Button
+                    variant="danger"
+                    size="small"
+                    onClick={() => {
+                      void jobProfileApi.remove().catch(() => undefined);
+                      onDeleted();
+                    }}
+                  >
+                    {t("settings.jobProfile.delete")}
+                  </Button>
                 </AlertDialog.Action>
               </div>
             </motion.div>
@@ -366,10 +371,11 @@ function diffLines(before: string, after: string): DiffRow[] {
  * （`3d ago`），挂在中文界面上就是一处夹生。
  */
 function updatedLabel(
-  iso: string,
+  iso: string | null,
   locale: string,
   t: (key: string, vars?: Record<string, unknown>) => string,
 ): string {
+  if (!iso) return t("settings.jobProfile.updatedJustNow");
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (!Number.isFinite(seconds) || seconds < 60) {
     return t("settings.jobProfile.updatedJustNow");

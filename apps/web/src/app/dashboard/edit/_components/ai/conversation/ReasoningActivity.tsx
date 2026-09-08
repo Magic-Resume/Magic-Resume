@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import AgentDisclosure from "./AgentDisclosure";
 
-// Exact beUI motion tokens. Do not retune these locally; animation changes should
+// Exact Agent UI motion tokens. Do not retune these locally; animation changes should
 // stay aligned with the source component.
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const SPRING_SWAP = {
@@ -35,8 +35,8 @@ const SPRING_LAYOUT = {
 const MAX_REASONING_HEIGHT = 180;
 
 const TEXT_SHIMMER_KEYFRAMES =
-  "@keyframes beui-text-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}" +
-  "@media (prefers-reduced-motion: reduce){.beui-text-shimmer{animation:none !important}}";
+  "@keyframes agent-text-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}" +
+  "@media (prefers-reduced-motion: reduce){.agent-text-shimmer{animation:none !important}}";
 
 type ReasoningItem = {
   id: string;
@@ -72,7 +72,7 @@ function reasoningItems(text: string): ReasoningItem[] {
     }));
 }
 
-/** Local data adapter: beUI receives duration as a prop; our stream exposes status only. */
+/** Local data adapter: Agent UI receives duration as a prop; our stream exposes status only. */
 function useReasoningDuration(running: boolean) {
   const [startedAt] = useState(() => (running ? Date.now() : null));
   const [seconds, setSeconds] = useState<number | null>(null);
@@ -95,8 +95,8 @@ function ThinkingShimmer({ children }: { children: string }) {
     <>
       <style>{TEXT_SHIMMER_KEYFRAMES}</style>
       <span
-        style={{ animation: "beui-text-shimmer 1.8s linear infinite" }}
-        className="beui-text-shimmer inline-block bg-[linear-gradient(110deg,var(--ink-3)_30%,var(--ink)_50%,var(--ink-3)_70%)] bg-[length:200%_100%] bg-clip-text font-medium text-transparent"
+        style={{ animation: "agent-text-shimmer 1.8s linear infinite" }}
+        className="agent-text-shimmer inline-block bg-[linear-gradient(110deg,var(--mr-muted)_30%,var(--mr-ink)_50%,var(--mr-muted)_70%)] bg-[length:200%_100%] bg-clip-text font-medium text-transparent"
       >
         {children}
       </span>
@@ -113,7 +113,7 @@ function TextRow({ item }: { item: ReasoningItem }) {
 }
 
 /**
- * beUI AgentActivity's streaming-text path. Product adapters are limited to localized
+ * AgentActivity's streaming-text path. Product adapters are limited to localized
  * labels, our reasoning-string input, and a content-sized viewport capped at 180px.
  */
 export default function ReasoningActivity({

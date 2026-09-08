@@ -4,7 +4,7 @@ import React from "react";
 import { Telescope } from "@magic-resume/icons";
 import { useTranslation } from "react-i18next";
 import { WidgetItem, WidgetShell } from "@magic-resume/genui";
-import type { WidgetProps } from "@magic-resume/genui/contract";
+import type { WidgetProps } from "@magic-resume/genui";
 import Markdown from "../conversation/Markdown";
 
 type Group = {
@@ -41,10 +41,10 @@ export default function JobResearchCard({
   return (
     <WidgetShell density="block">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-tint-sky">
-          <Telescope size={14} className="text-ink-sky" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-mr-accent-tint">
+          <Telescope size={14} className="text-mr-accent" />
         </div>
-        <span className="text-[13px] font-medium text-primary truncate">
+        <span className="text-mr-caption font-medium text-mr-ink truncate">
           {props.jobTitle || t("aiLab.widgets.research.title")}
         </span>
       </div>
@@ -57,7 +57,7 @@ export default function JobResearchCard({
                 className="h-3 w-1 rounded-full"
                 style={{ background: g.accent }}
               />
-              <span className="text-[11px] font-medium text-secondary">
+              <span className="text-mr-label font-medium text-mr-ink-secondary">
                 {g.title ||
                   t(`aiLab.widgets.research.groups.${g.key}`, {
                     defaultValue: g.key,
@@ -80,7 +80,7 @@ export default function JobResearchCard({
                           },
                         })
                       }
-                      className="w-full rounded-md px-1 py-0.5 text-left text-xs leading-relaxed text-secondary transition-colors hover:bg-sunk hover:text-primary cursor-pointer"
+                      className="w-full rounded-md px-1 py-0.5 text-left text-xs leading-relaxed text-mr-ink-secondary transition-colors hover:bg-mr-sunk hover:text-mr-ink cursor-pointer"
                     >
                       <Markdown
                         sources={sources}
@@ -94,7 +94,7 @@ export default function JobResearchCard({
                 ) : (
                   <li
                     key={item}
-                    className="text-xs leading-relaxed text-secondary"
+                    className="text-xs leading-relaxed text-mr-ink-secondary"
                   >
                     <Markdown sources={sources} inline>
                       {item}

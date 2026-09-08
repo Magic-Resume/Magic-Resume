@@ -1,43 +1,61 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
-import { Loader2 } from '@magic-resume/icons'
+import * as React from 'react';
+import {
+  buttonVariants as designButtonVariants,
+  cx,
+} from '@magic-resume/design-system';
+import { Loader2 } from '@magic-resume/icons';
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-neutral-800 text-white hover:bg-neutral-700",
-  {
-    variants: {
-      variant: {
-        default: "",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "underline-offset-4 hover:underline text-ink-sky",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 px-3 rounded-md",
-        lg: "h-11 px-8 rounded-md",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
+type LegacyVariant = 'default' | 'outline' | 'ghost' | 'link';
+type LegacySize = 'default' | 'sm' | 'lg' | 'icon';
+
+const variantMap = {
+  default: 'primary',
+  outline: 'secondary',
+  ghost: 'ghost',
+  link: 'ghost',
+} as const;
+
+const sizeMap = {
+  default: 'md',
+  sm: 'sm',
+  lg: 'lg',
+  icon: 'icon',
+} as const;
+
+export function buttonVariants({
+  variant = 'default',
+  size = 'default',
+  className,
+}: {
+  variant?: LegacyVariant;
+  size?: LegacySize;
+  className?: string;
+} = {}) {
+  return cx(
+    designButtonVariants({ variant: variantMap[variant], size: sizeMap[size] }),
+    variant === 'link' && 'text-mr-accent underline-offset-4 hover:underline',
+    className,
+  );
+}
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  loading?: boolean
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    Partial<{
+      variant: LegacyVariant;
+      size: LegacySize;
+    }> {
+  loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, disabled, children, ...props }, ref) => {
+  (
+    { className, variant, size, loading, disabled, children, ...props },
+    ref,
+  ) => {
     return (
       <button
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={buttonVariants({ variant, size, className })}
         ref={ref}
         disabled={loading || disabled}
         {...props}
@@ -45,9 +63,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {children}
       </button>
-    )
-  }
-)
-Button.displayName = "Button"
+    );
+  },
+);
+Button.displayName = 'Button';
 
-export { Button, buttonVariants }
+export { Button };

@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Section, SectionItem } from '@/types/frontend/resume';
-import { useResumeStore, getSanitizedResume } from '@/store/useResumeStore';
+import { getSanitizedResume } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
+import { useResumeEditorUiStore } from '@/store/resume/editor-ui';
+import { useResumePersistenceStore } from '@/store/resume/persistence';
+import { useResumeSyncStore } from '@/store/resume/sync';
 import { useSettingStore } from '@/store/useSettingStore';
 import debounce from 'lodash/debounce';
 import BasicForm from './forms/BasicForm';
@@ -54,8 +58,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const {
     activeResume,
     loadResumeForEdit,
-    saveResume: saveActiveResumeToResumes,
-    syncToCloud,
     updateInfo,
     setSectionOrder: updateSectionOrder,
     updateSectionItems,
@@ -63,17 +65,21 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     updateCustomSection,
     removeCustomSection,
     updateTemplate,
+    isStoreLoading,
+    resumes,
+  } = useResumeDocumentStore();
+
+  const { saveResume: saveActiveResumeToResumes } = useResumePersistenceStore();
+  const { syncToCloud, syncStatus } = useResumeSyncStore();
+  const {
     rightCollapsed,
     setRightCollapsed,
     leftCollapsed,
     setLeftCollapsed,
     activeSection,
     setActiveSection,
-    isStoreLoading,
-    resumes,
-    syncStatus,
     isAiGenerating,
-  } = useResumeStore();
+  } = useResumeEditorUiStore();
 
   const router = useRouter();
 
@@ -206,7 +212,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         }
       }
 
-      const { activeResume, isSyncing } = useResumeStore.getState();
+      const { activeResume } = useResumeDocumentStore.getState();
+      const { isSyncing } = useResumeSyncStore.getState();
       if (activeResume?.id === id && !isStoreLoading && !isSyncing) {
           return;
       }
@@ -245,7 +252,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       await saveActiveResumeToResumes('manual', activeResume || undefined);
       console.log('[Save] Store saveResume completed.');
       
-      const freshResume = useResumeStore.getState().activeResume;
+      const freshResume = useResumeDocumentStore.getState().activeResume;
       if (freshResume) {
           lastUpdatedAtRef.current = freshResume.updatedAt;
       }
@@ -313,7 +320,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     };
     const onPageHide = () => {
       debouncedSync.cancel();
-      useResumeStore.getState().flushSyncOnExit();
+      useResumeSyncStore.getState().flushSyncOnExit();
     };
     window.addEventListener('pagehide', onPageHide);
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -326,7 +333,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   // 网络恢复时若仍有未落云的修改或上次同步失败,立即补一次,不必等下次编辑。
   useEffect(() => {
     const onOnline = () => {
-      const { syncStatus: status } = useResumeStore.getState();
+      const { syncStatus: status } = useResumeSyncStore.getState();
       if (cloudSync && (status === 'modified' || status === 'error')) {
         void syncToCloud();
       }
@@ -442,7 +449,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                       aria-label={t('customSection.rename', { defaultValue: '重命名' })}
                       title={t('customSection.rename', { defaultValue: '重命名' })}
                       onClick={() => setEditingSection({ key, label: label || key, icon: iconName })}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200"
                     >
                       <SquarePen size={13} />
                     </button>
@@ -491,7 +498,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         <button
           type="button"
           onClick={() => setCreatingSection(true)}
-          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2.5 text-[13px] text-neutral-500 transition-colors duration-150 hover:border-sky-400/40 hover:text-sky-300"
+          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2.5 text-mr-caption text-neutral-500 transition-colors duration-150 hover:border-sky-400/40 hover:text-sky-300"
         >
           <Plus size={14} />
           {t('customSection.add', { defaultValue: '添加自定义模块' })}

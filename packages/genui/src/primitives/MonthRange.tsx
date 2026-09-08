@@ -118,7 +118,7 @@ export function MonthRange({
         labels={labels}
         onChange={(next) => onChange(join(next, end, ongoing, present))}
       />
-      <span className="text-xs text-muted">–</span>
+      <span className="text-xs text-mr-muted">–</span>
       <Point
         value={end}
         years={years}
@@ -126,12 +126,12 @@ export function MonthRange({
         labels={labels}
         onChange={(next) => onChange(join(start, next, false, present))}
       />
-      <label className="inline-flex items-center gap-1.5 text-xs text-secondary cursor-pointer">
+      <label className="inline-flex items-center gap-1.5 text-xs text-mr-ink-secondary cursor-pointer">
         <input
           type="checkbox"
           checked={ongoing}
           onChange={(e) => onChange(join(start, end, e.target.checked, present))}
-          className="accent-[var(--fill-sky)] cursor-pointer"
+          className="accent-mr-accent cursor-pointer"
         />
         {present}
       </label>

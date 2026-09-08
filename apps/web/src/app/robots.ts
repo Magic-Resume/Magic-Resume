@@ -19,7 +19,7 @@ const DISALLOW = [
 // `robots: { index: false, follow: false }` 明确要求除名，才是能真正生效的那条路。
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://magic-resume.cn'
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://app.magic-resume.cn').replace(/\/+$/, '')
 
   return {
     rules: [

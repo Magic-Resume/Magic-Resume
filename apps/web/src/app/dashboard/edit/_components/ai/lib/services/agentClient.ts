@@ -139,7 +139,7 @@ export async function* streamPdfParse(
 }
 
 export interface ChatStreamParams {
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  messages: { role: 'system' | 'user' | 'assistant' | 'ai'; content: string }[];
   /** 私有 R2 对象的短期读取地址；后端渲染为页面图并放进同一条用户消息。 */
   attachments?: Array<{
     id: string;
@@ -153,7 +153,18 @@ export interface ChatStreamParams {
    * 档位不会留下互相矛盾的旧契约。
    */
   agentMode?: 'cocreate' | 'plan' | 'ask';
-  mode?: 'create' | 'optimize' | 'analyze' | 'fit' | 'translate' | 'interview' | 'general';
+  mode?:
+    | 'create'
+    | 'optimize'
+    | 'analyze'
+    | 'fit'
+    | 'translate'
+    | 'interview'
+    | 'interview-prep'
+    | 'cover-letter'
+    | 'company-research'
+    | 'applications'
+    | 'general';
   /** 一次对话 = 一个 sessionId，"新对话"才换新的。服务端据此跨轮次续上下文。 */
   sessionId?: string;
   /**
@@ -161,6 +172,11 @@ export interface ChatStreamParams {
    * pushing a full resume snapshot into every chat turn.
    */
   resumeId?: string;
+  /** Optional explicit resume snapshot for stateless/evaluation callers. */
+  currentResume?: unknown;
+  /** Explicit user-installed skills; the Core service never auto-runs them. */
+  userSkillId?: string;
+  userSkillIds?: string[];
   request_type?: 'fix_analysis_weakness';
   context?: { analysisIssue?: AnalysisImprovementAction };
   /**

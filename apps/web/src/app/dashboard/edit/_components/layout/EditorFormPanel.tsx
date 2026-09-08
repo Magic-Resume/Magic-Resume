@@ -41,8 +41,8 @@ export default function EditorFormPanel({
   if (embedded) {
     return (
       <div className="flex h-full w-full flex-col bg-desk">
-        <div className="flex items-center border-b border-white/[0.06] px-4 py-4">
-          <h2 className="text-[15px] font-semibold tracking-tight text-white">{t("outline.title")}</h2>
+        <div className="flex items-center border-b border-mr-line-soft px-4 py-4">
+          <h2 className="text-mr-subtitle font-semibold tracking-tight text-white">{t("outline.title")}</h2>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-10 scrollbar-hide">
           {renderSections()}
@@ -62,14 +62,14 @@ export default function EditorFormPanel({
       />
 
       <motion.div
-        className="h-full overflow-hidden border-r border-white/[0.06] bg-desk"
+        className="h-full overflow-hidden border-r border-mr-line-soft bg-desk"
         animate={{ width: collapsed ? 0 : LEFT_PANEL_WIDTH }}
         initial={false}
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
       >
         <div style={{ width: LEFT_PANEL_WIDTH }} className="flex h-full flex-col">
-          <div className="flex items-center border-b border-white/[0.06] px-4 py-4">
-            <h2 className="text-[15px] font-semibold tracking-tight text-white">{t("outline.title")}</h2>
+          <div className="flex items-center border-b border-mr-line-soft px-4 py-4">
+            <h2 className="text-mr-subtitle font-semibold tracking-tight text-white">{t("outline.title")}</h2>
           </div>
           <div
             ref={scrollRef}

@@ -68,11 +68,11 @@ function TemplateRenderFailed() {
   return (
     <div className="flex h-full min-h-[200px] w-full items-center justify-center p-8">
       <div className="max-w-sm text-center">
-        <p className="text-[14px] text-neutral-300">
+        <p className="text-mr-body text-neutral-300">
           {t("templateError.title")}
         </p>
         {/* 说清楚「你的内容还在」——用户看到空白页第一反应是数据没了。 */}
-        <p className="mt-2 text-[13px] leading-relaxed text-neutral-500">
+        <p className="mt-2 text-mr-caption leading-relaxed text-neutral-500">
           {t("templateError.description")}
         </p>
       </div>

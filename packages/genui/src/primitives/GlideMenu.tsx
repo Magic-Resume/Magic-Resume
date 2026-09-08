@@ -18,12 +18,12 @@ type GlideMenuProps = {
  * 位置用 `getBoundingClientRect` 相减而不是 `offsetTop`：菜单常常自己带滚动，
  * `offsetTop` 是相对定位父级的静态值，滚动后高亮会停在错的行上。
  *
- * 移植自 beautiful-ui（`components/primitives/GlideMenu.tsx`），逐行保持一致。
+ * GenUI 的滑动菜单原语。
  */
 export default function GlideMenu({
   children,
   className = '',
-  highlightClassName = 'inset-x-0 rounded-[8px] bg-hover',
+  highlightClassName = 'inset-x-0 rounded-mr-control bg-mr-surface-soft',
   rowSelector = '[data-menu-row]',
 }: GlideMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export default function GlideMenu({
           height: box?.height ?? 0,
           opacity: box && visible ? 1 : 0,
           transition:
-            'top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease',
+            'top 220ms var(--narrate-ease), height 220ms var(--narrate-ease), opacity 150ms ease',
         }}
       />
       {children}

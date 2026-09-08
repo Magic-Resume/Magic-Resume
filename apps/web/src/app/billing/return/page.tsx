@@ -26,6 +26,7 @@ type Phase =
   | 'already_paid'
   | 'failed'
   | 'refunded'
+  | 'partially_refunded'
   | 'timeout'
   | 'error';
 
@@ -50,7 +51,11 @@ function ReturnState() {
 
       // 终态也要停：只认 'paid' 会让已失败/已退款的订单一路走到超时面板，
       // 对一笔明确失败的支付说"款项不会丢失，渠道会重试"。
-      if (next.status === 'failed' || next.status === 'refunded') {
+      if (
+        next.status === 'failed' ||
+        next.status === 'refunded' ||
+        next.status === 'partially_refunded'
+      ) {
         setPhase(next.status);
         return true;
       }
@@ -154,7 +159,11 @@ function ReturnState() {
     );
   }
 
-  if (phase === 'failed' || phase === 'refunded') {
+  if (
+    phase === 'failed' ||
+    phase === 'refunded' ||
+    phase === 'partially_refunded'
+  ) {
     return (
       <Panel
         icon={<XCircle className="h-10 w-10 text-red-500" />}

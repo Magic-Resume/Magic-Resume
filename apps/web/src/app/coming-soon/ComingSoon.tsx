@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer
 import { ArrowRight, Bell, FlaskConical } from '@magic-resume/icons';
 import { getCountdownTimeLeft, type CountdownTimeLeft } from '@/lib/utils/dateTime';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 interface ComingSoonProps {
   launchAt: string | null;
   waitlistUrl: string | null;
@@ -94,7 +95,7 @@ function CountUnit({
             initial={reduce ? false : { y: '55%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={reduce ? { opacity: 0 } : { y: '-55%', opacity: 0 }}
-            transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.34, ease: EASE_ENTER }}
             className="block text-[2rem] font-semibold leading-none tabular-nums text-white sm:text-[3.25rem]"
             style={BRAND_FONT}
           >
@@ -102,7 +103,7 @@ function CountUnit({
           </motion.span>
         </AnimatePresence>
       </div>
-      <span className="mt-2 text-[10px] uppercase tracking-[0.2em] text-white/40">{label}</span>
+      <span className="mt-2 text-mr-micro uppercase tracking-[0.2em] text-white/40">{label}</span>
     </div>
   );
 }
@@ -151,7 +152,7 @@ export default function ComingSoon({
   };
   const item: Variants = {
     hidden: { opacity: 0, y: 16 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_ENTER } },
   };
 
   return (
@@ -185,7 +186,7 @@ export default function ComingSoon({
       >
         <motion.span
           variants={item}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-400 backdrop-blur-sm"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-mr-label font-medium uppercase tracking-[0.18em] text-sky-400 backdrop-blur-sm"
         >
           <FlaskConical className="h-3 w-3" strokeWidth={2.2} />
           {'Magic Resume'}
@@ -210,9 +211,9 @@ export default function ComingSoon({
         {!launched && hasTarget && (
           <motion.div
             variants={item}
-            className="mt-9 w-full rounded-2xl border border-white/[0.06] bg-white/[0.015] px-5 py-5 sm:px-8"
+            className="mt-9 w-full rounded-2xl border border-mr-line-soft bg-white/[0.015] px-5 py-5 sm:px-8"
           >
-            <div className="mb-4 flex items-center justify-center gap-2 text-[10px] font-medium uppercase tracking-[0.24em] text-sky-400/80">
+            <div className="mb-4 flex items-center justify-center gap-2 text-mr-micro font-medium uppercase tracking-[0.24em] text-sky-400/80">
               <span className="cs-dot h-1 w-1 rounded-full bg-sky-400" />
               {t('comingSoon.countdownLabel')}
             </div>

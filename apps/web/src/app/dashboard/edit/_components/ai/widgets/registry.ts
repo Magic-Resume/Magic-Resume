@@ -17,8 +17,8 @@ import type {
   ResearchBriefItem,
   ResearchBriefVariant,
 } from './ResearchBriefCard';
-import type { RecommendationOption } from '@magic-resume/genui/beautiful';
-import type { WidgetFormField, WidgetOption, WidgetRegistry } from '@magic-resume/genui/contract';
+import type { RecommendationOption } from '@magic-resume/genui';
+import type { WidgetFormField, WidgetOption, WidgetRegistry } from '@magic-resume/genui';
 
 /** `['a','b']` → options. Used for the many short, fixed lists below. */
 const opts = (...labels: string[]): WidgetOption[] =>

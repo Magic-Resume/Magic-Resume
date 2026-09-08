@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" shape-rendering="crispEdges">
+  <!-- 断线帧（错误界面）。坐姿的几何原样搬过来，只改三处**信号**：
+       天线星熄灭（从近白降到暗蓝，比身体还暗才读得出「灭了」）、眼睛半闭、腿不再晃。
+       身体保留最慢的一次呼吸——它是断线，不是死了；完全静止会读成插图。 -->
+  <style>
+    .body { animation: settle 6.4s steps(1, end) infinite; }
+    @keyframes settle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-0.5px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .body { animation: none; }
+    }
+  </style>
+
+  <!-- 垂着的腿：位置同坐姿，不再晃 -->
+  <rect x="8" y="20" width="2.5" height="3.5" fill="#2fa8ea"/>
+  <rect x="13.5" y="20" width="2.5" height="3.5" fill="#2fa8ea"/>
+
+  <g class="body">
+    <!-- 熄灭的天线：星和杆同色，与身体阴影同一支蓝。
+         「亮」的信号是**星比身体亮**，不是星是深色——所以熄灭要做成「和杆一样，没有高光」。
+         做成深色在浅色主题下会反过来：暗星在暖纸上比亮星还显眼。 -->
+    <g fill="#2fa8ea">
+      <rect x="11.5" y="1.5" width="1" height="3"/>
+      <rect x="10.5" y="2.5" width="3" height="1"/>
+    </g>
+    <rect x="11.5" y="5" width="1" height="3" fill="#2fa8ea"/>
+
+    <!-- 身体：与坐姿完全相同的一组矩形 -->
+    <rect x="5" y="7" width="14" height="13" fill="#67cdf9"/>
+    <rect x="4" y="8" width="16" height="11" fill="#67cdf9"/>
+    <rect x="5" y="7" width="7" height="1" fill="#a8e2fd"/>
+    <rect x="4" y="8" width="1" height="6" fill="#a8e2fd"/>
+    <rect x="5" y="19" width="14" height="1" fill="#2fa8ea"/>
+    <rect x="19" y="13" width="1" height="6" fill="#2fa8ea"/>
+
+    <!-- 耳朵 -->
+    <rect x="2" y="10" width="2" height="4" fill="#a8e2fd"/>
+    <rect x="20" y="10" width="2" height="4" fill="#2fa8ea"/>
+
+    <!-- 半闭的眼：下沿与坐姿对齐，只留最下面一格半——蔫，不是闭眼睡着 -->
+    <rect x="8" y="13" width="2.5" height="1.5" fill="#082f49"/>
+    <rect x="13.5" y="13" width="2.5" height="1.5" fill="#082f49"/>
+  </g>
+</svg>

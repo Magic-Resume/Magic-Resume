@@ -35,7 +35,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from '@magic-resume/icons';
 import { ModalShell } from '@/components/ui/ModalShell';
 
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
 interface BaseItem {
@@ -101,7 +101,7 @@ function SortableItem<T extends BaseItem>({ id, item, index, handleEdit, handleD
   ];
 
   return (
-    <div ref={setNodeRef} style={style} className={cn("group relative mb-2 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-2.5 transition-colors duration-150 hover:border-white/20", isDragging ? 'opacity-50' : 'opacity-100', item.visible === false && "opacity-50")}>
+    <div ref={setNodeRef} style={style} className={cn("group relative mb-2 flex items-center gap-2 rounded-xl border border-mr-line bg-white/[0.03] p-2.5 transition-colors duration-150 hover:border-white/20", isDragging ? 'opacity-50' : 'opacity-100', item.visible === false && "opacity-50")}>
       <div {...attributes} {...listeners} className={cn("flex h-8 w-5 items-center justify-center text-neutral-400 transition-colors duration-150 hover:text-neutral-100", disabled ? "cursor-default" : "cursor-grab active:cursor-grabbing")}>
         <FaGripVertical size={14} />
       </div>
@@ -169,7 +169,7 @@ export default function SectionListWithModal<T extends BaseItem>({
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [isPolishing, setIsPolishing] = useState(false);
   const { t } = useTranslation();
-  const { activeResume } = useResumeStore();
+  const { activeResume } = useResumeDocumentStore();
 
   const translatedLabel = t(label);
 
@@ -315,7 +315,7 @@ export default function SectionListWithModal<T extends BaseItem>({
           <button
             type="button"
             onClick={() => handleOpenModal(null, null)}
-            className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12.5px] font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
+            className="flex items-center gap-2 rounded-lg border border-white/10 bg-mr-surface-subtle px-3 py-2 text-mr-ui font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
           >
             <FaPlus size={11} />
             {t('sections.shared.addItem')}
@@ -325,7 +325,7 @@ export default function SectionListWithModal<T extends BaseItem>({
         <button
           type="button"
           onClick={() => handleOpenModal(null, null)}
-          className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-3 text-[12.5px] font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
+          className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] py-3 text-mr-ui font-medium text-neutral-300 transition-colors duration-150 hover:border-sky-400/40 hover:text-white"
         >
           <FaPlus size={11} />
           {t('sections.shared.addItem')}
@@ -346,7 +346,7 @@ export default function SectionListWithModal<T extends BaseItem>({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {fields.map((field) => (
                 <div key={field.name} className="space-y-2">
-                  <Label htmlFor={field.name} className="text-[13px] font-medium text-neutral-300">
+                  <Label htmlFor={field.name} className="text-mr-caption font-medium text-neutral-300">
                     {field.label}
                   </Label>
                   <Input
@@ -369,7 +369,7 @@ export default function SectionListWithModal<T extends BaseItem>({
             title={t('basicForm.customFields.title')}
           />
           <div className="space-y-2">
-            <Label className="text-[13px] font-medium text-neutral-300">
+            <Label className="text-mr-caption font-medium text-neutral-300">
               {t('modals.dynamicForm.descriptionLabel')}
             </Label>
             <div className="overflow-hidden rounded-lg border border-white/[0.07] bg-sunk transition-colors focus-within:border-sky-500/40 focus-within:ring-1 focus-within:ring-sky-500/25">
@@ -384,18 +384,18 @@ export default function SectionListWithModal<T extends BaseItem>({
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white/[0.06] px-6 py-4">
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-mr-line-soft px-6 py-4">
           <button
             type="button"
             onClick={handleCloseModal}
-            className="h-9 rounded-lg px-4 text-[13px] text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-100"
+            className="h-9 rounded-lg px-4 text-mr-caption text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-neutral-100"
           >
             {t('modals.dynamicForm.cancelButton')}
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="h-9 rounded-lg bg-sky-500 px-5 text-[13px] font-medium text-[#fff] transition-colors hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+            className="h-9 rounded-lg bg-sky-500 px-5 text-mr-caption font-medium text-[#fff] transition-colors hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
           >
             {t('modals.dynamicForm.saveButton')}
           </button>

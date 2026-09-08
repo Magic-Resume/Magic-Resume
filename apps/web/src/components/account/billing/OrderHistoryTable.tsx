@@ -50,7 +50,7 @@ function OrderIdCell({ id }: { id: string }) {
       title={id}
       aria-label={t('account.billing.copyOrderId')}
       className={cn(
-        'group inline-flex items-center gap-1.5 rounded font-mono text-[12px] transition-colors cursor-pointer',
+        'group inline-flex items-center gap-1.5 rounded font-mono text-mr-overline transition-colors cursor-pointer',
         copied ? 'text-emerald-400' : 'text-neutral-400 hover:text-neutral-100'
       )}
     >
@@ -79,6 +79,7 @@ const STATUS_STYLES: Record<OrderHistoryRow['status'], string> = {
   pending: 'text-amber-400',
   failed: 'text-neutral-500',
   refunded: 'text-neutral-400',
+  partially_refunded: 'text-neutral-400',
 };
 
 export function OrderHistoryTable({
@@ -97,7 +98,7 @@ export function OrderHistoryTable({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-11 animate-pulse rounded-lg bg-white/[0.04]"
+            className="h-11 animate-pulse rounded-lg bg-mr-surface-subtle"
           />
         ))}
       </div>
@@ -106,17 +107,17 @@ export function OrderHistoryTable({
 
   if (orders.length === 0) {
     return (
-      <p className="rounded-lg border border-white/[0.06] px-4 py-6 text-center text-[13px] text-neutral-500">
+      <p className="rounded-lg border border-mr-line-soft px-4 py-6 text-center text-mr-caption text-neutral-500">
         {t('account.billing.noOrders')}
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
-      <table className="w-full min-w-[520px] text-[13px]">
+    <div className="overflow-x-auto rounded-lg border border-mr-line-soft">
+      <table className="w-full min-w-[520px] text-mr-caption">
         <thead>
-          <tr className="border-b border-white/[0.06] text-left text-[11.5px] uppercase tracking-wide text-neutral-500">
+          <tr className="border-b border-mr-line-soft text-left text-mr-label-tight uppercase tracking-wide text-neutral-500">
             <th className="px-4 py-2.5 font-medium">{t('account.billing.colDate')}</th>
             <th className="px-4 py-2.5 font-medium">{t('account.billing.colOrderId')}</th>
             <th className="px-4 py-2.5 font-medium">{t('account.billing.colItem')}</th>

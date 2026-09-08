@@ -241,7 +241,7 @@ export default function OnboardingWizard({
                       <h2 className="text-[24px] font-semibold leading-tight tracking-tight text-ink">
                         {t('onboarding.done.title')}
                       </h2>
-                      <p className="mt-2 text-[13px] leading-relaxed text-ink-3">
+                      <p className="mt-2 text-mr-caption leading-relaxed text-ink-3">
                         {t('onboarding.done.subtitle')}
                       </p>
                     </motion.div>
@@ -256,7 +256,7 @@ export default function OnboardingWizard({
                     <div className="mt-7 space-y-6">
                       {step.fields.map((field) => (
                         <div key={field.id}>
-                          <p className="mb-2.5 text-[12.5px] font-medium text-ink-2">
+                          <p className="mb-2.5 text-mr-ui font-medium text-ink-2">
                             {t(`onboarding.fields.${field.id}.label`)}
                           </p>
                           <ChipGroup
@@ -278,7 +278,7 @@ export default function OnboardingWizard({
 
                       {step.freeText && (
                         <div>
-                          <p className="mb-2.5 text-[12.5px] font-medium text-ink-2">
+                          <p className="mb-2.5 text-mr-ui font-medium text-ink-2">
                             {t('onboarding.fields.note.label')}
                           </p>
                           <textarea
@@ -286,7 +286,7 @@ export default function OnboardingWizard({
                             onChange={(event) => setNote(event.target.value)}
                             rows={3}
                             placeholder={t('onboarding.fields.note.placeholder')}
-                            className="w-full resize-none rounded-[10px] bg-field px-3.5 py-3 text-[13.5px] leading-relaxed text-ink outline-none ring-1 ring-inset ring-line transition-[box-shadow] placeholder:text-ink-3 focus:ring-accent"
+                            className="w-full resize-none rounded-mr-card bg-field px-3.5 py-3 text-mr-body-tight leading-relaxed text-ink outline-none ring-1 ring-inset ring-line transition-[box-shadow] placeholder:text-ink-3 focus:ring-accent"
                           />
                         </div>
                       )}
@@ -310,7 +310,7 @@ export default function OnboardingWizard({
                       <button
                         type="button"
                         onClick={() => go(-1)}
-                        className="flex items-center gap-1 rounded-full py-1 text-[12.5px] text-ink-3 transition-colors hover:text-ink-2"
+                        className="flex items-center gap-1 rounded-full py-1 text-mr-ui text-ink-3 transition-colors hover:text-ink-2"
                       >
                         <ArrowLeft size={13} />
                         {t('onboarding.previous')}
@@ -322,7 +322,7 @@ export default function OnboardingWizard({
                   <button
                     type="button"
                     onClick={() => onDone({})}
-                    className="rounded-full py-1 text-[12.5px] text-ink-3 transition-colors hover:text-ink-2"
+                    className="rounded-full py-1 text-mr-ui text-ink-3 transition-colors hover:text-ink-2"
                   >
                     {t('onboarding.skip')}
                   </button>
@@ -362,7 +362,7 @@ export default function OnboardingWizard({
                 <button
                   type="button"
                   onClick={() => (last ? finish() : go(1))}
-                  className="rounded-full bg-[color:var(--ink)] px-5 py-2 text-[13px] font-medium text-[color:var(--canvas)] transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.97]"
+                  className="rounded-full bg-[color:var(--ink)] px-5 py-2 text-mr-caption font-medium text-[color:var(--canvas)] transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.97]"
                 >
                   {t(last ? 'onboarding.finish' : 'onboarding.next')}
                 </button>

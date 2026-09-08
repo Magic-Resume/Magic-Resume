@@ -1,6 +1,7 @@
 'use client';
 
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
+import { useResumeEditorUiStore } from '@/store/resume/editor-ui';
 import { useInterceptModalRoute } from '@/hooks/useInterceptModalRoute';
 import AIModal from '../../../_components/modals/AIModal';
 
@@ -12,9 +13,8 @@ export default function AIModalPage() {
     updateInfo,
     applyFullResume,
     applyWorkspaceResolution,
-    isAiGenerating,
-    setIsAiGenerating,
-  } = useResumeStore();
+  } = useResumeDocumentStore();
+  const { isAiGenerating, setIsAiGenerating } = useResumeEditorUiStore();
 
   const templateId = activeResume?.template || 'classic';
 

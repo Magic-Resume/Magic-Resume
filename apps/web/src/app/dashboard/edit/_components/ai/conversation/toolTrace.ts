@@ -1,4 +1,4 @@
-import type { ToolChipRow } from '@magic-resume/genui/beautiful';
+import type { ToolChipRow } from '@magic-resume/genui';
 
 /**
  * 工具调用 → `ToolChips` 的行。
@@ -8,7 +8,7 @@ import type { ToolChipRow } from '@magic-resume/genui/beautiful';
  * 而不是再往这里加一行（加的人和写工具的人不在同一个仓，漏了还不报错）。
  */
 
-/** 工具名 → 芯片图标键，见 `genui/beautiful/icons.tsx`。 */
+/** 工具名 → 芯片图标键，见 GenUI 的 icons。 */
 const TOOL_ICON: Record<string, string> = {
   read_resume: 'read',
   write_resume: 'write',
@@ -85,7 +85,7 @@ export function subjectOf(args: unknown): string | undefined {
 }
 
 /**
- * 能安全画出来的图标键。**必须和 `genui/beautiful/icons.tsx` 的 `IconKey` 对齐**——
+ * 能安全画出来的图标键。**必须和 `genui/GenUI/icons.tsx` 的 `IconKey` 对齐**——
  * 这里少一个，后端指过来的图标就静默退成扳手。
  *
  * `run`（终端箭头）刻意仍在其中但只给 `execute` 用：把它当兜底会让一个求职工具带上

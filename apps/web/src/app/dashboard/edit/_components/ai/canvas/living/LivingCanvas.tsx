@@ -1318,7 +1318,7 @@ function LivingCanvas({
           <button
             type="button"
             onClick={() => setPanelOpen((v) => !v)}
-            className="ml-auto inline-flex items-center gap-1.5 text-[11px] text-neutral-300 border border-neutral-800 hover:border-neutral-700 rounded-full px-2.5 py-1 transition-colors cursor-pointer"
+            className="ml-auto inline-flex items-center gap-1.5 text-mr-label text-neutral-300 border border-neutral-800 hover:border-neutral-700 rounded-full px-2.5 py-1 transition-colors cursor-pointer"
           >
             <ListChecks size={12} />
             {t("aiLab.living.changeCountShort", { count })}

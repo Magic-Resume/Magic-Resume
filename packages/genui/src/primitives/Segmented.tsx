@@ -27,7 +27,7 @@ export function Segmented({
   const reduce = useReducedMotion() ?? false;
 
   return (
-    <div className="inline-flex rounded-xl bg-sunk border border-hairline p-0.5">
+    <div className="inline-flex rounded-xl bg-mr-sunk border border-mr-line p-0.5">
       {options.map((o) => {
         const selected = o.value === value;
         return (
@@ -37,15 +37,15 @@ export function Segmented({
             onClick={() => onChange(o.value)}
             aria-pressed={selected}
             className={cn(
-              'relative rounded-[10px] px-3 py-1.5 text-xs transition-colors cursor-pointer',
-              selected ? 'text-ink-sky' : 'text-secondary hover:text-primary',
+              'relative rounded-mr-card px-3 py-1.5 text-xs transition-colors cursor-pointer',
+              selected ? 'text-mr-accent' : 'text-mr-ink-secondary hover:text-mr-ink',
             )}
           >
             {selected && (
               <motion.span
                 aria-hidden
                 layoutId={reduce ? undefined : layoutId}
-                className="absolute inset-0 rounded-[10px] bg-tint-sky"
+                className="absolute inset-0 rounded-mr-card bg-mr-accent-tint"
                 transition={{ duration: DURATION.element, ease: EASE_ENTER }}
               />
             )}

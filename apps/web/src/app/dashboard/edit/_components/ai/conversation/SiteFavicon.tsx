@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { GlobeIcon } from '@magic-resume/icons';
+import { GlobeIcon } from "@magic-resume/icons";
 import type { CitationSource } from "../types";
 import { siteFaviconUrl } from "./citationSources";
 
 export default function SiteFavicon({
   source,
-  className = "size-4 rounded-[5px]",
+  className = "size-4 rounded-mr-compact",
   iconSize = 11,
 }: {
   source: Pick<CitationSource, "url" | "faviconUrl">;
@@ -18,7 +18,7 @@ export default function SiteFavicon({
 
   return (
     <span
-      className={`relative grid shrink-0 place-items-center overflow-hidden bg-accent-tint text-accent-ink ${className}`}
+      className={`relative grid shrink-0 place-items-center overflow-hidden text-mr-accent-ink ${className}`}
       aria-hidden="true"
     >
       <GlobeIcon width={iconSize} height={iconSize} />
@@ -33,7 +33,7 @@ export default function SiteFavicon({
           decoding="async"
           referrerPolicy="no-referrer"
           draggable={false}
-          className="absolute inset-0 size-full rounded-[inherit] bg-raised object-contain p-px"
+          className="absolute inset-0 size-full rounded-[inherit] object-contain"
           onError={(event) => {
             event.currentTarget.style.display = "none";
           }}

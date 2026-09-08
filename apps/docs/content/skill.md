@@ -17,9 +17,9 @@ tool spawns — the same data layer the web app uses. These docs are for
 #    Settings → Personal Access Tokens → Create  (value shown once, starts with mr_pat_)
 # 2. Configure the MCP server once:
 npx -y @magic-resume/mcp config set \
-  --api-url "https://api.magic-resume.cn" \
+  --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
-# writes ~/.magic-resume/mcp.json  (point --api-url at http://localhost:3111 for local Core API)
+# writes ~/.magic-resume/mcp.json  (point --api-url at http://localhost:3110/api for local Core gateway)
 
 # 3. Register with your tool, e.g. Claude Code:
 claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp

@@ -66,7 +66,7 @@ export interface InterviewTurnResult {
   message: string;
   stage: InterviewStage;
   finished: boolean;
-  revision: number;
+  revision?: number;
 }
 
 export type InterviewDimension =
@@ -106,11 +106,14 @@ export interface ArchivedInterview {
   stage: InterviewStage;
   startedAt: string;
   finishedAt: string | null;
+  /** 归档列表通常不带 JD；详情接口会明确返回 null 或完整文本。 */
+  jobDescription?: string | null;
   report: { overall: number; band: InterviewBand } | null;
 }
 
 export interface ArchivedInterviewDetail
-  extends Omit<ArchivedInterview, 'report'> {
+  extends Omit<ArchivedInterview, 'report' | 'jobDescription'> {
+  jobDescription: string | null;
   transcript: Array<{
     role: 'user' | 'assistant';
     content: string;

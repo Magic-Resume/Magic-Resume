@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "../types";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const PREVIEW_TITLE_LENGTH = 46;
 const PREVIEW_DESCRIPTION_LENGTH = 82;
 
@@ -277,7 +278,7 @@ export default function MessageNavigationRail({
               : {
                   duration: 0.2,
                   delay: visible ? 0.1 : 0,
-                  ease: [0.22, 1, 0.36, 1],
+                  ease: EASE_ENTER,
                 }
           }
           onMouseLeave={() => setPreviewId(null)}
@@ -335,14 +336,14 @@ export default function MessageNavigationRail({
                 }}
               >
                 <motion.div
-                  className="h-20 overflow-hidden rounded-xl border border-white/[0.08] bg-[#1b1b1b]/95 p-3 shadow-[0_14px_36px_rgba(0,0,0,0.28)] backdrop-blur-xl"
+                  className="h-20 overflow-hidden rounded-xl border border-mr-line bg-[#1b1b1b]/95 p-3 shadow-[0_14px_36px_rgba(0,0,0,0.28)] backdrop-blur-xl"
                   initial={{ opacity: 0, x: 8, scale: 0.98 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, x: 6, scale: 0.98 }}
                   transition={
                     reduceMotion
                       ? { duration: 0 }
-                      : { duration: 0.14, ease: [0.22, 1, 0.36, 1] }
+                      : { duration: 0.14, ease: EASE_ENTER }
                   }
                 >
                   <p className="line-clamp-1 text-xs font-medium leading-4 text-neutral-100">

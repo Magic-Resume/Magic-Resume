@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Beautiful } from '@magic-resume/genui';
+import { CodeBlock } from '@magic-resume/genui';
 import Markdown from '@/app/dashboard/edit/_components/ai/conversation/Markdown';
 import ApplicationTrackerCard from '@/app/dashboard/edit/_components/ai/widgets/ApplicationTrackerCard';
 import { readAsset, type LibraryAsset } from '@/lib/api/workspace';
@@ -77,12 +77,11 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
 
   if (asset.extra === 'INTERVIEW') {
     const session = asset.payload as
-      | { sessionId: string; score?: number | null }
-      | undefined;
+      { sessionId: string; score?: number | null } | undefined;
     return (
       <div className="space-y-3">
         {typeof session?.score === 'number' && (
-          <p className="text-[13px] text-ink-2">
+          <p className="text-mr-ink-secondary text-mr-caption">
             {t('aiLab.assets.interviewScore', { score: session.score })}
           </p>
         )}
@@ -99,7 +98,7 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-4 animate-pulse rounded bg-white/[0.05]"
+            className="h-4 animate-pulse rounded bg-mr-surface-muted"
             style={{ width: `${[92, 78, 85, 60][i]}%` }}
           />
         ))}
@@ -109,7 +108,7 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
 
   if (error) {
     return (
-      <p role="status" className="text-[13px] text-ink-3">
+      <p role="status" className="text-mr-muted text-mr-caption">
         {error}
       </p>
     );
@@ -124,13 +123,13 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
       <img
         src={text}
         alt={asset.title}
-        className="max-w-full rounded-[10px] shadow-hairline"
+        className="shadow-mr-control max-w-full rounded-mr-card"
       />
     );
   }
   if (content !== null && content !== undefined) {
     return (
-      <Beautiful.CodeBlock
+      <CodeBlock
         code={JSON.stringify(content, null, 2)}
         lang="JSON"
         copyLabel={t('aiLab.chat.copy')}
@@ -140,7 +139,7 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
   }
   // 认不出就说认不出，不渲染乱码。
   return (
-    <p role="status" className="text-[13px] text-ink-3">
+    <p role="status" className="text-mr-muted text-mr-caption">
       {t('aiLab.assets.previewUnsupported')}
     </p>
   );

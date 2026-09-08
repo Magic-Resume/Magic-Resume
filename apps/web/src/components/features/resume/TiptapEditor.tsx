@@ -68,7 +68,7 @@ function ToolButton({
           ? 'bg-sky-500/15 text-sky-300'
           : disabled
             ? 'cursor-default text-neutral-700'
-            : 'text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-100',
+            : 'text-neutral-400 hover:bg-mr-surface-soft hover:text-neutral-100',
       )}
     >
       {children}
@@ -76,7 +76,7 @@ function ToolButton({
   );
 }
 
-const Divider = () => <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-white/[0.08]" />;
+const Divider = () => <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-mr-line" />;
 
 /** 贴选区的链接编辑面板(替换原生 window.prompt)。 */
 type LinkPanelState = {
@@ -134,7 +134,7 @@ const TiptapEditor = ({ content, onChange, placeholder }: TiptapEditorProps) => 
     editorProps: {
       attributes: {
         class:
-          'tiptap-desc min-h-[160px] max-h-[300px] overflow-y-auto w-full max-w-none px-4 py-3.5 text-[13.5px] leading-[1.7] text-neutral-200 focus:outline-none hide-scrollbar cursor-text',
+          'tiptap-desc min-h-[160px] max-h-[300px] overflow-y-auto w-full max-w-none px-4 py-3.5 text-mr-body-tight leading-[1.7] text-neutral-200 focus:outline-none hide-scrollbar cursor-text',
       },
     },
   });
@@ -184,13 +184,13 @@ const TiptapEditor = ({ content, onChange, placeholder }: TiptapEditorProps) => 
   const canLink = !editor.state.selection.empty || editor.isActive('link');
 
   const floatMenuClass =
-    'flex items-center gap-0.5 rounded-xl border border-white/[0.08] bg-[#1b1b1e]/95 p-1 text-neutral-200 shadow-[0_10px_34px_-8px_rgba(0,0,0,0.7)] backdrop-blur-xl';
+    'flex items-center gap-0.5 rounded-xl border border-mr-line bg-[#1b1b1e]/95 p-1 text-neutral-200 shadow-[0_10px_34px_-8px_rgba(0,0,0,0.7)] backdrop-blur-xl';
 
   return (
     <div ref={wrapperRef} className="relative">
       {/* 工具栏:单行五组,窄容器横向滚动而非换行 */}
       <div
-        className="flex h-10 items-center gap-0.5 overflow-x-auto border-b border-white/[0.06] px-1.5 hide-scrollbar"
+        className="flex h-10 items-center gap-0.5 overflow-x-auto border-b border-mr-line-soft px-1.5 hide-scrollbar"
         onMouseDown={keepSelection}
       >
         <ToolButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} label={t('tiptap.toolbar.bold')}><Bold {...ICON} /></ToolButton>
@@ -267,7 +267,7 @@ const TiptapEditor = ({ content, onChange, placeholder }: TiptapEditorProps) => 
         <>
           <div className="fixed inset-0 z-40" onMouseDown={closeLinkPanel} />
           <div
-            className="absolute z-50 flex items-center gap-0.5 rounded-xl border border-white/[0.08] bg-[#1b1b1e]/95 p-1 shadow-[0_10px_34px_-8px_rgba(0,0,0,0.7)] backdrop-blur-xl [animation:tiptap-pop_.12s_ease-out]"
+            className="absolute z-50 flex items-center gap-0.5 rounded-xl border border-mr-line bg-[#1b1b1e]/95 p-1 shadow-[0_10px_34px_-8px_rgba(0,0,0,0.7)] backdrop-blur-xl [animation:tiptap-pop_.12s_ease-out]"
             style={{ top: linkPanel.top, left: linkPanel.left, width: LINK_PANEL_W }}
           >
             <Link2 size={13} strokeWidth={1.75} className="ml-1.5 shrink-0 text-neutral-500" />
@@ -280,7 +280,7 @@ const TiptapEditor = ({ content, onChange, placeholder }: TiptapEditorProps) => 
                 if (e.key === 'Escape') { e.preventDefault(); closeLinkPanel(); editor.chain().focus().run(); }
               }}
               placeholder={t('tiptap.link.placeholder')}
-              className="h-7 min-w-0 flex-1 bg-transparent px-1 text-[13px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none"
+              className="h-7 min-w-0 flex-1 bg-transparent px-1 text-mr-caption text-neutral-100 placeholder:text-neutral-600 focus:outline-none"
             />
             <ToolButton onClick={applyLink} disabled={!linkPanel.url.trim() && !linkPanel.hasLink} label={t('tiptap.link.apply')}>
               <Check {...ICON} className={linkPanel.url.trim() ? 'text-sky-300' : undefined} />

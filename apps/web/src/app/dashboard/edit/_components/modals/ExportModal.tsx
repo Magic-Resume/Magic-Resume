@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { Resume } from '@/types/frontend/resume';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 export type ExportFormat = 'pdf' | 'png' | 'json';
 
 /**
@@ -81,7 +82,7 @@ export default function ExportModal({
               initial={{ opacity: 0, scale: 0.98, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: 12 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.2, ease: EASE_ENTER }}
               className="pointer-events-auto w-full max-w-md rounded-2xl bg-desk p-6 shadow-[0_24px_70px_-20px_rgb(0_0_0/0.8)] ring-1 ring-white/[0.07]"
             >
               <div className="mb-5 flex items-start justify-between">
@@ -90,12 +91,12 @@ export default function ExportModal({
                     <Download size={17} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-semibold tracking-tight text-white">
+                    <h2 className="text-mr-subtitle font-semibold tracking-tight text-white">
                       {t('modals.export.title')}
                     </h2>
                     {/* 副标题报的是**这份**简历的名字，而不是又一句「选择格式」——
                         用户点开时最想确认的是"导的是不是我以为的那份"。 */}
-                    <p className="mt-0.5 truncate text-[13px] text-neutral-500">
+                    <p className="mt-0.5 truncate text-mr-caption text-neutral-500">
                       {resume.name || resume.info.fullName}
                     </p>
                   </div>
@@ -123,15 +124,15 @@ export default function ExportModal({
                       disabled={busy}
                       className={cn(
                         'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors disabled:opacity-50 cursor-pointer',
-                        active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'
+                        active ? 'bg-mr-surface-soft' : 'hover:bg-white/[0.03]'
                       )}
                     >
                       <Icon size={17} className={cn('shrink-0', accent)} />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[14px] font-medium text-neutral-100">
+                        <span className="block text-mr-body font-medium text-neutral-100">
                           {t(`modals.export.formats.${id}.name`)}
                         </span>
-                        <span className="mt-0.5 block text-[12px] leading-snug text-neutral-500">
+                        <span className="mt-0.5 block text-mr-overline leading-snug text-neutral-500">
                           {t(`modals.export.formats.${id}.hint`)}
                         </span>
                       </span>
@@ -146,7 +147,7 @@ export default function ExportModal({
                   type="button"
                   onClick={onClose}
                   disabled={busy}
-                  className="rounded-lg px-4 py-2 text-[13px] text-neutral-400 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-40 cursor-pointer"
+                  className="rounded-lg px-4 py-2 text-mr-caption text-neutral-400 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-40 cursor-pointer"
                 >
                   {t('modals.export.cancel')}
                 </button>
@@ -154,7 +155,7 @@ export default function ExportModal({
                   type="button"
                   onClick={run}
                   disabled={busy}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-[13px] font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-mr-caption font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
                 >
                   {busy && <Loader2 size={14} className="animate-spin" />}
                   {t('modals.export.confirm')}

@@ -45,7 +45,7 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
         'group relative flex gap-3.5 rounded-2xl border p-4 transition-colors duration-200',
         unread
           ? 'border-sky-400/20 bg-sky-400/[0.05] hover:border-sky-400/30'
-          : 'border-white/[0.06] bg-white/[0.02] hover:border-white/10',
+          : 'border-mr-line-soft bg-white/[0.02] hover:border-white/10',
       )}
     >
       {/* actor avatar + type marker — self-start so the column wraps the 44px avatar
@@ -111,12 +111,12 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
                 <span className="font-medium text-neutral-100">{notification.title}</span>
               )}
             </p>
-            {notification.body ? <p className="mt-1 text-[13px] leading-relaxed text-neutral-500">{notification.body}</p> : null}
+            {notification.body ? <p className="mt-1 text-mr-caption leading-relaxed text-neutral-500">{notification.body}</p> : null}
           </div>
           {unread && <span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-400" />}
         </div>
 
-        <p className="mt-1 text-[11px] text-neutral-500">
+        <p className="mt-1 text-mr-label text-neutral-500">
           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale })}
         </p>
 
@@ -130,7 +130,7 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
                   setDetailOpen(true);
                   if (unread) void markAsRead(notification.id);
                 }}
-                className="rounded-full px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="rounded-full px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:bg-mr-surface-soft hover:text-white"
               >
                 {t('notificationsPage.action.view')}
               </button>
@@ -138,7 +138,7 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
                 <button
                   type="button"
                   onClick={() => markAsRead(notification.id)}
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-sky-200"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-sky-200"
                 >
                   <Check size={12} />
                   {t('notificationsPage.action.markRead')}

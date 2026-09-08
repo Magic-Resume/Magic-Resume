@@ -162,27 +162,27 @@ export default function FormCard({ instance, onAction }: WidgetProps) {
   const summary = instance.status === 'submitted' ? summarize(fields, values) : '';
 
   return (
-    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-raised px-4 py-3.5">
+    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-mr-surface px-4 py-3.5">
       <div className="flex items-center gap-2.5">
-        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-tint-sky">
-          <ClipboardList size={14} className="text-ink-sky" />
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-mr-accent-tint">
+          <ClipboardList size={14} className="text-mr-accent" />
         </div>
-        <span className="text-[13px] font-medium text-primary shrink-0">
+        <span className="text-mr-caption font-medium text-mr-ink shrink-0">
           {props.title || t('aiLab.widgets.form.defaultTitle')}
         </span>
         {resolved && (
           <>
             {summary && (
-              <span className="text-xs text-secondary truncate" title={summary}>
+              <span className="text-xs text-mr-ink-secondary truncate" title={summary}>
                 {summary}
               </span>
             )}
             <span
               className={cn(
-                'ml-auto inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full shrink-0',
+                'ml-auto inline-flex items-center gap-1 text-mr-label px-2 py-0.5 rounded-full shrink-0',
                 instance.status === 'submitted'
-                  ? 'text-ink-sky bg-tint-sky'
-                  : 'text-muted bg-sunk',
+                  ? 'text-mr-accent bg-mr-accent-tint'
+                  : 'text-mr-muted bg-mr-sunk',
               )}
             >
               {instance.status === 'submitted' ? <Check size={12} /> : <X size={12} />}
@@ -199,13 +199,13 @@ export default function FormCard({ instance, onAction }: WidgetProps) {
         inert={resolved || undefined}
         aria-hidden={resolved || undefined}
         className={cn(
-          'grid transition-[grid-template-rows] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+          'grid transition-[grid-template-rows] duration-[320ms] ease-mr-enter motion-reduce:transition-none',
           resolved ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
         )}
       >
         <div className="overflow-hidden min-h-0">
           {props.message && (
-            <WidgetItem className="mt-2 text-xs text-secondary leading-relaxed">
+            <WidgetItem className="mt-2 text-xs text-mr-ink-secondary leading-relaxed">
               {props.message}
             </WidgetItem>
           )}
@@ -215,7 +215,7 @@ export default function FormCard({ instance, onAction }: WidgetProps) {
                 <label className={FIELD_LABEL}>
                   {f.label}
                   {f.optional && (
-                    <span className="ml-1 text-muted/70">
+                    <span className="ml-1 text-mr-muted/70">
                       （{t('aiLab.widgets.field.optional')}）
                     </span>
                   )}
@@ -233,7 +233,7 @@ export default function FormCard({ instance, onAction }: WidgetProps) {
             <button
               type="button"
               onClick={() => onAction({ type: 'cancel' })}
-              className="rounded-lg px-3 py-1.5 text-xs text-muted hover:text-primary transition-colors cursor-pointer"
+              className="rounded-lg px-3 py-1.5 text-xs text-mr-muted hover:text-mr-ink transition-colors cursor-pointer"
             >
               {props.skippable ? t('aiLab.widgets.field.skip') : t('common.cancel')}
             </button>
@@ -244,8 +244,8 @@ export default function FormCard({ instance, onAction }: WidgetProps) {
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors',
                 missingRequired
-                  ? 'bg-sunk text-muted cursor-not-allowed'
-                  : 'bg-fill-sky hover:bg-ink-sky-hover text-on-fill-sky cursor-pointer',
+                  ? 'bg-mr-sunk text-mr-muted cursor-not-allowed'
+                  : 'bg-mr-accent hover:bg-mr-accent-hover text-mr-accent-ink cursor-pointer',
               )}
             >
               <Check size={13} />

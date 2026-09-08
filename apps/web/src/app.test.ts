@@ -5,11 +5,15 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import type { ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { FilterTable, RecordsTable } from "@magic-resume/genui/beautiful";
+import {
+  FilterTable,
+  RecordsTable,
+  tokenizeCodeLines,
+} from "@magic-resume/genui";
 import type {
   FilterTableProps,
   RecordsTableProps,
-} from "@magic-resume/genui/beautiful";
+} from "@magic-resume/genui";
 import { WidgetHost } from "@magic-resume/genui";
 import zhCopy from "@/locales/zh/translation.json";
 import enCopy from "@/locales/en/translation.json";
@@ -26,7 +30,7 @@ import {
 } from "@/app/dashboard/edit/_components/ai/lib/widgetPlacement";
 import { presentAppError } from "@/lib/errors/present";
 import { APP_ERROR_CODES, opensBillingGate } from "@/lib/errors/types";
-import { projectUpstreamError } from "@/app/api/chat-agent/errorProjection";
+import { projectUpstreamError } from "@/lib/api/errorProjection";
 import TasksCard, {
   formatElapsedDuration,
   isPlanFulfilled,
@@ -41,12 +45,17 @@ import {
 import Markdown from "@/app/dashboard/edit/_components/ai/conversation/Markdown";
 import {
   citationSourcesFromWebSearchToolResult,
+  internalCitationSources,
   linkCitationMarkers,
   mergeCitationSources,
   normalizeCitationSources,
   siteFaviconUrl,
+  sourceHeadline,
+  sourcesForToolCall,
   visibleCitationSources,
+  webSearchStatusFromToolResult,
 } from "@/app/dashboard/edit/_components/ai/conversation/citationSources";
+import ToolLine from "@/app/dashboard/edit/_components/ai/conversation/ToolLine";
 import {
   planInterrupt,
   openDecisions,
@@ -68,6 +77,7 @@ import type {
   ChatMessage,
   PlanTodo,
   TodoSegment,
+  ToolCall,
 } from "@/app/dashboard/edit/_components/ai/types";
 import { ZodError } from "zod";
 import {
@@ -1257,7 +1267,9 @@ function testCitationSources() {
     ),
   );
   assert.match(citationMarkup, /data-citation-id="2"/);
-  assert.match(citationMarkup, /jobs\.example\.com/);
+  // 胶囊上写这条来源**自己的标题**，不是域名——`jobs.example.com` 说明不了任何事。
+  assert.match(citationMarkup, />公开岗位<\/span>/);
+  assert.doesNotMatch(citationMarkup, />jobs\.example\.com<\/span>/);
   assert.doesNotMatch(citationMarkup, />2<\//);
   assert.doesNotMatch(citationMarkup, /\[2\]/);
 
@@ -1271,10 +1283,17 @@ function testCitationSources() {
       "同站来源 [2][3]。",
     ),
   );
+  // 一组引用现在是**一枚**胶囊：首条的站点名 + `+N`，组员靠 `data-citation-group`
+  // 记账，翻页在浮层卡里发生。原来是三枚各自带 id 的小图标——那既说不出引的是谁，
+  // 也没法在组内翻页。
   assert.match(groupedCitationMarkup, /data-citation-group="2,3"/);
   assert.match(groupedCitationMarkup, /data-citation-id="2"/);
-  assert.match(groupedCitationMarkup, /data-citation-id="3"/);
-  assert.match(groupedCitationMarkup, />2 个来源<\/span>/);
+  assert.match(groupedCitationMarkup, /aria-haspopup="dialog"/);
+  // 一组只写首条的标题 + `+N`。
+  assert.match(groupedCitationMarkup, />公开岗位<\/span>/);
+  assert.doesNotMatch(groupedCitationMarkup, />同站另一岗位</);
+  // React 在某些渲染路径下会往文本节点间插注释分隔符，两种都算数。
+  assert.match(groupedCitationMarkup, />\+(?:<!-- -->)?1<\/span>/);
   assert.doesNotMatch(groupedCitationMarkup, />[23]<\//);
   assert.doesNotMatch(groupedCitationMarkup, /\[2\]\[3\]/);
 
@@ -1293,6 +1312,222 @@ function testCitationSources() {
   assert.match(missingCitationMarkup, />来源暂不可用<\/span>/);
   assert.doesNotMatch(missingCitationMarkup, />9,14<\//);
   assert.doesNotMatch(missingCitationMarkup, /\[(?:2|9|14)\]/);
+}
+
+/**
+ * 搜索行的三条正确性问题（见 `docs/specs/search-and-citations/design-brief.md` §4.0）：
+ * 按次归属、完成态时态、失败/空/额度可见。三条都是「界面在对用户说假话」，不是观感。
+ */
+function testSearchLine() {
+  const sources = normalizeCitationSources([
+    {
+      id: "external:1",
+      kind: "external",
+      visibility: "visible",
+      citationId: 1,
+      title: "牛客结果",
+      url: "https://www.nowcoder.com/jobs",
+    },
+    {
+      id: "external:2",
+      kind: "external",
+      visibility: "visible",
+      citationId: 2,
+      title: "另一站",
+      url: "https://jobs.example.com/role",
+    },
+    {
+      id: "internal:kb-1",
+      kind: "internal",
+      visibility: "hidden",
+      title: "面经库条目",
+      sourceName: "面经库",
+    },
+  ]);
+
+  // 按次归属：第二次搜索只认自己的那条，不能报整轮合并后的数字。
+  assert.deepEqual(
+    sourcesForToolCall(sources, { citationIds: [2], done: true }).map(
+      (source) => source.citationId,
+    ),
+    [2],
+  );
+  // 还在跑的时候**不许借用**上一次搜索的来源——那正是这次要修的 bug 在
+  // 「source_update 还没到」那个窗口里的残留。
+  assert.equal(sourcesForToolCall(sources, { done: false }).length, 0);
+  // 跑完了但带着 status = 这个部署会按次报账，没 id 就是真的没有。
+  assert.equal(
+    sourcesForToolCall(sources, { done: true, searchStatus: "empty" }).length,
+    0,
+  );
+  // 老部署 / 老消息两样都没有，才退回整轮合并——降级要不声不响。
+  assert.equal(sourcesForToolCall(sources, { done: true }).length, 2);
+
+  // 内部来源不进正文，但要能单独取出来给面板用。
+  assert.equal(visibleCitationSources(sources).length, 2);
+  assert.deepEqual(
+    internalCitationSources(sources).map((source) => source.title),
+    ["面经库条目"],
+  );
+
+  // 界面上显示这条来源**自己的标题**——那是 provider 本来就返回的真数据。曾经这里是一张
+  // 手写的域名→站点名映射表，删了：它只覆盖写表时想到的那些站，会造出一半说「牛客网」、
+  // 一半说 `jobs.bytedance.com` 的两类观感，而区别只在于当时有没有想到那个域名。
+  assert.equal(sourceHeadline(sources[0]!), "牛客结果");
+  assert.equal(sourceHeadline(sources[1]!), "另一站");
+  // 没有标题才依次退到 provider 的 sourceName、再到域名。
+  assert.equal(
+    sourceHeadline({ url: "https://jobs.example.com/x", sourceName: "官方站" }),
+    "官方站",
+  );
+  assert.equal(sourceHeadline({ url: "https://m.nowcoder.com/x" }), "m.nowcoder.com");
+  assert.equal(sourceHeadline({}), "");
+
+  // 状态一直躺在工具结果里没人读，这是它第一次被取出来。
+  assert.equal(
+    webSearchStatusFromToolResult(
+      JSON.stringify({ status: "daily_limit_exhausted", results: [] }),
+    ),
+    "daily_limit_exhausted",
+  );
+  assert.equal(webSearchStatusFromToolResult("not json"), undefined);
+
+  const render = (call: ToolCall) =>
+    renderToStaticMarkup(
+      createElement(
+        ToolLine as ComponentType<{
+          call: ToolCall;
+          sources?: typeof sources;
+        }>,
+        { call, sources },
+      ),
+    );
+
+  // 跑完要换过去时。此前两句文案都是现在进行时且永不变化——读完的历史消息里
+  // 也还写着「正在搜索」。
+  const running = render({
+    toolCallId: "a",
+    toolName: "web_search",
+    citationIds: [1],
+  });
+  assert.match(running, /正在搜索 1 个网站/);
+  // 同一轮里第二次搜索刚起步：来源还没到，不能挪用上一次的。
+  const runningUnattributed = render({ toolCallId: "a2", toolName: "web_search" });
+  assert.match(runningUnattributed, /正在搜索网页/);
+  assert.doesNotMatch(runningUnattributed, /个网站/);
+  const done = render({
+    toolCallId: "a",
+    toolName: "web_search",
+    done: true,
+    citationIds: [1],
+  });
+  assert.match(done, /搜了 1 个网站/);
+  assert.doesNotMatch(done, /正在搜索/);
+
+  // 一轮两次搜索，各报各的数。
+  const second = render({
+    toolCallId: "b",
+    toolName: "web_search",
+    done: true,
+    citationIds: [1, 2],
+  });
+  assert.match(second, /搜了 2 个网站/);
+
+  // 额度耗尽此前长得和「正在搜索网页」一模一样：静默失败。
+  const quota = render({
+    toolCallId: "c",
+    toolName: "web_search",
+    done: true,
+    searchStatus: "daily_limit_exhausted",
+  });
+  assert.match(quota, /今天的搜索额度用完了/);
+  const empty = render({
+    toolCallId: "d",
+    toolName: "web_search",
+    done: true,
+    searchStatus: "empty",
+  });
+  assert.match(empty, /没搜到相关网页/);
+  const failed = render({
+    toolCallId: "e",
+    toolName: "web_search",
+    done: true,
+    error: "boom",
+  });
+  assert.match(failed, /这次搜索没成功/);
+
+  // 查询词只在展开区里，折叠态不占地方；provider 没被调用时连展开都不给。
+  const withQuery = render({
+    toolCallId: "f",
+    toolName: "web_search",
+    done: true,
+    subject: "字节跳动 2027 前端 校招",
+    citationIds: [1],
+  });
+  assert.match(withQuery, /字节跳动 2027 前端 校招/);
+  assert.match(withQuery, /aria-expanded="false"/);
+  const unavailable = render({
+    toolCallId: "g",
+    toolName: "web_search",
+    done: true,
+    subject: "字节跳动",
+    searchStatus: "unavailable",
+  });
+  assert.match(unavailable, /搜索暂时不可用/);
+  assert.doesNotMatch(unavailable, /aria-expanded/);
+}
+
+/**
+ * 代码块的语法着色。此前整块代码是**一个色阶的灰**——一份十几行的 JSON 产物里，结构、
+ * 键、值被压成同一样东西，用户看到的是「原始数据」而不是「可读的调研结果」。
+ */
+function testCodeHighlight() {
+  const kindOf = (lines: ReturnType<typeof tokenizeCodeLines>, text: string) =>
+    lines.flat().find((token) => token.text === text)?.kind;
+
+  const json = tokenizeCodeLines(
+    '{\n  "scope": "公开岗位",\n  "count": 12,\n  "ready": true,\n  "note": null\n}',
+    "JSON",
+  );
+  // 键和值分色是读一份产物时最有用的一条线索。
+  assert.equal(kindOf(json, '"scope"'), "fn");
+  assert.equal(kindOf(json, '"公开岗位"'), "str");
+  assert.equal(kindOf(json, "12"), "num");
+  assert.equal(kindOf(json, "true"), "num");
+  assert.equal(kindOf(json, "null"), "num");
+  assert.equal(kindOf(json, "{"), "dim");
+  // 行号靠行数，切行必须准。
+  assert.equal(json.length, 6);
+
+  const ts = tokenizeCodeLines(
+    "// 取回岗位\nexport async function fetchJd(id) {\n  return null;\n}",
+    "TypeScript",
+  );
+  assert.equal(kindOf(ts, "// 取回岗位"), "com");
+  assert.equal(kindOf(ts, "export"), "kw");
+  assert.equal(kindOf(ts, "fetchJd"), "fn");
+  assert.equal(ts.length, 4);
+
+  // `#` 在 shell 里是注释，在 CSS 里是颜色——不按语言族分，就会把 `#fff` 染成注释。
+  assert.equal(kindOf(tokenizeCodeLines("# 装依赖\npnpm i", "Shell"), "# 装依赖"), "com");
+  assert.equal(
+    kindOf(tokenizeCodeLines("a { color: #fff; }", "CSS"), "# 装依赖"),
+    undefined,
+  );
+  assert.doesNotMatch(
+    JSON.stringify(tokenizeCodeLines("a { color: #fff; }", "CSS")),
+    /"com"/,
+  );
+
+  // 流式写入时最后一行常是断的：未闭合的引号不能把后面整段都染成字符串。
+  const streaming = tokenizeCodeLines('{\n  "half": "还没写完', "JSON");
+  assert.equal(streaming.length, 2);
+
+  // 跨行的块注释要整体识别——逐行扫会把中间几行错判成代码。
+  const block = tokenizeCodeLines("/* 一\n   二 */\nconst a = 1;", "TypeScript");
+  assert.equal(block[0]?.[0]?.kind, "com");
+  assert.equal(block[1]?.[0]?.kind, "com");
+  assert.equal(kindOf(block, "const"), "kw");
 }
 
 function testAfterAuthUrl() {
@@ -2670,6 +2905,8 @@ async function main() {
   testCanvasReachability();
   testDiffFieldCoverage();
   testCitationSources();
+  testSearchLine();
+  testCodeHighlight();
   testAfterAuthUrl();
   testImportedItemIds();
   testResumeMigrations();

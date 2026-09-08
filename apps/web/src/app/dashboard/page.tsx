@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Resume } from '@/types/frontend/resume';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import { useSettingStore } from '@/store/useSettingStore';
 import ResumeList from './_components/ResumeList';
 import RenameResumeDialog from './_components/RenameResumeDialog';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { resumes, deleteResume, duplicateResume, loadResumes, renameResume } = useResumeStore();
+  const { resumes, deleteResume, duplicateResume, loadResumes, renameResume } = useResumeDocumentStore();
   const { loadSettings } = useSettingStore();
 
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);

@@ -15,13 +15,18 @@ import { useTranslation } from "react-i18next";
 import { getTemplateManifestList } from "@magic-resume/resume-templates/config/magic-templates";
 import { MagicTemplateDSL } from "@magic-resume/resume-templates/types/magic-dsl";
 
-import { useResumeStore } from "@/store/useResumeStore";
+import { useResumeDocumentStore } from "@/store/resume/document";
 import { extractCustomConfig, mergeTemplateConfig } from "@/lib/utils/templateUtils";
 import { parseCssPixelValue } from "@/lib/utils/css";
 import { cn } from "@/lib/utils";
 import { MaskIcon } from "@/components/icons/MaskIcon";
 import ResumeMiniPreview from "../../../_components/ResumeMiniPreview";
 import TemplateStoreModal from "./TemplateStoreModal";
+import {
+  HoverSurface,
+  useHoverSurface,
+  type HoverSurfaceBinding,
+} from '@/components/ui/hover-surface';
 import {
   AccordionSection,
   ColorField,
@@ -66,7 +71,7 @@ export default function TemplatePanel({
   embedded = false,
 }: TemplatePanelProps) {
   const { t } = useTranslation();
-  const { updateCustomTemplate, activeResume } = useResumeStore();
+  const { updateCustomTemplate, activeResume } = useResumeDocumentStore();
 
   const [templates, setTemplates] = useState<MagicTemplateDSL[]>([]);
   const [storeOpen, setStoreOpen] = useState(false);
@@ -242,6 +247,12 @@ export default function TemplatePanel({
     setActive(current);
   }, []);
 
+  /* 图标轨高亮：一块共享的面在分区按钮之间滑动。选中项另有右侧那条 sky 竖杠，
+     所以面滑走时「现在停在哪一节」不会丢。 */
+  const railSurface = useHoverSurface({
+    activeKey: rightCollapsed ? null : active,
+  });
+
   const railItems: { id: SectionId; icon: React.ReactNode; label: string }[] = [
     { id: "template", icon: <Files size={18} />, label: t("templateCustomizer.sections.template") },
     { id: "layout", icon: <LayoutGrid size={18} />, label: t("templateCustomizer.sections.layout") },
@@ -263,17 +274,17 @@ export default function TemplatePanel({
         <button
           type="button"
           onClick={() => setStoreOpen(true)}
-          className="group flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left transition duration-150 active:scale-[0.99] hover:border-sky-400/40 hover:bg-white/[0.05]"
+          className="group flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left transition duration-150 active:scale-[0.99] hover:border-sky-400/40 hover:bg-mr-surface-muted"
         >
           <div className="h-20 w-[60px] shrink-0 overflow-hidden rounded-md border border-white/10 bg-neutral-900 p-1">
             <ResumeMiniPreview template={working} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold text-white">{baseTemplate.name}</p>
-            <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-neutral-500">
+            <p className="truncate text-mr-body font-semibold text-white">{baseTemplate.name}</p>
+            <p className="mt-0.5 line-clamp-2 text-mr-label leading-snug text-neutral-500">
               {baseTemplate.description}
             </p>
-            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-sky-300">
+            <span className="mt-1.5 inline-flex items-center gap-1 text-mr-label font-medium text-sky-300">
               {t("templatePanel.change")}
               <ChevronRight size={12} className="transition-transform duration-150 group-hover:translate-x-0.5" />
             </span>
@@ -285,7 +296,7 @@ export default function TemplatePanel({
             {baseTemplate.tags.slice(0, 6).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-medium text-neutral-400"
+                className="rounded-full bg-mr-surface-muted px-2.5 py-1 text-mr-label font-medium text-neutral-400"
               >
                 {tag}
               </span>
@@ -580,7 +591,7 @@ export default function TemplatePanel({
           <button
             type="button"
             onClick={() => setShowAdvancedColors((v) => !v)}
-            className="flex w-full items-center justify-between text-[12px] font-medium text-neutral-400 transition-colors duration-150 hover:text-neutral-200"
+            className="flex w-full items-center justify-between text-mr-overline font-medium text-neutral-400 transition-colors duration-150 hover:text-neutral-200"
           >
             {t("templateCustomizer.colors.advanced")}
             <ChevronRight
@@ -621,7 +632,7 @@ export default function TemplatePanel({
         <button
           type="button"
           onClick={resetCustomizations}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] py-2.5 text-[12.5px] font-medium text-neutral-400 transition-colors duration-150 hover:border-white/20 hover:text-neutral-200"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] py-2.5 text-mr-ui font-medium text-neutral-400 transition-colors duration-150 hover:border-white/20 hover:text-neutral-200"
         >
           <RotateCcw size={13} />
           {t("templateCustomizer.buttons.reset")}
@@ -644,9 +655,9 @@ export default function TemplatePanel({
   if (embedded) {
     return (
       <div className="flex h-full w-full flex-col bg-desk">
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
+        <div className="flex items-center gap-3 border-b border-mr-line-soft px-4 py-4">
           <Files size={16} className="text-sky-300" />
-          <h2 className="text-[15px] font-semibold tracking-tight text-white">
+          <h2 className="text-mr-subtitle font-semibold tracking-tight text-white">
             {t("templatePanel.customizeTitle")}
           </h2>
         </div>
@@ -660,14 +671,14 @@ export default function TemplatePanel({
     <>
       <aside className="fixed top-0 right-0 z-40 flex h-screen">
         <motion.div
-          className="h-full overflow-hidden border-l border-white/[0.06] bg-desk"
+          className="h-full overflow-hidden border-l border-mr-line-soft bg-desk"
           animate={{ width: rightCollapsed ? 0 : PANEL_WIDTH }}
           initial={false}
           transition={{ type: "spring", stiffness: 320, damping: 32 }}
         >
           <div style={{ width: PANEL_WIDTH }} className="flex h-full flex-col">
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4">
-              <h2 className="text-[15px] font-semibold tracking-tight text-white">
+            <div className="flex items-center justify-between border-b border-mr-line-soft px-4 py-4">
+              <h2 className="text-mr-subtitle font-semibold tracking-tight text-white">
                 {t("templatePanel.customizeTitle")}
               </h2>
             </div>
@@ -677,7 +688,7 @@ export default function TemplatePanel({
 
         {/* 图标轨:折叠开关 + 分区跳转 */}
         <div
-          className="flex h-full flex-col items-center gap-1 border-l border-white/[0.06] bg-desk py-3"
+          className="flex h-full flex-col items-center gap-1 border-l border-mr-line-soft bg-desk py-3"
           style={{ width: RAIL_WIDTH }}
         >
           <RailButton
@@ -692,18 +703,28 @@ export default function TemplatePanel({
             />
           </RailButton>
 
-          <div className="my-1.5 h-px w-6 bg-white/[0.08]" />
+          <div className="my-1.5 h-px w-6 bg-mr-line" />
 
-          {railItems.map((item) => (
-            <RailButton
-              key={item.id}
-              label={item.label}
-              active={!rightCollapsed && active === item.id}
-              onClick={() => jumpTo(item.id)}
-            >
-              {item.icon}
-            </RailButton>
-          ))}
+          <div
+            className="relative flex flex-col items-center gap-1"
+            {...railSurface.containerProps}
+          >
+            <HoverSurface
+              {...railSurface.surfaceProps}
+              className="rounded-xl bg-mr-surface-soft data-[on-active]:bg-sky-400/10"
+            />
+            {railItems.map((item) => (
+              <RailButton
+                key={item.id}
+                surface={railSurface.bind(item.id)}
+                label={item.label}
+                active={!rightCollapsed && active === item.id}
+                onClick={() => jumpTo(item.id)}
+              >
+                {item.icon}
+              </RailButton>
+            ))}
+          </div>
         </div>
       </aside>
 
@@ -717,28 +738,39 @@ function RailButton({
   active,
   onClick,
   children,
+  surface,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  /** `useHoverSurface().bind(key)`。底交给共享面；不传就退回自己画（折叠开关那颗）。 */
+  surface?: HoverSurfaceBinding;
 }) {
   return (
     <button
       type="button"
+      {...surface}
       onClick={onClick}
       title={label}
       aria-label={label}
       className={cn(
         "group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150",
-        active ? "bg-sky-400/10 text-sky-300" : "text-neutral-500 hover:bg-white/[0.06] hover:text-neutral-200",
+        // 接了共享面的按钮只留文字色；没接的（折叠开关）仍旧自己画底。
+        surface
+          ? active
+            ? "text-sky-300"
+            : "text-neutral-500 hover:text-neutral-200"
+          : active
+            ? "bg-sky-400/10 text-sky-300"
+            : "text-neutral-500 hover:bg-mr-surface-soft hover:text-neutral-200",
       )}
     >
       {children}
       {active && (
         <span className="absolute -right-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-sky-400" />
       )}
-      <span className="pointer-events-none absolute right-11 top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-neutral-900 px-2 py-1 text-[11px] text-neutral-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+      <span className="pointer-events-none absolute right-11 top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-neutral-900 px-2 py-1 text-mr-label text-neutral-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
         {label}
       </span>
     </button>

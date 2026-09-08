@@ -27,11 +27,10 @@ const IGNORE_PATTERNS = [
   // 模型/服务商目录里的中文是**专有名词**（「通义千问 Qwen」「火山方舟 豆包」）。
   // 翻译品牌名是错的，不是漏做。
   'src/lib/constants/modals.ts',
-  // 开发期陈列 / 验收页，不进生产（组件自身 `process.env.NODE_ENV` 兜底）。
-  'src/app/genui/**',
-  // 与 genui 同类：仅开发环境的陈列 / 实验页，生产返回 404。
-  // 它的文案是给开发者读的调试标签，不是产品 UI——翻译它没有消费方。
-  'src/app/template-lab/**',
+  // 开发期陈列 / 验收页，全部收在 `src/app/mock/` 下。文件叫 `page.dev.tsx`，生产构建的
+  // pageExtensions 不含 `dev.tsx`，所以线上没有这些路由，chunk 也不会被打进去
+  // （见 next.config.ts）。里面的文案是给开发者读的调试标签，不是产品 UI。
+  'src/app/mock/**',
   // ⚠️ 这条**是欠账，不是例外**。
   //
   // `FORM_DEFS` 里有 80 条中文：42 条 title/label/placeholder，外加 `opts(...)` 里

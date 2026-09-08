@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { NotificationItem } from './NotificationItem';
 import { Notification } from '@/lib/api/notifications';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 interface NotificationListProps {
   notifications: Notification[] | undefined;
   isLoading: boolean;
@@ -18,16 +19,16 @@ const container: Variants = {
 
 const item: Variants = {
   hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.26, ease: EASE_ENTER } },
 };
 
 function NotificationSkeleton() {
   return (
-    <div className="flex gap-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-      <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-white/[0.05]" />
+    <div className="flex gap-3.5 rounded-2xl border border-mr-line-soft bg-white/[0.02] p-4">
+      <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-mr-surface-muted" />
       <div className="flex-1 space-y-2 pt-1">
-        <div className="h-3.5 w-3/4 animate-pulse rounded bg-white/[0.06]" />
-        <div className="h-3 w-1/4 animate-pulse rounded bg-white/[0.04]" />
+        <div className="h-3.5 w-3/4 animate-pulse rounded bg-mr-surface-soft" />
+        <div className="h-3 w-1/4 animate-pulse rounded bg-mr-surface-subtle" />
       </div>
     </div>
   );
@@ -36,7 +37,7 @@ function NotificationSkeleton() {
 function EmptyState() {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.01] px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-mr-line bg-white/[0.01] px-6 py-16 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-400/10 text-sky-300">
         <Bell size={22} />
       </div>

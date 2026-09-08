@@ -1,4 +1,4 @@
-import type { WidgetEnvelope } from "@magic-resume/genui/contract";
+import type { WidgetEnvelope } from "@magic-resume/genui";
 import type { ChatMessage } from "../types";
 
 /**

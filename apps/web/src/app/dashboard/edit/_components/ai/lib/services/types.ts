@@ -75,7 +75,12 @@ type AgentToolSseEvent = AgentSseBase &
   (
     | {
         type: "tool_started";
-        payload: { toolCallId?: string; toolName: string; args?: unknown };
+        payload: {
+          toolCallId?: string;
+          toolName: string;
+          args?: unknown;
+          engine?: string;
+        };
       }
     | {
         type: "tool_result";
@@ -93,7 +98,7 @@ type AgentToolSseEvent = AgentSseBase &
       }
     | {
         type: "tool_completed";
-        payload: { toolCallId?: string; toolName: string };
+        payload: { toolCallId?: string; toolName: string; engine?: string };
       }
     | {
         type: "tool_approval_request";
@@ -103,6 +108,7 @@ type AgentToolSseEvent = AgentSseBase &
           reason: string;
           args: Record<string, unknown>;
           actions: Array<{ name: string; args: Record<string, unknown> }>;
+          engine?: string;
         };
       }
   );
@@ -116,6 +122,7 @@ type AgentResumeSseEvent = AgentSseBase &
           oldString?: string;
           newString?: string;
           mutation: Extract<ResumeMutation, { kind: "patch" }>;
+          engine?: string;
         };
       }
     | {
@@ -124,6 +131,7 @@ type AgentResumeSseEvent = AgentSseBase &
           resume: Record<string, unknown>;
           final?: boolean;
           mutation?: Extract<ResumeMutation, { kind: "snapshot" }>;
+          engine?: string;
         };
       }
     | {
@@ -158,6 +166,7 @@ type AgentWorkspaceSseEvent = AgentSseBase & {
     runId: string;
     status: string;
     changeCount: number;
+    engine?: string;
   };
 };
 

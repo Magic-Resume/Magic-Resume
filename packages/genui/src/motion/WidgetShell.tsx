@@ -45,7 +45,7 @@ const WIDTH_CLASS: Record<WidgetDensity, Record<WidgetWidth, string>> = {
  * conversation from filling up with forms already filled in.
  *
  * **外壳样式也在这里**（`density` / `width`）。此前那串
- * `rounded-2xl bg-raised px-4 py-3.5` 被六张卡各抄一遍，改一处只改一处；而两张卡
+ * `rounded-2xl bg-mr-surface px-4 py-3.5` 被六张卡各抄一遍，改一处只改一处；而两张卡
  * 悄悄偏离了约定（一张手写更宽的 `max-w-xl`，一张根本没有外壳）。调用方现在**不该再写
  * 任何 `rounded-*` / `bg-*` / `px-*`**。
  *
@@ -67,7 +67,7 @@ export function WidgetShell({
   /**
    * 孩子自带卡壳时置 false：只保留入场动效与 stagger，不再画第二层底色内边距。
    *
-   * `beautiful/*` 那一族**全部**自带 `rounded-card bg-surface shadow-card`，
+   * GenUI 生产卡片统一使用 `rounded-mr-card bg-mr-surface shadow-mr-panel`，
    * 套进默认外壳就是卡中卡——一个 380px 的卡被一个 445px 的相框裱起来。
    */
   surface?: boolean;
@@ -90,7 +90,7 @@ export function WidgetShell({
       className={cn(
         'flex-1',
         WIDTH_CLASS[density][width],
-        surface && 'rounded-2xl bg-raised',
+        surface && 'rounded-2xl bg-mr-surface',
         surface && DENSITY_CLASS[density],
         className,
       )}
@@ -104,10 +104,10 @@ export function WidgetShell({
  * 卡片内部需要与卡底色区分的嵌套块。
  *
  * 内部原来是完全自由的：`ResearchBriefCard` 用了 5 种块样式，多数卡 3 种，
- * `rounded-lg/md/xl/full` 与 `bg-sunk/tint-sky/paper` 随手混用。收敛成两种原语——
+ * `rounded-lg/md/xl/full` 与 `bg-mr-sunk/tint-sky/paper` 随手混用。收敛成两种原语——
  * {@link WidgetItem}（无底色，只有间距与 stagger）与这个（有底色）。
  *
- * ⚠️ **`bg-tint-sky` 不再作块底色**：它现在同时扮演「可点」和「一块信息」，
+ * ⚠️ **`bg-mr-accent-tint` 不再作块底色**：它现在同时扮演「可点」和「一块信息」，
  * 两种语义压在一个颜色上。留给动作（按钮）。
  */
 export function WidgetPanel({
@@ -121,7 +121,7 @@ export function WidgetPanel({
   return (
     <motion.div
       variants={itemVariants(reduce)}
-      className={cn('rounded-xl bg-sunk px-3 py-2.5', className)}
+      className={cn('rounded-xl bg-mr-sunk px-3 py-2.5', className)}
     >
       {children}
     </motion.div>

@@ -1,0 +1,636 @@
+/* AI editor motion feature styles. The route-level components own semantics;
+ * this file owns their shared visual effects and reduced-motion contract. */
+@keyframes polaris-halo {
+  0%,
+  100% {
+    transform: scale(0.93);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* AI 入口就是品牌桌宠本体:光身站立(无底板),身后靠 .polaris-fab__halo 那层柔和呼吸光晕。
+   桌宠自己的动作(静息多重微动 / hover 雀跃 / 生成中思考)烘在各自 svg 里,随 <img src> 切换。 */
+.polaris-pet-fab {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+/* 像素桌宠精灵:24→48 的 2x 整数放大,像素边严丝合缝不糊;
+   一层落地暗影 + 一层 sky 辉光,让它「立」在深色画布上而非漂浮的贴纸。 */
+.polaris-pet-fab__sprite {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 8px rgba(var(--polaris-sky), 0.32));
+  transition: filter 0.2s ease-out;
+}
+
+.polaris-fab:hover .polaris-pet-fab__sprite {
+  filter: drop-shadow(0 8px 11px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 11px rgba(var(--polaris-sky), 0.5));
+}
+
+/* 生成中:辉光更盛 + 光晕提速加亮(桌宠本体切到思考帧,由 <img> 负责) */
+.polaris-fab[data-running='true'] {
+  --orb-speed: 0.55;
+}
+.polaris-fab[data-running='true'] .polaris-fab__halo {
+  opacity: 0.72;
+}
+.polaris-fab[data-running='true'] .polaris-pet-fab__sprite {
+  filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 12px rgba(var(--polaris-sky), 0.6));
+}
+
+/* Apple Intelligence(iOS 18)式:四边亮起一圈流动的彩色光晕描边。
+   做法:一团旋转的 conic 渐变(sky→cyan→indigo→violet→pink),
+   用 padding + mask 只露出贴边的一圈光带,再 blur 成柔光;
+   transform 旋转(合成层,顺滑),中心镂空不挡画布。 */
+.ai-canvas-edge-flow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  overflow: hidden;
+  /* 羽化的四边遮罩(两轴线性渐变取并集):四边都亮、向内柔和淡出,中心镂空不挡画布 */
+  -webkit-mask:
+    linear-gradient(to right, #000, transparent 16%, transparent 84%, #000),
+    linear-gradient(to bottom, #000, transparent 16%, transparent 84%, #000);
+  -webkit-mask-composite: source-over;
+  mask:
+    linear-gradient(to right, #000, transparent 16%, transparent 84%, #000),
+    linear-gradient(to bottom, #000, transparent 16%, transparent 84%, #000);
+  mask-composite: add;
+  animation: ai-edge-in 0.55s var(--narrate-ease) both;
+}
+
+.ai-canvas-edge-flow__spin {
+  position: absolute;
+  inset: -65%;
+  /* 常亮的 sky 底 + 一段 cyan→indigo→violet→pink 的亮弧;旋转时亮弧绕四边流动 */
+  background: conic-gradient(
+    from 0deg,
+    rgba(56, 189, 248, 0.34),
+    rgba(56, 189, 248, 0.34) 78deg,
+    rgba(45, 212, 191, 0.62) 118deg,
+    rgba(34, 211, 238, 0.95) 158deg,
+    rgba(129, 140, 248, 1) 196deg,
+    rgba(192, 132, 252, 0.92) 230deg,
+    rgba(236, 72, 153, 0.6) 264deg,
+    rgba(56, 189, 248, 0.34) 312deg,
+    rgba(56, 189, 248, 0.34)
+  );
+  filter: blur(20px);
+  transform-origin: 50% 50%;
+  animation: ai-edge-rotate 6.5s linear infinite;
+  will-change: transform;
+}
+
+@keyframes ai-edge-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ai-edge-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ai-canvas-edge-flow__beam,
+.ai-thinking-overlay__beam {
+  position: absolute;
+  display: block;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(56, 189, 248, 0.16),
+    rgba(56, 189, 248, 0.82),
+    rgba(103, 232, 249, 0.38),
+    transparent
+  );
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.38));
+  will-change: transform, opacity;
+}
+
+.ai-canvas-edge-flow__beam--top,
+.ai-thinking-overlay__beam--top {
+  top: 0;
+  left: 0;
+  width: 34%;
+  height: 2px;
+  animation: ai-edge-sweep-x 5.6s var(--narrate-ease) infinite;
+}
+
+.ai-canvas-edge-flow__beam--bottom,
+.ai-thinking-overlay__beam--bottom {
+  right: 0;
+  bottom: 0;
+  width: 34%;
+  height: 2px;
+  animation: ai-edge-sweep-x-reverse 6.2s var(--narrate-ease) infinite;
+}
+
+.ai-canvas-edge-flow__beam--right,
+.ai-thinking-overlay__beam--right,
+.ai-canvas-edge-flow__beam--left,
+.ai-thinking-overlay__beam--left {
+  width: 2px;
+  height: 38%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(56, 189, 248, 0.14),
+    rgba(56, 189, 248, 0.76),
+    rgba(103, 232, 249, 0.34),
+    transparent
+  );
+}
+
+.ai-canvas-edge-flow__beam--right,
+.ai-thinking-overlay__beam--right {
+  top: 0;
+  right: 0;
+  animation: ai-edge-sweep-y 6s var(--narrate-ease) 0.35s infinite;
+}
+
+.ai-canvas-edge-flow__beam--left,
+.ai-thinking-overlay__beam--left {
+  bottom: 0;
+  left: 0;
+  animation: ai-edge-sweep-y-reverse 6.4s var(--narrate-ease) 0.2s infinite;
+}
+
+/* 「纸面入定」——docs/specs/ai-working-motion。
+   轻压暗、无 blur：纸面内容仍隐约可读，感觉是纸自己在思考。 */
+.ai-thinking-overlay {
+  --ai-color: 56, 189, 248;
+  overflow: hidden;
+  background: rgba(2, 8, 14, 0.32);
+}
+
+/* 边缘细流光：复用 edge-flow 的 beam，但巡行更慢、更淡 */
+.ai-thinking-overlay__edge {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.5;
+}
+
+.ai-thinking-overlay__edge > .ai-thinking-overlay__beam--top {
+  animation-duration: 9.5s;
+}
+
+.ai-thinking-overlay__edge > .ai-thinking-overlay__beam--bottom {
+  animation-duration: 10.5s;
+}
+
+.ai-thinking-overlay__edge > .ai-thinking-overlay__beam--right {
+  animation-duration: 10s;
+}
+
+.ai-thinking-overlay__edge > .ai-thinking-overlay__beam--left {
+  animation-duration: 11s;
+}
+
+/* 小 Polaris 球：品牌锚点，随全局心跳呼吸（JSX 上挂 design-system 的 .mr-motion-breathe） */
+.ai-thinking-overlay__orb {
+  position: relative;
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  background: linear-gradient(
+    150deg,
+    rgba(var(--ai-color), 0.85),
+    rgba(var(--ai-color), 0.58)
+  );
+  box-shadow: 0 10px 24px -16px rgba(var(--ai-color), 0.55);
+}
+
+.ai-thinking-overlay__mark {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+@keyframes ai-edge-sweep-x {
+  0% {
+    opacity: 0;
+    transform: translate3d(-115%, 0, 0);
+  }
+  16%,
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(315%, 0, 0);
+  }
+}
+
+@keyframes ai-edge-sweep-x-reverse {
+  0% {
+    opacity: 0;
+    transform: translate3d(115%, 0, 0);
+  }
+  16%,
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-315%, 0, 0);
+  }
+}
+
+@keyframes ai-edge-sweep-y {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -115%, 0);
+  }
+  16%,
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 285%, 0);
+  }
+}
+
+@keyframes ai-edge-sweep-y-reverse {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 115%, 0);
+  }
+  16%,
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -285%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .polaris-fab__halo,
+  .ai-canvas-edge-flow__spin,
+  .ai-thinking-overlay__beam {
+    animation: none;
+  }
+
+  .polaris-fab__halo,
+  .ai-canvas-edge-flow,
+  .ai-thinking-overlay__edge {
+    opacity: 0.5;
+  }
+}
+
+/* Light theme keeps the same choreography but grounds the glow on paper. */
+.light .polaris-fab__halo {
+  opacity: 0.14;
+  filter: blur(9px);
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(56, 120, 255, 0.26),
+    rgba(56, 189, 248, 0.1) 50%,
+    transparent 74%
+  );
+}
+
+.light .polaris-fab:hover .polaris-fab__halo {
+  opacity: 0.26;
+}
+
+.light .polaris-pet-fab__sprite {
+  filter: drop-shadow(0 6px 8px oklch(0.28 0.03 250 / 0.28))
+    drop-shadow(0 1px 2px oklch(0.28 0.02 85 / 0.18));
+}
+
+.light .polaris-fab:hover .polaris-pet-fab__sprite {
+  filter: drop-shadow(0 9px 12px oklch(0.28 0.04 250 / 0.34))
+    drop-shadow(0 1px 2px oklch(0.28 0.02 85 / 0.18));
+}
+
+.light .ai-canvas-edge-flow__spin {
+  filter: blur(11px);
+  opacity: 0.85;
+}
+
+.light .ai-thinking-overlay {
+  background: oklch(1 0 0 / 0.55);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.light .ai-thinking-overlay__edge {
+  opacity: 0.35;
+}
+
+.light .ai-thinking-overlay__orb {
+  border-color: rgba(var(--ai-color), 0.4);
+  box-shadow:
+    0 10px 20px -14px oklch(0.28 0.02 85 / 0.35),
+    0 1px 3px oklch(0.28 0.02 85 / 0.14);
+}
+
+/* ============================================================
+   「呼吸叙述」AI 工作中动效系统
+   docs/specs/ai-working-motion/brief.md
+   一个心跳：所有「AI 工作中」的元素共享同一条呼吸曲线。
+   ============================================================ */
+:root {
+  --breath-duration: 2.4s;
+  --breath-ease: ease-in-out;
+  --narrate-duration: 180ms;
+  /* 交互曲线。取自 animated-dropdown-recreation（CDP 逐帧拟合），JS 侧的同一份在
+     `@magic-resume/utils` 的 motion.ts——改一处必须改另一处。
+     主曲线：进入 / 展开 / 位移，凡是「东西出现」都用它。 */
+  --narrate-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* brief §4 定义了却一直没落到 CSS：贴块扫光一次行程 */
+  --sheen-duration: 1.8s;
+
+  /* GenUI 卡片层。与 @magic-resume/genui 的 motion/tokens.ts 成对：JS 侧给
+     framer-motion,这里给 CSS 动画,改一处必须改另一处。进入曲线复用
+     --narrate-ease,不另起一条。 */
+  --widget-enter: 240ms;
+  --widget-settle: 320ms;
+  --stagger-step: 30ms;
+  /* 退场。比进入短一档，且不回弹——退场回弹会读成「它又想开」。 */
+  --exit-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* 状态微变：hover 换色、按下、一两像素的位移。两头都收着。 */
+  --state-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* 过冲。全项目当前无人使用，只为补全词汇——`.impeccable.md` 定的是「不弹跳」，
+     要用它得是一次明确的决定。 */
+  --overshoot-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---- 任务清单：AI 正在做的那一步自己发光 ----
+   AI-native 的 ambient activity：不用进度条、不用「Agent working…」标签，
+   而是让**正在被处理的那个元素**发光。所有周期都挂在全局心跳 --breath-duration
+   上（同屏呼吸元素周期互质时，明暗会缓慢错开又对齐，看久了像在飘）。 */
+
+/* 导轨已不在这里：它曾是 <ul> 的背景渐变（.step-rail + --rail-fill），画在容器最
+   左侧，而标记点在行内被 padding 推开，两套坐标系永远对不上——量出来差 16px，那条
+   线从不穿过任何一个点，且填充百分比会停在行与行之间的空隙上。现在改由每一行自己
+   画出与相邻标记之间的线段（见 ChatThread 的 PlanCard），x 就是标记盒中心。 */
+
+/* 当前步的点：一圈随心跳张缩的光晕。用 box-shadow 而不是伪元素，省一个节点 */
+.step-dot-active {
+  animation: step-dot-pulse var(--breath-duration) var(--breath-ease) infinite;
+}
+@keyframes step-dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--ink-sky) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ink-sky) 0%, transparent);
+  }
+}
+
+/* 当前步的文字：极轻的辉光呼吸。只动 text-shadow 与 opacity,不动布局 */
+.step-text-active {
+  animation: step-text-glow var(--breath-duration) var(--breath-ease) infinite;
+}
+@keyframes step-text-glow {
+  0%,
+  100% {
+    opacity: 0.82;
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 12px color-mix(in oklab, var(--glow-sky) 34%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-dot-active,
+  .step-text-active {
+    animation: none;
+  }
+  .step-text-active {
+    opacity: 1;
+  }
+}
+
+/* 状态叙述文字：实色底 + 一道亮带同频掠过（Claude 式 shimmer text）。
+   基底与亮带只差一档亮度，读感仍是"实色文字上有光走过"。 */
+.ai-narrate {
+  display: inline-block;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--narrate-base, rgba(212, 212, 212, 0.85)) 0%,
+    var(--narrate-base, rgba(212, 212, 212, 0.85)) 38%,
+    var(--narrate-sheen, rgba(255, 255, 255, 0.98)) 50%,
+    var(--narrate-base, rgba(212, 212, 212, 0.85)) 62%,
+    var(--narrate-base, rgba(212, 212, 212, 0.85)) 100%
+  );
+  background-size: 220% 100%;
+  background-position: 120% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: ai-narrate-sheen var(--breath-duration) var(--breath-ease) infinite;
+}
+
+.light .ai-narrate {
+  --narrate-base: rgba(82, 82, 82, 0.9);
+  --narrate-sheen: var(--ink-sky, #0369a1);
+}
+
+@keyframes ai-narrate-sheen {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* 叙述文字换词：旧词上浮淡出、新词下方淡入（配 framer-motion 或原生皆可） */
+@keyframes ai-narrate-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.ai-narrate-enter {
+  animation: ai-narrate-in var(--narrate-duration) var(--narrate-ease) both;
+}
+
+/* ---- 输入框下方 Pro 升级条的辉光 ----
+   设计稿这团光是绿色的，这里换成品牌 sky：绿在本项目已经是简历修订的「新增内容」
+   语义色（--rev-add），右侧画布刚看过绿字=AI 新增，回头又看到绿光=付费广告，会撞。
+   渐变数学留在 CSS 里而不是内联 style，才好在浅色态整体降透明——纸上的光要落地，
+   不能像深色下那样发散（见 docs/specs/light-theme/）。 */
+.composer-pro-glow {
+  background: radial-gradient(
+    ellipse 48% 118% at 88% 46%,
+    color-mix(in oklab, var(--glow-sky) 30%, transparent),
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.light .composer-pro-glow {
+  background: radial-gradient(
+    ellipse 48% 118% at 88% 46%,
+    color-mix(in oklab, var(--glow-sky) 11%, transparent),
+    transparent 70%
+  );
+}
+
+/* ---- LivingCanvas 就地编辑（挂载点见 EditableCanvas.tsx）----
+   简历纸面恒定近白，深浅主题共用一套。 */
+
+/* 处理中：白纱把底下内容压到 ~45%，一道贴块 sky 扫光同频掠过 */
+.lc-shimmer {
+  display: block;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.lc-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    rgba(2, 132, 199, 0.08) 44%,
+    rgba(2, 132, 199, 0.16) 50%,
+    rgba(2, 132, 199, 0.08) 56%,
+    transparent 68%
+  );
+  transform: translate3d(-70%, 0, 0);
+  animation: lc-shimmer-sweep var(--breath-duration) var(--breath-ease) infinite;
+  will-change: transform;
+}
+
+@keyframes lc-shimmer-sweep {
+  to {
+    transform: translate3d(70%, 0, 0);
+  }
+}
+
+/* 提案出现：卡片与错误 chip 淡入上移一次（living-canvas design §9）。
+   这个类一直挂在 EditableCanvas 上但从没被定义过——提案卡至今是硬弹出来的。 */
+.lc-enter {
+  animation: lc-enter var(--narrate-duration) var(--narrate-ease) both;
+}
+
+@keyframes lc-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 绿增在红删下方展开：过渡 grid 行高而不是 height——height 从 auto 起算没法过渡，
+   0fr → 1fr 可以，且不需要预先知道内容高度。 */
+.lc-grow {
+  display: grid;
+  grid-template-rows: 0fr;
+  animation: lc-grow var(--widget-enter) var(--narrate-ease) both;
+}
+
+@keyframes lc-grow {
+  to {
+    grid-template-rows: 1fr;
+  }
+}
+
+/* 区块标题旁的 `+` 把手：能力按需浮现，不做常驻 chrome（.impeccable.md 原则②）。
+   悬停在标题上或键盘聚焦时才出现。 */
+.lc-section-handle {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+:hover > .lc-section-handle,
+.lc-section-handle:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 接受后：绿色微闪一次落定（绿 = 简历修订语言的"增"）。
+   420ms 不是随手取的：LivingCanvas 在这个点把 accepted 态摘掉,写 700ms 会让闪光
+   永远播到六成被截断。改这里必须同步改 LivingCanvas 的移除延时。 */
+.lc-flash {
+  animation: lc-flash 420ms var(--narrate-ease) both;
+}
+
+@keyframes lc-flash {
+  0% {
+    background-color: rgba(21, 128, 61, 0.16);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* 定位跳转：轻高亮一次（LivingCanvas 1.2s 后移除类名） */
+.lc-highlight {
+  animation: lc-highlight 1.2s var(--narrate-ease) both;
+}
+
+@keyframes lc-highlight {
+  0% {
+    background-color: rgba(2, 132, 199, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(2, 132, 199, 0.35);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-narrate,
+  .ai-narrate-enter,
+  .lc-shimmer::before,
+  .lc-flash,
+  .lc-highlight,
+  .lc-enter {
+    animation: none;
+  }
+
+  /* 展开动画停掉,但布局还得是展开的——否则绿增那一块高度归零、内容看不见。 */
+  .lc-grow {
+    animation: none;
+    grid-template-rows: 1fr;
+  }
+
+  /* 退化：叙述文字回到实色 */
+  .ai-narrate {
+    color: rgba(212, 212, 212, 0.9);
+    background: none;
+  }
+
+  .light .ai-narrate {
+    color: rgba(82, 82, 82, 0.9);
+  }
+}

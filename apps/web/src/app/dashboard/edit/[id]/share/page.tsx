@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import { ShareModal } from '@/app/dashboard/edit/_components/modals/ShareModal';
 import { useEffect } from 'react';
 
@@ -10,12 +10,12 @@ export default function ShareModalPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { activeResume, loadResumeForEdit } = useResumeStore();
+  const { activeResume, loadResumeForEdit } = useResumeDocumentStore();
 
   // Ensure resume is loaded if hitting this page directly
   useEffect(() => {
     if (id && (!activeResume || activeResume.id !== id)) {
-       loadResumeForEdit(id);
+      loadResumeForEdit(id);
     }
   }, [id, activeResume, loadResumeForEdit]);
 
@@ -26,11 +26,8 @@ export default function ShareModalPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-desk">
-        <ShareModal
-          isOpen={true}
-          onClose={() => handleOpenChange(false)}
-        />
+    <div className="bg-desk flex min-h-screen items-center justify-center">
+      <ShareModal isOpen={true} onClose={() => handleOpenChange(false)} />
     </div>
   );
 }

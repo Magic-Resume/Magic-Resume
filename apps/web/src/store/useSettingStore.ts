@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 import { dbClient } from '@/lib/api/IndexDBClient';
+import {
+  isProtectedApiKey,
+  protectApiKey,
+  revealApiKey,
+} from '@/lib/security/byokVault';
 import { isCloudMode } from '@/lib/config/app';
 import {
   CUSTOM_PROVIDER_ID,
@@ -97,12 +102,30 @@ const isNonEmpty = (value: unknown) => String(value ?? '').trim().length > 0;
  * settings so a mid-edit form (unsaved apiKey etc.) is never clobbered.
  */
 const persistPreference = async (
-  patch: Partial<Pick<SettingsData, 'selectedModel' | 'strength' | 'preferredSource'>>,
+  patch: Partial<
+    Pick<SettingsData, 'selectedModel' | 'strength' | 'preferredSource'>
+  >,
 ) => {
   await ensureDbInitialized();
-  const saved = (await dbClient.getItem('settings')) as Partial<SettingsData> | null;
-  await dbClient.setItem('settings', { ...(saved ?? {}), ...patch });
+  const saved = (await dbClient.getItem(
+    'settings',
+  )) as Partial<SettingsData> | null;
+  const storedApiKey = isProtectedApiKey(saved?.apiKey)
+    ? saved?.apiKey
+    : saved?.apiKey
+      ? await protectApiKey(String(saved.apiKey))
+      : '';
+  await dbClient.setItem('settings', {
+    ...(saved ?? {}),
+    ...patch,
+    apiKey: storedApiKey,
+  });
 };
+
+const toStoredSettings = async (settings: SettingsData) => ({
+  ...settings,
+  apiKey: await protectApiKey(settings.apiKey),
+});
 
 export const useSettingStore = create<SettingsState>((set, get) => ({
   ...defaultSettings,
@@ -121,37 +144,65 @@ export const useSettingStore = create<SettingsState>((set, get) => ({
     }
     const currentState = { ...get(), ...patch };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ ...patch, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      ...patch,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
   setApiKey: (apiKey) => {
     const currentState = { ...get(), apiKey };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ apiKey, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      apiKey,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
   setBaseUrl: (baseUrl) => {
     const currentState = { ...get(), baseUrl };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ baseUrl, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      baseUrl,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
   setModel: (model) => {
     const currentState = { ...get(), model };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ model, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      model,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
   setMaxTokens: (maxTokens) => {
     const currentState = { ...get(), maxTokens };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ maxTokens, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      maxTokens,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
   setCloudSync: (cloudSync) => {
     const currentState = { ...get(), cloudSync };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ cloudSync, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      cloudSync,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
   setSyncDisclaimerAgreed: (syncDisclaimerAgreed) => {
     const currentState = { ...get(), syncDisclaimerAgreed };
     const { initialSettings, ...currentSettings } = currentState;
-    set({ syncDisclaimerAgreed, isDirty: JSON.stringify(currentSettings) !== JSON.stringify(initialSettings) });
+    set({
+      syncDisclaimerAgreed,
+      isDirty:
+        JSON.stringify(currentSettings) !== JSON.stringify(initialSettings),
+    });
   },
 
   setSelectedModel: (selectedModel) => {
@@ -170,24 +221,48 @@ export const useSettingStore = create<SettingsState>((set, get) => ({
   hasLlmConfig: () => {
     const { provider, apiKey, baseUrl, model, maxTokens } = get();
     const tokens = Number(maxTokens);
-    return isNonEmpty(provider)
-      && isNonEmpty(apiKey)
-      && isNonEmpty(baseUrl)
-      && isNonEmpty(model)
-      && Number.isFinite(tokens)
-      && tokens > 0;
+    return (
+      isNonEmpty(provider) &&
+      isNonEmpty(apiKey) &&
+      isNonEmpty(baseUrl) &&
+      isNonEmpty(model) &&
+      Number.isFinite(tokens) &&
+      tokens > 0
+    );
   },
 
   saveSettings: async () => {
     await ensureDbInitialized();
-    const { provider, apiKey, baseUrl, model, maxTokens, cloudSync, syncDisclaimerAgreed, selectedModel, strength, preferredSource } = get();
-    const newSettings = { provider, apiKey, baseUrl, model, maxTokens, cloudSync, syncDisclaimerAgreed, selectedModel, strength, preferredSource };
-    await dbClient.setItem('settings', newSettings);
+    const {
+      provider,
+      apiKey,
+      baseUrl,
+      model,
+      maxTokens,
+      cloudSync,
+      syncDisclaimerAgreed,
+      selectedModel,
+      strength,
+      preferredSource,
+    } = get();
+    const newSettings = {
+      provider,
+      apiKey,
+      baseUrl,
+      model,
+      maxTokens,
+      cloudSync,
+      syncDisclaimerAgreed,
+      selectedModel,
+      strength,
+      preferredSource,
+    };
+    await dbClient.setItem('settings', await toStoredSettings(newSettings));
     set({ initialSettings: newSettings, isDirty: false });
   },
 
   resetSettings: () => {
-    set(state => ({
+    set((state) => ({
       ...state.initialSettings,
       isDirty: false,
     }));
@@ -195,15 +270,32 @@ export const useSettingStore = create<SettingsState>((set, get) => ({
 
   loadSettings: async () => {
     await ensureDbInitialized();
-    const savedSettings = await dbClient.getItem('settings') as Partial<SettingsData> | null;
+    const savedSettings = (await dbClient.getItem(
+      'settings',
+    )) as Partial<SettingsData> | null;
     if (savedSettings) {
       // Migrate legacy settings (pre-`provider`): reverse-derive the provider from
       // the saved base URL so old users keep working without re-configuring.
       const provider = isNonEmpty(savedSettings.provider)
         ? (savedSettings.provider as string)
-        : (savedSettings.baseUrl ? deriveProviderId(savedSettings.baseUrl) : '');
-      const merged: SettingsData = { ...defaultSettings, ...savedSettings, provider };
+        : savedSettings.baseUrl
+          ? deriveProviderId(savedSettings.baseUrl)
+          : '';
+      const { apiKey, legacyPlaintext } = await revealApiKey(
+        savedSettings.apiKey,
+      );
+      const merged: SettingsData = {
+        ...defaultSettings,
+        ...savedSettings,
+        apiKey,
+        provider,
+      };
       set({ ...merged, initialSettings: { ...merged }, isDirty: false });
+      // Migrate legacy plaintext values as soon as they are read. If no key is
+      // configured, this is a no-op and does not create a vault entry.
+      if (legacyPlaintext && apiKey) {
+        await dbClient.setItem('settings', await toStoredSettings(merged));
+      }
     }
   },
 }));

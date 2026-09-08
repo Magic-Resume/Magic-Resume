@@ -1,0 +1,41 @@
+/* Editor-only entrance choreography. Shared motion tokens live in the
+ * design-system package; this file owns the editor's three-column staging. */
+@keyframes editor-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes editor-enter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.editor-enter-left {
+  animation: editor-enter-fade 0.34s var(--narrate-ease) both;
+}
+
+.editor-enter-stage {
+  animation: editor-enter-rise 0.42s var(--narrate-ease) 0.08s both;
+}
+
+.editor-enter-right {
+  animation: editor-enter-fade 0.34s var(--narrate-ease) 0.16s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-enter-left,
+  .editor-enter-stage,
+  .editor-enter-right {
+    animation: none;
+  }
+}

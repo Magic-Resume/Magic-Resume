@@ -12,7 +12,7 @@ const CONFIG_PATH = join(homedir(), '.magic-resume', 'mcp.json');
 
 export function getDefaultConfig(): MagicResumeCliConfig {
   return {
-    apiUrl: 'http://localhost:3111/api',
+    apiUrl: 'http://localhost:3110/api',
   };
 }
 

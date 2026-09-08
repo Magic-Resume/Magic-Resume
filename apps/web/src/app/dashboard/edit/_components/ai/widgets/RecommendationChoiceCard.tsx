@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { RecommendationCard } from '@magic-resume/genui/beautiful';
+import { RecommendationCard } from '@magic-resume/genui';
 import { WidgetShell } from '@magic-resume/genui';
-import type { RecommendationOption } from '@magic-resume/genui/beautiful';
-import type { WidgetProps } from '@magic-resume/genui/contract';
+import type { RecommendationOption } from '@magic-resume/genui';
+import type { WidgetProps } from '@magic-resume/genui';
 
 /**
- * 「我建议 A，也可以 B/C」——`ask_choice` 在模型确实有倾向时的形态。
+ * 「我建议 A，也可以 B/C」——`ask_choice` 在模型确实有倾向时的 GenUI 形态。
  *
  * 与 `ChoiceCard` 的区别不是好看，是**表态**：主推项占满卡面并带上理由，其余收进抽屉。
  * 所以注册表只在模型给了 `recommended` 或任一选项带了理由/置信度时才路由到这里；
