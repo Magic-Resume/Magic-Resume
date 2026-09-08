@@ -1,0 +1,41 @@
+---
+import type { Copy, Locale } from '@/i18n/ui';
+import type { PricingPlan } from '@/data/pricing';
+import SectionHeading from '@/components/landing-ui/SectionHeading.astro';
+import Icon from '@/components/Icon.astro';
+import { dashboardLink } from '@/consts';
+interface Props { copy: Copy; locale: Locale; plans: PricingPlan[]; }
+const { copy, locale, plans } = Astro.props;
+const p = copy.landing.pricing;
+// 货币符号与数字拆开取:符号 24px 与数字 48px 基线对齐,合成一串就没法分号了。
+const money = (plan: PricingPlan) => {
+  const parts = new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {style:'currency',currency:plan.currency,minimumFractionDigits:0,maximumFractionDigits:2}).formatToParts(plan.priceCents / 100);
+  return {
+    symbol: parts.filter(x => x.type === 'currency').map(x => x.value).join(''),
+    amount: parts.filter(x => x.type !== 'currency' && x.type !== 'literal').map(x => x.value).join(''),
+  };
+};
+const unit = (plan: PricingPlan) => plan.interval === 'year' ? (locale === 'zh' ? '/年' : '/year') : (locale === 'zh' ? '/月' : '/month');
+---
+<section id="pricing" class="be-section be-pricing" data-beui="pricing-aurora-duo">
+  <div class="be-container"><SectionHeading {...p} centered/>
+    <div class="be-plan-grid reveal">
+      {plans.map(plan => <article class:list={['be-plan', plan.highlight && 'is-featured']}>
+        {plan.id !== 'free' && <pricing-aurora class="be-plan-aurora" data-tone={plan.id} aria-hidden="true"><i></i><canvas></canvas></pricing-aurora>}
+        <div class="be-plan-body">
+          <h3>{plan.name}</h3>
+          <p class="be-plan-price">
+            {plan.priceCents === 0
+              ? <strong>{p.free}</strong>
+              : <><span class="be-plan-symbol">{money(plan).symbol}</span><strong>{money(plan).amount}</strong><small>{unit(plan)}</small></>}
+          </p>
+          <p class="be-plan-copy">{plan.tagline}</p>
+          <div class="be-plan-rule"><span>{p.includes}</span></div>
+          <ul>{plan.features.map(item => <li><Icon name="check" size={16}/>{item}</li>)}</ul>
+          <div class="be-plan-action"><a href={dashboardLink('pricing',locale)} data-astro-reload>{plan.id === 'free' ? p.ctaFree : p.ctaPaid.replace('{plan}',plan.name)}<Icon name="arrow-right" size={15}/></a></div>
+        </div>
+      </article>)}
+    </div>
+    <p class="be-pricing-note">{p.note}</p>
+  </div>
+</section>

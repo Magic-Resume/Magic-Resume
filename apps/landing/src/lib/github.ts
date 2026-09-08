@@ -34,3 +34,52 @@ export function formatStars(n: number): string {
   if (n < 1000) return String(n);
   return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
 }
+
+export interface Contributor {
+  login: string;
+  avatar: string;
+  url: string;
+  commits: number;
+}
+
+/**
+ * 仓库贡献者,构建时取。开源项目的「团队」就是这些人——**不要编造成员**。
+ * 机器人账号(github-actions[bot]、vercel[bot] …)不是人,滤掉。
+ */
+export async function getContributors(limit = 8): Promise<Contributor[]> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.name}/contributors?per_page=30`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'magic-resume-landing',
+          ...(process.env.GITHUB_TOKEN
+            ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+            : {}),
+        },
+      },
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as Array<{
+      login?: string;
+      avatar_url?: string;
+      html_url?: string;
+      contributions?: number;
+      type?: string;
+    }>;
+    if (!Array.isArray(data)) return [];
+    return data
+      .filter((c) => c.type !== 'Bot' && !/\[bot\]$/.test(c.login ?? ''))
+      .filter((c) => c.login && c.avatar_url && c.html_url)
+      .slice(0, limit)
+      .map((c) => ({
+        login: c.login as string,
+        avatar: `${c.avatar_url as string}&s=240`,
+        url: c.html_url as string,
+        commits: c.contributions ?? 0,
+      }));
+  } catch {
+    return [];
+  }
+}

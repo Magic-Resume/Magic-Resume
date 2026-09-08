@@ -1,0 +1,28 @@
+---
+import type { ArticleEntry } from '@/lib/articles';
+import { articleHref, articleReadMinutes } from '@/lib/articles';
+import type { Locale } from '@/i18n/ui';
+
+interface Props {
+  entry: ArticleEntry;
+  locale: Locale;
+  index?: number;
+}
+const { entry, locale, index = 0 } = Astro.props;
+// 文章没有配图。封面用站内已有的渐变材质按序轮换生成,不引外部资源、也不开 WebGL。
+const tones = ['sky', 'mist', 'orchid', 'emerald'] as const;
+const tone = tones[index % tones.length];
+const minutes = articleReadMinutes(entry);
+const meta = `${entry.data.tags[0] ?? ''} / ${minutes} ${locale === 'zh' ? '分钟' : 'min read'}`;
+---
+<article class="be-blog-card" data-tags={entry.data.tags.join('|')}>
+  <a href={articleHref(locale, entry)}>
+    <span class="be-blog-cover" data-tone={tone} aria-hidden="true"></span>
+    <span class="be-blog-body">
+      <p class="be-blog-meta">{meta}</p>
+      <h3>{entry.data.title}</h3>
+      <p class="be-blog-desc">{entry.data.description}</p>
+      <p class="be-blog-more">{locale === 'zh' ? '阅读文章' : 'Read story'}<span aria-hidden="true">→</span></p>
+    </span>
+  </a>
+</article>

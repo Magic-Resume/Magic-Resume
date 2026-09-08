@@ -1,60 +1,18 @@
 ---
 import type { Copy, Locale } from '@/i18n/ui';
-import { dashboardLink, GITHUB } from '@/consts';
+import { dashboardLink, GITHUB, CONTACT_EMAIL } from '@/consts';
 import { interpolate } from '@/i18n/ui';
-
-interface Props {
-  copy: Copy;
-  locale: Locale;
-}
-const { copy, locale } = Astro.props;
+interface Props { copy: Copy; locale: Locale; base?: string; }
+const { copy, locale, base = '' } = Astro.props;
 const f = copy.footer;
-const year = new Date().getFullYear();
 ---
-
-<footer class="border-t border-hair bg-workbench py-14">
-  <div class="mx-auto max-w-[1120px] px-5 md:px-6">
-    <div class="flex flex-col justify-between gap-10 md:flex-row">
-      <div class="max-w-xs">
-        <div class="flex items-center gap-2">
-          <span class="flex h-7 w-7 items-center justify-center">
-            <img
-              src="/magic-resume-mark.png"
-              alt=""
-              aria-hidden="true"
-              width="28"
-              height="28"
-              class="h-7 w-7 object-contain"
-            />
-          </span>
-          <span class="text-[14px] font-w510 tracking-tight text-ink">
-            Magic Resume
-          </span>
-        </div>
-        <p class="mt-4 text-[13px] leading-relaxed text-muted">{f.brandSubtitle}</p>
-      </div>
-
-      <div class="grid grid-cols-2 gap-12 sm:gap-16">
-        <div class="flex flex-col gap-3">
-          <h3 class="text-[13px] font-w510 text-ink">{f.product}</h3>
-          <a class="text-[13px] text-muted transition-colors hover:text-ink" href={dashboardLink('footer', locale)}>
-            {f.builder}
-          </a>
-        </div>
-        <div class="flex flex-col gap-3">
-          <h3 class="text-[13px] font-w510 text-ink">{f.project}</h3>
-          <a class="text-[13px] text-muted transition-colors hover:text-ink" href={GITHUB.repo} target="_blank" rel="noopener noreferrer">
-            {f.github}
-          </a>
-          <a class="text-[13px] text-muted transition-colors hover:text-ink" href={GITHUB.issues} target="_blank" rel="noopener noreferrer">
-            {f.issues}
-          </a>
-        </div>
-      </div>
+<footer class="be-footer" data-beui="footer-spotlight">
+  <div class="be-container">
+    <div class="be-footer-grid"><div class="be-footer-brand"><a class="landing-brand" href={`${base}#top`}><img src="/magic-resume-mark.png" alt="" width="28" height="28"/><span>Magic Resume</span></a><p>{f.brandSubtitle}</p><a class="be-text-link" href={`mailto:${CONTACT_EMAIL}`}>{locale === 'zh' ? '联系我们' : 'Say hello'}<span aria-hidden="true">↗</span></a><small>{interpolate(f.copyright,{year:new Date().getFullYear()})}</small></div>
+      <div><h2>{f.product}</h2><a href={dashboardLink('footer',locale)} data-astro-reload>{f.builder}</a><a href={`${base}#features`}>{copy.nav.features}</a><a href={`${base}#pricing`}>{locale === 'zh' ? '套餐与定价' : 'Plans & pricing'}</a></div>
+      <div><h2>{locale === 'zh' ? '资源' : 'Resources'}</h2><a href={`/${locale}/blog`}>{locale === 'zh' ? '求职文章' : 'Career guides'}</a><a href={`/${locale}/tools`}>{locale === 'zh' ? '简历工具' : 'Resume tools'}</a><a href={`${base}#faq`}>{copy.nav.faq}</a></div>
+      <div><h2>{f.project}</h2><a href={GITHUB.repo} target="_blank" rel="noopener noreferrer">GitHub ↗</a><a href={GITHUB.issues} target="_blank" rel="noopener noreferrer">{f.issues} ↗</a><a href={GITHUB.contributors} target="_blank" rel="noopener noreferrer">{f.contributors} ↗</a></div>
     </div>
-
-    <div class="mt-12 border-t border-hair pt-6">
-      <p class="text-[12px] text-muted">{interpolate(f.copyright, { year })}</p>
-    </div>
+    <footer-spotlight class="be-footer-wordmark" aria-hidden="true"><span>Magic Resume</span><span class="be-wordmark-fill">Magic Resume</span></footer-spotlight>
   </div>
 </footer>

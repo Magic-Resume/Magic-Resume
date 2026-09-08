@@ -1,25 +1,28 @@
 {
   "meta": {
-    "title": "Magic Resume — the AI resume workbench",
-    "description": "Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one. MIT-licensed core, 19 templates, six modes, cloud sync."
+    "title": "Magic Resume — an AI-native resume workbench",
+    "description": "An open-source AI resume workbench. Build a local draft, tailor your experience to a role, review AI proposals, and export your resume."
   },
   "nav": {
     "features": "Features",
-    "workflow": "How it works",
+    "workflow": "Mock interview",
     "sync": "Cloud sync",
     "openSource": "Open source",
     "faq": "FAQ",
     "goToApp": "Open app",
-    "starOnGithub": "Star on GitHub"
+    "starOnGithub": "Star on GitHub",
+    "useCases": "Use cases",
+    "contributors": "Open source"
   },
   "hero": {
-    "pill": "V1.0 · Open-source core",
-    "title": "The resume workbench built for your target role",
-    "titleAccent": "your target role",
-    "subtitle": "AI proposes edits right on the page — accept what fits, skip the rest. Every change syncs to all your devices, instantly.",
+    "subtitle": "It reads your resume and looks up the role on its own. Every edit lands on the line it belongs to, with a reason attached — you just approve or skip",
     "ctaPrimary": "Start building",
     "ctaSecondary": "Star on GitHub",
-    "trust": ["Open-source MIT core", "Real-time cloud sync", "AI-native workbench"],
+    "trust": [
+      "Open-source MIT core",
+      "Real-time cloud sync",
+      "AI-native workbench"
+    ],
     "mockup": {
       "doc": "Kairo Chen's Resume",
       "synced": "Synced",
@@ -47,103 +50,47 @@
       "proposalHint": "Quantify this bullet…",
       "accept": "Accept",
       "skip": "Skip"
-    }
-  },
-  "bento": {
-    "eyebrow": "Capabilities",
-    "title": "Six modes. One workbench.",
-    "subtitle": "Everything between a blank page and a sent application. Try it below — the skills run right on this page, with mock data.",
-    "window": {
-      "title": "AI Lab",
-      "doc": "Kairo Chen's Resume",
-      "liveCanvas": "Live canvas",
-      "stop": "Stop generating"
     },
-    "welcome": {
-      "title": "How shall we polish your resume today?",
-      "sub": "Describe what you need — I'll pick the right skill.",
-      "hint": "Type / to browse skills",
-      "placeholder": "Describe a task, or type / to call a skill…"
-    },
-    "chat": {
-      "mockReply": "This is a demo playground, so I'll keep your data untouched. In the real app I'd pick the right skill and run it on your resume — type / to try one →",
-      "send": "Send",
-      "menuTitle": "Skills",
-      "toggleCanvas": "Toggle live canvas"
-    },
-    "chips": [
-      {
-        "id": "optimize",
-        "tag": "Smart Optimize",
-        "ask": "Optimize my projects, highlight quantified impact",
-        "label": "Optimize my projects"
-      },
-      {
-        "id": "analyze",
-        "tag": "Resume Analysis",
-        "ask": "Run a competitiveness check on my resume",
-        "label": "Run a competitiveness check"
-      },
-      {
-        "id": "translate",
-        "tag": "Translate",
-        "ask": "Translate my resume to Chinese",
-        "label": "Translate to Chinese"
-      },
-      {
-        "id": "interview",
-        "tag": "Mock Interview",
-        "ask": "Grill me on this resume",
-        "label": "Mock a technical interview"
-      }
+    "composerLabel": "Where do you want to go next?",
+    "composerSubmit": "Start writing",
+    "readRole": "Target role",
+    "readJd": "JD",
+    "readUnit": "words",
+    "roles": [
+      "Frontend Engineer",
+      "Product Manager",
+      "Data Analyst",
+      "Backend Engineer",
+      "Product Designer"
     ],
-    "flows": {
-      "optimize": {
-        "reply": "Before rewriting, let's lock the target role so every edit aims the right way. Fill in the target role:",
-        "formTitle": "Target role",
-        "jd": "Target JD",
-        "jdPh": "Paste the job description — AI will steer the rewrite…",
-        "company": "Company",
-        "companyPh": "e.g. ByteDance",
-        "role": "Role",
-        "rolePh": "e.g. Senior Product Manager",
-        "cancel": "Cancel",
-        "submit": "Submit",
-        "applied": "Done — rewrote one bullet toward the target JD. Applied on the canvas →"
-      },
-      "analyze": {
-        "cardTitle": "Multi-role resume review",
-        "steps": [
-          "Reading resume",
-          "Peer review",
-          "Hiring-manager review",
-          "HRBP review",
-          "Scoring competitiveness"
-        ],
-        "result": "Overall competitiveness 86/100 — strongest signal: quantified impact. Two gaps flagged on the canvas →"
-      },
-      "translate": {
-        "reply": "Translated to Chinese — layout intact. See the canvas →"
-      },
-      "interview": {
-        "reply": "Reading your resume… let's start with the Google internship:",
-        "question": "“You cut memory leaks by 25% — how did you find them, and how did you verify the fix?”",
-        "hint": "The related bullet is highlighted on the canvas →"
-      }
-    },
-    "modes": [
-      { "id": "create", "title": "Create", "desc": "Guided drafts from a blank page" },
-      { "id": "optimize", "title": "Optimize", "desc": "Inline proposals — accept or skip" },
-      { "id": "analyze", "title": "Analyze", "desc": "Match score against any JD" },
-      { "id": "translate", "title": "Translate", "desc": "Bilingual in one click" },
-      { "id": "interview", "title": "Interview", "desc": "Rehearse resume-based questions" },
-      { "id": "export", "title": "Export", "desc": "ATS-friendly PDF, JSON backup" }
+    "promptPrefix": "A resume for a ",
+    "promptSuffix": "",
+    "shortcuts": [
+      "Aim it at a JD",
+      "Make my experience land",
+      "Write one from scratch"
+    ],
+    "eyebrow": "Polaris Agent is live",
+    "titleMark": [
+      1
+    ],
+    "titleLines": [
+      [
+        "An",
+        "AI-native",
+        "resume workbench"
+      ],
+      [
+        "It reads,",
+        "it proposes,",
+        "you decide"
+      ]
     ]
   },
   "workflow": {
     "eyebrow": "How it works",
-    "title": "AI proposes. You decide.",
-    "subtitle": "No black-box rewrites. Every change is a reasoned proposal — red for cuts, green for adds, fully traceable — and nothing lands until you say so.",
+    "title": "AI proposes. You decide",
+    "subtitle": "No black-box rewrites. Every change is a reasoned proposal — red for cuts, green for adds, fully traceable — and nothing lands until you say so",
     "points": [
       "Edits are proposed in place, never applied silently",
       "Each proposal comes with a reason",
@@ -165,26 +112,26 @@
       "items": [
         {
           "reason": "Vague wording",
-          "before": "Responsible for the frontend team.",
-          "after": "Led a 5-engineer frontend team, shipping 3 products in a year."
+          "before": "Responsible for the frontend team",
+          "after": "Led a 5-engineer frontend team, shipping 3 products in a year"
         },
         {
           "reason": "No numbers",
-          "before": "Improved website performance.",
-          "after": "Cut page load time 42%, lifting conversion 18%."
+          "before": "Improved website performance",
+          "after": "Cut page load time 42%, lifting conversion 18%"
         },
         {
           "reason": "Loose summary",
-          "before": "Hard-working developer looking for work.",
-          "after": "Full-stack engineer who ships fast and sweats the details."
+          "before": "Hard-working developer looking for work",
+          "after": "Full-stack engineer who ships fast and sweats the details"
         }
       ]
     }
   },
   "sync": {
     "eyebrow": "Cloud sync",
-    "title": "Edit once. Everywhere at once.",
-    "subtitle": "Cloud sync is on by default — every word you change at your desk is already on your phone. Full version history: roll back or export anytime.",
+    "title": "Edit once. Everywhere at once",
+    "subtitle": "Cloud sync is on by default — every word you change at your desk is already on your phone. Full version history: roll back or export anytime",
     "points": [
       "Real-time across all your devices",
       "Version history with one-click rollback",
@@ -193,56 +140,446 @@
     "synced": "Synced",
     "justNow": "just now",
     "doc": "Li Ming's Resume",
-    "devices": ["MacBook Pro", "iPhone", "iPad"]
+    "devices": [
+      "MacBook Pro",
+      "iPhone",
+      "iPad"
+    ]
   },
   "openSource": {
     "eyebrow": "Open source",
     "title": "Built in the open",
-    "desc": "The Magic Resume core is MIT-licensed and built with its community. Read the code, file an issue, or star the repo.",
+    "desc": "The Magic Resume core is MIT-licensed and built with its community. Read the code, file an issue, or star the repo",
     "starCta": "Star on GitHub",
     "starsLabel": "stars",
     "contributorsLabel": "Contributors"
   },
   "faq": {
-    "eyebrow": "FAQ",
     "title": "Questions, answered",
     "items": [
       {
-        "q": "Is Magic Resume free?",
-        "a": "The open-source edition is free forever and self-hostable. The cloud edition adds sync and built-in AI with a generous free tier — upgrade when you need more."
+        "q": "Can I start without an account?",
+        "a": "Yes. Start a local draft and explore editing and previewing in your browser. Sign in when you want to save it to your account or continue to features that require an account."
       },
       {
-        "q": "Is my resume data safe?",
-        "a": "Sync is encrypted in transit and at rest, the data stays yours, and you can export everything anytime. Want fully offline? Self-host the open-source edition."
+        "q": "What is free, and what is paid?",
+        "a": "The open-source editor is MIT-licensed. You can explore local editing for free. The hosted service offers Free, Pro, and Max plans; current prices, models, and included usage are shown in your account before upgrading."
       },
       {
         "q": "Will AI change my resume without asking?",
-        "a": "Never. Every edit arrives as a proposal — red cuts, green adds, with a reason — and nothing applies until you accept it."
+        "a": "AI suggestions are shown as proposals for you to review. Accept the changes that match your experience and skip the rest. Always check the final resume before sending it."
+      },
+      {
+        "q": "Where does my draft live?",
+        "a": "Anonymous drafts stay in this browser. Sign in to save your work to your cloud workspace. Export a JSON backup before clearing browser data or changing devices if your draft has not been saved to your account."
       },
       {
         "q": "What can I export?",
-        "a": "One-click ATS-friendly PDF, plus JSON in and out for backup and migration."
+        "a": "Export a PDF for applications or a JSON file for backup and reuse. You can continue editing the resume and export another version when you need it."
       },
       {
-        "q": "How is it different from other resume builders?",
-        "a": "It's not a form filler — it's a workbench that knows your target role: create, optimize, analyze, translate and rehearse, all on one canvas."
+        "q": "Are the previews on this page real AI?",
+        "a": "The previews are interactive examples using sample data. They show how the workbench feels. Start creating to work with your own experience in the app."
       }
     ]
   },
-  "cta": {
-    "title": "From blank page to sent application",
-    "subtitle": "Build a resume that knows the role you're aiming for.",
-    "button": "Start building",
-    "note": "Open-source core · Cloud sync · Export anytime"
-  },
   "footer": {
-    "brandSubtitle": "The AI resume workbench that makes a job search feel simple.",
+    "brandSubtitle": "An AI-native resume workbench",
     "product": "Product",
     "builder": "Online builder",
     "project": "Project",
     "github": "GitHub",
     "issues": "Issues",
     "contributors": "Contributors",
-    "copyright": "© {year} Magic Resume. All rights reserved."
+    "copyright": "© {year} Magic Resume. All rights reserved"
+  },
+  "landing": {
+    "demo": "Interactive preview · Sample resume",
+    "tryDemo": "Explore the workbench",
+    "proof": {
+      "title": "A few numbers you can check",
+      "subtitle": "No customer logos, no growth curve — only what has actually happened",
+      "items": [
+        {
+          "value": "1k+",
+          "label": "People writing here",
+          "detail": "and still counting"
+        },
+        {
+          "value": "2k+",
+          "label": "Resumes created",
+          "detail": "first drafts through final ones"
+        },
+        {
+          "value": "19",
+          "label": "Resume templates",
+          "detail": "switch any time, layout follows"
+        },
+        {
+          "value": "MIT",
+          "label": "Open-source licence",
+          "detail": "read it, fork it, self-host it"
+        }
+      ]
+    },
+    "cases": {
+      "eyebrow": "Your next move",
+      "title": "Different journeys.\nA clearer starting point",
+      "subtitle": "Choose where you are. We’ll help you find the words for what comes next",
+      "cta": "Start with this goal",
+      "hint": "Select a story to bring it forward",
+      "items": [
+        {
+          "label": "First role",
+          "title": "Your experience starts before your first job",
+          "desc": "Turn coursework, side projects, and internships into a focused first resume",
+          "prompt": "Help me create my first resume from my projects and internships",
+          "tag": "A first chapter",
+          "visual": [
+            "Coursework",
+            "Side projects",
+            "Internships"
+          ],
+          "result": "A story worth starting"
+        },
+        {
+          "label": "Career move",
+          "title": "Give your next role the right version of you",
+          "desc": "Bring a job description. Surface the experience that matters and make every bullet earn its place",
+          "prompt": "Help me tailor my experience to a new job description",
+          "tag": "A new direction",
+          "visual": [
+            "Target role",
+            "Relevant experience",
+            "Clearer impact"
+          ],
+          "result": "Made for the opportunity"
+        },
+        {
+          "label": "Going global",
+          "title": "The same experience. A wider world",
+          "desc": "Translate your resume while keeping the meaning, tone, and structure of your work intact",
+          "prompt": "Help me translate my resume into English while keeping the original meaning",
+          "tag": "Across borders",
+          "visual": [
+            "Experience",
+            "工作经历",
+            "Professional English"
+          ],
+          "result": "Your story, in another language"
+        }
+      ]
+    },
+    "features": {
+      "title": "Scattered experience.\nOne clear next step",
+      "subtitle": "Write, revise, lay out, translate, rehearse, export — one resume, no shuffling between tools",
+      "items": [
+        {
+          "title": "Live preview\nwhile you write",
+          "desc": "The editor and the preview share one screen, so layout follows content"
+        },
+        {
+          "title": "Proposed first\napplied after",
+          "desc": "Every AI edit arrives with a reason. You decide whether to keep it"
+        },
+        {
+          "title": "19 templates\nswitch any time",
+          "desc": "Change the layout without rewriting anything — one document, 19 looks"
+        },
+        {
+          "title": "Two languages\none set of facts",
+          "desc": "Translate the whole resume while keeping its tone and structure"
+        },
+        {
+          "title": "Interview practice\nbefore you speak",
+          "desc": "Questions drawn from your own resume, with live voice rehearsal"
+        },
+        {
+          "title": "Take it with you\nPDF and JSON",
+          "desc": "PDF for the application, JSON for backup and reuse"
+        }
+      ]
+    },
+    "review": {
+      "title": "It gathers the context first,\nthen it suggests",
+      "subtitle": "No pasting your resume into a chat box — Polaris reads it",
+      "before": "Original",
+      "after": "Suggested edit",
+      "reason": "Why this helps",
+      "cards": [
+        {
+          "title": "It gathers the context first",
+          "desc": "Your resume, the role, the requirements — it reads them itself"
+        },
+        {
+          "title": "The change lands on the resume",
+          "desc": "Marked in place on the line, not pasted into a chat box"
+        },
+        {
+          "title": "Every edit explains itself",
+          "desc": "The reason sits next to the change, so you can judge it"
+        },
+        {
+          "title": "It asks when it isn't sure",
+          "desc": "Where it needs your call, it stops and offers the options"
+        },
+        {
+          "title": "Every step is reversible",
+          "desc": "Changes are recorded, so you can go back to an earlier draft"
+        }
+      ],
+      "sim": {
+        "prompt": "Line my resume up with this frontend role",
+        "working": "Working",
+        "steps": [
+          "Reading your resume",
+          "Looking up the role",
+          "Matching requirements"
+        ],
+        "ask": {
+          "label": "Needs your call",
+          "question": "Emphasise collaboration, or solo delivery?",
+          "a": "Collaboration",
+          "b": "Solo"
+        },
+        "json": {
+          "file": "resume.json",
+          "chip": "restorable",
+          "lines": [
+            [
+              "\"version\"",
+              "4"
+            ],
+            [
+              "\"accepted\"",
+              "2"
+            ],
+            [
+              "\"skipped\"",
+              "1"
+            ]
+          ]
+        },
+        "paused": "Paused — it’s yours"
+      },
+      "items": [
+        {
+          "title": "See the difference",
+          "desc": "Read the original and the proposed wording together. Nothing gets lost between chat and canvas",
+          "before": "Worked on the frontend and fixed bugs",
+          "after": "Built frontend features and resolved interface bugs in collaboration with the product team",
+          "reason": "Use a direct action verb and name the work. No invented metrics"
+        },
+        {
+          "title": "Understand the reason",
+          "desc": "A useful edit explains itself, so you can decide whether the change matches your experience",
+          "before": "I am a hard-working developer looking for a job",
+          "after": "Frontend developer focused on building clear, accessible web interfaces",
+          "reason": "Replace a generic claim with a specific professional focus"
+        },
+        {
+          "title": "Keep what feels right",
+          "desc": "Accept a proposal or skip it. You stay responsible for the story your resume tells",
+          "before": "Responsible for writing docs",
+          "after": "Documented product workflows to help teammates understand and maintain them",
+          "reason": "Describe the purpose of the work, not just the responsibility"
+        }
+      ]
+    },
+    "process": {
+      "eyebrow": "Mock interview",
+      "title": "Not a question list —\nan interview you actually speak",
+      "subtitle": "A full voice loop, end to end, and a report you can actually work from",
+      "cta": "Start a mock interview",
+      "steps": [
+        {
+          "num": "01",
+          "eyebrow": "Set up",
+          "title": "Give it one job",
+          "desc": "Paste the JD, or just name the company and role — with no JD it goes and finds the real posting. Language, length and difficulty get settled before the room opens"
+        },
+        {
+          "num": "02",
+          "eyebrow": "Interview",
+          "title": "Speak through the loop",
+          "desc": "Real-time voice, back and forth. It follows up on what you just said instead of reading from a list"
+        },
+        {
+          "num": "03",
+          "eyebrow": "Debrief",
+          "title": "Get a report you can act on",
+          "desc": "Depth, job fit, expression and structure, weighted into one score — with your own words quoted back question by question"
+        }
+      ],
+      "stage": {
+        "role": "ByteDance Frontend Engineer",
+        "host": "jobs.bytedance.com",
+        "found": "Posting it found itself",
+        "postTitle": "Frontend Engineer · Growth",
+        "reqs": [
+          "3+ years on the frontend",
+          "Strong React and tooling",
+          "Performance or cross-platform work"
+        ],
+        "enter": "Enter the room",
+        "phases": {
+          "listening": "Listening",
+          "thinking": "Thinking",
+          "speaking": "Speaking"
+        },
+        "reportTitle": "Interview report",
+        "band": "Nearly there",
+        "overall": "Overall",
+        "dims": [
+          [
+            "Depth",
+            "35%",
+            68
+          ],
+          [
+            "Job fit",
+            "25%",
+            75
+          ],
+          [
+            "Expression",
+            "20%",
+            80
+          ],
+          [
+            "Structure",
+            "20%",
+            66
+          ]
+        ],
+        "quoteLabel": "What you actually said",
+        "quote": "We cut the analytics beacon first — it was 40% of the blocking time on first paint",
+        "strength": "The trade-off had a clear cause and effect",
+        "improve": "Only one number in there — add a second result",
+        "enterTitle": "Mock interview",
+        "meta": [
+          "20 min",
+          "Standard",
+          "English"
+        ]
+      }
+    },
+    "export": {
+      "eyebrow": "Yours to take",
+      "title": "Close the tab.\nKeep your progress",
+      "subtitle": "Start locally. Sign in when you want a cloud workspace. Export a file of your own when it is ready to leave",
+      "items": [
+        {
+          "title": "Local drafts",
+          "desc": "Begin editing in your browser before creating an account"
+        },
+        {
+          "title": "Cloud workspace",
+          "desc": "Sign in to save to your account and continue on another device"
+        },
+        {
+          "title": "PDF export",
+          "desc": "The file you actually send, generated right in your browser"
+        },
+        {
+          "title": "JSON backup",
+          "desc": "Keep a structured copy and load it back. Nothing is locked in here"
+        }
+      ],
+      "pills": [
+        "Local first",
+        "Export anytime"
+      ],
+      "cta": "Open source — self-host it",
+      "doc": "Your next chapter",
+      "fileLabel": "Export format"
+    },
+    "pricing": {
+      "title": "Start with a draft.\nGrow at your own pace",
+      "subtitle": "Explore the workbench for free. Choose a paid plan when you need more from AI",
+      "free": "Free",
+      "includes": "Plan includes",
+      "note": "Monthly price for this billing region. Your account confirms the final amount before you upgrade",
+      "ctaFree": "Start creating",
+      "ctaPaid": "Explore {plan}",
+      "plans": [
+        {
+          "id": "free",
+          "tagline": "The blank page is the hard part. Start there",
+          "features": [
+            "2 base AI models",
+            "About 22 AI conversations a month",
+            "30 requests per minute",
+            "Every template, PDF export included",
+            "Cloud sync and version history"
+          ]
+        },
+        {
+          "id": "pro",
+          "tagline": "Every role deserves a resume written for it",
+          "features": [
+            "Every AI model, strongest reasoning included",
+            "Room to run a whole application season",
+            "60 requests per minute, less queueing",
+            "AI interview practice with live voice",
+            "Everything in Free"
+          ]
+        },
+        {
+          "id": "max",
+          "tagline": "Apply hard, revise often, stop watching the meter",
+          "features": [
+            "Every AI model, strongest reasoning included",
+            "Several times Pro's allowance",
+            "180 requests per minute, highest concurrency",
+            "AI interview practice with live voice",
+            "Everything in Pro"
+          ]
+        }
+      ]
+    },
+    "trust": {
+      "eyebrow": "Open source",
+      "title": "Your story deserves\na little more transparency",
+      "subtitle": "An open editor, visible changes, and files you can keep. A workbench you can check for yourself",
+      "source": "View source on GitHub",
+      "starsSuffix": "stars",
+      "marks": [
+        {
+          "mark": "MIT",
+          "suffix": "licensed",
+          "desc": "Read it, change it, ship it commercially. No permission needed"
+        },
+        {
+          "mark": "GitHub",
+          "suffix": "in the open",
+          "desc": "Development happens in the public repo — issues and PRs included"
+        },
+        {
+          "mark": "Docker",
+          "suffix": "self-host",
+          "desc": "One compose command and it runs on a server you own"
+        },
+        {
+          "mark": "JSON",
+          "suffix": "portable",
+          "desc": "Your resume is structured data. Export it, load it back"
+        }
+      ],
+      "checks": [
+        "Nothing lands on your resume without your approval",
+        "Start from a local draft without signing in",
+        "Take PDF and JSON with you anytime"
+      ]
+    },
+    "faqSubtitle": "A few things to know before you start"
+  },
+  "team": {
+    "eyebrow": "Contributors",
+    "title": "The people behind Magic Resume",
+    "subtitle": "An open-source project. These are the people who wrote it",
+    "cta": "Contribute with us",
+    "maintainer": "Maintainer",
+    "commits": "{n} commits"
   }
 }

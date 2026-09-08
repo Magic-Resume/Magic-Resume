@@ -1,0 +1,48 @@
+---
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { getTools } from '@/data/tools';
+
+export function getStaticPaths() {
+  return LOCALES.map((locale) => ({ params: { locale }, props: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+if (!isLocale(localeParam)) return Astro.redirect('/en/tools');
+const locale = localeParam as Locale;
+const tools = getTools(locale);
+const title = locale === 'zh' ? 'AI 简历工具 | Magic Resume' : 'AI resume tools | Magic Resume';
+const description = locale === 'zh'
+  ? '使用 JD 匹配、ATS 模板和 Resume MCP，把求职准备变成可验证的工作流。'
+  : 'Use JD matching, ATS-ready templates, and Resume MCP to make job preparation a verifiable workflow.';
+const canonical = new URL(`/${locale}/tools`, Astro.site).href;
+const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', href: new URL(`/${loc}/tools`, Astro.site).href }));
+---
+
+<ContentLayout locale={locale} title={title} description={description} canonical={canonical} alternates={alternates}>
+  <section class="be-section" data-beui="blog-index">
+    <div class="be-container">
+      <div class="be-blog-head">
+        <div>
+          <p>{locale === 'zh' ? '可验证的工具' : 'Verifiable tools'}</p>
+          <h1>{locale === 'zh' ? '为目标岗位准备一份更可信的简历' : 'Prepare a more credible resume for the role you want'}</h1>
+        </div>
+      </div>
+      <p class="be-blog-lede">{description}</p>
+      <div class="be-blog-grid">
+        {tools.map((tool, i) => (
+          <article class="be-blog-card is-flat">
+            <a href={`/${locale}/tools/${tool.slug}`}>
+              <span class="be-blog-body">
+                <time>{String(i + 1).padStart(2, '0')} · {tool.eyebrow}</time>
+                <h3>{tool.title}</h3>
+                <p>{tool.description}</p>
+                <span class="be-blog-more">{locale === 'zh' ? '查看工具' : 'Explore tool'} →</span>
+              </span>
+            </a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</ContentLayout>

@@ -1,8 +1,11 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import '@/styles/global.css';
+import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
+import '@/styles/beui.css';
 import { DEFAULT_LOCALE, LOCALES, type Copy, type Locale } from '@/i18n/ui';
 import Seo from '@/components/Seo.astro';
+import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
 
 interface Props {
   locale: Locale;
@@ -36,7 +39,7 @@ const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
 ---
 
 <!doctype html>
-<html lang={htmlLang} class="scroll-smooth scroll-pt-20">
+<html lang={htmlLang} class="landing-site scroll-smooth scroll-pt-20">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -64,7 +67,7 @@ const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
 
-    <meta name="theme-color" content="#08090a" />
+    <meta name="theme-color" content="#151515" />
     <meta name="generator" content={Astro.generator} />
 
     <Seo
@@ -77,19 +80,18 @@ const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
 
     <ClientRouter />
 
-    <script>
-      // Mark JS availability ASAP so .reveal only hides when it can un-hide.
-      document.documentElement.classList.add('js');
-    </script>
+    <ThemeScript />
   </head>
-  <body class="min-h-screen antialiased">
+  <body class="landing-body min-h-screen antialiased">
     <a
       href="#main"
-      class="sr-only rounded-md bg-ink px-4 py-2 text-[13px] font-w510 text-workbench focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
+      class="sr-only rounded-md bg-ink px-4 py-2 text-mr-caption font-w510 text-workbench focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
     >
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
     <slot />
+
+    <UtilityDock locale={locale} />
 
     <script>
       const win = window as typeof window & { __magicResumeRevealBound?: boolean };

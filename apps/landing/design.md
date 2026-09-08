@@ -4,6 +4,10 @@
 > 不适用于 `apps/web`(产品内 UI 仍遵循 `.impeccable.md` 与 `docs/specs/light-theme/`)。
 > 状态:**已实施**(2026-08-05)。§9 六档改造全部落地,`build` + `astro check` 零错误。
 > 剩余待办只有人工视觉走查与 Lighthouse 实测。
+>
+> **2026-09-04 修订(作者定稿)**:强调色由 Acid Lime `#e4f222` 换回 sky `#38bdf8`,
+> 双层配色的「chrome 禁 sky」边界随之作废(§1、§2.1、§2.2);标题强调词从「无彩色」
+> 改为 **sky 徽章**(§3.5)。原因见各节。
 
 ---
 
@@ -31,7 +35,7 @@
 | **目录** | `components/sections/`、`layouts/`、`components/*.astro`、`islands/Faq.tsx` | **`components/islands/`、`components/product-sim/`** |
 | 范围 | Header / 标题 / 正文 / 按钮 / eyebrow / 分隔线 / Footer | 三个产品仿真岛 + 简历纸卡 |
 | 底色 | Void `#08090a` | 产品自己的工作台色 |
-| 强调色 | **Acid Lime `#e4f222`** | **保留 sky-400 `#38bdf8`** |
+| 强调色 | **Sky `#38bdf8`** | **保留 sky-400 `#38bdf8`** |
 | 字体 | Inter Variable | 跟随产品(可用任意,以像真为准) |
 | 圆角 | 只有 2 / 6 / 12 / pill | 不限,以像真为准 |
 | 字号下限 | 12px | 无下限(视作截图) |
@@ -43,7 +47,12 @@
 - 它顺手解决了 landing 换成柠檬黄后最大的风险:**从 landing(黄)点进 /dashboard(蓝)的观感断裂**。访客在 landing 上已经透过三个产品框看了一路 sky 蓝的产品界面,进入应用时看到的是同一套蓝——断裂发生在"营销外壳"这一层,而营销外壳本来就该在进入应用时消失。
 - 工程上它把改造面积从"全站 38+12 处 sky"压到"chrome 层 12 处",三个岛(1453 行 tsx)零改动。
 
-**边界规则:** Chrome 层禁止出现 sky;Product-Sim 层禁止出现 acid lime。跨界即违规。
+**边界规则(2026-09-04 修订):** 两层现在共用 sky。原规则是「chrome 禁 sky、product-sim
+禁 lime」,前提是 chrome 走独立营销品牌色;改回 sky 之后那条前提没了。**仍然成立的部分**是
+目录边界本身——product-sim 的红绿增删、纸白、模板配色仍不许被刷成 chrome 的调子。
+
+上面那段「换柠檬黄是为了不跟产品撞色」的推演,结论已经反转:访客透过三个产品框看了一路
+sky,进入应用时也该是同一套 sky,营销外壳没有理由自己另起一个颜色。
 
 **边界必须是目录边界,不能只靠注释。** 实施时踩到过:简历纸卡原本内联在 `Sync.astro` 里,它合法地用着 `text-sky-700` 和 `font-semibold`,导致任何 chrome 层的 grep 检查都会被这两行绊倒——规则一旦"总是误报"就等于没有规则。现已抽成 `components/product-sim/ResumeCard.astro`。以后新增任何产品仿真元素,先建文件再写代码,不要内联进 section。
 
@@ -68,7 +77,8 @@ Chrome 层可用色的**全集**。表里没有的颜色,chrome 层不许出现�
 | Fog | `#8a8f98` | `--color-muted` | 次要正文、占位、图标 | 6.1:1 ✓ |
 | Mist | `#d0d6e0` | `--color-ink-soft` | 正文、按钮文字 | 13.7:1 ✓ |
 | White | `#ffffff` | `--color-ink` | 标题、最高对比强调 | 19.9:1 ✓ |
-| **Acid Lime** | `#e4f222` | `--color-accent` | **唯一强调色**,见 §2.2 | 16.2:1 ✓ |
+| **Sky** | `#38bdf8` | `--color-accent` | **唯一强调色**,见 §2.2。只作**填充与描边** | 9.3:1 ✓ |
+| **Sky Ink** | `#0369a1` | `--color-accent-text` | 强调色**当文字**时用。深色主题下同 `--color-accent` | 浅色 5.7:1 ✓ |
 
 对比度为实测值(WCAG 相对亮度公式)。
 
@@ -78,21 +88,23 @@ Chrome 层可用色的**全集**。表里没有的颜色,chrome 层不许出现�
 
 ### 2.2 强调色预算表 ★
 
-Acid lime 是闪光灯,不是涂料。全站配额:
+强调色是闪光灯,不是涂料。全站配额:
 
 | 位置 | 允许用量 | 形态 |
 |---|---|---|
-| Hero 主 CTA | 1 | 实心 lime 底 + `#08090a` 黑字 |
+| Hero 主 CTA | 1 | 实心 sky 底 + `#08090a` 黑字 |
 | CTA section 按钮 | 1 | 同上 |
-| `:focus-visible` 焦点环 | 不限 | 2px lime 描边(可达性,不计入预算) |
-| `::selection` 选中态 | 不限 | lime 30% 混色 |
+| Hero 标题徽章 | 1 | **描边款**:sky 9% 填充 + 45% 描边 + `--color-accent-text` 文字。见 §3.5 |
+| `:focus-visible` 焦点环 | 不限 | 2px sky 描边(可达性,不计入预算) |
+| `::selection` 选中态 | 不限 | sky 30% 混色 |
 | **其它任何位置** | **0** | — |
 
-**每个视口内最多 1 个实心 lime 元素。** Hero 与 CTA section 相距整页,不会同屏。
+**每个视口内最多 1 个实心 sky 元素。** Hero 与 CTA section 相距整页,不会同屏;标题徽章
+虽与 Hero CTA 同屏,但它是描边款不是实心块,不占实心配额。
 
-Header 的"进入应用"用**白色 pill**(`#ffffff` 底 + 黑字)——它是系统里第二高对比元素,与 lime 形成两级 CTA 梯度,且滚动时始终吸顶,如果做成 lime 就会与 Hero 的 lime 同屏打架。
+Header 的"进入应用"用**白色 pill**(`#ffffff` 底 + 黑字)——它是系统里第二高对比元素,与强调色形成两级 CTA 梯度,且滚动时始终吸顶,如果做成强调色就会与 Hero 的 CTA 同屏打架。
 
-被这条预算砍掉的现有装饰(全部降级为中性,**不换成 lime**):
+被这条预算砍掉的现有装饰(全部降级为中性,**不换成强调色**):
 
 - `global.css:110` eyebrow 圆点 → `--color-muted`,去掉 `box-shadow` 光晕
 - `Hero.astro:30` 标题强调词着色 → 见 §3.5
@@ -122,7 +134,7 @@ Header 的"进入应用"用**白色 pill**(`#ffffff` 底 + 黑字)——它是�
 | 分隔线 | `1px solid rgba(255,255,255,0.06)` | section 之间的 `border-t`、Footer 分栏线 |
 | 强调分隔 | `1px solid #383b3f` | 需要明确切断视线时(慎用,全页 ≤2 处) |
 
-**不要用投影把卡片从画布上抬起来。** 唯一允许的投影:①产品框的环境阴影(§5.6);②lime 按钮的内阴影堆叠(§5.1)。
+**不要用投影把卡片从画布上抬起来。** 唯一允许的投影:①产品框的环境阴影(§5.6);②强调色按钮的内阴影堆叠(§5.1)。
 
 ### 2.4 渐变
 
@@ -254,14 +266,27 @@ Linear 是纯拉丁排版系统,它的字距和行高直接套到中文上是错
 
 ### 3.5 标题里的"强调词"怎么办
 
-`Hero.astro:15-18` 有一套把标题切成三段、给中间段着色的机制(`titleAccent`)。着色违反 §2.2 预算,但**机制保留**,改成无彩色强调:
+`Hero.astro` 有一套按 `titleAccent` 把标题切段的机制。强调段渲染成一枚**内联徽章**:
 
 ```
-强调段 → #ffffff (White)
-其余段 → #d0d6e0 (Mist)
+徽章文字  → --color-accent-text   (深色 #38bdf8 / 浅色 #0369a1)
+徽章填充  → --color-accent 9%
+徽章描边  → --color-accent 45%,1px,pill 圆角
+徽章字号  → 0.8em(比标题小一号)
+其余段    → #d0d6e0 (Mist) / #ffffff (White)
 ```
 
-明度差本身就是强调。i18n 文案不需要改。
+三条容易踩的:
+
+1. **徽章必须比标题小。** 跟标题同字号时药丸有 65px 高、570px 宽,读起来是个按钮不是徽章。
+2. **色块整段共用一个,不是每词一个。** 逐词的半透明块在词距处两两重叠,重叠区 alpha
+   翻倍,读出来是几条深浅不一的色带。
+3. **上下内缩按字形墨迹配平,不是按行盒。** 行盒的中线和字的视觉中线不是同一条:标题
+   `line-height: 0.94` 的行盒是 56px,而 Inter 的 ascent+descent 是 1.21em——贴着行盒画,
+   要么切掉 descender,要么整颗胶囊挂在基线以下。
+
+历史:2026-08-05 那一版是「无彩色,靠 White/Mist 明度差」。实测明度差在这个尺寸下读不出
+"被强调",作者定稿改成徽章(2026-09-04)。
 
 ---
 
@@ -336,16 +361,16 @@ grep -rnE 'font-(bold|semibold|medium|display)\b|text-faint|bg-faint|rounded-(sm
   inset 0 1px 1px rgb(0 0 0 / 0.07);
 ```
 
-`--shadow-accent` 只给 lime 按钮——这是全系统唯一一处给 chrome 元素上真实阴影的地方。
+`--shadow-accent` 只给强调色按钮——这是全系统唯一一处给 chrome 元素上真实阴影的地方。
 
 ---
 
 ## 5. 组件规格
 
-### 5.1 主 CTA(Acid Lime)
+### 5.1 主 CTA(Sky)
 
 ```
-背景  #e4f222
+背景  #38bdf8
 文字  #08090a,15px / 510 / -0.011em
 圆角  6px
 内距  10px 16px(Hero 与 CTA section 用 12px 24px)
@@ -452,7 +477,7 @@ hover 描边提亮到 0.12;去掉 sky 泛光层(::after 整个删除)
 | Nav | 5 项,13px / 400 / Mist,间距 24px,hover → White |
 | 右区 | GitHub star(ghost,mono 数字)· 语言切换 · **白 pill "进入应用"** |
 | Accent | 0 |
-| 验收 | 滚动时不变高、不换色;lime 一处不得出现 |
+| 验收 | 滚动时不变高、不换色;强调色一处不得出现 |
 
 改动:`:31` 去掉 `font-display`;`:58` 的 `bg-ink` 方形按钮 → 白 pill(`rounded-full`);字重 `font-semibold` → `font-w510`。
 
@@ -466,7 +491,7 @@ hover 描边提亮到 0.12;去掉 sky 泛光层(::after 整个删除)
 | 上边距 | `pt-40 md:pt-52 lg:pt-56`(保持) |
 | 标题 | Display 64px / 510 / lh 1.0 / -0.022em;强调段 White,其余 Mist;中文走 §3.3 |
 | 副标题 | 17px / 400 / Fog,`max-w-xl`,上距 24px |
-| CTA | **lime 主按钮** + ghost GitHub 按钮,间距 12px,上距 32px |
+| CTA | **强调色主按钮** + ghost GitHub 按钮,间距 12px,上距 32px |
 | Trust 条 | 13px / Fog(从 Ash 提上来),勾选图标中性,竖线分隔用发丝色 |
 | 产品框 | `EditorMockup`,`client:load`,上距 64px,`max-w-1280` |
 | 背景 | `.hero-bloom` 冷白泛光(去 sky) |
@@ -551,7 +576,7 @@ hover 描边提亮到 0.12;去掉 sky 泛光层(::after 整个删除)
 | 结构 | 居中单栏 `max-w-2xl`,`py-28 md:py-36` |
 | 标题 | 48px / 510 / White / -0.022em |
 | 副标题 | 16px / Fog |
-| 按钮 | **lime 主按钮**,`px-24 py-12`,15px / 510 |
+| 按钮 | **强调色主按钮**,`px-24 py-12`,15px / 510 |
 | 注脚 | 13px / Fog |
 | 背景 | 底部冷白泛光(去 sky) |
 | Accent | 1 |
@@ -589,7 +614,8 @@ hover 描边提亮到 0.12;去掉 sky 泛光层(::after 整个删除)
 ## 8. 可达性
 
 - **对比度**:见 §2.1 实测表。正文只能用 White / Mist / Fog;Ash 仅限 ≥24px 或非文本。
-- **焦点环**:`2px solid #e4f222` + `outline-offset: 2px`,圆角 2px。lime 对底 16.2:1,是全站最醒目的焦点提示——这也是 lime 值得留在系统里的功能性理由。
+- **焦点环**:`2px solid #38bdf8` + `outline-offset: 2px`,圆角 2px。sky 对底 9.3:1,达到 WCAG 2.2 焦点外观的 3:1 要求还有富余。
+- **强调色当文字时必须换深支**:亮 sky `#38bdf8` 压在浅色主题的暖纸上只有 2.1:1,读不出来。文字一律走 `--color-accent-text`(浅色 = `#0369a1`,5.7:1)。填充和描边不受此限。
 - **产品仿真岛**:岛内有大量 6–11px 文本(模拟真实产品在缩放下的样子)。
 
   规范初稿写的是"纯展示岛整块 `aria-hidden` + `sr-only` 描述"——**实施时发现这条对本站三个岛全都不成立**:`EditorMockup`、`AiLabScene`、`ProposalStream` 各有 5 / 5 / 2 个真实 `<button>`,`aria-hidden` 包含可聚焦元素本身就是违规。核查后现状是合格的:12 个按钮全部具备可访问名称(可见文字或 `aria-label`),且都在 tab 序列内、键盘可操作。
@@ -746,7 +772,8 @@ Chrome 层:`rounded-lg`×4 → `rounded-md`;`rounded-2xl`×1、`rounded-[3rem]`�
   --color-faint: #62666d;          /*  3.5:1 — 仅 ≥24px / 非文本 */
 
   /* ── 唯一强调色(预算见 §2.2) ─────────────────────────── */
-  --color-accent: #e4f222;
+  --color-accent: #38bdf8;      /* 填充与描边 */
+  --color-accent-text: #38bdf8; /* 当文字用;浅色主题翻成 #0369a1 */
 
   /* ── Product-Sim 层:简历纸(勿改,勿改名) ─────────────── */
   --color-paper: oklch(0.975 0.003 95);
@@ -795,8 +822,8 @@ body {
 
 | # | 决策 | 选择 | 理由 |
 |---|---|---|---|
-| D1 | 强调色 | Acid Lime `#e4f222` | 用户选定;landing 走独立营销品牌 |
-| D2 | landing↔app 观感断裂 | 双层配色(§1) | 产品仿真层保留 sky,断裂只发生在营销外壳 |
+| D1 | 强调色 | ~~Acid Lime `#e4f222`~~ → **Sky `#38bdf8`** | 2026-09-04 作者定稿改回产品品牌色:柠檬黄低透明度压在近黑上永远是橄榄泥色,且 landing→app 没有理由换色 |
+| D2 | landing↔app 观感断裂 | ~~双层配色(§1)~~ → 两层共用 sky | D1 改掉之后断裂本身消失了,双层配色只剩目录边界的意义 |
 | D3 | 文档形态 | 可执行落地规范 | 含 section 蓝图 + 差异清单 + 验收 |
 | D4 | 主字族 | Inter Variable,Sora 退役 | cv01/ss03/zero 是这套排版的身份 |
 | D5 | 等宽字 | `ui-monospace` 系统栈 | Berkeley Mono 需商业授权;本站仅两处用到 |

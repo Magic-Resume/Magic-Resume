@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 // the configured `site` (SITE_URL differs between preview and production, and a
 // hard-coded absolute URL here would point previews at the live sitemap).
 export const GET: APIRoute = ({ site }) => {
-  const base = (site ?? new URL('https://magic-resume.cn')).origin;
+  const base = (site ?? new URL('https://www.magic-resume.cn')).origin;
   const body = `User-agent: *
 Allow: /
 

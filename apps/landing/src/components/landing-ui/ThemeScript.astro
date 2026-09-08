@@ -1,0 +1,40 @@
+---
+/**
+ * 首帧主题。两个 layout 共用一份——之前各存一份,内容页那份还漏了换页后的重放。
+ *
+ * 必须 `is:inline` 且留在 <head>:只要晚一帧,深色底就会先画出来再翻白,闪一下
+ * 比没有切换更难受。
+ *
+ * `astro:after-swap` 那次重放不能省:ClientRouter 换页时会用新文档的 <html>
+ * 属性覆盖当前的,而服务端渲染的 HTML 里没有 data-theme,不重放就会掉回默认的
+ * 深色——首页浅色点进博客直接翻黑就是这么来的。
+ */
+---
+
+<script is:inline>
+  // Mark JS availability ASAP so .reveal only hides when it can un-hide.
+  document.documentElement.classList.add('js');
+
+  (function () {
+    var KEY = 'magic:landing-theme';
+    function apply() {
+      var theme;
+      try {
+        var stored = localStorage.getItem(KEY);
+        theme =
+          stored === 'light' || stored === 'dark'
+            ? stored
+            : window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark';
+      } catch (e) {
+        theme = 'dark';
+      }
+      document.documentElement.dataset.theme = theme;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme === 'light' ? '#faf8f4' : '#151515');
+    }
+    apply();
+    document.addEventListener('astro:after-swap', apply);
+  })();
+</script>

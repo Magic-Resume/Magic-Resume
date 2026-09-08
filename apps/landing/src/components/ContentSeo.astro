@@ -1,0 +1,82 @@
+---
+interface Alternate {
+  lang: string;
+  href: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  locale: 'en' | 'zh';
+  type?: 'article' | 'website' | 'software';
+  published?: Date;
+  modified?: Date;
+  author?: string;
+  alternates?: Alternate[];
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  locale,
+  type = 'website',
+  published,
+  modified,
+  author = 'Magic Resume Editorial',
+  alternates = [],
+  image = new URL('/magic-resume-og.jpg', Astro.site).href,
+} = Astro.props;
+
+const inLanguage = locale === 'zh' ? 'zh-CN' : 'en';
+const graph: Record<string, unknown>[] = [
+  {
+    '@type': 'Organization',
+    '@id': `${new URL('/', Astro.site).href}#organization`,
+    name: 'Magic Resume',
+    url: new URL('/', Astro.site).href,
+    logo: new URL('/magic-resume-mark.png', Astro.site).href,
+    sameAs: ['https://github.com/Magic-Resume/Magic-Resume'],
+  },
+  {
+    '@type': type === 'article' ? 'Article' : type === 'software' ? 'SoftwareApplication' : 'WebPage',
+    '@id': `${canonical}#${type}`,
+    name: title,
+    headline: type === 'article' ? title : undefined,
+    description,
+    url: canonical,
+    inLanguage,
+    image,
+    author: type === 'article' ? { '@type': 'Person', name: author } : undefined,
+    publisher: type === 'article' ? { '@id': `${new URL('/', Astro.site).href}#organization` } : undefined,
+    datePublished: published?.toISOString(),
+    dateModified: modified?.toISOString(),
+    applicationCategory: type === 'software' ? 'BusinessApplication' : undefined,
+    operatingSystem: type === 'software' ? 'Web' : undefined,
+  },
+];
+const cleanGraph = graph.map((item) =>
+  Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined)),
+);
+const schema = { '@context': 'https://schema.org', '@graph': cleanGraph };
+const serialize = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
+---
+
+<link rel="canonical" href={canonical} />
+{alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<meta property="og:type" content={type === 'article' ? 'article' : 'website'} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={image} />
+<meta property="og:locale" content={inLanguage === 'zh-CN' ? 'zh_CN' : 'en_US'} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+{type === 'article' && published && <meta property="article:published_time" content={published.toISOString()} />}
+{type === 'article' && modified && <meta property="article:modified_time" content={modified.toISOString()} />}
+<script type="application/ld+json" is:inline set:html={serialize(schema)} />

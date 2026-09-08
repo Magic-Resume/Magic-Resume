@@ -1,0 +1,43 @@
+---
+interface Props {
+  title: string;
+  button: string;
+  done: string;
+  items: string[];
+}
+const { title, button, done, items } = Astro.props;
+---
+
+<div class="rounded-xl border border-hair bg-surface/50 p-5" data-synthetic-demo>
+  <div class="flex items-center justify-between gap-4">
+    <h2 class="text-mr-body font-w510 text-ink">{title}</h2>
+    <button type="button" data-demo-button class="rounded-md bg-ink px-3 py-2 text-mr-overline font-w510 text-workbench transition-opacity hover:opacity-85">{button}</button>
+  </div>
+  <ul class="mt-5 space-y-3 text-mr-caption text-muted">
+    {items.map((item) => (
+      <li class="flex items-center gap-3" data-demo-item>
+        <span class="h-2 w-2 rounded-full border border-hairline" data-demo-dot aria-hidden="true"></span>
+        <span>{item}</span>
+      </li>
+    ))}
+  </ul>
+  <p class="mt-5 hidden rounded-md bg-accent/10 px-3 py-2 text-mr-overline text-accent" data-demo-result aria-live="polite">{done}</p>
+  <p class="mt-4 text-mr-label text-faint">Synthetic demo · no login, backend, model, or API cost</p>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-synthetic-demo]').forEach((demo) => {
+    const button = demo.querySelector<HTMLButtonElement>('[data-demo-button]');
+    const result = demo.querySelector<HTMLElement>('[data-demo-result]');
+    const dots = demo.querySelectorAll<HTMLElement>('[data-demo-dot]');
+    if (!button || !result) return;
+    button.addEventListener('click', () => {
+      dots.forEach((dot) => {
+        dot.classList.add('border-accent', 'bg-accent');
+      });
+      result.classList.remove('hidden');
+      button.disabled = true;
+      button.setAttribute('aria-disabled', 'true');
+    });
+  });
+</script>

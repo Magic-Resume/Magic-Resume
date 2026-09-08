@@ -1,0 +1,50 @@
+---
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import SyntheticDemo from '@/components/content/SyntheticDemo.astro';
+import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { getTool, getTools } from '@/data/tools';
+import { dashboardLink, CONTENT_LINKS, GITHUB } from '@/consts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((locale) =>
+    getTools(locale).map((tool) => ({ params: { locale, slug: tool.slug }, props: { tool, locale } })),
+  );
+}
+
+const localeParam = Astro.params.locale;
+const slug = Astro.params.slug ?? '';
+if (!isLocale(localeParam)) return Astro.redirect('/en/tools');
+const locale = localeParam as Locale;
+const tool = Astro.props.tool ?? getTool(locale, slug);
+if (!tool) return Astro.redirect(`/${locale}/tools`);
+const canonical = new URL(`/${locale}/tools/${tool.slug}`, Astro.site).href;
+const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', href: new URL(`/${loc}/tools/${tool.slug}`, Astro.site).href }));
+---
+
+<ContentLayout locale={locale} title={`${tool.title} | Magic Resume`} description={tool.description} canonical={canonical} alternates={alternates} type="software">
+  <section class="mx-auto max-w-[880px] px-5 py-14 md:px-6 md:py-24">
+    <a href={`/${locale}/tools`} class="text-mr-caption text-muted hover:text-ink">← {locale === 'zh' ? '返回工具列表' : 'Back to tools'}</a>
+    <div class="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <div>
+        <p class="eyebrow">{tool.eyebrow}</p>
+        <h1 class="type-heading-lg mt-4 text-ink">{tool.title}</h1>
+        <p class="type-body-lg mt-5 text-muted">{tool.description}</p>
+        <p class="mt-8 text-[16px] leading-8 text-ink-soft">{tool.summary}</p>
+        <ul class="mt-8 space-y-4 text-mr-body leading-7 text-ink-soft">
+          {tool.bullets.map((bullet) => <li class="flex gap-3"><span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent"></span><span>{bullet}</span></li>)}
+        </ul>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <a href={tool.slug === 'mcp-resume-editor' ? (CONTENT_LINKS.docs ?? GITHUB.repo) : dashboardLink('hero', locale)} target={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? '_blank' : undefined} rel={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? 'noopener noreferrer' : undefined} class="rounded-md bg-ink px-5 py-3 text-mr-body font-w510 text-workbench">{tool.cta}</a>
+          <span class="self-center text-mr-overline text-muted">{tool.ctaNote}</span>
+        </div>
+      </div>
+      <SyntheticDemo title={tool.demoTitle} button={tool.demoButton} done={tool.demoDone} items={tool.demoItems} />
+    </div>
+    <div class="mt-16 border-t border-hair pt-10">
+      <h2 class="type-heading text-ink">{locale === 'zh' ? '推荐流程' : 'Recommended workflow'}</h2>
+      <ol class="mt-7 grid gap-4 md:grid-cols-3">
+        {tool.steps.map((step, index) => <li class="rounded-xl border border-hair bg-surface/30 p-5"><span class="font-mono text-mr-overline text-accent">0{index + 1}</span><p class="mt-3 text-mr-body leading-7 text-ink-soft">{step}</p></li>)}
+      </ol>
+    </div>
+  </section>
+</ContentLayout>

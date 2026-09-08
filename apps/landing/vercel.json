@@ -3,7 +3,25 @@
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm turbo build --filter=@magic-resume/landing",
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/",
+      "headers": [{"key": "Vary", "value": "Accept-Language"}]
+    }
+  ],
   "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept-language",
+          "value": "^zh(?:-|,|;|$)"
+        }
+      ],
+      "destination": "/zh",
+      "permanent": false
+    },
     {
       "source": "/",
       "destination": "/en",

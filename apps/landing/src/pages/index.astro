@@ -1,0 +1,5 @@
+---
+// Vercel negotiates Accept-Language for production requests at `/`. This
+// static fallback keeps Astro dev/preview and non-Vercel adapters valid.
+return Astro.redirect('/en');
+---

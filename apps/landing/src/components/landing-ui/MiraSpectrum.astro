@@ -1,0 +1,116 @@
+---
+/**
+ * Mira 的光谱背景。
+ *
+ * 这里没有 shader。原件就是 7 层 `radial-gradient` 椭圆横排成一条带，整体
+ * `blur(18px) saturate(1.08)`，上面盖一层 soft-light 噪点，再 14s 往复漂移。
+ * 全是声明式的，数值可以照抄。
+ *
+ * 深色是把原件那层「向下收到浅青」的地板换成向下收到画布底色，椭圆本身保留：
+ * 一排高饱和粉彩椭圆糊在暗底上，正好就是发光带。
+ */
+---
+
+<div class="mira-spectrum" aria-hidden="true">
+  <div class="mira-spectrum-colors"></div>
+</div>
+
+<style>
+  .mira-spectrum {
+    position: absolute;
+    inset-inline: -8%;
+    bottom: 0;
+    /* 原件是 top:440px 的绝对值。我们的首屏高度随视口变，所以改成从下往上量， */
+    /* 让这条带始终坐在首屏下缘——它在原件里就是「地平线」那个角色。 */
+    height: min(760px, 82%);
+    overflow: hidden;
+    /* The fade stays fixed to the hero. Scaling it with the colors would push
+       its transparent end below the hero's clip and leave a visible seam. */
+    --spectrum-mask: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 16%,
+      #000 50%,
+      rgb(0 0 0 / 86%) 62%,
+      rgb(0 0 0 / 48%) 76%,
+      rgb(0 0 0 / 14%) 88%,
+      rgb(0 0 0 / 2.5%) 95%,
+      transparent 100%
+    );
+    -webkit-mask-image: var(--spectrum-mask);
+    mask-image: var(--spectrum-mask);
+    opacity: 0.62;
+    pointer-events: none;
+  }
+
+  .mira-spectrum-colors {
+    position: absolute;
+    inset: 0;
+    /* 七个椭圆：桃 → 薄荷 → 蓝 → 长春花 → 薄荷 → 青 → 桃。位置与透明度照抄原件。 */
+    background:
+      radial-gradient(ellipse 15% 95% at 3% 79%, rgba(244, 192, 173, 0.66), transparent 68%),
+      radial-gradient(ellipse 18% 105% at 16% 83%, rgba(124, 228, 220, 0.76), transparent 68%),
+      radial-gradient(ellipse 17% 105% at 31% 87%, rgba(124, 187, 248, 0.84), transparent 66%),
+      radial-gradient(ellipse 16% 100% at 46% 82%, rgba(144, 175, 250, 0.84), transparent 67%),
+      radial-gradient(ellipse 17% 100% at 60% 84%, rgba(137, 229, 219, 0.78), transparent 67%),
+      radial-gradient(ellipse 16% 105% at 75% 84%, rgba(114, 212, 230, 0.72), transparent 66%),
+      radial-gradient(ellipse 15% 95% at 90% 78%, rgba(250, 197, 165, 0.65), transparent 68%),
+      /* 地板。深色下收到画布底色,浅色下才是原件那层浅青。 */
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-workbench) 0%, transparent) 0%,
+        color-mix(in srgb, var(--color-workbench) 35%, transparent) 18%,
+        var(--color-workbench) 100%
+      );
+    filter: blur(18px) saturate(1.08);
+    /* 独立成层交给合成器,否则 blur(18px) 每帧都在主线程重算。 */
+    transform: translateZ(0);
+    animation: mira-spectrum 14s ease-in-out infinite alternate;
+  }
+
+  /* 浅色下椭圆压在浅底上,不需要压不透明度,地板也换回原件那层浅青。 */
+  :root[data-theme='light'] .mira-spectrum {
+    opacity: 1;
+  }
+  :root[data-theme='light'] .mira-spectrum-colors {
+    background:
+      radial-gradient(ellipse 15% 95% at 3% 79%, rgba(244, 192, 173, 0.66), transparent 68%),
+      radial-gradient(ellipse 18% 105% at 16% 83%, rgba(124, 228, 220, 0.76), transparent 68%),
+      radial-gradient(ellipse 17% 105% at 31% 87%, rgba(124, 187, 248, 0.84), transparent 66%),
+      radial-gradient(ellipse 16% 100% at 46% 82%, rgba(144, 175, 250, 0.84), transparent 67%),
+      radial-gradient(ellipse 17% 100% at 60% 84%, rgba(137, 229, 219, 0.78), transparent 67%),
+      radial-gradient(ellipse 16% 105% at 75% 84%, rgba(114, 212, 230, 0.72), transparent 66%),
+      radial-gradient(ellipse 15% 95% at 90% 78%, rgba(250, 197, 165, 0.65), transparent 68%),
+      linear-gradient(to bottom, rgba(245, 247, 251, 0) 0%, rgba(237, 245, 248, 0.4) 18%, #bde3ef 100%);
+  }
+
+  /* 噪点。大面积 blur 渐变没有它必起色带,原件也带这一层。 */
+  .mira-spectrum-colors::after {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-radial-gradient(
+      circle at 20% 20%,
+      rgba(18, 26, 35, 0.13) 0 0.55px,
+      transparent 0.7px 2px
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0.3;
+    content: '';
+  }
+
+  @keyframes mira-spectrum {
+    from {
+      transform: translate3d(-1.5%, 8px, 0) scale(1.02);
+    }
+    to {
+      transform: translate3d(1.5%, -8px, 0) scale(1.06);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mira-spectrum-colors {
+      animation: none;
+      transform: translateZ(0) scale(1.04);
+    }
+  }
+</style>
