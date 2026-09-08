@@ -1820,10 +1820,11 @@
         "hrbp": "HRBP"
       },
       "scoreBand": {
-        "excellent": "综合竞争力优秀",
-        "good": "综合竞争力良好",
-        "medium": "综合竞争力中等",
-        "needsWork": "竞争力有待提升"
+        "outstanding": "综合竞争力出众",
+        "strong": "综合竞争力扎实",
+        "solid": "综合竞争力中上",
+        "rough": "还需要一轮重写",
+        "draft": "目前还是初稿"
       },
       "match": {
         "empty": "还没有匹配结果。把目标 JD 贴给我，我来看看这份简历离岗位还差多远",
@@ -1858,7 +1859,39 @@
         "ImpactAndActionability": "影响力与行动力",
         "QuantifiableAchievements": "量化成果",
         "ClarityAndReadability": "清晰度与可读性",
-        "ProfessionalSummary": "职业概述"
+        "AiCollaboration": "AI 协同能力",
+        "CredibilityAndSpecificity": "可信度与具体性"
+      },
+      "categoryShort": {
+        "ImpactAndActionability": "影响力",
+        "QuantifiableAchievements": "量化成果",
+        "ClarityAndReadability": "可读性",
+        "AiCollaboration": "AI 协同",
+        "CredibilityAndSpecificity": "可信度"
+      },
+      "scoreBandShort": {
+        "outstanding": "Outstanding",
+        "strong": "Strong",
+        "solid": "Solid",
+        "rough": "Rough",
+        "draft": "Draft"
+      },
+      "radarLabel": "五维竞争力雷达",
+      "axisBreakdown": "{{axis}}：三位面试官各自的评分",
+      "personaPending": "评审中",
+      "personaFailed": "本轮无结果",
+      "improvementsHint": "点任意一条，我直接帮你改",
+      "verdictFallback": {
+        "outstanding_0": "这份简历不太需要我，投出去就好。",
+        "outstanding_1": "少见的完成度，挑不出该先改哪一条。",
+        "strong_0": "底子很稳，剩下的是把好故事讲得更短。",
+        "strong_1": "拿得出手了，再抠一遍数字会更狠。",
+        "solid_0": "该有的都有，就是还差几个能站住的数字。",
+        "solid_1": "读得下去，但还没到让人记住的程度。",
+        "rough_0": "经历是真的，只是还没写成证据。先补最近一段的可验证细节。",
+        "rough_1": "内容不缺，缺的是取舍。先把最强的一段放到最前面。",
+        "draft_0": "现在更像一份提纲。先把一段经历写完整，其余的照着它改。",
+        "draft_1": "起点在这里，不在别处。挑一段你最熟的经历，把过程和结果补全。"
       }
     },
     "chat": {

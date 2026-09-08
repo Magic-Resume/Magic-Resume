@@ -1636,26 +1636,37 @@ export default function AiChatShell({
                 view: "score",
                 status: "ready",
               });
-              // 真出了结果才算成功：只流不产出不是成功。
-              appLifecycle.aiAnalysisSucceeded();
-              // 收尾时把清单全置完成（防御：汇总步骤的 plan_update 可能晚于本事件）。
-              if (planCardRef.current) {
-                const planId = planCardRef.current;
-                planCardRef.current = null;
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === planId
-                      ? {
-                          ...m,
-                          status: "done",
-                          todos: m.todos?.map((t) => ({
-                            ...t,
-                            status: "completed",
-                          })),
-                        }
-                      : m,
-                  ),
-                );
+              // 这个事件现在会来多次：每位面试官评完都送一份局部快照，雷达因此逐步成形。
+              // 画布可以每次都更新，但「跑完了」的收尾只能做一次——否则每来一帧就封口一张
+              // 清单卡，下一条 plan_update 再新建一张，聊天里会排出三张「全部完成」。
+              // 还有人格在 pending，这份快照按定义就不是终局。
+              const stillRunning = [
+                result.peer_analysis,
+                result.leader_analysis,
+                result.hrbp_analysis,
+              ].some((persona) => persona?.status === "pending");
+              if (!stillRunning) {
+                // 真出了结果才算成功：只流不产出不是成功。
+                appLifecycle.aiAnalysisSucceeded();
+                // 收尾时把清单全置完成（防御：汇总步骤的 plan_update 可能晚于本事件）。
+                if (planCardRef.current) {
+                  const planId = planCardRef.current;
+                  planCardRef.current = null;
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === planId
+                        ? {
+                            ...m,
+                            status: "done",
+                            todos: m.todos?.map((t) => ({
+                              ...t,
+                              status: "completed",
+                            })),
+                          }
+                        : m,
+                    ),
+                  );
+                }
               }
             }
           } else if (ev.type === "fit_report") {

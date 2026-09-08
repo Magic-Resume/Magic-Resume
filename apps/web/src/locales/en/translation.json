@@ -1820,10 +1820,11 @@
         "hrbp": "HRBP"
       },
       "scoreBand": {
-        "excellent": "Overall competitiveness is excellent",
-        "good": "Overall competitiveness is good",
-        "medium": "Overall competitiveness is moderate",
-        "needsWork": "Competitiveness needs improvement"
+        "outstanding": "Outstanding overall competitiveness",
+        "strong": "Strong overall competitiveness",
+        "solid": "Solid overall competitiveness",
+        "rough": "Needs another rewrite",
+        "draft": "Still a draft"
       },
       "match": {
         "empty": "No fit report yet. Paste the target JD and I'll size up how close this resume is.",
@@ -1858,7 +1859,39 @@
         "ImpactAndActionability": "Impact & actionability",
         "QuantifiableAchievements": "Quantified results",
         "ClarityAndReadability": "Clarity & readability",
-        "ProfessionalSummary": "Professional summary"
+        "AiCollaboration": "AI collaboration",
+        "CredibilityAndSpecificity": "Credibility & specificity"
+      },
+      "categoryShort": {
+        "ImpactAndActionability": "Impact",
+        "QuantifiableAchievements": "Quantified",
+        "ClarityAndReadability": "Clarity",
+        "AiCollaboration": "AI fluency",
+        "CredibilityAndSpecificity": "Credibility"
+      },
+      "scoreBandShort": {
+        "outstanding": "Outstanding",
+        "strong": "Strong",
+        "solid": "Solid",
+        "rough": "Rough",
+        "draft": "Draft"
+      },
+      "radarLabel": "Five-dimension competitiveness radar",
+      "axisBreakdown": "{{axis}}: how each interviewer scored it",
+      "personaPending": "Reviewing",
+      "personaFailed": "No result this round",
+      "improvementsHint": "Pick any one and I'll rewrite it",
+      "verdictFallback": {
+        "outstanding_0": "This one barely needs me. Send it.",
+        "outstanding_1": "Rare completeness — hard to say what to fix first.",
+        "strong_0": "The foundation is steady; now make the good story shorter.",
+        "strong_1": "Ready to send. One more pass on the numbers would sharpen it.",
+        "solid_0": "Everything's there — it just needs a few numbers that hold up.",
+        "solid_1": "It reads well, but it isn't memorable yet.",
+        "rough_0": "The experience is real; it just isn't written as evidence yet. Start with verifiable detail on the most recent role.",
+        "rough_1": "No shortage of content — what's missing is a choice. Lead with your strongest role.",
+        "draft_0": "This reads like an outline. Write one role out in full, then match the rest to it.",
+        "draft_1": "The starting point is here. Pick the role you know best and fill in the process and the result."
       }
     },
     "chat": {
