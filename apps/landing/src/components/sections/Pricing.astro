@@ -19,8 +19,8 @@ const unit = (plan: PricingPlan) => plan.interval === 'year' ? (locale === 'zh' 
 ---
 <section id="pricing" class="be-section be-pricing" data-beui="pricing-aurora-duo">
   <div class="be-container"><SectionHeading {...p} centered/>
-    <div class="be-plan-grid reveal">
-      {plans.map(plan => <article class:list={['be-plan', plan.highlight && 'is-featured']}>
+    <div class="be-plan-grid">
+      {plans.map((plan, i) => <article class:list={['be-plan', 'reveal', plan.highlight && 'is-featured']} style={`--reveal-delay:${i + 1}`}>
         {plan.id !== 'free' && <pricing-aurora class="be-plan-aurora" data-tone={plan.id} aria-hidden="true"><i></i><canvas></canvas></pricing-aurora>}
         <div class="be-plan-body">
           <h3>{plan.name}</h3>

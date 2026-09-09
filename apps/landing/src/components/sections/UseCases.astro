@@ -12,12 +12,12 @@ const href = (prompt: string) => `${dashboardLink('use_cases', locale)}&prompt=$
 <section id="customers" class="be-section" data-beui="use-cases-animated-story-collage">
   <div class="be-container be-collage-layout">
     <div class="be-collage-copy">
-      <p class="be-collage-chip reveal">{c.eyebrow}</p>
+      <p class="be-collage-chip reveal" style="--reveal-delay:0">{c.eyebrow}</p>
       <SectionHeading title={c.title} subtitle={c.subtitle} />
-      <a class="be-collage-cta reveal" data-collage-cta href={href(c.items[0].prompt)} data-astro-reload>{c.cta}<Icon name="arrow-right" size={16}/></a>
+      <a class="be-collage-cta reveal" style="--reveal-delay:1" data-collage-cta href={href(c.items[0].prompt)} data-astro-reload>{c.cta}<Icon name="arrow-right" size={16}/></a>
     </div>
 
-    <div class="be-collage-stage reveal">
+    <div class="be-collage-stage reveal" style="--reveal-delay:2">
       <i class="be-collage-ring is-fill" aria-hidden="true"></i>
       <i class="be-collage-ring is-line" aria-hidden="true"></i>
       <story-collage class="be-collage">
