@@ -158,8 +158,8 @@
     "title": "Questions, answered",
     "items": [
       {
-        "q": "Can I start without an account?",
-        "a": "Yes. Start a local draft and explore editing and previewing in your browser. Sign in when you want to save it to your account or continue to features that require an account."
+        "q": "Do I need an account to start?",
+        "a": "Yes. Your resumes, revision history, and job profile live in your account, so you can pick up where you left off on any device. Signing up takes one step with an email or a social account."
       },
       {
         "q": "What is free, and what is paid?",
@@ -170,8 +170,8 @@
         "a": "AI suggestions are shown as proposals for you to review. Accept the changes that match your experience and skip the rest. Always check the final resume before sending it."
       },
       {
-        "q": "Where does my draft live?",
-        "a": "Anonymous drafts stay in this browser. Sign in to save your work to your cloud workspace. Export a JSON backup before clearing browser data or changing devices if your draft has not been saved to your account."
+        "q": "Where do my resumes live?",
+        "a": "In your cloud workspace, tied to your account, so signing in on another device picks up where you left off. You can export a JSON backup at any time to keep a copy of your own."
       },
       {
         "q": "What can I export?",
