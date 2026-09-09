@@ -1,9 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "concurrency": "11",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "!.next/cache/**"]
+      "env": ["NEXT_DIST_DIR"],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        ".next-verify/**",
+        "!.next-verify/cache/**",
+        "dist/**"
+      ]
     },
     "dev": {
       "cache": false,

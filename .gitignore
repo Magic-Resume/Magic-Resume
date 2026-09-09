@@ -16,8 +16,9 @@
 
 # next.js
 /.next/
-# dev 开着时的验证构建产物（NEXT_DIST_DIR=.next-verify）
+# dev 开着时的验证构建产物（NEXT_DIST_DIR=.next-verify / .next-dev）
 .next-verify/
+.next-dev/
 /out/
 
 # production
@@ -55,3 +56,10 @@ dist
 node_modules
 .next
 .superpowers
+
+# 模板实验室的对照数据。里面是**参考件的真实内容**（真人简历），
+# 只用于本地把复刻版式与原件并排比对，**不进仓库**。
+#
+# 走 public/ + 运行时 fetch 而不是 import：被 gitignore 的文件如果被源码静态 import，
+# 新克隆的仓库会直接构建失败。fetch 的话文件不在就只是少一个数据源。
+apps/web/public/template-lab-reference.local.json

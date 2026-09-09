@@ -1,0 +1,102 @@
+@theme {
+  --animate-mr-fade-in: mr-fade-in 180ms var(--ease-mr-enter) both;
+  --animate-mr-pop-in: mr-pop-in 220ms var(--ease-mr-enter) both;
+  --animate-mr-breathe: mr-breathe 2.4s ease-in-out infinite;
+  --animate-mr-breathe-soft: mr-breathe-soft 2.4s ease-in-out infinite;
+  --animate-mr-shimmer: mr-shimmer 1.8s var(--ease-mr-enter) infinite;
+
+  @keyframes mr-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes mr-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes mr-breathe {
+    0%,
+    100% {
+      opacity: 0.76;
+      transform: scale(0.985);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.015);
+    }
+  }
+
+  @keyframes mr-breathe-soft {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes mr-shimmer {
+    from {
+      background-position: 120% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
+}
+
+@utility mr-motion-fade-in {
+  animation: var(--animate-mr-fade-in);
+}
+
+@utility mr-motion-pop-in {
+  animation: var(--animate-mr-pop-in);
+}
+
+@utility mr-motion-breathe {
+  animation: var(--animate-mr-breathe);
+  will-change: transform, opacity;
+}
+
+@utility mr-motion-breathe-soft {
+  animation: var(--animate-mr-breathe-soft);
+  will-change: opacity;
+}
+
+@utility mr-motion-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklab, var(--mr-accent) 8%, transparent) 45%,
+    color-mix(in oklab, var(--mr-accent) 18%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  animation: var(--animate-mr-shimmer);
+  will-change: background-position;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mr-motion-fade-in,
+  .mr-motion-pop-in,
+  .mr-motion-breathe,
+  .mr-motion-breathe-soft,
+  .mr-motion-shimmer {
+    animation: none;
+    transform: none;
+    opacity: 1;
+    will-change: auto;
+  }
+}

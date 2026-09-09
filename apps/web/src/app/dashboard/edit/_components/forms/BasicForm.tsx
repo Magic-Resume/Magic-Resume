@@ -8,13 +8,11 @@ import CustomFieldsEditor from './CustomFieldsEditor';
 type BasicFormProps = {
   info: InfoType;
   updateInfo: (info: Partial<InfoType>) => void;
-  enableCustomFields?: boolean;
 };
 
 export default function BasicForm({
   info,
   updateInfo,
-  enableCustomFields = false,
 }: BasicFormProps) {
   const { t } = useTranslation();
 
@@ -64,13 +62,12 @@ export default function BasicForm({
         />
       ))}
 
-      {enableCustomFields && (
-        <CustomFieldsEditor
-          fields={customFields}
-          onChange={(next) => updateInfo({ customFields: next })}
-          title={t('basicForm.customFields.title')}
-        />
-      )}
+      <CustomFieldsEditor
+        fields={customFields}
+        onChange={(next) => updateInfo({ customFields: next })}
+        title={t('basicForm.customFields.title')}
+        enableIcons
+      />
     </div>
   );
 }

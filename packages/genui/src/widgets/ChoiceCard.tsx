@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { CornerDownLeft, MessageCircleQuestion } from 'lucide-react';
+import { CornerDownLeft, MessageCircleQuestion } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@magic-resume/utils';
 import { WidgetItem, WidgetShell } from '../motion';
@@ -40,16 +40,16 @@ export default function ChoiceCard({ instance, onAction }: WidgetProps) {
   };
 
   return (
-    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-raised px-4 py-3.5">
+    <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-mr-surface px-4 py-3.5">
       <div className="flex items-center gap-2.5">
-        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-tint-sky">
-          <MessageCircleQuestion size={14} className="text-ink-sky" />
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 bg-mr-accent-tint">
+          <MessageCircleQuestion size={14} className="text-mr-accent" />
         </div>
-        <span className="text-[13px] text-primary leading-snug">{props.message}</span>
+        <span className="text-mr-caption text-mr-ink leading-snug">{props.message}</span>
       </div>
 
       {resolved ? (
-        <div className="mt-2 text-xs text-secondary">
+        <div className="mt-2 text-xs text-mr-ink-secondary">
           {instance.status !== 'submitted'
             ? t(`aiLab.widgets.form.${instance.status}`)
             : // `picked` is component state, so a transcript restored from
@@ -65,7 +65,7 @@ export default function ChoiceCard({ instance, onAction }: WidgetProps) {
                 <button
                   type="button"
                   onClick={() => choose(o.value)}
-                  className={cn(CHIP_BASE, CHIP_IDLE, 'hover:bg-tint-sky hover:text-ink-sky')}
+                  className={cn(CHIP_BASE, CHIP_IDLE, 'hover:bg-mr-accent-tint hover:text-mr-accent')}
                 >
                   {o.label}
                 </button>
@@ -112,8 +112,8 @@ export default function ChoiceCard({ instance, onAction }: WidgetProps) {
                 className={cn(
                   'shrink-0 rounded-lg p-2 transition-colors',
                   freeText.trim()
-                    ? 'bg-fill-sky text-on-fill-sky cursor-pointer'
-                    : 'bg-sunk text-muted cursor-not-allowed',
+                    ? 'bg-mr-accent text-mr-accent-ink cursor-pointer'
+                    : 'bg-mr-sunk text-mr-muted cursor-not-allowed',
                 )}
               >
                 <CornerDownLeft size={13} />

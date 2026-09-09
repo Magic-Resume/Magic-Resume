@@ -99,6 +99,15 @@ export interface ComponentDefinition {
   props?: Record<string, unknown>;
   style?: ComponentStyle;
   fieldMap?: FieldMapping;
+  /**
+   * 原语树。**给了它就走新路径**（`type` 必须是 `'Tree'`），两个渲染器都改为
+   * 编译这棵树，而不是去注册表里找组件。
+   *
+   * 这是绞杀榕的接缝：新旧两条路并存，旧的 19 个模板一个字都不用改。
+   * 类型写成 `unknown` 是为了不让本文件依赖 `primitives/`——那边导入这边的
+   * `ComponentType`，反向再导一次就成环了。渲染器侧各自窄化。
+   */
+  tree?: unknown;
 }
 
 export type ComponentType = 
@@ -116,7 +125,9 @@ export type ComponentType =
   | 'ContactInfo'
   | 'Timeline'
   | 'CompactList'
-  | 'Divider';
+  | 'Divider'
+  /** 走原语树，见 `ComponentDefinition.tree`。 */
+  | 'Tree';
 
 export interface ComponentPosition {
   area?: 'main' | 'sidebar' | 'header' | 'footer';

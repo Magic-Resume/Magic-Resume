@@ -1,0 +1,81 @@
+/* Shared utilities are deliberately small and composable. Complex markup and
+ * business states belong to the React modules or feature stylesheets. */
+@utility mr-focus-ring {
+  outline: none;
+
+  &:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--mr-desk),
+      0 0 0 4px var(--mr-focus);
+  }
+}
+
+@utility mr-press-motion {
+  transition:
+    background-color 150ms var(--ease-mr-state),
+    border-color 150ms var(--ease-mr-state),
+    box-shadow 150ms var(--ease-mr-state),
+    color 150ms var(--ease-mr-state),
+    transform 220ms var(--ease-mr-state);
+
+  &:active:not(:disabled):not([aria-disabled='true']) {
+    transform: scale(0.98);
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    transform: none;
+  }
+}
+
+@utility mr-scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility mr-surface {
+  border: 1px solid var(--mr-line);
+  border-radius: var(--radius-mr-panel);
+  background: var(--mr-surface);
+  box-shadow: var(--mr-shadow-panel);
+}
+
+@utility mr-field {
+  width: 100%;
+  border: 1px solid var(--mr-line);
+  border-radius: var(--radius-mr-control);
+  background: var(--mr-sunk);
+  color: var(--mr-ink);
+  outline: none;
+  transition:
+    border-color 150ms var(--ease-mr-state),
+    box-shadow 150ms var(--ease-mr-state),
+    background-color 150ms var(--ease-mr-state);
+
+  &::placeholder {
+    color: var(--mr-muted);
+  }
+
+  &:hover {
+    border-color: var(--mr-line-strong);
+  }
+
+  &:focus-visible {
+    border-color: var(--mr-focus);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--mr-focus) 28%, transparent);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}

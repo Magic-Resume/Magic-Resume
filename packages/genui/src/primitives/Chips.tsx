@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@magic-resume/utils';
 import { DURATION, EASE_ENTER } from '../motion';
@@ -20,7 +20,7 @@ function SelectionRing({ show }: { show: boolean }) {
   return (
     <motion.span
       aria-hidden
-      className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-ink-sky/50"
+      className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-mr-accent/50"
       initial={reduce ? false : { scaleX: 0 }}
       animate={{ scaleX: 1 }}
       transition={{ duration: reduce ? 0 : DURATION.micro, ease: EASE_ENTER }}

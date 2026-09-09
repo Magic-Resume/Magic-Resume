@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 type AiFabProps = {
   onClick: () => void;
   isRunning?: boolean;
@@ -71,7 +72,7 @@ export function AiFab({ onClick, isRunning = false }: AiFabProps) {
       className="absolute bottom-6 right-6 z-20"
       initial={{ opacity: 0, scale: 0.92, y: 6 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.42 }}
+      transition={{ duration: 0.45, ease: EASE_ENTER, delay: 0.42 }}
     >
       <motion.button
         type="button"

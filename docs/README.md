@@ -37,6 +37,9 @@ related: [CONVENTIONS.md]
 | [Magic-Resume Analytics Frontend Boundary](specs/analytics-sdk/design.md) | Draft | 2026-07-04 | Frontend-only analytics event catalog, privacy rules, and SDK integration boundary for Magic-Resume. |
 | [Magic-Resume Frontend Backend Integration](specs/frontend-v2-backend-integration/design.md) | Draft | 2026-07-04 | Frontend-only integration boundary for API routing, auth forwarding, streaming events, and response normalization. |
 | [Stage-First Editor Relayout](specs/editor-relayout/design.md) | Draft | 2026-07-03 | Design brief for restructuring the editor around a stage-first workflow. |
+| [CodeBlock 重构](specs/code-block/design-brief.md) | Draft | 2026-09-04 | 把 genui 的 CodeBlock 拆成 snippet / document 两档形态，高亮改用 lowlight，并按「九成内容是中文句子而非代码」重定行号、折行与字体。 |
+| [搜索过程与引用来源](specs/search-and-citations/design-brief.md) | Draft | 2026-09-04 | AI Lab 的搜索过程行、行内引用浮层、消息底部来源栏与右舷来源面板四个面的重设计，外加行内代码 / 引用块的排版校正。 |
+| [GenUI 交互层收敛](specs/genui-ui/design.md) | Draft | 2026-08-12 | Agent 交互组件的数据驱动迁移、设计令牌接入，以及对话、任务、审批和输入交互的统一。 |
 
 ## Reference
 

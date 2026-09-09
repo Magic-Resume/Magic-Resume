@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Resume } from '@/types/frontend/resume';
-import { DownloadIcon } from "@radix-ui/react-icons";
-import { Bot, History, Share2, MessageCircle, ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { DownloadIcon } from '@magic-resume/icons';
+import { Bot, History, Share2, MessageCircle, ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useState } from "react";
 import { useRouter, useParams } from "next/navigation";

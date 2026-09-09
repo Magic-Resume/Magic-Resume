@@ -11,5 +11,7 @@
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  // Archived reference sources are not part of the production package.
+  "exclude": ["src/components/_vendor/**"]
 }

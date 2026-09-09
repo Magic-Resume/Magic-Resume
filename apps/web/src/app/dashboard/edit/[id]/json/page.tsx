@@ -1,7 +1,8 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useResumeStore, getSanitizedResume } from '@/store/useResumeStore';
+import { getSanitizedResume } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import JsonModal from '@/app/dashboard/edit/_components/modals/JsonModal';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -10,7 +11,7 @@ import { useEffect } from 'react';
 export default function JsonModalPage() {
   const router = useRouter();
   const params = useParams();
-  const { activeResume, loadResumeForEdit } = useResumeStore();
+  const { activeResume, loadResumeForEdit } = useResumeDocumentStore();
   const { t } = useTranslation();
   const id = params.id as string;
 

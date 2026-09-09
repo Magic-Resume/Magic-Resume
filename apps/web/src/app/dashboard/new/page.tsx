@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import NewResumeDialog from '../_components/NewResumeDialog';
 
@@ -10,7 +10,7 @@ export default function NewResumePage() {
   const router = useRouter();
   const [newName, setNewName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const { createResume } = useResumeStore();
+  const { createResume } = useResumeDocumentStore();
 
   // On hard navigation, "closing" the dialog should typically go back to dashboard
   const handleOpenChange = (open: boolean) => {

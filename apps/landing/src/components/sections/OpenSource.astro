@@ -1,86 +1,42 @@
 ---
 import type { Copy } from '@/i18n/ui';
 import { GITHUB } from '@/consts';
-import { formatStars } from '@/lib/github';
 import Icon from '@/components/Icon.astro';
-
-interface Props {
-  copy: Copy;
-  stars: number | null;
-}
+interface Props { copy: Copy; stars: number | null; }
 const { copy, stars } = Astro.props;
-const o = copy.openSource;
+const t = copy.landing.trust;
+const icons = ['shield', 'github', 'zap', 'braces'] as const;
+// 第二枚标记拿真实 star 数;取不到就退回「公开开发」,不编一个数字出来。
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const marks = t.marks.map((item, i) =>
+  i === 1 && stars !== null ? { ...item, mark: compact.format(stars), suffix: t.starsSuffix } : item,
+);
 ---
-
-<section id="open-source" class="relative border-t border-hair py-24 md:py-32">
-  <div class="mx-auto max-w-[1120px] px-5 md:px-6">
-    <div class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
-      <div class="reveal max-w-xl">
-        <p class="eyebrow">{o.eyebrow}</p>
-        <h2 class="type-heading mt-4 text-ink">
-          {o.title}
-        </h2>
-        <p class="type-body mt-4 text-muted">{o.desc}</p>
-
-        <div class="mt-8">
-          <a
-            href={GITHUB.repo}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 rounded-md border border-hair px-5 py-3 text-[14px] text-ink-soft transition-colors hover:border-hairline-strong hover:text-ink"
-          >
-            <Icon name="star" size={16} class="text-muted" />
-            {o.starCta}
-            {
-              stars !== null && (
-                <span class="ml-1 rounded-md bg-white/[0.05] px-2 py-0.5 font-mono text-[12px] tabular-nums text-muted">
-                  {formatStars(stars)}
-                </span>
-              )
-            }
-          </a>
-        </div>
+<section id="open-source" class="be-section" data-beui="trust-compliance-marks">
+  <div class="be-container">
+    <div class="be-marks-head reveal">
+      <div>
+        <span class="be-marks-eyebrow">{t.eyebrow}</span>
+        <h2>{t.title.split('\n').map((line) => <span>{line}</span>)}</h2>
+        <p>{t.subtitle}</p>
       </div>
-
-      <div class="reveal" style="--reveal-delay:1">
-        {
-          stars !== null && (
-            <div class="flex items-baseline gap-2">
-              <span class="text-[clamp(3rem,7vw,4rem)] font-w510 tabular-nums leading-none tracking-[-0.022em] text-ink">
-                {formatStars(stars)}
-              </span>
-              <span class="text-[13px] text-muted">{o.starsLabel}</span>
-            </div>
-          )
-        }
-      </div>
+      <a class="be-marks-cta" href={GITHUB.repo} target="_blank" rel="noopener noreferrer">
+        <Icon name="github" size={16}/>{t.source}<Icon name="arrow-right" size={16}/>
+      </a>
     </div>
 
-    <div class="reveal mt-14 border-t border-hair pt-8" style="--reveal-delay:1">
-      <p class="mb-4 text-[13px] text-muted">{o.contributorsLabel}</p>
-      {/*
-        The contributor strip is the only third-party asset in the render path.
-        Its intrinsic width depends on how many people have contributed, so the
-        wrapper reserves the height: if contrib.rocks is slow or down, the
-        section keeps its shape instead of collapsing and shoving the footer up.
-        `onerror` hides a broken image rather than leaving the alt-text box.
-      */}
-      <a
-        href={GITHUB.contributors}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex h-9 items-center transition-opacity hover:opacity-80 md:h-10"
-      >
-        <img
-          src={GITHUB.contribImage}
-          alt={o.contributorsLabel}
-          loading="lazy"
-          decoding="async"
-          height="40"
-          class="h-9 w-auto md:h-10"
-          onerror="this.style.display='none'"
-        />
-      </a>
+    <div class="be-marks-band reveal">
+      {marks.map((item, i) => (
+        <article>
+          <Icon name={icons[i]} size={20}/>
+          <div class="be-mark-line"><h3>{item.mark}</h3><p>{item.suffix}</p></div>
+          <p class="be-mark-desc">{item.desc}</p>
+        </article>
+      ))}
+    </div>
+
+    <div class="be-marks-checks reveal">
+      {t.checks.map((check) => <span><Icon name="check" size={16}/>{check}</span>)}
     </div>
   </div>
 </section>

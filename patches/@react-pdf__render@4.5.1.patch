@@ -1,0 +1,121 @@
+diff --git a/lib/index.js b/lib/index.js
+index 028cf374f1a58c341eaee8ade5e5e2143254a723..2ff01fb7c62e161065e61d82576cb487f8ee4978 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -114,6 +114,61 @@ const number = (n) => {
+     }
+     throw new Error(`unsupported number: ${n}`);
+ };
++/**
++ * Synthetic ("faux") bold, the way browsers do it.
++ *
++ * react-pdf resolves `fontWeight` to the closest registered face and stops
++ * there: ask for 700 from a family that only ships a regular file and you get
++ * the regular glyphs, silently — `<strong>` renders identical to body text.
++ * Several CJK fonts (fangsong / kai / brush styles) have exactly one upstream
++ * weight, so this is not an edge case for Chinese documents.
++ *
++ * Blink's rule is "the caller wants bold AND the face we picked isn't bold" →
++ * embolden by stroking the outline. PDF has that natively: text rendering mode
++ * 2 (`2 Tr`) fills *and* strokes each glyph, so a stroke of width w grows every
++ * stem by w. That is the same construction, expressed in the page's content
++ * stream, and it costs zero extra bytes — no second font file to ship.
++ *
++ * The decision reads the face's own `usWeightClass`, not the @font-face-style
++ * declaration, because that is what Blink compares against. Keep the font files
++ * honest about their weight (see scripts/build-cjk-font.py) and the screen and
++ * the export synthesise on exactly the same set of fonts.
++ */
++const FAUX_BOLD_MIN_WEIGHT = 600;
++// 1.5% of the font size — calibrated, not guessed. The stroke widens every stem
++// on both sides, so it lands roughly twice as heavy as intuition suggests:
++// at 3% these CJK faces gained 42–65% ink where Chromium's own synthetic bold
++// gains 21–29% (measured on the same strings at 11px, normalised against a
++// real-bold control so the two rasterisers are comparable). 1.5% puts all four
++// within a few points of the screen. Skia's fake-bold constant (~1/24) is for a
++// different construction and is not a useful reference here.
++const FAUX_BOLD_STROKE_RATIO = 0.015;
++const numericFontWeight = (value) => {
++    if (typeof value === 'number')
++        return value;
++    if (value === 'bold')
++        return 700;
++    if (value === 'normal' || value == null)
++        return 400;
++    const parsed = Number(value);
++    return Number.isFinite(parsed) ? parsed : 400;
++};
++const fauxBoldStrokeWidth = (run) => {
++    const attributes = run?.attributes;
++    const font = attributes?.font?.[0];
++    const fontSize = attributes?.fontSize;
++    if (!font || !fontSize)
++        return 0;
++    if (numericFontWeight(attributes.fontWeight) < FAUX_BOLD_MIN_WEIGHT)
++        return 0;
++    const weightClass = font['OS/2']?.usWeightClass;
++    // Standard PDF fonts carry no OS/2 table, and their bold is a separate
++    // family (Helvetica-Bold) that resolution already picked — stroking those
++    // would double-embolden.
++    if (typeof weightClass !== 'number' || weightClass >= FAUX_BOLD_MIN_WEIGHT)
++        return 0;
++    return fontSize * FAUX_BOLD_STROKE_RATIO;
++};
+ const _renderGlyphs = (ctx, encoded, positions, x, y) => {
+     const commands = [];
+     const scale = ctx._fontSize / 1000;
+@@ -134,6 +189,13 @@ const _renderGlyphs = (ctx, encoded, positions, x, y) => {
+     ctx.addContent(`1 0 0 1 ${number(x)} ${number(y)} Tm`);
+     // font and font size
+     ctx.addContent(`/${ctx._font.id} ${number(ctx._fontSize)} Tf`);
++    // Synthetic bold: fill + stroke the glyph outlines. Both operators are part
++    // of the graphics state, so the surrounding save/restore scopes them to this
++    // run and the next one starts from `0 Tr` again.
++    if (ctx._fauxBoldStroke) {
++        ctx.addContent(`${number(ctx._fauxBoldStroke)} w`);
++        ctx.addContent('2 Tr');
++    }
+     // Adds a segment of text to the TJ command buffer
+     const addSegment = (cur) => {
+         if (last < cur) {
+@@ -213,12 +275,20 @@ const renderRun$1 = (ctx, run) => {
+     if (font) {
+         ctx.font(font.type === 'STANDARD' ? font.fullName : font, fontSize);
+     }
++    // Same synthetic bold as the text renderer below, for SVG <Text>.
++    const fauxBoldStroke = fauxBoldStrokeWidth(run);
++    ctx._fauxBoldStroke = fauxBoldStroke;
++    if (fauxBoldStroke && color) {
++        ctx.strokeColor(color);
++        ctx.strokeOpacity(opacity);
++    }
+     try {
+         renderGlyphs(ctx, run.glyphs, run.positions, 0, 0);
+     }
+     catch (error) {
+         console.log(error);
+     }
++    ctx._fauxBoldStroke = 0;
+     ctx.translate(runAdvanceWidth, 0);
+ };
+ const renderSpan = (ctx, line, textAnchor, dominantBaseline) => {
+@@ -1303,12 +1373,19 @@ const renderRun = (ctx, run) => {
+     const glyphs = [...run.glyphs];
+     renderAttachments(ctx, run, glyphs);
+     ctx.font(font.type === 'STANDARD' ? font.fullName : font, fontSize);
++    const fauxBoldStroke = fauxBoldStrokeWidth(run);
++    ctx._fauxBoldStroke = fauxBoldStroke;
++    if (fauxBoldStroke) {
++        ctx.strokeColor(color.value);
++        ctx.strokeOpacity(opacity);
++    }
+     try {
+         renderGlyphs(ctx, glyphs, run.positions, 0, 0);
+     }
+     catch (error) {
+         console.log(error);
+     }
++    ctx._fauxBoldStroke = 0;
+     ctx.translate(xAdvance, 0);
+ };
+ const renderBackground$1 = (ctx, rect, backgroundColor) => {

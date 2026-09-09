@@ -1,0 +1,59 @@
+---
+import { render } from 'astro:content';
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { isLocale, type Locale } from '@/i18n/ui';
+import { articleAlternates, articleHref, articleSlug, getArticles } from '@/lib/articles';
+
+export async function getStaticPaths() {
+  const entries = await getArticles();
+  return entries.map((entry) => ({
+    params: { locale: entry.data.locale, slug: articleSlug(entry) },
+    props: { entry },
+  }));
+}
+
+const entry = Astro.props.entry;
+const localeParam = Astro.params.locale;
+if (!entry || !isLocale(localeParam)) return Astro.redirect('/en/blog');
+const locale = localeParam as Locale;
+const { Content } = await render(entry);
+const canonical = entry.data.canonical ?? new URL(articleHref(locale, entry), Astro.site).href;
+const alternates = articleAlternates(entry);
+---
+
+<ContentLayout
+  locale={locale}
+  title={`${entry.data.title} | Magic Resume`}
+  description={entry.data.description}
+  canonical={canonical}
+  alternates={alternates}
+  type="article"
+  published={entry.data.datePublished}
+  modified={entry.data.dateModified}
+  author={entry.data.author}
+>
+  <article class="mx-auto max-w-[760px] px-5 py-14 md:px-6 md:py-24">
+    <a href={`/${locale}/blog`} class="text-mr-caption text-muted hover:text-ink">← {locale === 'zh' ? '返回文章列表' : 'Back to all articles'}</a>
+    <header class="mt-8 border-b border-hair pb-8">
+      <p class="eyebrow">{entry.data.primaryIntent}</p>
+      <h1 class="type-heading-lg mt-4 text-ink">{entry.data.title}</h1>
+      <p class="type-body-lg mt-5 text-muted">{entry.data.description}</p>
+      <div class="mt-6 flex flex-wrap items-center gap-3 text-mr-overline text-muted">
+        <span>{entry.data.author}</span>
+        <span aria-hidden="true">·</span>
+        <time datetime={entry.data.datePublished.toISOString()}>{entry.data.datePublished.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US')}</time>
+      </div>
+    </header>
+    <div class="content-prose mt-10 max-w-none text-[16px] leading-8 text-ink-soft">
+      <Content />
+    </div>
+    {entry.data.sources.length > 0 && (
+      <aside class="mt-12 rounded-xl border border-hair bg-surface/40 p-5">
+        <h2 class="text-mr-body font-w510 text-ink">{locale === 'zh' ? '来源与延伸阅读' : 'Sources and further reading'}</h2>
+        <ul class="mt-3 space-y-2 text-mr-caption text-muted">
+          {entry.data.sources.map((source) => <li><a href={source.url} target="_blank" rel="noopener noreferrer" class="underline underline-offset-4 hover:text-ink">{source.title}</a></li>)}
+        </ul>
+      </aside>
+    )}
+  </article>
+</ContentLayout>

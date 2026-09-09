@@ -1,0 +1,28 @@
+{
+  "$comment": [
+    "后加的十档 CJK 字体的源清单。源文件本身**不进仓库**——那是构建输入,不是运行时资产,",
+    "十款全量字体约 400MB,提交进公开仓的 git 历史就再也删不掉了。仓库里只留子集产物",
+    "(public/fonts/*.woff2)。要重新生成:按下表下载到任意目录,再对每个文件跑",
+    "  python3 scripts/build-cjk-font.py <源文件> <输出名.woff2>",
+    "授权全部是 OFL-1.1 或 MIT,允许再分发与子集化(衍生)。",
+    "已排除:霞鹜新晰黑 / 霞鹜致宋 —— 它们是 IPA Font License,要求衍生字体改名,与子集化流程冲突。"
+  ],
+  "fonts": [
+    { "pack": "glow-sans",    "name": "未来荧黑 Glow Sans SC",       "license": "MIT",     "repo": "welai/glow-sans",           "version": "v0.93",   "asset": "GlowSansSC-Normal-v0.93.zip", "files": { "GlowSansSC-Normal-Regular.otf": "GlowSansSC-Regular.woff2", "GlowSansSC-Normal-Bold.otf": "GlowSansSC-Bold.woff2" } },
+    { "pack": "chiron-hei",   "name": "昭源黑体 Chiron Hei HK",      "license": "OFL-1.1", "repo": "chiron-fonts/chiron-hei-hk", "version": "v2.609",  "asset": "STATIC_OTF/ (仓库内,非 release)", "files": { "ChironHeiHK-R.otf": "ChironHeiHK-Regular.woff2", "ChironHeiHK-B.otf": "ChironHeiHK-Bold.woff2" } },
+    { "pack": "chiron-sung",  "name": "昭源宋体 Chiron Sung HK",     "license": "OFL-1.1", "repo": "chiron-fonts/chiron-sung-hk","version": "v1.024",  "asset": "STATIC_OTF/ (仓库内,非 release)", "files": { "ChironSungHK-R.otf": "ChironSungHK-Regular.woff2", "ChironSungHK-B.otf": "ChironSungHK-Bold.woff2" } },
+    { "pack": "lxgw-bright",  "name": "霞鹜漫黑 LXGW Bright GB",     "license": "OFL-1.1", "repo": "lxgw/LxgwBright",           "version": "v5.528",  "asset": "LXGWBrightGB.7z", "files": { "LXGWBrightGB-Regular.ttf": "LXGWBrightGB-Regular.woff2", "LXGWBrightGB-Medium.ttf": "LXGWBrightGB-Medium.woff2" } },
+    { "pack": "sarasa",       "name": "更纱黑体 Sarasa Gothic SC",   "license": "OFL-1.1", "repo": "be5invis/Sarasa-Gothic",    "version": "v1.0.41", "asset": "SarasaGothicSC-TTF-Unhinted-1.0.41.7z", "files": { "SarasaGothicSC-Regular.ttf": "SarasaGothicSC-Regular.woff2", "SarasaGothicSC-Bold.ttf": "SarasaGothicSC-Bold.woff2" } },
+    { "pack": "zhuque",       "name": "朱雀仿宋 Zhuque Fangsong",    "license": "OFL-1.1", "repo": "TrionesType/zhuque",        "version": "v0.212",  "asset": "ZhuqueFangsong-v0.212.zip", "files": { "ZhuqueFangsong-Regular.ttf": "ZhuqueFangsong-Regular.woff2" } },
+    { "pack": "lxgw-zhenkai", "name": "霞鹜臻楷 LXGW ZhenKai GB",    "license": "OFL-1.1", "repo": "lxgw/LxgwZhenKai",          "version": "v0.825",  "asset": "LXGWZhenKaiGB-Regular.ttf", "files": { "LXGWZhenKaiGB-Regular.ttf": "LXGWZhenKaiGB-Regular.woff2" } },
+    { "pack": "qiushui",      "name": "秋水书体 Qiushui Shotai",     "license": "OFL-1.1", "repo": "NoHeartPen/QiushuiShotai",  "version": "v1.511",  "asset": "QiushuiShotai.ttf", "files": { "QiushuiShotai.ttf": "QiushuiShotai-Regular.woff2" } },
+    { "pack": "lxgw-marker",  "name": "霞鹜标记体 LXGW Marker Gothic","license": "OFL-1.1", "repo": "lxgw/LxgwMarkerGothic",     "version": "v1.003",  "asset": "LxgwMarkerGothic-v1.003.zip", "files": { "LXGWMarkerGothic-Regular.ttf": "LXGWMarkerGothic-Regular.woff2" } },
+    { "pack": "maple-mono",   "name": "Maple Mono CN",              "license": "OFL-1.1", "repo": "subframe7536/maple-font",   "version": "v7.9",    "asset": "MapleMonoNormalNL-CN-unhinted.zip", "files": { "MapleMonoNormalNL-CN-Regular.ttf": "MapleMonoCN-Regular.woff2", "MapleMonoNormalNL-CN-Bold.ttf": "MapleMonoCN-Bold.woff2" } }
+  ],
+  "coverage": {
+    "$comment": "对 scripts/charset.txt(8420 字)实测的缺字数。缺得多的那两款在 font-family.ts 里配了 gapFallback。",
+    "glow-sans": 1, "chiron-hei": 1, "chiron-sung": 1, "lxgw-bright": 0,
+    "sarasa": 1, "zhuque": 108, "lxgw-zhenkai": 0, "qiushui": 0,
+    "lxgw-marker": 0, "maple-mono": 281
+  }
+}

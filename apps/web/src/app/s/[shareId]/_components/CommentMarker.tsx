@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Plus } from 'lucide-react';
+import { Plus } from '@magic-resume/icons';
 
 interface CommentMarkerProps {
     x: number; // Percentage 0-100

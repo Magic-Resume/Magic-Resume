@@ -12,6 +12,10 @@ type AIModalProps = {
   onApplySectionChanges: (newSections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
   onApplyFullResume: (newResume: Resume) => void;
+  onApplyWorkspaceResolution: (
+    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder'>,
+    revision: number,
+  ) => void;
   templateId: string;
   isAiJobRunning: boolean;
   setIsAiJobRunning: (isRunning: boolean) => void;
@@ -24,6 +28,7 @@ export default function AIModal({
   onApplySectionChanges,
   onApplyInfo,
   onApplyFullResume,
+  onApplyWorkspaceResolution,
   templateId,
   isAiJobRunning,
   setIsAiJobRunning,
@@ -66,6 +71,7 @@ export default function AIModal({
                 onApplySections={onApplySectionChanges}
                 onApplyInfo={onApplyInfo}
                 onApplyFullResume={onApplyFullResume}
+                onApplyWorkspaceResolution={onApplyWorkspaceResolution}
                 setIsAiJobRunning={setIsAiJobRunning}
               />
             </motion.div>

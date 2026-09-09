@@ -1,0 +1,19 @@
+diff --git a/lib/index.js b/lib/index.js
+index b7ea5e30fddb9bdef0034c00f28bbd4f0dee584a..f1eefd6b20d32471ff4ad5f6c2cc36174039c7ad 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -1697,6 +1697,14 @@ const getFragments = (fontStore, instance, parentLink = null, level = 0) => {
+     const backgroundColor = level === 0 ? null : instance.style.backgroundColor;
+     const attributes = {
+         font,
++        // The requested weight is dropped here upstream: only the *resolved*
++        // face travels to the renderer, so it cannot tell "the user asked for
++        // bold and this family has none" from "this family is regular by
++        // design". Browsers use exactly that comparison to decide on synthetic
++        // bold; carrying the number through lets the render package do the
++        // same for CJK fonts that ship a single weight (see the sibling patch
++        // in @react-pdf/render).
++        fontWeight,
+         color,
+         opacity,
+         fontSize,

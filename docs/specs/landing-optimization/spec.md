@@ -303,21 +303,9 @@ P0-a 单独先发，是因为 301 缓存与埋点缺失这两件事**越晚做�
 
 已在 `Landing.astro` 统一归一到无尾斜杠形式。现在 canonical / hreflang / sitemap / JSON-LD 四处地址完全一致——**这四处任何一处改动都必须同改其余三处**，建议作为回归检查项固化。
 
-### 11.2 ⚠ `apps/web/src/components/shared/StructuredData.tsx` 含编造数据（未处理，需决策）
+### 11.2 web 端旧 JSON-LD 实现已移除
 
-实施 P0-c 时为对齐既有实现读了这个文件，发现主应用输出的 JSON-LD 里有多处不实内容。**本轮未改动它**——它属 `apps/web`，超出本方案范围，且涉及对外声明，应由你决定。
-
-| 位置 | 内容 | 问题 |
-|---|---|---|
-| `aggregateRating` | `ratingValue: "4.8"`、`reviewCount: "500"` | **无对应评价体系,数字是编造的。** Google 结构化数据垃圾政策明确禁止虚构评分,可触发人工处罚并使全站富媒体结果失效 |
-| `sameAs` | `github.com/magic-resume`、`twitter.com/MagicResume`、`linkedin.com/company/magic-resume` | 真实仓库是 `github.com/LinMoQC/Magic-Resume`,这几个地址存疑 |
-| `offers.price` | `"0"` + `"完全免费使用"` | 与现有 Free/Pro 双档订阅矛盾 |
-| `offers.priceValidUntil` | `"2025-12-31"` | 已过期 |
-| FAQ 答案 | `"准确率达到90%以上"`、`"完全免费"`、`"所有简历数据采用本地存储,我们不会收集或存储您的个人信息"` | 第一条无依据;后两条与付费套餐、与默认开启的云同步矛盾 |
-
-**风险排序**:`aggregateRating` 最高(政策违规 + 失实),其次是隐私声明与实际云同步行为不符(可能构成对用户的不实陈述),再次是过期与失效链接。
-
-**建议**:单独开一个 issue 处理,最小动作是删掉 `aggregateRating` 与过期的 `priceValidUntil`、修正 `sameAs`、把隐私与价格表述改成与现状一致。landing 侧的 `Seo.astro` 已按此原则实现(不含评分、不含价格),可作参照。
+旧的 web 端结构化数据模块没有运行时调用，且包含会漂移的价格、评分和隐私声明。它已从活动源码删除；当前公开 JSON-LD 由 landing 的 `Seo.astro` 统一输出。
 
 ### 11.3 favicon 未达到原定 <5 KB（据实调整为 <20 KB）
 

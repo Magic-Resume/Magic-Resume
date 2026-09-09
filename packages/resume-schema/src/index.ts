@@ -24,21 +24,101 @@ export const templateIds = [
 
 export const templateSchema = z.enum(templateIds);
 
+/** Shared persisted template customization contract used by web and PDF. */
+export type CustomTemplateConfig = {
+  designTokens?: {
+    colors?: Partial<{
+      primary: string;
+      secondary: string;
+      text: string;
+      textSecondary: string;
+      background: string;
+      border: string;
+      accent: string;
+      sidebar: string;
+    }>;
+    typography?: {
+      fontFamily?: {
+        primary?: string;
+        secondary?: string;
+        mono?: string;
+      };
+      fontSize?: Partial<{
+        xs: string;
+        sm: string;
+        md: string;
+        lg: string;
+        xl: string;
+        xxl: string;
+      }>;
+      fontWeight?: Partial<{
+        normal: number;
+        medium: number;
+        bold: number;
+      }>;
+      lineHeight?: number;
+      letterSpacing?: string;
+    };
+    spacing?: Partial<{
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+    }>;
+    borderRadius?: Partial<{
+      none: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+    }>;
+  };
+  layout?: {
+    type?: 'single-column' | 'two-column' | 'sidebar' | 'grid';
+    pageSize?: 'A4' | 'Letter';
+    containerWidth?: string;
+    containerHeight?: string;
+    padding?: string;
+    gap?: string;
+    twoColumn?: {
+      leftWidth?: string;
+      rightWidth?: string;
+      gap?: string;
+    };
+    sidebar?: {
+      position?: 'left' | 'right';
+      width?: string;
+      gap?: string;
+    };
+    showTitleDivider?: boolean;
+    showTitleIcon?: boolean;
+  };
+  header?: {
+    avatarPosition?: 'left' | 'right';
+    avatarWidth?: number;
+    avatarHeight?: number;
+    avatarRounded?: boolean;
+    contactStyle?: 'icon' | 'label';
+  };
+};
+
 export const customInfoFieldSchema = z.object({
   id: z.string(),
   name: z.string(),
   value: z.string(),
+  // Persist the registry name, never a React component. The renderer still
+  // validates it against its own safe icon registry before drawing.
+  icon: z.string().optional(),
 });
 
 // Reject the URL schemes that make a rendered <a href> executable (defense in
 // depth behind the render-layer safeHref guard). Scheme-less domains and empty
 // strings stay valid so existing resumes and the default resume still parse.
 const UNSAFE_URL_SCHEME = /^\s*(?:javascript|data|vbscript):/i;
-const safeUrlString = z
-  .string()
-  .refine((v) => !UNSAFE_URL_SCHEME.test(v), {
-    message: 'URL must not use a javascript:, data:, or vbscript: scheme',
-  });
+const safeUrlString = z.string().refine((v) => !UNSAFE_URL_SCHEME.test(v), {
+  message: 'URL must not use a javascript:, data:, or vbscript: scheme',
+});
 
 export const infoSchema = z.object({
   fullName: z.string(),
@@ -80,6 +160,18 @@ export const resumeSchema = z.object({
   sectionOrder: z.array(sectionOrderItemSchema),
   template: templateSchema.catch('classic'),
   customTemplate: z.record(z.unknown()).optional(),
+  /**
+   * 整棵模板树。有它就**完全接管渲染**——不再走 `template` 指向的注册模板。
+   *
+   * 存在简历上而不是建一张模板表，是有意的：第一波要验证的是「复刻出来的版式能用」，
+   * 不是「模板能分享」。分享与画廊是独立的产品决定，留到以后。
+   *
+   * 形状不在这里约束（`z.unknown()`）：真正的校验在
+   * `@magic-resume/resume-templates` 的 `validateTemplate` + JSON Schema 里，
+   * 在这里再写一份 Zod 版就是第二份会漂的定义。渲染器拿到坏树会降级成不渲染，
+   * 不会崩——所以这里放行、那里把关是安全的分工。
+   */
+  templateOverride: z.unknown().optional(),
   themeColor: z.string(),
   typography: z.string(),
   isPublic: z.boolean().optional(),
@@ -111,6 +203,18 @@ export const updateTemplateInputSchema = resumeUpdateBaseSchema.extend({
   themeColor: z.string().optional(),
   typography: z.string().optional(),
   customTemplate: z.record(z.unknown()).optional(),
+  /**
+   * 整棵模板树。有它就**完全接管渲染**——不再走 `template` 指向的注册模板。
+   *
+   * 存在简历上而不是建一张模板表，是有意的：第一波要验证的是「复刻出来的版式能用」，
+   * 不是「模板能分享」。分享与画廊是独立的产品决定，留到以后。
+   *
+   * 形状不在这里约束（`z.unknown()`）：真正的校验在
+   * `@magic-resume/resume-templates` 的 `validateTemplate` + JSON Schema 里，
+   * 在这里再写一份 Zod 版就是第二份会漂的定义。渲染器拿到坏树会降级成不渲染，
+   * 不会崩——所以这里放行、那里把关是安全的分工。
+   */
+  templateOverride: z.unknown().optional(),
 });
 
 const defaultSectionKeys = [
@@ -168,7 +272,8 @@ export const sampleResume = {
         position: 'Frontend Engineer',
         location: 'Remote',
         date: '2023 - Present',
-        summary: '<p>Built polished resume editing workflows with TypeScript, React, and structured AI assistance.</p>',
+        summary:
+          '<p>Built polished resume editing workflows with TypeScript, React, and structured AI assistance.</p>',
       },
     ],
     projects: [
@@ -176,7 +281,8 @@ export const sampleResume = {
         id: 'sample-project-1',
         visible: true,
         name: 'Magic Resume MCP',
-        description: '<p>Connected resume data to AI coding tools through schema-aware JSON Patch operations.</p>',
+        description:
+          '<p>Connected resume data to AI coding tools through schema-aware JSON Patch operations.</p>',
       },
     ],
     skills: [
@@ -196,7 +302,15 @@ export const resumeJsonSchema = {
   title: 'Magic Resume',
   type: 'object',
   additionalProperties: true,
-  required: ['name', 'info', 'sections', 'sectionOrder', 'template', 'themeColor', 'typography'],
+  required: [
+    'name',
+    'info',
+    'sections',
+    'sectionOrder',
+    'template',
+    'themeColor',
+    'typography',
+  ],
   properties: {
     id: { type: 'string' },
     userId: { type: 'string' },
@@ -204,7 +318,15 @@ export const resumeJsonSchema = {
     updatedAt: { type: 'number' },
     info: {
       type: 'object',
-      required: ['fullName', 'headline', 'email', 'phoneNumber', 'address', 'website', 'avatar'],
+      required: [
+        'fullName',
+        'headline',
+        'email',
+        'phoneNumber',
+        'address',
+        'website',
+        'avatar',
+      ],
       properties: {
         fullName: { type: 'string' },
         headline: { type: 'string' },
@@ -266,11 +388,44 @@ export const resumeJsonSchema = {
 export type TemplateId = z.infer<typeof templateSchema>;
 export type CustomInfoField = z.infer<typeof customInfoFieldSchema>;
 export type Info = z.infer<typeof infoSchema>;
-export type SectionItem = z.infer<typeof sectionItemSchema>;
-export type SectionOrderItem = z.infer<typeof sectionOrderItemSchema>;
-export type Resume = z.infer<typeof resumeSchema>;
+
+/** Open-ended section fields are intentionally string/boolean-like for form
+ * rendering; runtime validation remains the Zod schema above. */
+export type SectionItem = {
+  id: string;
+  visible: boolean;
+  customFields?: CustomInfoField[];
+  [key: string]: string | boolean | CustomInfoField[] | undefined;
+};
+export type Section = Record<string, SectionItem[]>;
+export type SectionOrderItem = {
+  key: string;
+  label: string;
+  icon?: string;
+};
+export type Resume = {
+  id?: string;
+  userId?: string;
+  name: string;
+  updatedAt?: number;
+  info: Info;
+  sections: Section;
+  sectionOrder: SectionOrderItem[];
+  /** Runtime validation uses templateSchema; string keeps legacy custom ids
+   * type-compatible at the app boundary. */
+  template: string;
+  customTemplate?: CustomTemplateConfig;
+  templateOverride?: unknown;
+  themeColor: string;
+  typography: string;
+  isPublic?: boolean;
+  shareId?: string;
+  shareRole?: 'VIEWER' | 'COMMENTER' | 'EDITOR';
+};
 export type ResumeUpdateBase = z.infer<typeof resumeUpdateBaseSchema>;
 export type UpdateInfoInput = z.infer<typeof updateInfoInputSchema>;
-export type UpdateSectionItemsInput = z.infer<typeof updateSectionItemsInputSchema>;
+export type UpdateSectionItemsInput = z.infer<
+  typeof updateSectionItemsInputSchema
+>;
 export type ReorderSectionsInput = z.infer<typeof reorderSectionsInputSchema>;
 export type UpdateTemplateInput = z.infer<typeof updateTemplateInputSchema>;

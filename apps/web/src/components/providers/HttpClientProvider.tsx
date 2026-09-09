@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 import { configureHttpClient } from '@/lib/api/httpClient';
 import { useAppAuth } from '@/lib/auth';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
+import { isCloudMode } from '@/lib/config/app';
+import { startConversationSync } from '@/lib/api/conversationSync';
+import { migrateLocalConversations } from '@/lib/api/conversationMigration';
 
 export function HttpClientProvider({ children }: { children: React.ReactNode }) {
   const { getToken, userId, isLoaded } = useAppAuth();
@@ -29,6 +32,18 @@ export function HttpClientProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!isLoaded) return;
     appLifecycle.identifyUser(userId);
+  }, [isLoaded, userId]);
+
+  // 对话的写队列与存量迁移。
+  //
+  // 要等 `userId` 到位再起：两者都打需要鉴权的接口，signed-out 时跑只会白白失败一轮
+  // ——而迁移失败就不会标记完成，于是每次加载都重扫一遍本地库。
+  // self-hosted 没有这套后端，整段不跑。
+  useEffect(() => {
+    if (!isCloudMode || !isLoaded || !userId) return;
+    const stop = startConversationSync();
+    void migrateLocalConversations();
+    return stop;
   }, [isLoaded, userId]);
 
   return <>{children}</>;

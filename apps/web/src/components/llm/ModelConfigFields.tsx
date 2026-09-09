@@ -3,18 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RiEyeLine, RiEyeOffLine } from '@remixicon/react';
 import {
   ChevronDown,
   ExternalLink,
-  Eye,
-  EyeOff,
   Loader2,
   PlugZap,
   CheckCircle2,
   XCircle,
   Image as ImageGlyph,
-} from 'lucide-react';
-import { LockClosedIcon } from '@radix-ui/react-icons';
+} from '@magic-resume/icons';
+import { LockClosedIcon } from '@magic-resume/icons';
 import { useSettingStore } from '@/store/useSettingStore';
 import {
   MODEL_PROVIDERS,
@@ -25,6 +24,7 @@ import {
 import { ProviderMark } from '@/components/llm/ProviderMark';
 import { classifyLlmTestError } from '@/lib/utils/llmTestError';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/product-button';
 import {
   Select,
   SelectContent,
@@ -121,37 +121,37 @@ export function ModelConfigFields() {
   };
 
   const inputClass =
-    'h-11 rounded-xl border-white/[0.08] bg-sunk text-neutral-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-all placeholder:text-neutral-700 focus-visible:ring-sky-500/30 focus-visible:ring-offset-0';
+    'h-9 rounded-2lg border-border-button-default bg-background-primary-default text-text-primary shadow-xs transition-all placeholder:text-text-placeholder focus-visible:ring-border-focus-ring focus-visible:ring-offset-0';
   const selectTriggerClass =
-    'h-11 w-full rounded-xl border-white/[0.08] bg-sunk text-neutral-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-all focus:ring-sky-500/30';
+    'h-9 w-full rounded-2lg border-border-button-default bg-background-primary-default text-text-primary shadow-xs transition-all focus:ring-border-focus-ring';
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="rounded-2xl bg-background-secondary-default p-3">
       {/* Provider + Model on one row — both are short selects, so this fills the
           width and keeps the form compact instead of a sparse vertical stack. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-[13px] font-medium text-neutral-300">
+          <label className="text-body-2-medium text-text-primary">
             {t('settings.llm.providerLabel')}
           </label>
           <Select value={provider} onValueChange={setProvider}>
             <SelectTrigger className={selectTriggerClass}>
               <SelectValue placeholder={t('settings.llm.providerPlaceholder')} />
             </SelectTrigger>
-            <SelectContent className="max-h-[min(60vh,26rem)] rounded-xl border-white/[0.08] bg-neutral-950 text-white shadow-2xl shadow-black/50">
+            <SelectContent className="z-[110] max-h-[min(60vh,26rem)] rounded-xl border-border-button-default bg-background-primary-default text-text-primary shadow-dropdown">
               {(['global', 'china', 'custom'] as const).map((region) => {
                 const group = MODEL_PROVIDERS.filter((p) => p.region === region);
                 if (!group.length) return null;
                 return (
                   <SelectGroup key={region}>
-                    <SelectLabel className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">
+                    <SelectLabel className="text-mr-micro font-medium uppercase tracking-[0.14em] text-text-tertiary">
                       {t(`settings.llm.region.${region}`)}
                     </SelectLabel>
                     {group.map((p) => (
                       <SelectItem
                         key={p.id}
                         value={p.id}
-                        className="rounded-lg transition-colors focus:bg-white/[0.06] focus:text-sky-300"
+                        className="rounded-lg transition-colors focus:bg-background-primary-hover focus:text-text-primary"
                       >
                         <ProviderMark provider={p} size={16} />
                         {p.label}
@@ -165,7 +165,7 @@ export function ModelConfigFields() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="model" className="text-[13px] font-medium text-neutral-300">
+          <label htmlFor="model" className="text-body-2-medium text-text-primary">
             {t('settings.llm.modelLabel')}
           </label>
           {freeformModel ? (
@@ -188,19 +188,19 @@ export function ModelConfigFields() {
                   }
                 />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-white/[0.08] bg-neutral-950 text-white shadow-2xl shadow-black/50">
+              <SelectContent className="z-[110] rounded-xl border-border-button-default bg-background-primary-default text-text-primary shadow-dropdown">
                 {meta?.models.map((m) => (
                   <SelectItem
                     key={m.id}
                     value={m.id}
-                    className="rounded-lg transition-colors focus:bg-white/[0.06] focus:text-sky-300"
+                    className="rounded-lg transition-colors focus:bg-background-primary-hover focus:text-text-primary"
                   >
                     <span className="inline-flex items-center gap-2">
                       {m.id}
                       {m.supportsImage ? (
                         <span
                           title={t('settings.llm.imageSupported')}
-                          className="inline-flex items-center gap-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-emerald-400"
+                          className="inline-flex items-center gap-1 rounded bg-mr-surface-soft px-1.5 py-0.5 text-mr-micro font-medium text-emerald-400"
                         >
                           <ImageGlyph size={10} />
                           {t('settings.llm.imageBadge')}
@@ -208,7 +208,7 @@ export function ModelConfigFields() {
                       ) : (
                         <span
                           title={t('settings.llm.imageNotSupported')}
-                          className="inline-flex items-center rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-neutral-500"
+                          className="inline-flex items-center rounded bg-mr-surface-soft px-1.5 py-0.5 text-mr-micro font-medium text-neutral-500"
                         >
                           {t('settings.llm.textOnlyBadge')}
                         </span>
@@ -229,7 +229,7 @@ export function ModelConfigFields() {
           <div className="flex items-center justify-between gap-2 min-h-[1.25rem]">
             <label
               htmlFor="apiKey"
-              className="flex items-center gap-2 text-[13px] font-medium text-neutral-300"
+              className="flex items-center gap-2 text-body-2-medium text-text-primary"
             >
               <LockClosedIcon className="w-3.5 h-3.5" />
               {t('settings.llm.apiKeyLabel')}
@@ -255,25 +255,27 @@ export function ModelConfigFields() {
               placeholder={'sk-...'}
               className={`${inputClass} pr-10`}
             />
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="xs"
+              iconOnly
+              leadingIcon={showKey ? RiEyeOffLine : RiEyeLine}
               onClick={() => setShowKey((v) => !v)}
               aria-label={showKey ? t('settings.llm.hideKey') : t('settings.llm.showKey')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
-            >
-              {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+              className="absolute right-2 top-1/2 -translate-y-1/2 border-transparent bg-transparent text-text-secondary shadow-none hover:border-border-button-hover"
+            />
           </div>
         </div>
 
         <div className="min-w-0 space-y-2">
           <span className="block min-h-[1.25rem]" aria-hidden="true" />
-          <div className="flex h-11 min-w-0 items-center gap-2">
-            <button
-              type="button"
+          <div className="flex h-9 min-w-0 items-center gap-2">
+            <Button
+              variant="secondary"
+              size="small"
               onClick={handleTest}
               disabled={!canTest || testState === 'testing'}
-              className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 text-xs font-medium text-neutral-300 transition-colors hover:border-sky-400/20 hover:bg-sky-400/[0.06] hover:text-[#fff] disabled:cursor-not-allowed disabled:opacity-40"
+              className="shrink-0"
             >
               {testState === 'testing' ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -281,7 +283,7 @@ export function ModelConfigFields() {
                 <PlugZap size={13} />
               )}
               {testState === 'testing' ? t('settings.llm.testing') : t('settings.llm.testConnection')}
-            </button>
+            </Button>
           </div>
           {testState === 'ok' && (
             <span className="flex items-center gap-1 text-xs text-emerald-400">
@@ -307,7 +309,7 @@ export function ModelConfigFields() {
                   <>
                     <span>{t(`settings.llm.testErrors.${testKind}`)}</span>
                     {testMsg && (
-                      <span className="block truncate text-[11px] text-red-400/60" title={testMsg}>
+                      <span className="block truncate text-mr-label text-red-400/60" title={testMsg}>
                         {testMsg}
                       </span>
                     )}
@@ -322,18 +324,19 @@ export function ModelConfigFields() {
       </div>
 
       {/* Advanced — Base URL + Max Tokens, prefilled. Collapsed for presets. */}
-      <div className="mt-5 border-t border-white/[0.06] pt-4">
+      <div className="mt-5 border-t border-separator-border pt-4">
         {!isCustom && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={() => setAdvancedOpen((v) => !v)}
-            className="inline-flex cursor-pointer items-center gap-1 text-xs text-neutral-500 transition-colors hover:text-neutral-200"
+            className="border-transparent bg-transparent text-text-secondary shadow-none hover:border-border-button-hover"
           >
             <ChevronDown
               className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
             />
             {t('settings.llm.advanced')}
-          </button>
+          </Button>
         )}
         <AnimatePresence initial={false}>
           {showAdvanced && (
@@ -346,7 +349,7 @@ export function ModelConfigFields() {
               className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2"
             >
               <div className="space-y-2">
-                <label htmlFor="baseUrl" className="text-[13px] font-medium text-neutral-300">
+                <label htmlFor="baseUrl" className="text-body-2-medium text-text-primary">
                   {t('settings.llm.baseUrlLabel')}
                 </label>
                 <Input
@@ -359,13 +362,13 @@ export function ModelConfigFields() {
                 />
                 {/* 这家的端点是工作区级的模板,原样保存必然连不上——把待替换的部分说明白。 */}
                 {meta?.baseUrlNeedsEdit && baseUrl.includes('{') && (
-                  <p className="text-[11px] leading-snug text-amber-400/80">
+                  <p className="text-mr-label leading-snug text-amber-400/80">
                     {t('settings.llm.baseUrlNeedsEdit')}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <label htmlFor="maxTokens" className="text-[13px] font-medium text-neutral-300">
+                <label htmlFor="maxTokens" className="text-body-2-medium text-text-primary">
                   {t('settings.llm.maxTokensLabel')}
                 </label>
                 <Input

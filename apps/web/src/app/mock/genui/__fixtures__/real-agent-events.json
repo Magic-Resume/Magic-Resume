@@ -1,0 +1,102 @@
+[
+  {
+    "type": "tool_started",
+    "payload": {
+      "toolCallId": "c1",
+      "toolName": "read_resume",
+      "args": {}
+    }
+  },
+  {
+    "type": "tool_result",
+    "payload": {
+      "toolCallId": "c1",
+      "toolName": "read_resume",
+      "result": "{\"sections\":{\"experience\":[],\"education\":[],\"skills\":[],\"projects\":[]}}",
+      "summary": "4 sections"
+    }
+  },
+  {
+    "type": "tool_completed",
+    "payload": {
+      "toolCallId": "c1",
+      "toolName": "read_resume"
+    }
+  },
+  {
+    "type": "plan_update",
+    "payload": {
+      "todos": [
+        {
+          "content": "读取 简历",
+          "status": "completed",
+          "segments": [
+            {
+              "type": "chip",
+              "verb": "读取",
+              "rest": "简历",
+              "kind": "read"
+            }
+          ],
+          "activity": "reading"
+        },
+        {
+          "content": "重写 工作经历 第 2 段",
+          "status": "in_progress",
+          "segments": [
+            {
+              "type": "chip",
+              "verb": "重写",
+              "rest": "工作经历",
+              "kind": "write"
+            },
+            {
+              "type": "text",
+              "text": "第 2 段"
+            }
+          ],
+          "activity": "writing"
+        },
+        {
+          "content": "对齐岗位 JD",
+          "status": "pending",
+          "segments": [
+            {
+              "type": "chip",
+              "verb": "对齐岗位",
+              "rest": "JD",
+              "kind": "analyze"
+            }
+          ],
+          "activity": "analyzing"
+        }
+      ]
+    }
+  },
+  {
+    "type": "tool_started",
+    "payload": {
+      "toolCallId": "c2",
+      "toolName": "write_resume",
+      "args": {
+        "file_path": "/workspace/resume.json"
+      }
+    }
+  },
+  {
+    "type": "tool_result",
+    "payload": {
+      "toolCallId": "c2",
+      "toolName": "write_resume",
+      "result": "{}",
+      "summary": "resume.json"
+    }
+  },
+  {
+    "type": "tool_completed",
+    "payload": {
+      "toolCallId": "c2",
+      "toolName": "write_resume"
+    }
+  }
+]

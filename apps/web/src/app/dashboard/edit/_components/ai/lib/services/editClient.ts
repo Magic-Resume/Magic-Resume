@@ -1,5 +1,7 @@
 import { WEB_AGENT_ROUTES } from '@/lib/api/routes';
 import i18n from '@/i18n';
+import { fromResponse } from '@/lib/errors/normalize';
+import { appErrorText } from '@/lib/errors/present';
 import type { ActionKind } from '../changeModel';
 import type { AgentLlmConfig } from './types';
 
@@ -38,13 +40,16 @@ export interface EditResult {
   rationaleDetail?: string;
 }
 
-async function readError(res: Response): Promise<string> {
-  try {
-    const data = await res.json();
-    return (data?.errorMessage || data?.error || data?.message || data?.detail || `请求失败（${res.status}）`) as string;
-  } catch {
-    return `请求失败（${res.status}）`;
-  }
+/**
+ * 与 `agentClient` 合并成同一条判定路径。
+ *
+ * 两个 readError 此前优先级还不一样：这个先读 `errorMessage`——那正是 BFF 500 时装
+ * undici 内部消息与内网 host 的字段。同一次失败在两个客户端里说两种话，而其中一种
+ * 会把拓扑写到用户屏幕上。
+ */
+async function readError(res: Response): Promise<Error> {
+  const appError = await fromResponse(res, 'bff');
+  return new Error(appErrorText(appError));
 }
 
 /** One-shot snippet/element edit. Throws on transport / empty-result errors. */
@@ -58,7 +63,7 @@ export async function requestEdit({ signal, ...body }: EditParams): Promise<Edit
     body: JSON.stringify({ ...body, locale: isEn ? 'en' : 'zh' }),
     signal,
   });
-  if (!res.ok) throw new Error(await readError(res));
+  if (!res.ok) throw await readError(res);
 
   // Unwrap the useful payload, tolerating a bare `{ after, rationale }` body too.
   const raw = (await res.json()) as

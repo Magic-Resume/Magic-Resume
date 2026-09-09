@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useReducedMotion } from 'framer-motion';
-import { FileText, Bell, Milestone, ChevronLeft } from 'lucide-react';
+import { FileText, Bell, Milestone, FolderOpen, ChevronLeft } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import AccountMenu from '@/components/shared/AccountMenu';
@@ -12,11 +12,16 @@ import { useAppUser } from '@/lib/auth';
 import { isCloudMode } from '@/lib/config/app';
 import { useNotifications } from '@/hooks/useNotifications';
 import { BrandMark, BrandWordmark } from './BrandMark';
+import {
+  HoverSurface,
+  useHoverSurface,
+  type HoverSurfaceBinding,
+} from '@/components/ui/hover-surface';
 
 const RAIL_WIDTH = 60;
 const PANEL_WIDTH = 232;
 const STORAGE_KEY = 'dashboard:sidebar-collapsed';
-const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const EASE = 'var(--narrate-ease)';
 const DUR = 300;
 
 /**
@@ -34,6 +39,19 @@ const DUR = 300;
 export default function DashboardSidebar() {
   const { t } = useTranslation();
   const pathname = usePathname();
+
+  /* 导航高亮：一块共享的面在四项之间滑动。activeKey 用 href，和 bind() 那边同一套值。 */
+  const navActiveKey =
+    pathname === '/dashboard'
+      ? '/dashboard'
+      : pathname.startsWith('/dashboard/assets')
+        ? '/dashboard/assets'
+        : pathname.startsWith('/dashboard/timelines')
+          ? '/dashboard/timelines'
+          : pathname === '/dashboard/notifications'
+            ? '/dashboard/notifications'
+            : null;
+  const navSurface = useHoverSurface({ activeKey: navActiveKey });
   const { user } = useAppUser();
   const reduce = useReducedMotion();
 
@@ -65,7 +83,10 @@ export default function DashboardSidebar() {
       return next;
     });
 
-  if (pathname.includes('/edit')) return null;
+  // 编辑器与面试页都自带全屏外壳。父级 dashboard/layout 是复合的，挡不住侧栏，
+  // 所以由侧栏自己按路由隐身——这是这个仓库既有的做法。
+  if (pathname.includes('/edit') || pathname.includes('/interview'))
+    return null;
 
   const anim = animReady && !reduce;
   const labelStyle: React.CSSProperties | undefined = anim
@@ -80,7 +101,7 @@ export default function DashboardSidebar() {
 
   return (
     <aside
-      className="group relative z-30 h-full shrink-0 border-r border-white/[0.06] bg-desk"
+      className="group relative z-30 h-full shrink-0 border-r border-mr-line-soft bg-desk"
       style={{
         width: collapsed ? RAIL_WIDTH : PANEL_WIDTH,
         transition: anim ? `width ${DUR}ms ${EASE}` : undefined,
@@ -104,11 +125,21 @@ export default function DashboardSidebar() {
           </span>
         </Link>
 
-        <div className="my-4 h-px bg-white/[0.06]" />
+        <div className="my-4 h-px bg-mr-surface-soft" />
 
-        {/* nav */}
-        <nav className="flex flex-col gap-1">
+        {/*
+          nav。高亮不再由每一项各自的 hover 底承担，而是下面这一块共享的面在项与项
+          之间滑动（见 `useHoverSurface`）——指针快速划过时读到的是连续位移，不是
+          一串闪烁。没在 hover 时它停在当前页那一项上，并借 `data-on-active` 换成
+          品牌色底；选中项的 sky 文字色始终在，所以面滑走时「我在哪一页」不会丢。
+        */}
+        <nav className="relative flex flex-col gap-1" {...navSurface.containerProps}>
+          <HoverSurface
+            {...navSurface.surfaceProps}
+            className="rounded-xl bg-mr-surface-muted data-[on-active]:bg-sky-400/10"
+          />
           <NavItem
+            surface={navSurface.bind('/dashboard')}
             href="/dashboard"
             label={label('sidebar.resumes')}
             active={pathname === '/dashboard'}
@@ -116,16 +147,28 @@ export default function DashboardSidebar() {
             collapsed={collapsed}
             labelStyle={labelStyle}
           />
+          {/* 放在简历和时间线之间：它属于求职资产，和时间线同族，而不是账号设置那一类。 */}
           <NavItem
-            href="/knowledge/timelines"
+            surface={navSurface.bind('/dashboard/assets')}
+            href="/dashboard/assets"
+            label={label('sidebar.assets')}
+            active={pathname.startsWith('/dashboard/assets')}
+            icon={<FolderOpen size={18} />}
+            collapsed={collapsed}
+            labelStyle={labelStyle}
+          />
+          <NavItem
+            surface={navSurface.bind('/dashboard/timelines')}
+            href="/dashboard/timelines"
             label={label('sidebar.knowledge')}
-            active={pathname.startsWith('/knowledge')}
+            active={pathname.startsWith('/dashboard/timelines')}
             icon={<Milestone size={18} />}
             collapsed={collapsed}
             labelStyle={labelStyle}
           />
           {isCloudMode && (
             <NavNotifications
+              surface={navSurface.bind('/dashboard/notifications')}
               label={label('sidebar.notifications')}
               active={pathname === '/dashboard/notifications'}
               collapsed={collapsed}
@@ -139,7 +182,7 @@ export default function DashboardSidebar() {
         {/* account — the whole row is the trigger (name/email live inside the button).
             Cloud mode resolves the user async; show a skeleton row until it lands so
             the footer never flashes a lone, unlabelled avatar icon. */}
-        <div className="h-px bg-white/[0.06]" />
+        <div className="h-px bg-mr-surface-soft" />
         <div className="mt-3">
           {isCloudMode && !user ? (
             <AccountRowSkeleton collapsed={collapsed} labelStyle={labelStyle} />
@@ -152,8 +195,8 @@ export default function DashboardSidebar() {
                     className="block max-w-[142px] overflow-hidden pl-1 text-left opacity-100"
                     style={labelStyle}
                   >
-                    {name && <span className="block truncate text-[13px] font-medium text-neutral-100">{name}</span>}
-                    {email && <span className="block truncate text-[11px] text-neutral-500">{email}</span>}
+                    {name && <span className="block truncate text-mr-caption font-medium text-neutral-100">{name}</span>}
+                    {email && <span className="block truncate text-mr-label text-neutral-500">{email}</span>}
                   </span>
                 ) : undefined
               }
@@ -187,7 +230,7 @@ function AccountRowSkeleton({
   return (
     <div className="flex h-11 items-center rounded-xl px-2">
       <span className="grid w-9 shrink-0 place-items-center">
-        <span className="h-8 w-8 animate-pulse rounded-full bg-white/[0.06] ring-1 ring-white/[0.06]" />
+        <span className="h-8 w-8 animate-pulse rounded-full bg-mr-surface-soft ring-1 ring-mr-line-soft" />
       </span>
       <span
         className={cn(
@@ -196,8 +239,8 @@ function AccountRowSkeleton({
         )}
         style={labelStyle}
       >
-        <span className="block h-3 w-24 animate-pulse rounded bg-white/[0.06]" />
-        <span className="mt-1.5 block h-2.5 w-28 animate-pulse rounded bg-white/[0.04]" />
+        <span className="block h-3 w-24 animate-pulse rounded bg-mr-surface-soft" />
+        <span className="mt-1.5 block h-2.5 w-28 animate-pulse rounded bg-mr-surface-subtle" />
       </span>
     </div>
   );
@@ -213,6 +256,7 @@ function NavItem({
   collapsed,
   labelStyle,
   dot = false,
+  surface,
 }: {
   href: string;
   label?: string;
@@ -221,18 +265,21 @@ function NavItem({
   collapsed: boolean;
   labelStyle?: React.CSSProperties;
   dot?: boolean;
+  /** `useHoverSurface().bind(key)` 的返回值。底交给共享面，这一项自己不带。 */
+  surface?: HoverSurfaceBinding;
 }) {
   return (
     <Link
       href={href}
       title={collapsed ? label : undefined}
       aria-label={label}
+      {...surface}
       className={cn(
+        // 没有 hover 底、没有选中底——两者都由 nav 上那块共享面承担。这里只剩
+        // 文字和图标的换色，以及焦点环。
         'group/nav relative flex h-9 items-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40',
-        active ? '' : 'hover:bg-white/[0.04]',
       )}
     >
-      {active && <span aria-hidden className="absolute inset-0 rounded-xl bg-sky-400/10" />}
       <span
         className={cn(
           'relative z-[1] grid w-9 shrink-0 place-items-center transition-colors duration-150',
@@ -257,7 +304,7 @@ function NavItem({
         {label ?? (
           <span
             aria-hidden
-            className="my-1 block h-3 w-16 animate-pulse rounded bg-white/[0.06]"
+            className="my-1 block h-3 w-16 animate-pulse rounded bg-mr-surface-soft"
           />
         )}
       </span>
@@ -271,15 +318,18 @@ function NavNotifications({
   active,
   collapsed,
   labelStyle,
+  surface,
 }: {
   label?: string;
   active: boolean;
   collapsed: boolean;
   labelStyle?: React.CSSProperties;
+  surface?: React.ComponentProps<typeof NavItem>['surface'];
 }) {
   const { unreadCount } = useNotifications();
   return (
     <NavItem
+      surface={surface}
       href="/dashboard/notifications"
       label={label}
       active={active}

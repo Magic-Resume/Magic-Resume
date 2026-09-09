@@ -8,6 +8,7 @@ import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/Mag
 import { getMagicTemplateById, getDefaultMagicTemplate } from '@magic-resume/resume-templates/config/magic-templates';
 import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
 
+import { TemplateErrorBoundary } from '@/components/shared/TemplateErrorBoundary';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { mergeTemplateConfig } from '@/lib/utils/templateUtils';
 import { useTranslation } from 'react-i18next';
@@ -77,7 +78,7 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
     return (
       // 呼吸挂在容器上跑全局心跳（2.4s），而不是每根条自己 animate-pulse（2s）：
       // 后者既与心跳不同频，各条相位还互相独立，一屏骨架看起来是在各闪各的。
-      <div className="ai-breath--soft w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
+      <div className="mr-motion-breathe-soft w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
         {/* 简化的头部骨架 */}
         <div className="p-8 border-b border-gray-200">
           <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
@@ -102,7 +103,13 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
       </div>
     );
   }
-  return <MagicResumeRenderer template={template} data={resumeData} locale={i18n.resolvedLanguage || i18n.language} />;
+  // 模板崩了不该让整个编辑器白屏——用户刚打的字还在 store 里，只是看不见了。
+  // resetKey 用模板 id：换个模板应当重试，而不是一直卡在错误态。
+  return (
+    <TemplateErrorBoundary resetKey={template.id}>
+      <MagicResumeRenderer template={template} data={resumeData} locale={i18n.resolvedLanguage || i18n.language} />
+    </TemplateErrorBoundary>
+  );
 }
 
 // 导出 memo 化的预览组件，避开非核心数据导致的重渲染。

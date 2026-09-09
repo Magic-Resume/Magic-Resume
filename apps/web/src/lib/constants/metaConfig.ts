@@ -8,7 +8,7 @@ const metaConfig: { [key: string]: Metadata } = {
       template: `%s | Magic Resume - AI智能简历制作`,
     },
     // 实体定义的唯一来源见 docs/specs/geo/spec.md §3。这句话在 landing i18n、
-    // StructuredData、README 里必须逐字一致 —— 答案引擎靠交叉印证建立实体认知，
+    // Landing SEO、README 里必须逐字一致 —— 答案引擎靠交叉印证建立实体认知，
     // 说法不一致就建不起稳定实体。改这里请同步改其余几处。
     description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，19 套模板，六种工作模式，多设备云同步。",
     keywords: [

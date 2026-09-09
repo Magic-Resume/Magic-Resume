@@ -1,7 +1,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { ComponentType } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@magic-resume/icons';
 
 /**
  * 创建优化的动态导入组件
@@ -47,20 +47,20 @@ export const EditorComponents = {
       ssr: false,
       loading: () => (
         <div aria-hidden className="animate-pulse">
-          <div className="flex h-10 items-center gap-1.5 border-b border-white/[0.06] px-2">
+          <div className="flex h-10 items-center gap-1.5 border-b border-mr-line-soft px-2">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-6 w-6 rounded-md bg-white/[0.05]" />
+              <div key={i} className="h-6 w-6 rounded-md bg-mr-surface-muted" />
             ))}
-            <div className="mx-1 h-4 w-px bg-white/[0.06]" />
+            <div className="mx-1 h-4 w-px bg-mr-surface-soft" />
             {[6, 7, 8].map((i) => (
-              <div key={i} className="h-6 w-6 rounded-md bg-white/[0.05]" />
+              <div key={i} className="h-6 w-6 rounded-md bg-mr-surface-muted" />
             ))}
           </div>
           <div className="min-h-[160px] space-y-2.5 px-4 py-4">
-            <div className="h-3 w-2/5 rounded bg-white/[0.06]" />
-            <div className="h-3 w-11/12 rounded bg-white/[0.04]" />
-            <div className="h-3 w-4/5 rounded bg-white/[0.04]" />
-            <div className="h-3 w-3/5 rounded bg-white/[0.04]" />
+            <div className="h-3 w-2/5 rounded bg-mr-surface-soft" />
+            <div className="h-3 w-11/12 rounded bg-mr-surface-subtle" />
+            <div className="h-3 w-4/5 rounded bg-mr-surface-subtle" />
+            <div className="h-3 w-3/5 rounded bg-mr-surface-subtle" />
           </div>
         </div>
       ),
@@ -126,4 +126,4 @@ export const measureComponentPerformance = (componentName: string) => {
     };
   }
   return { start: () => {}, end: () => {} };
-}; 
+};

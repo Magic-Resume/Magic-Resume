@@ -186,11 +186,10 @@ pnpm run dev
 | `NEXT_PUBLIC_APP_URL` | 两者 | `https://magic-resume.cn` | 用于 OG / SEO 的规范基址。请设为你的部署源（开发环境可用 `http://localhost:3000`）。 |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | 云 | — | Clerk 公钥（`pk_...`）。 |
 | `CLERK_SECRET_KEY` | 云 | — | Clerk 私钥（`sk_...`）。 |
-| `NEXT_PUBLIC_CLOUD_API_URL` | 云 | `http://localhost:3111` | NestJS Core API —— 简历、设置、分享、PAT。 |
-| `BACKEND_URL` | AI 功能 | `http://localhost:8000` | Agent 服务 —— 面试、翻译、AI 优化 / 分析。 |
+| `NEXT_PUBLIC_API_URL` | 云 | `http://localhost:3110` | 统一的 NestJS Core 网关，承载所有 API 与 AI 路由。 |
 
 - **`self-hosted`** —— 纯浏览器。无 Clerk、无 Core API；仅 `NEXT_PUBLIC_APP_URL` 有意义。
-- **`cloud`** —— 需两把 Clerk 密钥加 `NEXT_PUBLIC_CLOUD_API_URL`；AI 功能另需 `BACKEND_URL`。
+- **`cloud`** —— 需两把 Clerk 密钥加 `NEXT_PUBLIC_API_URL`；网关会把 API 与 AI 路由转发到对应的 Core 服务。
 
 </details>
 

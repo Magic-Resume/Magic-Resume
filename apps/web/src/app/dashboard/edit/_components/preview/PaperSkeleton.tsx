@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 // 同一相位 —— 实例替换在肉眼里"没有发生过"。useState 惰性初始化保证 re-render 不重算,
 // 否则 delay 每次变化会让 CSS 动画反复重启、骨架条抖动。
 //
-// 用 ai-breath--soft 而不是 Tailwind 的 animate-pulse:后者是 2s,与心跳的 2.4s 不同频,
+// 用 design-system 的 mr-motion-breathe-soft 而不是 Tailwind 的 animate-pulse:后者是 2s,与心跳的 2.4s 不同频,
 // 两种骨架在同一屏交接时能肉眼看见相位跳变。
 const BREATH_PERIOD_MS = 2400;
 
@@ -16,7 +16,7 @@ export function PaperSkeletonBars() {
   const [animationDelay] = useState(() => `-${Date.now() % BREATH_PERIOD_MS}ms`);
 
   return (
-    <div className="ai-breath--soft space-y-6" style={{ animationDelay }}>
+    <div className="mr-motion-breathe-soft space-y-6" style={{ animationDelay }}>
       <div className="space-y-3">
         <div className="h-7 w-52 rounded bg-neutral-200" />
         <div className="h-3.5 w-72 rounded bg-neutral-100" />

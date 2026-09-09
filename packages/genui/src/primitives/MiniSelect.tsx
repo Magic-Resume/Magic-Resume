@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@magic-resume/icons';
 import { cn } from '@magic-resume/utils';
 import { Popover } from './Popover';
 import { FIELD_SURFACE } from './styles';
@@ -68,14 +68,14 @@ export function MiniSelect({
           'h-9 px-2.5 inline-flex items-center justify-between gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed',
         )}
       >
-        <span className={cn('truncate', !value && 'text-muted')}>{value || placeholder}</span>
-        <ChevronDown size={13} className="shrink-0 text-muted" />
+        <span className={cn('truncate', !value && 'text-mr-muted')}>{value || placeholder}</span>
+        <ChevronDown size={13} className="shrink-0 text-mr-muted" />
       </button>
 
       <Popover anchorRef={triggerRef} open={open && !disabled} onClose={() => setOpen(false)}>
         <div
           role="listbox"
-          className="max-h-56 overflow-y-auto rounded-xl border border-hairline bg-overlay py-1 shadow-lg backdrop-blur"
+          className="max-h-56 overflow-y-auto rounded-xl border border-mr-line bg-mr-overlay py-1 shadow-lg backdrop-blur"
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault();
@@ -99,7 +99,7 @@ export function MiniSelect({
               onClick={() => commit(o)}
               className={cn(
                 'block w-full px-3 py-1.5 text-left text-sm cursor-pointer',
-                i === highlight ? 'bg-tint-sky text-ink-sky' : 'text-primary',
+                i === highlight ? 'bg-mr-accent-tint text-mr-accent' : 'text-mr-ink',
               )}
             >
               {o}

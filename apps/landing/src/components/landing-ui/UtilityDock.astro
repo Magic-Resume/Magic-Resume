@@ -1,0 +1,231 @@
+---
+/**
+ * 右下角常驻的主题开关。
+ *
+ * 放右下而不是塞进顶部导航：深浅色是「读者怎么看这一页」的偏好，不是产品叙事的
+ * 一部分。顶部那条胶囊导航只保留产品内容与一个明确的开始按钮，控件集中在这里。
+ *
+ * 首帧的主题由 Landing.astro 里 inline 的脚本定（必须在 <head> 里跑，晚一帧就会
+ * 闪）。这里只管切换和落盘。
+ */
+interface Props {
+  locale?: string;
+}
+const { locale = 'en' } = Astro.props;
+const label = locale === 'zh' ? '切换深浅色' : 'Toggle colour theme';
+const languageLabel = locale === 'zh' ? '切换到 English' : '切换到中文';
+const languageHref = locale === 'zh' ? '/en' : '/zh';
+---
+
+<div class="utility-dock pointer-events-none fixed bottom-4 right-4 z-50" data-utility-dock>
+  <div class="utility-dock-buttons pointer-events-auto" aria-label={locale === 'zh' ? '页面工具' : 'Page controls'}>
+    <a class="dock-button language-toggle" href={languageHref} aria-label={languageLabel} title={languageLabel}>
+      <span aria-hidden="true">{locale === 'zh' ? 'EN' : '中'}</span>
+    </a>
+    <button
+      type="button"
+      data-theme-toggle
+      class="dock-button theme-toggle text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
+      aria-label={label}
+      title={label}
+    >
+      {/* 两个图标叠在同一格里，靠主题切换互相让位——布局不动，只有图标在换。 */}
+      <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+        ></path>
+      </svg>
+      <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  /* 主内容之后再淡入：常驻工具不该和首屏的分层入场抢注意力。 */
+  .utility-dock {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: utility-dock-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+  }
+  .utility-dock-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .dock-button {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-surface) 84%, transparent);
+    color: var(--color-muted);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 12%, transparent),
+      0 12px 28px -18px color-mix(in srgb, var(--color-ink) 62%, transparent);
+    backdrop-filter: blur(18px) saturate(1.12);
+    text-decoration: none;
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease, color 220ms ease;
+  }
+  .dock-button:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 24%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+    color: var(--color-ink);
+    transform: translateY(-2px);
+  }
+  .dock-button:active {
+    transform: translateY(0) scale(0.94);
+  }
+  .language-toggle {
+    border-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    color: var(--color-ink-soft);
+    font-size: 12px;
+    font-weight: 590;
+    letter-spacing: 0.03em;
+  }
+  @keyframes utility-dock-in {
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .theme-toggle {
+    display: grid;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 9%, transparent);
+    background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
+    transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease;
+  }
+  .theme-toggle:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+    background: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  }
+  .theme-toggle:active {
+    transform: scale(0.92);
+  }
+  .theme-icon {
+    grid-area: 1 / 1;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition:
+      opacity 0.18s ease,
+      transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* 深色下露月亮（点它去浅色），浅色下露太阳。让位用旋转 + 缩放，不是硬切。 */
+  .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(-70deg) scale(0.7);
+  }
+  :root[data-theme='light'] .theme-icon-sun {
+    opacity: 1;
+    transform: none;
+  }
+  :root[data-theme='light'] .theme-icon-moon {
+    opacity: 0;
+    transform: rotate(70deg) scale(0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .utility-dock {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+    .theme-icon {
+      transition: none;
+    }
+  }
+</style>
+
+<style is:global>
+  /* The new theme is a second rendered page layer, so content stays visible
+     while the colour system expands from the control that was pressed. */
+  @property --wipe-progress {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+  }
+  ::view-transition-group(root) { animation-duration: var(--wipe-duration, 0ms); }
+  ::view-transition-old(root) { animation: none; z-index: 1; }
+  ::view-transition-new(root) {
+    z-index: 2;
+    /* A soft radial mask removes the hard diagonal seam visible with clip-path
+       while keeping the new snapshot fully rendered underneath. */
+    mask-image: radial-gradient(
+      circle at 100% 100%,
+      #000 0,
+      #000 max(0px, calc(160vmax * var(--wipe-progress) - 180px)),
+      transparent calc(160vmax * var(--wipe-progress))
+    );
+    animation: var(--wipe-animation, none);
+  }
+  @keyframes theme-view-wipe {
+    from { --wipe-progress: 0; }
+    to { --wipe-progress: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-new(root) { animation: none; }
+  }
+</style>
+
+<script>
+  const KEY = 'magic:landing-theme';
+
+  /*
+   * 绑定必须挂在 `astro:page-load` 上,不能在模块求值时绑一次。
+   *
+   * ClientRouter 换页(**包括点站内锚点,`#top` 也算一次导航**)会换掉 body,
+   * 新的按钮身上没有监听器;而打包过的模块脚本不会二次执行,于是主题开关就哑了。
+   * `data-bound` 防止同一个按钮被绑两次。
+   */
+  const initDock = () => {
+  document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
+    if (button.dataset.bound) return;
+    button.dataset.bound = 'true';
+    button.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const finish = () => {
+        root.dataset.theme = next;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'light' ? '#faf8f4' : '#151515');
+      };
+      if (reduce) {
+        finish();
+      } else if ('startViewTransition' in document) {
+        root.style.setProperty('--wipe-duration', '1000ms');
+        root.style.setProperty('--wipe-animation', 'theme-view-wipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) both');
+        const transition = document.startViewTransition(finish);
+        transition.finished.finally(() => {
+          root.style.removeProperty('--wipe-x');
+          root.style.removeProperty('--wipe-y');
+          root.style.removeProperty('--wipe-radius');
+          root.style.removeProperty('--wipe-duration');
+          root.style.removeProperty('--wipe-animation');
+        });
+      } else {
+        finish();
+      }
+      try {
+        localStorage.setItem(KEY, next);
+      } catch {
+        // 隐私模式下存不下就只在本次会话内生效，不值得为此打断。
+      }
+    });
+  });
+  };
+  document.addEventListener('astro:page-load', initDock);
+  initDock();
+</script>

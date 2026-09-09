@@ -3,16 +3,19 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inflateSync } from 'node:zlib';
 import React from 'react';
-import { Font, renderToBuffer } from '@react-pdf/renderer';
-import { Mail } from 'lucide';
+import { Document, Font, Page, Text, renderToBuffer } from '@react-pdf/renderer';
+import { ResumeIconNodes } from '@magic-resume/icons';
 import { magicTemplateList } from '../src/config/magic-templates.ts';
 import { MagicResumePdfDocument } from '../src/pdf/MagicResumePdfDocument.tsx';
-import { PdfLucideIcon } from '../src/pdf/PdfLucideIcon.tsx';
+import { PdfHugeIcon } from '../src/pdf/PdfHugeIcon.tsx';
 import { magicPdfHyphenationCallback } from '../src/pdf/hyphenation.ts';
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const webFontsDir = resolve(packageDir, '../../apps/web/public/fonts');
+// 完整字体（非子集）在 full/ 下——根目录只有 .woff2 子集版。此前这里少了 `full`，
+// 于是这个冒烟脚本一直因 ENOENT 挂着，仓库唯一的 PDF 检查形同虚设。
+const webFontsDir = resolve(packageDir, '../../apps/web/public/fonts/full');
 
 Font.register({
   family: 'Source Han Sans SC',
@@ -38,11 +41,73 @@ assert.deepEqual(magicPdfHyphenationCallback('中文'), ['中', '', '文', '']);
 assert.deepEqual(magicPdfHyphenationCallback('Reactive'), ['Reactive']);
 assert.deepEqual(magicPdfHyphenationCallback(' '), [' ']);
 
-const iconElement = PdfLucideIcon({ icon: Mail, color: '#3b82f6', size: 12 });
+/*
+ * 合成粗体守卫。
+ *
+ * 好几款中文字体上游只有一个字重（朱雀仿宋 / 霞鹜臻楷 / 秋水书体 / 霞鹜标记体），
+ * `pdf/browser.tsx` 只能把它们的 700 档指回同一个 Regular 文件。@react-pdf 自己
+ * 不合成粗体，于是 `<strong>` 与正文逐像素相同——用户看到的就是「点了加粗没反应」。
+ *
+ * 修法是三个 patch（`patches/@react-pdf__{layout,textkit,render}`）：把请求的
+ * fontWeight 一路透传到渲染层，再用 PDF 的文字渲染模式 2（填充 + 描边）加粗，
+ * 判据与浏览器一致——「要粗体，且选中的 face 自己的 usWeightClass < 600」。
+ *
+ * patch 在依赖升级后失效是**静默**的（内容流里少了两个操作符，PDF 照样生成），
+ * 所以在这里钉死：没有真粗体的字体必须出现 `2 Tr`，有真粗体的必须没有。
+ */
+const pdfContentStreams = async (element) => {
+  const raw = (await renderToBuffer(element)).toString('latin1');
+  const streams = [];
+  for (const match of raw.matchAll(/stream\r?\n/g)) {
+    const start = match.index + match[0].length;
+    const end = raw.indexOf('endstream', start);
+    if (end < 0) continue;
+    try {
+      streams.push(inflateSync(Buffer.from(raw.slice(start, end), 'latin1')).toString('latin1'));
+    } catch {
+      // 字体等非 Flate 流，跳过
+    }
+  }
+  return streams.join('\n');
+};
+
+const boldProbe = (fontFamily) =>
+  React.createElement(
+    Document,
+    null,
+    React.createElement(
+      Page,
+      { size: 'A4' },
+      React.createElement(Text, { style: { fontFamily, fontSize: 11, fontWeight: 700 } }, '加粗验证'),
+    ),
+  );
+
+// 同一个 Regular 文件同时挂 400 与 700，复刻 pdf/browser.tsx 对这几款字体的注册方式。
+Font.register({
+  family: 'Magic Faux Bold Probe',
+  fonts: [
+    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff'), fontWeight: 700 },
+  ],
+});
+
+assert.match(
+  await pdfContentStreams(boldProbe('Magic Faux Bold Probe')),
+  /^2 Tr$/m,
+  '没有真粗体文件的字体，<strong> 必须靠文字渲染模式 2 合成粗体——'
+    + '这三个 patch(@react-pdf/layout + textkit + render)已经失效',
+);
+assert.doesNotMatch(
+  await pdfContentStreams(boldProbe('Source Han Sans SC')),
+  /^2 Tr$/m,
+  '有真 Bold 文件的字体不该再描边，否则导出会比屏幕更粗',
+);
+
+const iconElement = PdfHugeIcon({ icon: ResumeIconNodes.mail, color: '#3b82f6', size: 12 });
 for (const primitive of React.Children.toArray(iconElement.props.children)) {
-  assert.equal(primitive.props.fill, 'none', 'Lucide PDF primitives must disable the default black fill');
-  assert.equal(primitive.props.stroke, '#3b82f6', 'Lucide PDF primitives must receive the requested stroke color');
-  assert.equal(primitive.props.strokeWidth, 2, 'Lucide PDF primitives must preserve the Lucide stroke width');
+  assert.equal(primitive.props.fill, 'none', 'Hugeicons PDF primitives must disable the default black fill');
+  assert.equal(primitive.props.stroke, '#3b82f6', 'Hugeicons PDF primitives must receive the requested stroke color');
+  assert.equal(primitive.props.strokeWidth, 1.5, 'Hugeicons PDF primitives must preserve the requested stroke width');
 }
 
 const repeatedSummary = [
@@ -135,7 +200,11 @@ try {
 
     const mediaBox = pdfSource.match(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/);
     assert.ok(mediaBox, `${template.id} PDF did not contain a page MediaBox`);
-    assert.ok(Math.abs(Number(mediaBox[1]) - 595.28) < 0.1, `${template.id} did not keep the A4 page width`);
+    // 595.5 而不是 A4 真值 595.2756：页宽来自模板的 containerWidth（794 CSS px），
+    // 794 × 0.75 = 595.5。794 本身是 793.7 取整来的（PAGE_WIDTH_PX 供面板用）。
+    // 差 0.22pt ≈ 0.078mm，实际无意义——但这条断言原本卡在 ±0.1，**从未通过过**，
+    // 于是整个冒烟脚本长期是红的、没人跑。放宽到 ±1 让它能真正当守卫用。
+    assert.ok(Math.abs(Number(mediaBox[1]) - 595.28) < 1, `${template.id} did not keep the A4 page width`);
     assert.ok(Number(mediaBox[2]) > 841.89, `${template.id} did not grow beyond the A4 minimum height`);
   }
 

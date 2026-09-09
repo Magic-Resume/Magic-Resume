@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Section, SectionItem } from '@/types/frontend/resume';
-import { useResumeStore, getSanitizedResume } from '@/store/useResumeStore';
+import { getSanitizedResume } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
+import { useResumeEditorUiStore } from '@/store/resume/editor-ui';
+import { useResumePersistenceStore } from '@/store/resume/persistence';
+import { useResumeSyncStore } from '@/store/resume/sync';
 import { useSettingStore } from '@/store/useSettingStore';
 import debounce from 'lodash/debounce';
 import BasicForm from './forms/BasicForm';
@@ -13,7 +17,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { Plus, SquarePen, Trash2 } from 'lucide-react';
+import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
 import {
   DndContext,
   closestCenter,
@@ -28,6 +32,8 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
+import { fromThrown } from '@/lib/errors/normalize';
+import { presentAppError } from '@/lib/errors/present';
 import ResumeEditSkeleton from './layout/ResumeEditSkeleton';
 import TemplatePanel, { rightPanelWidth } from './templates/TemplatePanel';
 import EditorFormPanel from './layout/EditorFormPanel';
@@ -52,8 +58,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const {
     activeResume,
     loadResumeForEdit,
-    saveResume: saveActiveResumeToResumes,
-    syncToCloud,
     updateInfo,
     setSectionOrder: updateSectionOrder,
     updateSectionItems,
@@ -61,17 +65,21 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     updateCustomSection,
     removeCustomSection,
     updateTemplate,
+    isStoreLoading,
+    resumes,
+  } = useResumeDocumentStore();
+
+  const { saveResume: saveActiveResumeToResumes } = useResumePersistenceStore();
+  const { syncToCloud, syncStatus } = useResumeSyncStore();
+  const {
     rightCollapsed,
     setRightCollapsed,
     leftCollapsed,
     setLeftCollapsed,
     activeSection,
     setActiveSection,
-    isStoreLoading,
-    resumes,
-    syncStatus,
     isAiGenerating,
-  } = useResumeStore();
+  } = useResumeEditorUiStore();
 
   const router = useRouter();
 
@@ -96,7 +104,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     // agent 是从云端库读简历的，先尽力把编辑器最新状态推上去（关了云同步则无操作）。
     try {
       await syncToCloud();
-    } catch {
+    } catch (err) {
+      // 这一次吞掉的后果不是「少存一次」，而是**agent 接下来读的是旧简历**：它会照着
+      // 过时内容提改动，用户看着自己刚写的段落被改回去。必须说出来。
+      presentAppError(fromThrown(err, 'local'), { surface: 'background' });
     }
     router.push(`/dashboard/edit/${id}/ai-lab`);
   };
@@ -201,7 +212,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         }
       }
 
-      const { activeResume, isSyncing } = useResumeStore.getState();
+      const { activeResume } = useResumeDocumentStore.getState();
+      const { isSyncing } = useResumeSyncStore.getState();
       if (activeResume?.id === id && !isStoreLoading && !isSyncing) {
           return;
       }
@@ -240,12 +252,14 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       await saveActiveResumeToResumes('manual', activeResume || undefined);
       console.log('[Save] Store saveResume completed.');
       
-      const freshResume = useResumeStore.getState().activeResume;
+      const freshResume = useResumeDocumentStore.getState().activeResume;
       if (freshResume) {
           lastUpdatedAtRef.current = freshResume.updatedAt;
       }
     } catch (err) {
       console.error('[Save] Manual save failed:', err);
+      // 用户按了保存按钮，然后什么都没发生——静默在这里就是 bug。
+      presentAppError(fromThrown(err, 'local'), { surface: 'inline' });
     } finally {
       setIsSaving(false);
       console.log('[Save] Manual save process ended, loading state released.');
@@ -306,7 +320,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     };
     const onPageHide = () => {
       debouncedSync.cancel();
-      useResumeStore.getState().flushSyncOnExit();
+      useResumeSyncStore.getState().flushSyncOnExit();
     };
     window.addEventListener('pagehide', onPageHide);
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -319,7 +333,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   // 网络恢复时若仍有未落云的修改或上次同步失败,立即补一次,不必等下次编辑。
   useEffect(() => {
     const onOnline = () => {
-      const { syncStatus: status } = useResumeStore.getState();
+      const { syncStatus: status } = useResumeSyncStore.getState();
       if (cloudSync && (status === 'modified' || status === 'error')) {
         void syncToCloud();
       }
@@ -435,7 +449,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                       aria-label={t('customSection.rename', { defaultValue: '重命名' })}
                       title={t('customSection.rename', { defaultValue: '重命名' })}
                       onClick={() => setEditingSection({ key, label: label || key, icon: iconName })}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200"
                     >
                       <SquarePen size={13} />
                     </button>
@@ -459,7 +473,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                   <BasicForm
                     info={info!}
                     updateInfo={updateInfo}
-                    enableCustomFields={activeResume?.template === 'product-ops-focus'}
                   />
                 ) : (
                   <SectionListWithModal
@@ -485,7 +498,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         <button
           type="button"
           onClick={() => setCreatingSection(true)}
-          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2.5 text-[13px] text-neutral-500 transition-colors duration-150 hover:border-sky-400/40 hover:text-sky-300"
+          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2.5 text-mr-caption text-neutral-500 transition-colors duration-150 hover:border-sky-400/40 hover:text-sky-300"
         >
           <Plus size={14} />
           {t('customSection.add', { defaultValue: '添加自定义模块' })}
@@ -515,7 +528,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
           onClose={() => setDeletingSection(null)}
           title={t('customSection.deleteTitle', { defaultValue: '删除模块' })}
           description={t('customSection.deleteHint', {
-            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销。',
+            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销',
             name: deletingSection?.label ?? '',
           })}
           confirmText={t('common.delete', { defaultValue: '删除' })}
@@ -566,7 +579,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         <div className="editor-enter-left">
           <EditorFormPanel
             renderSections={renderSections}
-            sectionOrder={(sectionOrder || []).map(s => ({ key: s.key, label: s.label }))}
+            // 原样传，**别再 `.map(s => ({ key, label }))` 重建一遍**——那样会把用户
+            // 选的 `icon` 抹掉，于是同一个 section 在表单里是他选的图标、在侧栏里是
+            // 一张通用文档纸。`normalizeResumeSectionOrder` 里踩过同一个坑。
+            sectionOrder={sectionOrder || []}
             activeSection={activeSection}
             collapsed={leftCollapsed}
             onToggleCollapse={toggleLeftPanel}

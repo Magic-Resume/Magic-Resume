@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { MODEL_IMAGE_SUPPORT_MAP } from '@/lib/constants/modals';
-import { Loader2, X, FileText, FileJson, AlertTriangle } from 'lucide-react';
+import { Loader2, X, FileText, FileJson, AlertTriangle } from '@magic-resume/icons';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -11,11 +11,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Resume } from '@/types/frontend/resume';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 import { useSettingStore } from '@/store/useSettingStore';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
 import { toast } from 'sonner';
-import { FaFileUpload } from 'react-icons/fa';
+import { FaFileUpload } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
@@ -78,7 +78,7 @@ type ImportResumeDialogProps = {
 };
 
 export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeDialogProps) {
-  const { importResume } = useResumeStore();
+  const { importResume } = useResumeDocumentStore();
   const { cloudSync } = useSettingStore();
   const openSettings = useAccountUiStore((s) => s.openSettings);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -381,7 +381,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                           {/* 每一项都标 AI：这四种都要花模型额度去解析，而 JSON 不用。
                               标在每一行而不是标一次，是因为用户是逐项扫的，
                               不会去推断"上面那个标签是不是也管我这一行"。 */}
-                          <span className="inline-flex items-center text-[10px] font-semibold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-full leading-none">
+                          <span className="inline-flex items-center text-mr-micro font-semibold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-full leading-none">
                             {'AI'}
                           </span>
                         </span>
@@ -415,7 +415,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                         >
                           {t('importDialog.errors.noApiKeyLink', { defaultValue: '设置' })}
                         </button>
-                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试。' })}
+                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试' })}
                       </span>
                     </div>
                   </motion.div>

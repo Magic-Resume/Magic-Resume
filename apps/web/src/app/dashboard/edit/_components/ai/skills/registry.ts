@@ -1,4 +1,4 @@
-import { Wand2, BarChart3, BotMessageSquare, Mic, Languages, Target } from 'lucide-react';
+import { Wand2, BarChart3, BotMessageSquare, Mic, Languages, Target } from '@magic-resume/icons';
 import i18n from '@/i18n';
 import type { AiSkill, SkillId } from '../types';
 

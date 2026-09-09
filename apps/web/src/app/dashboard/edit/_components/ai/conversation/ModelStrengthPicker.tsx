@@ -7,13 +7,14 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-} from "lucide-react";
+} from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useSettingStore, type Strength } from "@/store/useSettingStore";
 import ModelMark from "./ModelMark";
 import { useEntitlement } from "@/lib/extensions/billing-client";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const STRENGTHS: Strength[] = ["low", "medium", "high"];
 
 /**
@@ -124,9 +125,9 @@ export default function ModelStrengthPicker({
         // 控件行的第二档重量:无框。它是**状态显示**,只是恰好可点——给它一圈边框,
         // 就是在假装它和「添加文件 / 模式」那一档一样重。规格见 design-brief §4。
         className={cn(
-          "inline-flex h-[38px] max-w-[260px] items-center gap-2 rounded-full pl-1 pr-2.5 text-[14px] transition-colors",
-          "text-neutral-100 hover:bg-white/[0.05] disabled:opacity-40 cursor-pointer",
-          open && "bg-white/[0.06]",
+          "inline-flex h-[38px] max-w-[260px] items-center gap-1.5 rounded-full pl-1 pr-2 text-mr-body transition-colors",
+          "text-neutral-100 hover:bg-mr-surface-soft hover:text-neutral-50 disabled:opacity-40 cursor-pointer",
+          open && "text-neutral-50",
         )}
       >
         {/* 当前模型所属厂商的标。"自动"由系统挑,没有具体模型 → 中性 sparkle。 */}
@@ -151,8 +152,8 @@ export default function ModelStrengthPicker({
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-72 origin-bottom rounded-2xl border border-white/[0.06] bg-neutral-900/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
+            transition={{ duration: 0.16, ease: EASE_ENTER }}
+            className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-72 origin-bottom rounded-2xl border border-mr-line bg-[var(--mr-overlay)] p-2 shadow-[var(--elev-3)] backdrop-blur-xl dark:border-mr-line-soft dark:bg-neutral-900/95 dark:shadow-2xl dark:shadow-black/60"
           >
             {view === "main" ? (
               <motion.div
@@ -165,13 +166,13 @@ export default function ModelStrengthPicker({
                 <button
                   type="button"
                   onClick={() => setView("models")}
-                  className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]"
+                  className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-mr-surface-subtle"
                 >
                   <span className="min-w-0">
-                    <span className="block text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">
+                    <span className="block text-mr-micro font-medium uppercase tracking-[0.14em] text-neutral-600">
                       {t("aiLab.picker.model")}
                     </span>
-                    <span className="mt-0.5 block truncate text-[14px] text-neutral-100">
+                    <span className="mt-0.5 block truncate text-mr-body text-neutral-100">
                       {modelLabel}
                     </span>
                   </span>
@@ -181,14 +182,14 @@ export default function ModelStrengthPicker({
                   />
                 </button>
 
-                <div className="my-2 h-px bg-white/[0.06]" />
+                <div className="my-2 h-px bg-mr-surface-soft" />
 
                 {/* strength slider */}
                 <div className="flex items-center justify-between px-2">
-                  <span className="text-[12px] text-neutral-300">
+                  <span className="text-mr-overline text-neutral-300">
                     {t("aiLab.picker.strengthLabel")}
                   </span>
-                  <span className="text-[12px] text-sky-300">
+                  <span className="text-mr-overline text-sky-300">
                     {strengthLabel}
                   </span>
                 </div>
@@ -205,7 +206,7 @@ export default function ModelStrengthPicker({
                 <button
                   type="button"
                   onClick={() => setView("main")}
-                  className="mb-1 flex w-full items-center gap-1 rounded-lg px-1.5 py-1.5 text-left text-[12px] text-neutral-400 transition-colors hover:bg-white/[0.04]"
+                  className="mb-1 flex w-full items-center gap-1 rounded-lg px-1.5 py-1.5 text-left text-mr-overline text-neutral-400 transition-colors hover:bg-mr-surface-subtle"
                 >
                   <ChevronLeft size={15} className="shrink-0" />
                   {t("aiLab.picker.model")}
@@ -248,7 +249,7 @@ export default function ModelStrengthPicker({
                   )}
 
                   {loading && internalModels.length === 0 && (
-                    <div className="px-2 py-2 text-[11px] text-neutral-500">
+                    <div className="px-2 py-2 text-mr-label text-neutral-500">
                       {t("aiLab.picker.loadingModels")}
                     </div>
                   )}
@@ -262,7 +263,7 @@ export default function ModelStrengthPicker({
                       onClick={pickByok}
                     />
                   ) : (
-                    <p className="px-2 py-1.5 text-[12px] text-neutral-500">
+                    <p className="px-2 py-1.5 text-mr-overline text-neutral-500">
                       {t("aiLab.picker.addCustom")}
                     </p>
                   )}
@@ -279,10 +280,10 @@ export default function ModelStrengthPicker({
 function GroupHeader({ label, hint }: { label: string; hint?: string }) {
   return (
     <div className="flex items-center justify-between px-2 pb-1 pt-2.5">
-      <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">
+      <span className="text-mr-micro font-medium uppercase tracking-[0.14em] text-neutral-600">
         {label}
       </span>
-      {hint && <span className="text-[10px] text-amber-400/70">{hint}</span>}
+      {hint && <span className="text-mr-micro text-amber-400/70">{hint}</span>}
     </div>
   );
 }
@@ -313,15 +314,15 @@ function ModelRow({
         disabled
           ? "cursor-not-allowed opacity-40"
           : active
-            ? "bg-white/[0.06] text-neutral-50"
+            ? "bg-mr-surface-soft text-neutral-50"
             : "text-neutral-300 hover:bg-white/[0.035]",
       )}
     >
       <ModelMark model={label} generic={generic} size={22} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px]">{label}</span>
+        <span className="block truncate text-mr-caption">{label}</span>
         {sub && (
-          <span className="block truncate text-[11px] text-neutral-500">
+          <span className="block truncate text-mr-label text-neutral-500">
             {sub}
           </span>
         )}
@@ -387,10 +388,10 @@ function StrengthSlider({
         className="relative h-7 cursor-pointer touch-none select-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
       >
         {/* track */}
-        <div className="absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-white/[0.08]" />
+        <div className="absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-mr-sunk dark:bg-mr-line" />
         {/* filled — from the left cap up to the thumb centre */}
         <div
-          className="absolute left-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-sky-400 transition-[width] duration-200 ease-out"
+          className="absolute left-0 top-1/2 h-6 -translate-y-1/2 rounded-full bg-[var(--fill-sky)] transition-[width] duration-200 ease-out dark:bg-sky-400"
           style={{ width: `calc(0.875rem + (100% - 1.75rem) * ${frac})` }}
         />
         {/* inner rail: dot stops + thumb centres live here (inset by the thumb radius) */}
@@ -404,7 +405,9 @@ function StrengthSlider({
                 key={s}
                 className={cn(
                   "absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors duration-200",
-                  i < index ? "bg-white/70" : "bg-white/25",
+                  i < index
+                    ? "bg-[#fff]/70 dark:bg-white/70"
+                    : "bg-[var(--mr-line-strong)] dark:bg-white/25",
                 )}
                 style={{ left: `${(i / last) * 100}%` }}
               />
@@ -412,7 +415,7 @@ function StrengthSlider({
           )}
           {/* thumb */}
           <span
-            className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-md shadow-black/40 ring-1 ring-black/5 transition-[left] duration-200 ease-out"
+            className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#fff] shadow-[var(--elev-1)] ring-1 ring-[var(--border-mr-line)] transition-[left] duration-200 ease-out dark:bg-white dark:shadow-md dark:shadow-black/40 dark:ring-black/5"
             style={{ left: `${frac * 100}%` }}
           />
         </div>

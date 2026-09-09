@@ -1,0 +1,34 @@
+---
+import type { Copy, Locale } from '@/i18n/ui';
+import { dashboardLink } from '@/consts';
+import SectionHeading from '@/components/landing-ui/SectionHeading.astro';
+import Icon from '@/components/Icon.astro';
+interface Props { copy: Copy; locale: Locale; }
+const { copy, locale } = Astro.props;
+const c = copy.landing.cases;
+const icons = ['pen', 'target', 'languages'] as const;
+const href = (prompt: string) => `${dashboardLink('use_cases', locale)}&prompt=${encodeURIComponent(prompt)}`;
+---
+<section id="customers" class="be-section" data-beui="use-cases-animated-story-collage">
+  <div class="be-container be-collage-layout">
+    <div class="be-collage-copy">
+      <p class="be-collage-chip reveal">{c.eyebrow}</p>
+      <SectionHeading title={c.title} subtitle={c.subtitle} />
+      <a class="be-collage-cta reveal" data-collage-cta href={href(c.items[0].prompt)} data-astro-reload>{c.cta}<Icon name="arrow-right" size={16}/></a>
+    </div>
+
+    <div class="be-collage-stage reveal">
+      <i class="be-collage-ring is-fill" aria-hidden="true"></i>
+      <i class="be-collage-ring is-line" aria-hidden="true"></i>
+      <story-collage class="be-collage">
+        {c.items.map((item, i) => <button type="button" class:list={['be-story', i === 0 && 'is-active']} style={`--offset:${i};--depth:${i}`} data-href={href(item.prompt)} aria-pressed={i === 0}>
+          <span class="be-story-top"><span class="be-story-label">{item.tag}</span><span class="be-story-icon"><Icon name={icons[i]} size={16}/></span></span>
+          <span class="be-story-title">{item.title}</span>
+          <span class="be-story-body">{item.desc}</span>
+          <span class="be-story-result">{item.result}</span>
+        </button>)}
+      </story-collage>
+      <p class="be-collage-hint">{c.hint}</p>
+    </div>
+  </div>
+</section>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { KeyRound, Loader2 } from 'lucide-react';
+import { KeyRound, Loader2 } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { clerkErrorMessage } from './clerkError';
@@ -71,17 +71,17 @@ export default function PasswordSection({ user }: { user: ClerkUser }) {
   };
 
   return (
-    <div className="rounded-lg bg-white/[0.04] p-3">
+    <div className="rounded-lg bg-mr-surface-subtle p-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2 text-[13px] text-neutral-100">
+        <div className="flex min-w-0 items-center gap-2 text-mr-caption text-neutral-100">
           <KeyRound size={16} className="shrink-0 text-neutral-500" />
           <span className="truncate">{t('account.security.password.label')}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span
             className={cn(
-              'rounded px-1.5 py-0.5 text-[11px]',
-              has ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.06] text-neutral-500'
+              'rounded px-1.5 py-0.5 text-mr-label',
+              has ? 'bg-emerald-500/15 text-emerald-300' : 'bg-mr-surface-soft text-neutral-500'
             )}
           >
             {t(has ? 'account.security.on' : 'account.security.off')}
@@ -89,7 +89,7 @@ export default function PasswordSection({ user }: { user: ClerkUser }) {
           <button
             type="button"
             onClick={() => (open ? reset() : setOpen(true))}
-            className="rounded px-2 py-1 text-[12px] text-sky-300 transition-colors hover:bg-sky-400/10 hover:text-sky-200 cursor-pointer"
+            className="rounded px-2 py-1 text-mr-overline text-sky-300 transition-colors hover:bg-sky-400/10 hover:text-sky-200 cursor-pointer"
           >
             {t(open ? 'account.security.cancel' : has ? 'account.security.password.change' : 'account.security.password.set')}
           </button>
@@ -97,7 +97,7 @@ export default function PasswordSection({ user }: { user: ClerkUser }) {
       </div>
 
       {open && (
-        <form onSubmit={submit} className="mt-3 space-y-2 border-t border-white/[0.06] pt-3">
+        <form onSubmit={submit} className="mt-3 space-y-2 border-t border-mr-line-soft pt-3">
           {has && (
             <Field
               label={t('account.security.password.current')}
@@ -119,17 +119,17 @@ export default function PasswordSection({ user }: { user: ClerkUser }) {
             autoComplete="new-password"
           />
 
-          {error && <p className="text-[12px] text-rose-300">{error}</p>}
+          {error && <p className="text-mr-overline text-rose-300">{error}</p>}
 
           {/* 先说清后果再让人点。「其它设备会被登出」不是副作用，是这个动作的一半意义。 */}
-          <p className="text-[11.5px] leading-relaxed text-neutral-500">
+          <p className="text-mr-label-tight leading-relaxed text-neutral-500">
             {t('account.security.password.signOutNotice')}
           </p>
 
           <button
             type="submit"
             disabled={busy || !next || !confirm || (has && !current)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-3.5 py-1.5 text-[12.5px] font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-40 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-3.5 py-1.5 text-mr-ui font-semibold text-[#fff] transition-colors hover:bg-sky-400 disabled:opacity-40 cursor-pointer"
           >
             {busy && <Loader2 size={13} className="animate-spin" />}
             {t('account.security.save')}
@@ -153,13 +153,13 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11.5px] text-neutral-500">{label}</span>
+      <span className="mb-1 block text-mr-label-tight text-neutral-500">{label}</span>
       <input
         type="password"
         value={value}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-white/[0.08] bg-neutral-950/60 px-3 py-1.5 text-[13px] text-neutral-100 outline-none transition-colors focus:border-sky-400/40"
+        className="w-full rounded-lg border border-mr-line bg-neutral-950/60 px-3 py-1.5 text-mr-caption text-neutral-100 outline-none transition-colors focus:border-sky-400/40"
       />
     </label>
   );

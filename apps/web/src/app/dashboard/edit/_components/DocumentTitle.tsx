@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 
 // Static SSR fallback (mirrors metaConfig.Edit) — used before a resume loads
 // and restored when leaving the editor.
@@ -13,7 +13,7 @@ const DEFAULT_TITLE = '编辑简历 - 在线简历编辑器 | Magic Resume';
  * in server-side `generateMetadata` — we update `document.title` at runtime.
  */
 export default function DocumentTitle() {
-  const name = useResumeStore((s) => s.activeResume?.name);
+  const name = useResumeDocumentStore((s) => s.activeResume?.name);
 
   useEffect(() => {
     document.title = name ? `${name} | Magic Resume` : DEFAULT_TITLE;

@@ -3,7 +3,7 @@ import { PANEL_WIDTH, RAIL_WIDTH } from "../templates/TemplatePanel";
 
 /* 骨架条:与新版工作台一致,用极轻的白色叠加而非实心灰块,呼吸感来自 animate-pulse */
 function Bar({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-white/[0.05] ${className}`} />;
+  return <div className={`animate-pulse rounded-md bg-mr-surface-muted ${className}`} />;
 }
 
 /* 图标轨占位:一列小方块,顶部一个折叠钮 + 分隔线 + 若干分区图标 */
@@ -12,17 +12,17 @@ function RailSkeleton({ side }: { side: "left" | "right" }) {
     <div
       className={`flex h-full shrink-0 flex-col items-center gap-2 bg-desk py-3 ${
         side === "left" ? "border-r" : "border-l"
-      } border-white/[0.06]`}
+      } border-mr-line-soft`}
       style={{ width: side === "left" ? LEFT_RAIL_WIDTH : RAIL_WIDTH }}
     >
       <Bar className="h-8 w-8 rounded-xl" />
-      <div className="my-0.5 h-px w-6 bg-white/[0.08]" />
+      <div className="my-0.5 h-px w-6 bg-mr-line" />
       {Array.from({ length: side === "left" ? 7 : 4 }).map((_, i) => (
         <Bar key={i} className="h-8 w-8 rounded-xl" />
       ))}
       {side === "left" && (
         <div className="mt-auto flex flex-col items-center gap-2.5 pt-2">
-          <div className="h-px w-6 bg-white/[0.08]" />
+          <div className="h-px w-6 bg-mr-line" />
           <Bar className="h-8 w-8 rounded-full" />
         </div>
       )}
@@ -39,10 +39,10 @@ export default function ResumeEditSkeleton() {
       <div className="hidden h-full shrink-0 lg:flex">
         <RailSkeleton side="left" />
         <div
-          className="h-full border-r border-white/[0.06] bg-desk"
+          className="h-full border-r border-mr-line-soft bg-desk"
           style={{ width: LEFT_PANEL_WIDTH }}
         >
-          <div className="flex items-center border-b border-white/[0.06] px-4 py-4">
+          <div className="flex items-center border-b border-mr-line-soft px-4 py-4">
             <Bar className="h-5 w-16" />
           </div>
 
@@ -70,7 +70,7 @@ export default function ResumeEditSkeleton() {
 
             {/* 折叠分区标题占位 */}
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 border-t border-white/[0.06] pt-5">
+              <div key={i} className="flex items-center gap-3 border-t border-mr-line-soft pt-5">
                 <Bar className="h-8 w-8 rounded-lg" />
                 <Bar className="h-4 w-28" />
               </div>
@@ -89,7 +89,7 @@ export default function ResumeEditSkeleton() {
 
         {/* 预览纸:A4 比例 */}
         <div className="flex h-full max-h-[calc(100vh-8rem)] items-center px-4 py-16">
-          <div className="aspect-[210/297] h-full max-w-full animate-pulse rounded-lg bg-white/[0.04] shadow-2xl" />
+          <div className="aspect-[210/297] h-full max-w-full animate-pulse rounded-lg bg-mr-surface-subtle shadow-2xl" />
         </div>
 
         {/* 底部工具坞:胶囊 */}
@@ -105,10 +105,10 @@ export default function ResumeEditSkeleton() {
       {/* ── 右:自定义面板 + 图标轨 ── */}
       <div className="hidden h-full shrink-0 lg:flex">
         <div
-          className="h-full border-l border-white/[0.06] bg-desk"
+          className="h-full border-l border-mr-line-soft bg-desk"
           style={{ width: PANEL_WIDTH }}
         >
-          <div className="flex items-center border-b border-white/[0.06] px-4 py-4">
+          <div className="flex items-center border-b border-mr-line-soft px-4 py-4">
             <Bar className="h-5 w-16" />
           </div>
 
@@ -137,14 +137,14 @@ export default function ResumeEditSkeleton() {
 
             {/* 折叠分区标题 */}
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 border-t border-white/[0.06] pt-5">
+              <div key={i} className="flex items-center gap-3 border-t border-mr-line-soft pt-5">
                 <Bar className="h-8 w-8 rounded-lg" />
                 <Bar className="h-4 w-24" />
               </div>
             ))}
 
             {/* 配色:快速主题色板 */}
-            <div className="space-y-3 border-t border-white/[0.06] pt-5">
+            <div className="space-y-3 border-t border-mr-line-soft pt-5">
               <div className="flex items-center gap-3">
                 <Bar className="h-8 w-8 rounded-lg" />
                 <Bar className="h-4 w-16" />

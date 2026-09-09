@@ -1,25 +1,14 @@
 ---
 import type { Copy } from '@/i18n/ui';
-import Faq from '@/components/islands/Faq';
-
-interface Props {
-  copy: Copy;
-}
+import SectionHeading from '@/components/landing-ui/SectionHeading.astro';
+interface Props { copy: Copy; }
 const { copy } = Astro.props;
 const f = copy.faq;
 ---
-
-<section id="faq" class="relative border-t border-hair py-24 md:py-32">
-  <div class="mx-auto grid max-w-[1120px] gap-10 px-5 md:px-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-20">
-    <div class="reveal">
-      <p class="eyebrow">{f.eyebrow}</p>
-      <h2 class="type-heading mt-4 text-ink">
-        {f.title}
-      </h2>
-    </div>
-
-    <div class="reveal" style="--reveal-delay:1">
-      <Faq client:visible items={f.items} />
-    </div>
+<section id="faq" class="be-section be-faq" data-beui="faq-numbered">
+  <div class="be-container"><SectionHeading {...f} subtitle={copy.landing.faqSubtitle} centered/>
+    <faq-list class="be-numbered-list reveal">
+      {f.items.map((item,i) => <details class="be-faq-item" open={i === 0}><summary><span class="be-index">{String(i+1).padStart(2,'0')}</span><h3>{item.q}</h3><span class="be-faq-icon" aria-hidden="true"><i></i><i></i></span></summary><div class="be-faq-answer"><div><p>{item.a}</p></div></div></details>)}
+    </faq-list>
   </div>
 </section>

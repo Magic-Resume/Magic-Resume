@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Trash2, Loader2 } from 'lucide-react';
+import { Send, Trash2, Loader2 } from '@magic-resume/icons';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { formatCommentDate } from '@/lib/utils/dateTime';
@@ -101,7 +101,7 @@ export const CommentPopover = ({
                                     <img src={avatarUrl} alt={authorName} className="w-5 h-5 rounded-full object-cover border border-neutral-200 dark:border-neutral-700" />
                                 </>
                             ) : (
-                               <div className="w-5 h-5 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center text-[10px] text-[#fff] font-bold">
+                               <div className="w-5 h-5 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center text-mr-micro text-[#fff] font-bold">
                                    {authorName && authorName !== 'Anonymous' ? authorName.charAt(0) : (t('sharedPage.comments.anonymous') || 'A').charAt(0)}
                                </div>
                            )}
@@ -109,12 +109,12 @@ export const CommentPopover = ({
                                <div className="flex items-center gap-1.5">
                                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">{authorName === 'Anonymous' ? t('sharedPage.comments.anonymous') : authorName}</span>
                                    {isOwner && (
-                                       <span className="px-1 py-0.25 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[8px] font-bold uppercase tracking-wider border border-amber-200 dark:border-amber-800">
+                                       <span className="px-1 py-0.25 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-mr-micro-small font-bold uppercase tracking-wider border border-amber-200 dark:border-amber-800">
                                            {t('sharedPage.comments.owner')}
                                        </span>
                                    )}
                                </div>
-                               <span className="text-[10px] text-neutral-500">{formatCommentDate(createdAt, t)}</span>
+                               <span className="text-mr-micro text-neutral-500">{formatCommentDate(createdAt, t)}</span>
                            </div>
                        </div>
                        {!isDraft && onDelete && !readOnly && (

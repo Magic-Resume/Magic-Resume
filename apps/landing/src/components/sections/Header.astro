@@ -1,67 +1,178 @@
 ---
 import type { Copy, Locale } from '@/i18n/ui';
-import { dashboardLink, GITHUB } from '@/consts';
-import { formatStars } from '@/lib/github';
-import Icon from '@/components/Icon.astro';
-import LangSwitcher from '@/components/LangSwitcher.astro';
+import { dashboardLink } from '@/consts';
 
 interface Props {
   copy: Copy;
   stars: number | null;
   locale: Locale;
+  /** 内容页要把锚点指回首页;首页留空,同页跳转不触发导航。 */
+  base?: string;
 }
-const { copy, stars, locale } = Astro.props;
+const { copy, locale, base = '' } = Astro.props;
 const nav = copy.nav;
 ---
 
 <header
-  class="fixed inset-x-0 top-0 z-50 border-b border-hair bg-workbench/75 backdrop-blur-xl"
+  class="landing-header fixed inset-x-0 top-0 z-50"
 >
-  <div class="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-4 px-5 md:px-6">
-    <a href="#top" class="flex items-center gap-2">
-      <span
-        class="flex h-7 w-7 items-center justify-center"
-      >
-        <img
-          src="/magic-resume-mark.png"
-          alt=""
-          aria-hidden="true"
-          width="28"
-          height="28"
-          class="h-7 w-7 object-contain"
-        />
+  <div class="landing-header-bar mx-auto flex h-14 items-center justify-between gap-4 px-5 md:px-6">
+    <a href={`${base}#top`} class="landing-brand flex items-center gap-2">
+      <span class="flex h-7 w-7 items-center justify-center">
+        <img src="/magic-resume-mark.png" alt="" aria-hidden="true" width="28" height="28" class="h-7 w-7 object-contain" />
       </span>
-      <span class="text-[14px] font-w510 tracking-tight text-ink">
-        Magic Resume
-      </span>
+      <span class="landing-wordmark">Magic Resume</span>
     </a>
 
-    <nav class="hidden items-center gap-6 text-[13px] text-ink-soft md:flex">
-      <a class="transition-colors hover:text-ink" href="#features">{nav.features}</a>
-      <a class="transition-colors hover:text-ink" href="#workflow">{nav.workflow}</a>
-      <a class="transition-colors hover:text-ink" href="#sync">{nav.sync}</a>
-      <a class="transition-colors hover:text-ink" href="#open-source">{nav.openSource}</a>
-      <a class="transition-colors hover:text-ink" href="#faq">{nav.faq}</a>
+    <nav class="landing-morph-nav hidden md:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>
+      <span class="landing-morph-surface" aria-hidden="true"></span>
+      <button type="button" data-landing-menu="product" aria-expanded="false">{locale === 'zh' ? '产品' : 'Product'} <i aria-hidden="true"></i></button>
+      <button type="button" data-landing-menu="resources" aria-expanded="false">{locale === 'zh' ? '资源' : 'Resources'} <i aria-hidden="true"></i></button>
+      <a href={`${base}#pricing`}>{locale === 'zh' ? '定价' : 'Pricing'}</a>
+      <a href={`${base}#customers`}>{nav.useCases}</a>
     </nav>
 
-    <div class="flex items-center gap-2">
-      <a
-        href={GITHUB.repo}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={nav.starOnGithub}
-        class="hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] text-muted transition-colors hover:text-ink sm:flex"
-      >
-        <Icon name="github" size={15} />
-        {stars !== null && <span class="font-mono text-xs tabular-nums">{formatStars(stars)}</span>}
-      </a>
-      <LangSwitcher />
+    <div class="landing-header-actions flex items-center gap-2">
+      <button class="landing-mobile-menu md:hidden" type="button" data-landing-mobile aria-controls="landing-mobile-panel" data-open-label={locale === 'zh' ? '打开菜单' : 'Open menu'} data-close-label={locale === 'zh' ? '关闭菜单' : 'Close menu'} aria-label={locale === 'zh' ? '打开菜单' : 'Open menu'} aria-expanded="false"><span><i></i><i></i><i></i></span></button>
       <a
         href={dashboardLink('header', locale)}
-        class="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-[13px] font-w510 text-workbench transition-opacity hover:opacity-85"
+        class="landing-get-started flex items-center gap-1 rounded-full px-4 py-2 text-mr-caption font-w510 transition-opacity hover:opacity-85"
       >
-        {nav.goToApp}
+        {locale === 'zh' ? '开始使用' : 'Get started'}
       </a>
+    </div>
+
+    <div class="landing-morph-popover" data-landing-popover aria-hidden="true" inert>
+      <div class="landing-morph-popover-frame">
+        <div class="landing-morph-panel" data-landing-panel="product">
+          {[
+            { href: '#features', title: locale === 'zh' ? '简历工作台' : 'Resume workbench', desc: locale === 'zh' ? '编辑、排版、实时预览' : 'Write, style, and preview' },
+            { href: '#review', title: locale === 'zh' ? 'AI 修改建议' : 'AI proposals', desc: locale === 'zh' ? '每一条修改，由你决定' : 'Review every proposed edit' },
+            { href: '#workflow', title: nav.workflow, desc: locale === 'zh' ? '给个岗位，开口面一场' : 'One job, one spoken loop' },
+            { href: '#sync', title: locale === 'zh' ? '保存与导出' : 'Save and export', desc: locale === 'zh' ? '本地草稿到 PDF / JSON' : 'Local draft to PDF and JSON' },
+          ].map((item, i) => <a href={item.href} style={`--i:${i}`}><strong>{item.title}</strong><small>{item.desc}</small></a>)}
+        </div>
+        <div class="landing-morph-panel" data-landing-panel="resources" hidden>
+          {[
+            { href: '#faq', title: nav.faq, desc: locale === 'zh' ? '常见问题与答案' : 'Answers to common questions', out: false },
+            { href: '#open-source', title: nav.contributors, desc: locale === 'zh' ? 'MIT、可自部署、贡献者' : 'MIT, self-host, contributors', out: false },
+            { href: `/${locale}/blog`, title: locale === 'zh' ? '文章' : 'Blog', desc: locale === 'zh' ? '简历与求职技巧' : 'Resume and career notes', out: true },
+            { href: `/${locale}/tools`, title: locale === 'zh' ? '工具' : 'Tools', desc: locale === 'zh' ? '免费工具集' : 'Free utilities', out: true },
+          ].map((item, i) => <a href={item.href} style={`--i:${i}`}><strong>{item.title}{item.out && <i aria-hidden="true">↗</i>}</strong><small>{item.desc}</small></a>)}
+        </div>
+      </div>
+    </div>
+
+    <div class="landing-mobile-panel" data-landing-mobile-panel id="landing-mobile-panel" hidden>
+      <button type="button" data-landing-sub="product" aria-expanded="false">{locale === 'zh' ? '产品' : 'Product'} <i aria-hidden="true"></i></button>
+      <div data-landing-subpanel="product" hidden>
+        <a href={`${base}#features`}>{nav.features}</a><a href={`${base}#review`}>{locale === 'zh' ? 'AI 修改建议' : 'AI proposals'}</a><a href={`${base}#workflow`}>{nav.workflow}</a><a href={`${base}#sync`}>{locale === 'zh' ? '保存与导出' : 'Save and export'}</a>
+      </div>
+      <button type="button" data-landing-sub="resources" aria-expanded="false">{locale === 'zh' ? '资源' : 'Resources'} <i aria-hidden="true"></i></button>
+      <div data-landing-subpanel="resources" hidden>
+        <a href={`${base}#faq`}>{nav.faq}</a><a href={`${base}#open-source`}>{nav.contributors}</a><a href={`/${locale}/blog`}>{locale === 'zh' ? '文章' : 'Blog'}</a><a href={`/${locale}/tools`}>{locale === 'zh' ? '工具' : 'Tools'}</a>
+      </div>
+      <a href={`${base}#pricing`}>{locale === 'zh' ? '定价' : 'Pricing'}</a><a href={`${base}#customers`}>{nav.useCases}</a>
+      <footer><a href={dashboardLink('header', locale)}>{nav.goToApp}</a></footer>
     </div>
   </div>
 </header>
+
+<script>
+  // @ts-nocheck
+  const initHeader = () => {
+  const root = document.querySelector('.landing-header');
+  if (!root || root.dataset.bound) return;
+  root.dataset.bound = 'true';
+  const abort = new AbortController();
+  document.addEventListener('astro:before-swap', () => abort.abort(), {once: true});
+  const nav = root?.querySelector('.landing-morph-nav');
+  const popover = root?.querySelector('[data-landing-popover]');
+  const frame = root?.querySelector('.landing-morph-popover-frame');
+  const mobileButton = root?.querySelector('[data-landing-mobile]');
+  const mobilePanel = root?.querySelector('[data-landing-mobile-panel]');
+  if (root && nav && popover && frame && mobileButton && mobilePanel) {
+    const triggers = [...nav.querySelectorAll('[data-landing-menu]')];
+    const surface = nav.querySelector('.landing-morph-surface');
+    let active = '';
+    let closeTimer = 0;
+    const open = (kind) => {
+      clearTimeout(closeTimer);
+      const trigger = triggers.find((item) => item.dataset.landingMenu === kind);
+      if (!trigger || !surface) return;
+      const triggerRect = trigger.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      const barRect = root.querySelector('.landing-header-bar').getBoundingClientRect();
+      surface.style.setProperty('--landing-surface-x', `${triggerRect.left - navRect.left}px`);
+      surface.style.setProperty('--landing-surface-width', `${triggerRect.width}px`);
+      surface.style.setProperty('--landing-surface-opacity', '1');
+      const width = Math.min(520, barRect.width);
+      popover.style.setProperty('--landing-panel-x', `${Math.max(0, Math.min(triggerRect.left - barRect.left, barRect.width-width))}px`);
+      triggers.forEach((item) => item.setAttribute('aria-expanded', String(item === trigger)));
+      root.querySelectorAll('[data-landing-panel]').forEach((panel) => {
+        const on = panel.dataset.landingPanel === kind;
+        panel.hidden = !on;
+        // 重放逐项入场:换菜单时盒子不动,变化全靠这一串错峰交代。
+        panel.classList.remove('is-live');
+        if (on) { void panel.offsetWidth; panel.classList.add('is-live'); }
+      });
+      active = kind;
+      popover.inert = false;
+      popover.setAttribute('aria-hidden', 'false');
+      popover.classList.add('is-open');
+    };
+    const close = () => {
+      clearTimeout(closeTimer);
+      closeTimer = window.setTimeout(() => {
+        active = '';
+        triggers.forEach((item) => item.setAttribute('aria-expanded', 'false'));
+        popover.classList.remove('is-open');
+        popover.inert = true;
+        popover.setAttribute('aria-hidden', 'true');
+        surface?.style.setProperty('--landing-surface-opacity', '0');
+      }, 120);
+    };
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('pointerenter', () => open(trigger.dataset.landingMenu));
+      trigger.addEventListener('keydown', (event) => { if(event.key === 'ArrowDown') { event.preventDefault(); open(trigger.dataset.landingMenu); root.querySelector('[data-landing-panel]:not([hidden]) a')?.focus(); } });
+      trigger.addEventListener('click', () => open(trigger.dataset.landingMenu));
+    });
+    const hoverRegion = root.querySelector('.landing-header-bar');
+    hoverRegion.addEventListener('pointerenter', () => clearTimeout(closeTimer));
+    hoverRegion.addEventListener('pointerleave', close);
+    popover.addEventListener('pointerenter', () => clearTimeout(closeTimer));
+    popover.addEventListener('pointerleave', close);
+    mobileButton.addEventListener('click', () => {
+      const next = mobileButton.getAttribute('aria-expanded') !== 'true';
+      mobileButton.setAttribute('aria-expanded', String(next));
+      mobileButton.setAttribute('aria-label', next ? mobileButton.dataset.closeLabel : mobileButton.dataset.openLabel);
+      mobilePanel.toggleAttribute('hidden', !next);
+    });
+    mobilePanel.querySelectorAll('[data-landing-sub]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const kind = button.dataset.landingSub;
+        const panel = mobilePanel.querySelector(`[data-landing-subpanel="${kind}"]`);
+        const next = button.getAttribute('aria-expanded') !== 'true';
+        button.setAttribute('aria-expanded', String(next));
+        panel?.toggleAttribute('hidden', !next);
+      });
+    });
+    root.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        if (active) triggers.find(item => item.dataset.landingMenu === active)?.focus();
+        else if (mobileButton.getAttribute('aria-expanded') === 'true') mobileButton.focus();
+        close();
+        mobileButton.setAttribute('aria-expanded', 'false');
+        mobilePanel.setAttribute('hidden', '');
+      }
+    });
+    root.addEventListener('focusout', (event) => { if (!root.contains(event.relatedTarget)) close(); });
+    root.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { close(); mobileButton.setAttribute('aria-expanded', 'false'); mobilePanel.hidden = true; }));
+    document.addEventListener('pointerdown', (event) => {
+      if (!root.contains(event.target)) { close(); mobileButton.setAttribute('aria-expanded','false'); mobilePanel.hidden=true; }
+    }, {signal:abort.signal});
+  }
+  };
+  document.addEventListener('astro:page-load', initHeader);
+  initHeader();
+</script>

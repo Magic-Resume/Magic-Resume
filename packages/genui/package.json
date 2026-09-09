@@ -8,26 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./contract": {
-      "types": "./dist/contract/index.d.ts",
-      "default": "./dist/contract/index.js"
-    },
-    "./host": {
-      "types": "./dist/host/index.d.ts",
-      "default": "./dist/host/index.js"
-    },
-    "./motion": {
-      "types": "./dist/motion/index.d.ts",
-      "default": "./dist/motion/index.js"
-    },
-    "./primitives": {
-      "types": "./dist/primitives/index.d.ts",
-      "default": "./dist/primitives/index.js"
-    },
-    "./widgets": {
-      "types": "./dist/widgets/index.d.ts",
-      "default": "./dist/widgets/index.js"
     }
   },
   "files": [
@@ -37,22 +17,36 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run lint"
+    "test": "npm run lint",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build -o storybook-static",
+    "storybook:typecheck": "tsc -p .storybook/tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@magic-resume/utils": "workspace:*"
+    "@magic-resume/design-system": "workspace:*",
+    "@magic-resume/icons": "workspace:*",
+    "@magic-resume/utils": "workspace:*",
+    "highlight.js": "11.11.2",
+    "lowlight": "3.3.0"
   },
   "peerDependencies": {
     "framer-motion": "^12.17.0",
-    "lucide-react": "^0.513.0",
     "react": ">=19",
     "react-dom": ">=19",
     "react-i18next": "^15.5.2"
   },
   "devDependencies": {
     "@magic-resume/tsconfig": "workspace:*",
+    "@storybook/react-vite": "^10.6.0",
+    "@tailwindcss/postcss": "^4.3.0",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19",
-    "typescript": "^5"
+    "i18next": "^25.10.10",
+    "postcss": "^8.5.28",
+    "react-i18next": "^15.5.2",
+    "storybook": "^10.6.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5",
+    "vite": "^8.2.2"
   }
 }

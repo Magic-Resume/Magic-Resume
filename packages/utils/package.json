@@ -19,8 +19,7 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^3.3.0"
+    "@magic-resume/design-system": "workspace:*"
   },
   "devDependencies": {
     "@magic-resume/tsconfig": "workspace:*",

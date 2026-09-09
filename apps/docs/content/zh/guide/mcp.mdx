@@ -21,11 +21,11 @@ description: 进阶玩法——在 Claude Code、Cursor 等工具里直接读改
 <Step title="配置 MCP 服务器">
 ```bash
 npx -y @magic-resume/mcp config set \
-  --api-url "https://api.magic-resume.cn" \
+  --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 ```
 
-这会写入 `~/.magic-resume/mcp.json`。如果你本地跑了后端，把 `--api-url` 指向它。
+这会写入 `~/.magic-resume/mcp.json`。如果你本地跑了后端，把 `--api-url` 指向 `http://localhost:3110/api`（Core 网关）。
 </Step>
 
 <Step title="注册到你的 AI 工具">

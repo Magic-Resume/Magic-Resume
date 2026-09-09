@@ -63,6 +63,20 @@ class IndexedDBClient {
     const db = await this.dbPromise;
     await db.delete(STORE_NAME, key);
   }
+
+  /**
+   * 库里所有的 key。
+   *
+   * 用于按前缀扫一批条目（存量对话迁移、过期会话清理）——那两处此前写成
+   * `db.getAllKeys?.()`，而这个类根本没有这个方法，于是它们一直扫到空数组。
+   */
+  async getAllKeys(): Promise<string[]> {
+    await this.init();
+    if (!this.dbPromise) return [];
+    const db = await this.dbPromise;
+    const keys = await db.getAllKeys(STORE_NAME);
+    return keys.filter((k): k is string => typeof k === 'string');
+  }
 }
 
 export const dbClient = new IndexedDBClient();

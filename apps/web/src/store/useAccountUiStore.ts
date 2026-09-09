@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /** Categories in the GPT-style settings modal. Cloud-only ones are filtered at render. */
-export type SettingsSection = 'general' | 'model' | 'cloudSync' | 'mcp';
+export type SettingsSection = 'general' | 'model' | 'cloudSync' | 'mcp' | 'memory' | 'notifications';
 
 /** Tabs in the account (个人资料) modal. Billing lives here, with the rest of
  *  what is true about the account rather than about the app. */

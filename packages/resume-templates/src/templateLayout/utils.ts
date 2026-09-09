@@ -1,69 +1,21 @@
-import get from 'lodash.get';
 import { sectionIconByName, type SectionIconComponent } from '../sectionIcons';
 import React from 'react';
+// 三个取值/链接函数移到了中立的 `fieldAccess`，两个渲染器共用一份——
+// 此前 PDF 侧各写了一份，其中 safeHref 的那份没有拒绝路径，是个 XSS 洞。
+// 这里 re-export 以保持既有调用点不变。
+export { getFieldValue, getFieldEntry, safeHref } from '../fieldAccess';
 import {
-  Briefcase, GraduationCap, FolderOpen, Wrench,
+  Briefcase, Certificate, GraduationCap, FolderKanban, Wrench,
   Languages, Award, User, Globe,
-} from 'lucide-react';
-
-interface Item {
-  [key: string]: unknown;
-}
-
-/**
- * Return a safe href for a user-supplied link value, or null if it can't be
- * trusted. Only http(s) URLs are allowed; a bare domain-like value is promoted to
- * https://. Anything else (javascript:, data:, vbscript:, …) yields null so the
- * caller renders the value as plain text instead of a clickable link. This is the
- * XSS guard for user-authored links shown on the public share page.
- */
-export const safeHref = (value: string | undefined | null): string | null => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(\/.*)?$/.test(trimmed)) {
-    return `https://${trimmed}`;
-  }
-  return null;
-};
-
-export const getFieldValue = (item: Item, field: string | string[] | undefined) => {
-  if (!field) return null;
-  const fields = Array.isArray(field) ? field : [field];
-  for (const f of fields) {
-    const value = get(item, f);
-    if (value) return String(value);
-  }
-  return null;
-};
-
-/**
- * Like {@link getFieldValue}, but also reports which concrete key produced the
- * value. The living canvas needs the real field key (e.g. `summary`) to anchor a
- * pending change back onto the right property — fieldMap aliases like
- * `description` are not writable paths.
- */
-export const getFieldEntry = (
-  item: Item,
-  field: string | string[] | undefined
-): { key: string; value: string } | null => {
-  if (!field) return null;
-  const fields = Array.isArray(field) ? field : [field];
-  for (const f of fields) {
-    const value = get(item, f);
-    if (value) return { key: f, value: String(value) };
-  }
-  return null;
-};
+} from '@magic-resume/icons';
 
 const SECTION_ICON_MAP: Record<string, SectionIconComponent> = {
   experience: Briefcase,
   education: GraduationCap,
-  projects: FolderOpen,
+  projects: FolderKanban,
   skills: Wrench,
   languages: Languages,
-  certificates: Award,
+  certificates: Certificate,
   profiles: User,
   contact: Globe,
 };
@@ -71,10 +23,10 @@ const SECTION_ICON_MAP: Record<string, SectionIconComponent> = {
 const TITLE_ICON_KEYWORDS: Record<string, SectionIconComponent> = {
   '工作': Briefcase, 'experience': Briefcase, 'work': Briefcase,
   '教育': GraduationCap, 'education': GraduationCap,
-  '项目': FolderOpen, 'project': FolderOpen,
+  '项目': FolderKanban, 'project': FolderKanban,
   '技能': Wrench, 'skill': Wrench, 'technical': Wrench,
   '语言': Languages, 'language': Languages,
-  '证书': Award, 'certif': Award, 'award': Award,
+  '证书': Certificate, 'certif': Certificate, 'award': Award,
   '个人': User, 'profile': User, 'summary': User,
   '联系': Globe, 'contact': Globe,
 };

@@ -1,0 +1,8 @@
+---
+interface Props { title: string; subtitle?: string; centered?: boolean; }
+const { title, subtitle, centered = false } = Astro.props;
+---
+<div class:list={['be-heading', 'reveal', centered && 'is-centered']}>
+  <h2>{title}</h2>
+  {subtitle && <p class="be-description">{subtitle}</p>}
+</div>

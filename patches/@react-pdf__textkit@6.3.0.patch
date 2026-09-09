@@ -1,5 +1,5 @@
 diff --git a/lib/textkit.js b/lib/textkit.js
-index 0b8b6fa636c48ef0ac9cecb27040d2bac9303ce8..058d96e4d47339482c2c8e8769ca031b8688e3a5 100644
+index 0b8b6fa636c48ef0ac9cecb27040d2bac9303ce8..99bf13e4ffec576ae999416001edb6d95c07e1f6 100644
 --- a/lib/textkit.js
 +++ b/lib/textkit.js
 @@ -697,6 +697,31 @@ const omit = (value, run) => {
@@ -73,3 +73,19 @@ index 0b8b6fa636c48ef0ac9cecb27040d2bac9303ce8..058d96e4d47339482c2c8e8769ca031b
  };
  
  /**
+@@ -1753,6 +1779,15 @@ const applyAttributes = (a) => {
+         fill: a.fill !== false,
+         font: a.font || [],
+         fontSize: a.fontSize || 12,
++        // This whitelist is what reaches the renderer: anything not listed here
++        // is dropped. The *requested* weight has to survive alongside the
++        // resolved face, otherwise the render package cannot tell "asked for
++        // bold, got the only weight this family ships" from "this text is
++        // regular by design" — the exact comparison browsers use to decide on
++        // synthetic bold. See the sibling patches in @react-pdf/layout (which
++        // puts it on the attributes) and @react-pdf/render (which strokes the
++        // glyphs when it applies).
++        fontWeight: a.fontWeight,
+         hangingPunctuation: a.hangingPunctuation || false,
+         hyphenationFactor: a.hyphenationFactor || 0,
+         indent: a.indent || 0,

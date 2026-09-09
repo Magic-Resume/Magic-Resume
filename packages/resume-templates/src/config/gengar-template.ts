@@ -146,7 +146,7 @@ export const gengarTemplate: MagicTemplateDSL = {
         title: ["company"],
         subtitle: ["position"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#f9fafb"
@@ -166,7 +166,7 @@ export const gengarTemplate: MagicTemplateDSL = {
         title: ["school"],
         subtitle: ["degree", "major"], 
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#f9fafb"
@@ -186,7 +186,7 @@ export const gengarTemplate: MagicTemplateDSL = {
         title: ["certificate", "name"],
         subtitle: ["level"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#f9fafb"
@@ -206,7 +206,7 @@ export const gengarTemplate: MagicTemplateDSL = {
         title: ["name"],
         subtitle: ["role"],
         date: ["date"], 
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#f9fafb"
@@ -226,7 +226,7 @@ export const gengarTemplate: MagicTemplateDSL = {
         title: ["name", "platform"],
         subtitle: ["username"],
         date: ["date"],
-        description: ["summary"]
+        description: ["summary", "description"]
       },
       style: {
         color: "#f9fafb"

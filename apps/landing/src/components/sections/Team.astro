@@ -1,0 +1,44 @@
+---
+import type { Copy } from '@/i18n/ui';
+import type { Contributor } from '@/lib/github';
+import { GITHUB } from '@/consts';
+import Icon from '@/components/Icon.astro';
+interface Props { copy: Copy; contributors: Contributor[]; }
+const { copy, contributors } = Astro.props;
+const t = copy.team;
+---
+<section id="team" class="be-section" data-beui="team-grid">
+  <div class="be-container">
+    <div class="be-team-head reveal">
+      <div>
+        <span class="be-team-eyebrow">{t.eyebrow}</span>
+        <h2>{t.title}</h2>
+        <p>{t.subtitle}</p>
+      </div>
+      <a class="be-team-cta" href={GITHUB.contributors} target="_blank" rel="noopener noreferrer">
+        <span class="be-team-dot" aria-hidden="true"><i></i><i></i></span>{t.cta}<Icon name="arrow-up" size={16}/>
+      </a>
+    </div>
+
+    {contributors.length > 0 && (
+      <div class="be-team-grid reveal">
+        {contributors.map((person, i) => (
+          <article class="be-team-card">
+            <div class="be-team-avatar">
+              <img src={person.avatar} alt="" width="240" height="240" loading="lazy" decoding="async"/>
+              <div class="be-team-socials">
+                <a href={person.url} target="_blank" rel="noopener noreferrer" aria-label={person.login}>
+                  <Icon name="github" size={15}/>
+                </a>
+              </div>
+            </div>
+            <div class="be-team-name">
+              <h3>{person.login}</h3>
+              <p>{i === 0 ? t.maintainer : t.commits.replace('{n}', String(person.commits))}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

@@ -1,7 +1,14 @@
 @import "tailwindcss";
+@import "@magic-resume/design-system/styles/tokens.css";
+@import "@magic-resume/design-system/styles/utilities.css";
+@import "@magic-resume/design-system/styles/motion.css";
+@source "../../../../packages/design-system/src";
 
 /* Self-hosted brand face. Latin only — CJK falls back to the system stack. */
 @import "@fontsource-variable/inter";
+/* 技术细节层的字。系统 ui-monospace 在 macOS 是 SF Mono、Windows 是 Consolas,
+   同一个计费行在两台机器上宽度差一截——细节层必须自带字才立得住。 */
+@import "@fontsource-variable/geist-mono";
 
 /*
   Design tokens — see design.md for the full spec.
@@ -9,8 +16,8 @@
   Two colour systems live in this file, and the boundary between them is
   `.linear-frame`:
 
-    Chrome layer (outside the frame)  — near-black neutrals, one accent:
-                                        acid lime #e4f222, used twice per page.
+    Chrome layer (outside the frame)  — neutral dark grays, one accent:
+                                        sky #38bdf8, used twice per page.
     Product-Sim layer (inside)        — the product's own palette (sky-400,
                                         paper white, red/green revision marks).
                                         It is a screenshot; recolouring it would
@@ -23,7 +30,9 @@
   --font-sans:
     "Inter Variable", ui-sans-serif, system-ui, -apple-system, "PingFang SC",
     "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-mono:
+    "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
 
   /* The ladder is 300 / 400 / 510 / 590 — nothing heavier in the chrome layer.
      `font-bold` (700) still resolves for the product mockups, which simulate a
@@ -32,20 +41,30 @@
   --font-weight-w590: 590;
 
   /* ── Chrome: surfaces ──────────────────────────────────────────────── */
-  --color-workbench: #08090a; /* Void     — page canvas */
-  --color-surface: #0f1011; /* Carbon   — cards, frames, nav */
-  --color-surface-2: #161718; /* Obsidian — nested panels */
-  --color-hairline: #23252a; /* Graphite — hairline borders */
-  --color-hairline-strong: #383b3f; /* Smoke    — emphatic dividers */
+  --color-workbench: #151515; /* BeUI canvas — shared by every section */
+  --color-surface: #1c1c1c; /* Cards, frames, nav */
+  --color-surface-2: #242424; /* Nested panels */
+  --color-hairline: #2a2a2a; /* Hairline borders */
+  --color-hairline-strong: #383838; /* Emphatic dividers */
 
-  /* ── Chrome: ink (contrast against #08090a, measured) ──────────────── */
-  --color-ink: #ffffff; /* 19.9:1 — headings */
-  --color-ink-soft: #d0d6e0; /* 13.7:1 — body */
-  --color-muted: #8a8f98; /*  6.1:1 — secondary */
-  --color-faint: #62666d; /*  3.5:1 — ≥24px or non-text ONLY */
+  /* ── Chrome: ink ────────────────────────────────────────────────── */
+  --color-ink: #ffffff; /* Headings */
+  --color-ink-soft: #d0d6e0; /* Body */
+  --color-muted: #8a8f98; /* Secondary */
+  --color-faint: #62666d; /* Large labels or decorative elements */
 
-  /* ── The one accent. Budget: 2 filled elements per page, ≤1 per view ── */
-  --color-accent: #e4f222;
+  /* ── The one accent. Budget: 2 filled elements per page, ≤1 per view ──
+        Sky, the product's own brand colour. The chrome layer used to run acid
+        lime to stay distinct from the app, but a visitor who crosses from the
+        landing into /dashboard should not meet a different hue on the way in. */
+  --color-accent: #38bdf8;
+  /* Sky splits in two: the bright one fills CTAs and draws borders, the dark
+     one carries *text*. #38bdf8 as type is 2.1:1 on paper — unreadable in the
+     light theme. Same split as docs/specs/light-theme (--glow-sky/--ink-sky). */
+  --color-accent-text: #38bdf8;
+  /* 强调按钮上的文字。**不能**绑 --color-workbench：那在浅色主题下会翻成近白，
+     压在黄绿底上直接读不出来。两套主题下它都得是暗的。 */
+  --color-accent-ink: #08090a;
 
   /* ── Product-Sim: the resume document (do not rename — `paper` here is
         the sheet the résumé is printed on, not white text) ───────────── */
@@ -69,8 +88,57 @@
   color-scheme: dark;
 }
 
+/* ── 浅色主题 ───────────────────────────────────────────────────────────
+   深色是默认，浅色靠 `<html data-theme="light">` 打开（脚本 inline 在 <head>
+   里跑，避免首帧闪一下深色）。
+
+   只翻 chrome 层的 token：产品截图里那张「纸」（--color-paper*）、红绿增删、
+   窗口红黄绿点都是**模拟真实 UI**的一部分，两套主题下都不该动。
+
+   对比度按 #f7f7f5 底实测标注。
+   ------------------------------------------------------------------- */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* 值对齐 apps/web 已实现的那套（docs/specs/light-theme）。
+     第一版我用的是中性灰 + 深色那套「靠更白造层次」，于是卡片、面板、页底全挤在
+     95–100% 之间谁也分不开谁。规范的做法是**向暖纸微染**（OKLCH hue≈85，刻意
+     不向品牌冷色染），层次改由 hairline 边界 + 落地暖影承担。 */
+  /* 2026-09-07(作者定稿):浅色的面色改成**中性**,不再向暖纸微染。
+     原方案(hue≈85)让页面 #FAF8F4、拼贴 #FCFCFC、Sync/页脚 #FBFAF8 三种白并存,
+     分区交界处能看见一道色差缝。统一到 #FCFCFC 一支。
+     这条推翻 design.md §2.1「向暖纸微染」的结论,那份文档需要同步。 */
+  --color-workbench: #fcfcfc; /* 页面画布,全站唯一的白 */
+  --color-surface: #ffffff; /*   卡片 / 框 / 导航 */
+  --color-surface-2: #f4f4f4; /* 嵌套面板 */
+  --color-hairline: #e6e6e6;
+  --color-hairline-strong: #d0d0d0;
+
+  --color-ink: oklch(0.27 0.01 85); /*      ≈ #2B2723 暖炭 */
+  --color-ink-soft: oklch(0.36 0.01 85); /* ≈ #423C35 */
+  --color-muted: oklch(0.55 0.01 85); /*    ≈ #6E695F */
+  --color-faint: oklch(0.68 0.008 85); /*   ≈ #9A958C  ≥24px 或非文字 ONLY */
+
+  /* 强调色文字压深到 sky-700：亮 sky 在暖纸上只有 2.1:1，当字用读不出来。
+     填充与描边仍用亮 sky（--color-accent），两支各司其职。 */
+  --color-accent-text: #0369a1; /* 5.7:1 ✓ */
+
+  /* 阴影用**暖黑**不用纯黑：纯黑影压在暖纸上显脏、发灰。 */
+  --shadow-1: 0 1px 2px oklch(0.2 0.02 85 / 0.06);
+  --shadow-2: 0 2px 8px oklch(0.2 0.02 85 / 0.08);
+  --shadow-3: 0 12px 32px oklch(0.2 0.02 85 / 0.12);
+}
+
+/* 深色沿用发光造层次，阴影极浅。 */
+:root {
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 18px 44px -22px rgba(0, 0, 0, 0.7);
+}
+
 html {
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -86,6 +154,68 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+}
+
+/* Long-form pages use a deliberately small prose vocabulary instead of the
+   optional typography plugin. This keeps the landing bundle lean and makes
+   headings/links render consistently in both locales. */
+.content-prose > :first-child {
+  margin-top: 0;
+}
+.content-prose h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 0.9rem;
+  color: var(--color-ink);
+  font-size: 1.35rem;
+  font-weight: 510;
+  line-height: 1.35;
+}
+.content-prose h3 {
+  margin-top: 1.8rem;
+  margin-bottom: 0.6rem;
+  color: var(--color-ink);
+  font-size: 1.05rem;
+  font-weight: 510;
+  line-height: 1.45;
+}
+.content-prose p {
+  margin-top: 1rem;
+}
+.content-prose ul,
+.content-prose ol {
+  margin-top: 1rem;
+  padding-left: 1.4rem;
+}
+.content-prose li + li {
+  margin-top: 0.45rem;
+}
+.content-prose ul li {
+  list-style: disc;
+}
+.content-prose ol li {
+  list-style: decimal;
+}
+.content-prose a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-hairline-strong);
+  text-underline-offset: 0.2em;
+}
+.content-prose a:hover {
+  text-decoration-color: var(--color-accent);
+}
+.content-prose blockquote {
+  margin: 1.5rem 0;
+  border-left: 2px solid var(--color-accent);
+  padding-left: 1rem;
+  color: var(--color-ink);
+}
+.content-prose code {
+  border-radius: 4px;
+  background: var(--color-surface-2);
+  padding: 0.1em 0.3em;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
 }
 
 ::selection {
@@ -162,6 +292,71 @@ body {
   border-radius: 9999px;
   background: var(--color-muted);
 }
+
+/* Morphing navbar adapted from the verified recreation catalog. The source is
+   light, so the same geometry/motion is recoloured for the landing dark
+   chrome while preserving the measured pill, shared surface and popover. */
+.landing-header-bar { position: relative; width: calc(100% - 48px); max-width: 1024px; margin-top: 16px; border: 1px solid var(--color-hairline); border-radius: 999px; background: color-mix(in srgb, var(--color-workbench) 90%, transparent); backdrop-filter: blur(16px); }
+.landing-brand { flex-shrink: 0; color: var(--color-ink); }
+/* 字标与正文同一张脸,靠字重和字号跟右边 14/400 的菜单拉开(590 是 chrome 层的
+   上限,design.md §2)。字距收紧一点,几个字才聚成一个名字。 */
+.landing-wordmark { font-size: 17px; font-weight: 590; letter-spacing: -0.025em; color: var(--color-ink); }
+.landing-brand-mark { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: var(--color-ink); color: var(--color-workbench); font-size: 18px; line-height: 1; }
+.landing-morph-nav { position: absolute; top: 10px; left: 50%; height: 36px; align-items: center; gap: 4px; transform: translateX(-50%); }
+.landing-morph-nav > button, .landing-morph-nav > a { position: relative; z-index: 2; display: flex; height: 36px; align-items: center; gap: 5px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--color-muted); font-family: var(--font-sans); font-size: 14px; font-weight: 400; line-height: 20px; text-decoration: none; cursor: pointer; transition: color 160ms ease; }
+.landing-morph-nav > button:hover, .landing-morph-nav > button:focus-visible, .landing-morph-nav > a:hover, .landing-morph-nav > a:focus-visible, .landing-morph-nav > button[aria-expanded='true'] { color: var(--color-ink); }
+.landing-morph-nav > button:nth-of-type(1) { width: 94px; justify-content: center; }
+.landing-morph-nav > button:nth-of-type(2) { width: 111px; justify-content: center; }
+.landing-morph-nav > a:nth-of-type(1) { width: 70px; justify-content: center; }
+.landing-morph-nav > a:nth-of-type(2) { width: 95px; justify-content: center; }
+.landing-morph-nav > button i, .landing-mobile-panel > button i { display: inline-block; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translate(-1px,-1px); transform-origin: center; transition: transform 200ms ease; }
+.landing-morph-nav > button[aria-expanded='true'] i, .landing-mobile-panel > button[aria-expanded='true'] i { transform: rotate(225deg) translate(-1px,-1px); }
+.landing-morph-surface { position: absolute; z-index: 1; top: 2px; bottom: 2px; left: 0; width: var(--landing-surface-width,0px); border-radius: 999px; background: color-mix(in srgb, var(--color-ink) 12%, transparent); opacity: var(--landing-surface-opacity,0); transform: translateX(var(--landing-surface-x,0px)); transition: width 420ms cubic-bezier(.16,1,.3,1), transform 420ms cubic-bezier(.16,1,.3,1), opacity 180ms ease; pointer-events: none; }
+.landing-morph-popover { --landing-panel-x: 264px; position: absolute; z-index: 20; top: 64px; left: 0; width: 520px; height: 176px; opacity: 0; transform: translateX(var(--landing-panel-x)) translateY(6px); transition: transform 360ms cubic-bezier(.16,1,.3,1), opacity 160ms ease; pointer-events: none; }
+.landing-morph-popover.is-open { opacity: 1; transform: translateX(var(--landing-panel-x)); pointer-events: auto; }
+/* 开合是从上往下擦入,不是整块淡入——盒子先到位,内容跟着露出来。 */
+.landing-morph-popover-frame { width: 100%; height: 100%; overflow: hidden; padding: 8px; border: 1px solid var(--color-hairline); border-radius: 16px; background: color-mix(in srgb, var(--color-surface) 96%, transparent); box-shadow: 0 24px 60px -30px rgb(0 0 0 / .85); transform-origin: top left; clip-path: inset(0 0 100% 0 round 16px); transition: clip-path 380ms cubic-bezier(.16,1,.3,1); }
+.landing-morph-popover.is-open .landing-morph-popover-frame { clip-path: inset(0 0 0 0 round 16px); }
+.landing-morph-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; height: 100%; }
+.landing-morph-panel a { display: flex; height: 100%; flex-direction: column; justify-content: center; padding: 12px 14px; border-radius: 12px; color: var(--color-ink); text-decoration: none; }
+.landing-morph-panel a:hover, .landing-morph-panel a:focus-visible { background: color-mix(in srgb, var(--color-ink) 8%, transparent); }
+.landing-morph-panel strong, .landing-morph-panel small { display: block; }
+.landing-morph-panel strong { font-size: 13px; font-weight: 510; }
+.landing-morph-panel strong i { margin-left: 5px; color: var(--color-muted); font-size: 11px; font-style: normal; }
+.landing-morph-panel small { margin-top: 4px; color: var(--color-muted); font-size: 11px; }
+/* 换菜单时盒子不动,变化全靠这一串错峰入场交代。类由 JS 摘掉再加,动画才会重放。 */
+.landing-morph-panel.is-live a { animation: landing-menu-item 280ms cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i) * 34ms); }
+@keyframes landing-menu-item { from { opacity: 0; transform: translateY(7px); } }
+@media (prefers-reduced-motion: reduce) {
+  .landing-morph-popover-frame { transition: none; }
+  .landing-morph-panel.is-live a { animation: none; }
+}
+.landing-get-started { background: var(--color-ink); color: var(--color-workbench); }
+.landing-mobile-menu { display: none; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--color-ink-soft); cursor: pointer; }
+.landing-mobile-menu > span { position: relative; display: block; width: 16px; height: 14px; }
+.landing-mobile-menu i { position: absolute; left: 0; width: 16px; height: 2px; border-radius: 999px; background: currentColor; transition: transform 240ms cubic-bezier(.16,1,.3,1), opacity 160ms ease; }
+.landing-mobile-menu i:nth-child(1) { top: 0; } .landing-mobile-menu i:nth-child(2) { top: 6px; } .landing-mobile-menu i:nth-child(3) { bottom: 0; }
+.landing-mobile-menu[aria-expanded='true'] i:nth-child(1) { transform: translateY(6px) rotate(45deg); } .landing-mobile-menu[aria-expanded='true'] i:nth-child(2) { opacity: 0; } .landing-mobile-menu[aria-expanded='true'] i:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.landing-mobile-panel { position: absolute; z-index: 40; top: 64px; right: 0; left: 0; overflow: hidden; padding: 8px; border: 1px solid var(--color-hairline); border-radius: 16px; background: color-mix(in srgb, var(--color-surface) 96%, transparent); box-shadow: 0 24px 60px -30px rgb(0 0 0 / .85); backdrop-filter: blur(18px); transform-origin: top; animation: landing-mobile-in 260ms cubic-bezier(.16,1,.3,1) both; }
+.landing-mobile-panel[hidden], .landing-morph-panel[hidden] { display: none; }
+.landing-mobile-panel > button, .landing-mobile-panel > a, .landing-mobile-panel [data-landing-subpanel] a { display: flex; width: 100%; min-height: 40px; align-items: center; justify-content: space-between; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: var(--color-ink-soft); font: 510 14px/20px inherit; text-decoration: none; cursor: pointer; }
+.landing-mobile-panel > button:hover, .landing-mobile-panel > a:hover, .landing-mobile-panel [data-landing-subpanel] a:hover { background: color-mix(in srgb, var(--color-ink) 8%, transparent); color: var(--color-ink); }
+.landing-mobile-panel [data-landing-subpanel] { padding: 4px; }
+.landing-mobile-panel footer { display: grid; margin-top: 8px; padding: 4px; }
+.landing-mobile-panel footer a { justify-content: center; border: 1px solid var(--color-hairline); border-radius: 999px; color: var(--color-ink); }
+@keyframes landing-mobile-in { from { opacity: 0; transform: scale(.96) translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 767px) {
+  .landing-morph-nav, .landing-morph-popover { display: none; }
+  .landing-mobile-menu { display: grid; }
+  .landing-header-actions > a:first-of-type { display: none; }
+  .landing-mobile-panel { position: fixed; top: 4.25rem; right: 1rem; left: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-morph-surface, .landing-morph-popover, .landing-mobile-panel, .landing-mobile-menu i { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+
+/* Keep the decorative sync glow inside its measured scene on narrow screens. */
+.sync-scene { overflow: hidden; }
 
 /* ---------------------------------------------------------------------------
    Type scale — design.md §3.2 / §3.3
@@ -247,7 +442,7 @@ body {
    real shadow on a chrome element anywhere in the system. */
 .btn-accent {
   background: var(--color-accent);
-  color: var(--color-workbench);
+  color: var(--color-accent-ink);
   box-shadow:
     inset 0 5px 2px rgb(0 0 0 / 0.01),
     inset 0 3px 2px rgb(0 0 0 / 0.04),
@@ -262,6 +457,24 @@ body {
    simulation inside it, and the visual centre of gravity of the whole page.
    Layered material with gradient hairlines: a lit top edge, a hairline ring,
    and ambient depth. No backing plate, no padding. */
+/* ── 浅色下的产品框 ─────────────────────────────────────────────────────
+   深色版靠「顶部白渐变 + 底部黑渐变」造抬起感；浅色下 #fff 2.2% 压在暖纸上
+   等于什么都没有，框和页面糊成一片（这就是「Six modes」那一屏浮不起来的原因）。
+   规范的做法是**清晰 hairline + 落地暖影**，不是继续提亮。
+   ------------------------------------------------------------------- */
+:root[data-theme='light'] .linear-frame {
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-3);
+}
+:root[data-theme='light'] .linear-frame > :first-child {
+  box-shadow: none;
+}
+
+/* 深色下的白色叠层在浅色里是「更白」，层次直接消失——换成 hairline 承担边界。 */
+:root[data-theme='light'] .sync-halo {
+  background: transparent !important;
+}
 .linear-frame {
   position: relative;
   isolation: isolate;
@@ -426,13 +639,7 @@ body {
 /* The only gradients in the chrome layer: atmospheric bloom behind the hero and
    above the closing CTA. Colourless — a tinted wash would spend accent budget
    on decoration. */
-.hero-bloom {
-  background: radial-gradient(
-    50% 42% at 50% 0%,
-    color-mix(in srgb, #fff 6%, transparent),
-    transparent 72%
-  );
-}
+/* CTA 段落的唯一大气泛光。 */
 .cta-bloom {
   background: radial-gradient(
     55% 70% at 50% 100%,
@@ -445,9 +652,11 @@ body {
 .reveal {
   opacity: 0;
   transform: translateY(18px);
+  /* 主曲线。与 `@magic-resume/utils` 的 EASE_ENTER / apps/web 的 --narrate-ease
+     同一条。快起长落。 */
   transition:
-    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.62s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.62s cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: calc(var(--reveal-delay, 0) * 70ms);
 }
 .reveal.is-visible {

@@ -1,0 +1,104 @@
+---
+import type { Copy, Locale } from '@/i18n/ui';
+import Icon from '@/components/Icon.astro';
+import { dashboardLink } from '@/consts';
+interface Props { copy: Copy; locale: Locale; }
+const { copy, locale } = Astro.props;
+const p = copy.landing.process;
+const st = p.stage;
+const badges = ['search', 'mic', 'clipboard'] as const;
+---
+<section id="workflow" class="be-section" data-beui="how-it-works-walkthrough">
+  <div class="be-container">
+    <header class="be-walk-head reveal">
+      <div>
+        <span class="be-walk-eyebrow">{p.eyebrow}</span>
+        <h2>{p.title.split('\n').map((line) => <span>{line}</span>)}</h2>
+      </div>
+      <div class="be-walk-aside">
+        <p>{p.subtitle}</p>
+        <a class="be-walk-cta" href={dashboardLink('interview', locale)}>{p.cta}<Icon name="arrow-right" size={16}/></a>
+      </div>
+    </header>
+
+    <walkthrough-stage class="be-walk-shell reveal" data-step="0" data-phases={JSON.stringify(st.phases)}>
+      <div class="be-walk-stage">
+        <bento-mesh class="be-walk-mesh" data-tone="mist" aria-hidden="true"><canvas></canvas></bento-mesh>
+
+        <div class="be-walk-scene" data-scene="0">
+          <div class="be-walk-flow">
+            <p class="be-walk-ask"><Icon name="search" size={14}/>{st.role}<i aria-hidden="true"></i></p>
+            <div class="be-glass be-walk-hit">
+              <span class="be-walk-favicon" aria-hidden="true">{st.host.charAt(0).toUpperCase()}</span>
+              <span class="be-walk-hit-text"><strong>{st.postTitle}</strong><em>{st.host}</em></span>
+              <Icon name="check" size={13}/>
+            </div>
+            <div class="be-glass be-walk-jd">
+              <header><Icon name="file" size={12}/>{st.found}</header>
+              <ul>{st.reqs.map((req) => <li><Icon name="check" size={11}/>{req}</li>)}</ul>
+            </div>
+            <div class="be-glass be-walk-room">
+              <header>
+                <span class="be-walk-room-chip" aria-hidden="true"><Icon name="mic" size={14}/></span>
+                {st.enterTitle}
+              </header>
+              <p class="be-walk-meta">
+                <strong>{st.role}</strong>
+                {st.meta.map((item) => <span>{item}</span>)}
+              </p>
+              <span class="be-walk-room-cta">{st.enter}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="be-walk-scene" data-scene="1">
+          <div class="be-orb"></div>
+          <p class="be-glass be-walk-phase">{st.phases.speaking}</p>
+        </div>
+
+        <div class="be-walk-scene" data-scene="2">
+          <div class="be-glass be-walk-report">
+            <header>
+              <div class="be-walk-gauge" style="--gauge:72"><strong>72</strong></div>
+              <div class="be-walk-verdict">
+                <span class="be-walk-band">{st.band}</span>
+                <p>{st.reportTitle}<em>{st.role}</em></p>
+              </div>
+            </header>
+            <dl class="be-walk-dims">
+              {st.dims.map(([name, weight, value], i) => (
+                <div style={`--v:${value};--i:${i}`}>
+                  <dt>{name}<em>{weight}</em></dt>
+                  <dd><i></i></dd>
+                  <span>{value}</span>
+                </div>
+              ))}
+            </dl>
+            <div class="be-walk-quote">
+              <header><Icon name="clipboard" size={11}/>{st.quoteLabel}</header>
+              <blockquote>{st.quote}</blockquote>
+              <ul>
+                <li class="is-up"><Icon name="check" size={12}/>{st.strength}</li>
+                <li class="is-down"><Icon name="arrow-up" size={12}/>{st.improve}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="be-walk-rail" role="tablist" aria-label={p.eyebrow}>
+        {p.steps.map((step, i) => (
+          <button type="button" role="tab" aria-selected={i === 0} class="be-walk-step">
+            <span class="be-walk-row">
+              <span class="be-walk-num">{step.num}</span>
+              <span class="be-walk-badge"><Icon name={badges[i]} size={16}/></span>
+            </span>
+            <span class="be-walk-kicker">{step.eyebrow}</span>
+            <span class="be-walk-title">{step.title}</span>
+            <span class="be-walk-desc">{step.desc}</span>
+          </button>
+        ))}
+      </div>
+    </walkthrough-stage>
+  </div>
+</section>

@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
-import { useResumeStore } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
 
 /**
  * 顶栏标题即入口:点名称就地重命名,点箭头下拉切换简历。
@@ -13,9 +13,9 @@ import { useResumeStore } from '@/store/useResumeStore';
 export default function ResumeSwitcher() {
     const { t } = useTranslation();
     const router = useRouter();
-    const resumes = useResumeStore((s) => s.resumes);
-    const activeResume = useResumeStore((s) => s.activeResume);
-    const renameResume = useResumeStore((s) => s.renameResume);
+    const resumes = useResumeDocumentStore((s) => s.resumes);
+    const activeResume = useResumeDocumentStore((s) => s.activeResume);
+    const renameResume = useResumeDocumentStore((s) => s.renameResume);
 
     const activeId = activeResume?.id;
     const activeName = activeResume?.name ?? '';
@@ -84,7 +84,7 @@ export default function ResumeSwitcher() {
 
     if (!activeResume) {
         return (
-            <span className="truncate text-[15px] font-semibold tracking-tight text-neutral-100">
+            <span className="truncate text-mr-subtitle font-semibold tracking-tight text-neutral-100">
                 {t('header.untitled')}
             </span>
         );
@@ -109,7 +109,7 @@ export default function ResumeSwitcher() {
                 placeholder={t('renameDialog.placeholder')}
                 aria-label={t('renameDialog.title')}
                 maxLength={60}
-                className="w-48 min-w-0 rounded-md border border-sky-400/40 bg-white/[0.04] px-2 py-0.5 text-[15px] font-semibold tracking-tight text-neutral-100 outline-none transition-colors focus:border-sky-400/70"
+                className="w-48 min-w-0 rounded-md border border-sky-400/40 bg-mr-surface-subtle px-2 py-0.5 text-mr-subtitle font-semibold tracking-tight text-neutral-100 outline-none transition-colors focus:border-sky-400/70"
             />
         );
     }
@@ -121,7 +121,7 @@ export default function ResumeSwitcher() {
                 type="button"
                 onClick={startEditing}
                 title={t('dashboard.resumeCard.rename')}
-                className="min-w-0 truncate rounded-md px-1.5 py-0.5 text-[15px] font-semibold tracking-tight text-neutral-100 transition-colors hover:bg-white/[0.06]"
+                className="min-w-0 truncate rounded-md px-1.5 py-0.5 text-mr-subtitle font-semibold tracking-tight text-neutral-100 transition-colors hover:bg-mr-surface-soft"
             >
                 {activeName || t('header.untitled')}
             </button>
@@ -134,7 +134,7 @@ export default function ResumeSwitcher() {
                 aria-expanded={menuOpen}
                 aria-label={t('header.switchResume')}
                 title={t('header.switchResume')}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-white/[0.06] hover:text-neutral-200"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200"
             >
                 <ChevronDown
                     size={15}
@@ -160,8 +160,8 @@ export default function ResumeSwitcher() {
                                 onClick={() => switchTo(r.id)}
                                 className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${
                                     isActive
-                                        ? 'bg-white/[0.06] text-neutral-100'
-                                        : 'text-neutral-300 hover:bg-white/[0.04] hover:text-neutral-100'
+                                        ? 'bg-mr-surface-soft text-neutral-100'
+                                        : 'text-neutral-300 hover:bg-mr-surface-subtle hover:text-neutral-100'
                                 }`}
                             >
                                 <span className="flex h-4 w-4 shrink-0 items-center justify-center">

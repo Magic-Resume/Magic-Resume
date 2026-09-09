@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Palette, Type, Layout } from 'lucide-react';
+import { Palette, TextFont, Layout } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { MagicTemplateDSL } from '../types/magic-dsl';
 import ColorPicker from './ColorPicker';
@@ -120,7 +120,7 @@ const TemplateCustomizer = React.memo(({
 
   const tabs = [
     { id: 'colors', label: t('templateCustomizer.tabs.colors'), icon: Palette },
-    { id: 'typography', label: t('templateCustomizer.tabs.typography'), icon: Type },
+    { id: 'typography', label: t('templateCustomizer.tabs.typography'), icon: TextFont },
     { id: 'layout', label: t('templateCustomizer.tabs.layout'), icon: Layout },
   ] as const;
 

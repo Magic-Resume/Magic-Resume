@@ -16,6 +16,9 @@ import { isCloudMode } from '@magic-resume/env';
 // channel for what is really a missing session.
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
+  // 求职画像引导。是独立路由而不是 dashboard 的子页——它要占满整屏、没有侧栏，
+  // 但**必须登录**：画像是写到这个人账号上的。
+  '/onboarding(.*)',
   '/coming-soon(.*)',
   '/billing(.*)',
 ]);

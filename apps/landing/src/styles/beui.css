@@ -1,0 +1,4069 @@
+/*
+  BeUI 层 —— landing 各 section 的版式。
+
+  默认使用 global.css 的语义 token；实测复刻区域使用独立、随主题切换的局部色阶。
+  chrome 层的三条铁律仍然成立（design.md §0）：颜色稀缺、层次靠描边、字重封顶 590。
+  产品仿真（islands/、product-sim/）自己带色，本文件只负责它外面的框与留白。
+*/
+
+/* ---------------------------------------------------------------------------
+   0. 本层自己的 token
+--------------------------------------------------------------------------- */
+:root {
+  --be-section-background: var(--color-workbench);
+  /* 标题以下的四级。原来 13/14/15/17/20 挤成一团,除了大标题以外全是小字糊——
+     这是「抽」的第二大原因。24 / 20 / 16 / 13 / 12 才拉得开。 */
+  --be-lead: 24px;
+  --be-title: 20px;
+  --be-body: 16px;
+  --be-caption: 13px;
+  --be-label: 12px;
+  /* 斜纹。深浅两套只换这一处的两阶,用到它的地方都不必再分主题。 */
+  --be-hatch: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, #fff 3.5%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+  /* 发丝网格场。同理。 */
+  --be-mesh:
+    linear-gradient(to right, var(--color-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-hairline) 1px, transparent 1px);
+}
+:root[data-theme='light'] {
+  --be-section-background: color-mix(
+    in srgb,
+    var(--color-surface) 55%,
+    var(--color-workbench)
+  );
+  --be-hatch: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, #000 4.5%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+}
+
+/* 固定头部会盖住锚点落点,每个 section 都要留出它的高度。 */
+section[id] {
+  scroll-margin-top: 88px;
+}
+
+/* ---------------------------------------------------------------------------
+   1. 版心与段落节奏
+--------------------------------------------------------------------------- */
+.be-container {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.be-section {
+  position: relative;
+  padding-block: clamp(72px, 11vw, 132px);
+  /* 固定导航压住锚点。html 的 scroll-pt-20 只管 80px，这里再留一档给 eyebrow。 */
+  scroll-margin-top: 88px;
+}
+
+/* 深色分区共用同一画布，卡片承担明暗层次；浅色保留原有暖纸层次。 */
+.be-section-tinted {
+  background: var(--be-section-background);
+  border-block: 1px solid var(--color-hairline);
+}
+
+/* 浅色下分区不再靠底色台阶分开——三种白并存会在交界处露出一道色差缝。
+   全站统一 #fcfcfc,分区交给上下那两条 hairline。 */
+:root[data-theme='light'] .be-section-tinted,
+:root[data-theme='light'] .be-footer {
+  background: transparent;
+}
+:root[data-theme='light'] [data-beui='use-cases-animated-story-collage'] {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   2. 通用零件
+--------------------------------------------------------------------------- */
+
+/* 序号 / 元数据。等宽 + 大字距，用来把"这是标签不是正文"一眼说清楚。 */
+.be-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--be-label);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  white-space: nowrap;
+}
+/* 中文没有大小写,0.08em 字距在方块字之间会散架——两条都得关。 */
+:lang(zh) .be-index {
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+/* 状态点。是句号不是光源——不发光，只标"在线/进行中"。 */
+.be-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  flex: none;
+}
+
+.be-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* 不能用 ch:它按这个 div 继承的 14px 算,会把 48px 的标题卡在 400px 里断三行。 */
+  max-width: min(100%, 46rem);
+}
+.be-heading.is-centered {
+  margin-inline: auto;
+  align-items: center;
+  text-align: center;
+}
+.be-heading h2 {
+  /* 与 .type-heading 同一档；文案里带 \n，靠 pre-line 落到作者定的断行上。 */
+  white-space: pre-line;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 510;
+  line-height: 1.02;
+  letter-spacing: -0.022em;
+  color: var(--color-ink);
+}
+:lang(zh) .be-heading h2 {
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.be-description {
+  font-size: 16px;
+  line-height: 1.62;
+  letter-spacing: -0.011em;
+  color: var(--color-muted);
+  max-width: 52ch;
+}
+:lang(zh) .be-description {
+  line-height: 1.78;
+  letter-spacing: 0;
+}
+
+/* 图标底托。描边圆，不填色。 */
+.be-icon-circle {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+}
+
+/* ── 按钮 ─────────────────────────────────────────────────────────────── */
+
+/* 全页只有两个实心强调元素：hero 提交与结尾 CTA（design.md §2.2）。 */
+.be-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 510;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    inset 0 3px 2px rgb(0 0 0 / 0.04),
+    inset 0 1px 1px rgb(0 0 0 / 0.07);
+  transition: filter 200ms ease;
+}
+.be-primary:hover {
+  filter: brightness(1.06);
+}
+
+.be-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+}
+.be-secondary:hover {
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink);
+}
+
+.be-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--be-caption);
+  font-weight: 510;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.be-text-link svg,
+.be-text-link span[aria-hidden] {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-text-link:hover svg,
+.be-text-link:hover span[aria-hidden] {
+  transform: translateX(3px);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Hero —— hero-ai-marketplace
+--------------------------------------------------------------------------- */
+.be-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  min-height: min(920px, 100svh);
+  padding-block: clamp(120px, 16vh, 176px) clamp(80px, 12vh, 128px);
+  scroll-margin-top: 0;
+}
+.be-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  text-align: center;
+}
+
+/* Eyebrow 是可点的锚——做成 pill，让"可点"这件事不用另写说明。 */
+.be-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--color-muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+}
+.be-hero-eyebrow:hover {
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink-soft);
+}
+.be-hero-eyebrow svg {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-hero-eyebrow:hover svg {
+  transform: translateX(3px);
+}
+
+.be-hero h1 {
+  /* 两行的对比结构是这句文案的骨架,窄到折行就散了。 */
+  max-width: 26ch;
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-weight: 510;
+  line-height: 1;
+  letter-spacing: -0.022em;
+  color: var(--color-ink);
+}
+:lang(zh) .be-hero h1 {
+  max-width: 20ch;
+  font-weight: 400;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+}
+/* 标题逐词浮出,再由高亮扫过被标记的那一组(Animated Text 的 progressive blur)。
+   时序照实测:每词 45ms 错峰、520ms 落定;高亮在 1350ms 才起,让人先读完整句。 */
+.be-hero-line {
+  display: block;
+}
+.be-hero-word {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  animation: be-hero-word 520ms cubic-bezier(0.16, 1, 0.3, 1)
+    calc(var(--i) * 45ms + 20ms) both;
+}
+:lang(en) .be-hero-word + .be-hero-word {
+  margin-left: 0.26em;
+}
+:lang(en) .be-hero-line > .be-hero-word:first-child {
+  margin-left: 0;
+}
+/* 中文里汉字紧挨着,但拉丁词**两侧**都要留气口,只留左边会和后半句黏在一起。 */
+:lang(zh) .be-hero-word.is-marked {
+  margin-right: 0.16em;
+  margin-left: 0.16em;
+}
+@keyframes be-hero-word {
+  from {
+    opacity: 0;
+    transform: translateY(30%);
+    filter: blur(10px);
+  }
+}
+.be-hero-word.is-marked {
+  animation:
+    be-hero-word 520ms cubic-bezier(0.16, 1, 0.3, 1)
+      calc(var(--i) * 45ms + 20ms) both,
+    be-hero-mark-ink 260ms ease 1350ms both;
+}
+.be-hero-word i {
+  position: absolute;
+  z-index: -1;
+  top: 0.03em;
+  right: -0.12em;
+  bottom: 0.03em;
+  left: -0.12em;
+  border-radius: 10px;
+  /* 荧光笔,不是实心徽章:源站的 marker 也是淡色。实心 accent 在这个字号上
+     会把整页的强调预算一次花光(design.md §3.5)。 */
+  background: color-mix(
+    in srgb,
+    var(--color-accent) 34%,
+    var(--color-workbench)
+  );
+  transform: scaleX(0.78);
+  transform-origin: left center;
+  animation: be-hero-mark 320ms cubic-bezier(0.16, 1, 0.3, 1) 1350ms both;
+}
+@keyframes be-hero-mark {
+  from {
+    opacity: 0;
+    transform: scaleX(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@keyframes be-hero-mark-ink {
+  to {
+    color: var(--color-ink);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .be-hero-word,
+  .be-hero-word.is-marked,
+  .be-hero-word i {
+    animation: none;
+  }
+  .be-hero-word.is-marked {
+    color: var(--color-ink);
+  }
+  .be-hero-word i {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.be-hero-copy {
+  max-width: 46ch;
+  font-size: 17px;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+  color: var(--color-muted);
+}
+:lang(zh) .be-hero-copy {
+  line-height: 1.78;
+  letter-spacing: 0;
+}
+
+resume-composer {
+  display: block;
+  width: 100%;
+  max-width: 660px;
+  margin-top: 8px;
+}
+
+/* Composer —— agent-chat-input 的结构，提交逻辑仍是我们自己的目标岗位表单。 */
+.be-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--color-hairline);
+  /* 源站实测:r21.6(1.35rem),材质靠**上沿的内高光**而不是外阴影。 */
+  border-radius: 21.6px;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    var(--shadow-3);
+  text-align: left;
+  transition: border-color 220ms ease;
+}
+.be-composer:focus-within {
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 42%,
+    var(--color-hairline)
+  );
+}
+/* 输入区一整块 padding 20/20/12,控件行 44 高、padding 0/16/8——两行直接相邻,
+   中间不放分隔线(源站实测就没有)。 */
+.be-composer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 0;
+  gap: 12px;
+}
+.be-composer-top label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 510;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+.be-composer-top label svg {
+  color: var(--color-muted);
+}
+.be-composer-field {
+  padding: 8px 20px 12px;
+}
+.be-composer-field textarea {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.55;
+  resize: none;
+  outline: none;
+}
+.be-composer-field textarea::placeholder {
+  color: var(--color-faint);
+}
+.be-composer-bottom {
+  display: flex;
+  height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+  gap: 12px;
+}
+/* 发送键收成 32 的反白圆钮:139px 的带字按钮会把重心从输入区抢走。
+   margin-left:auto 不能省——键盘提示在触屏被隐藏后,space-between 只剩一个子元素,
+   按钮会滑到左边。 */
+/* 箭头改白,底色跟着换成 ink:白箭头压在 sky 上只有约 1.9:1,读不出来。
+   源站那枚发送键本来也是反色的(#f2f2f2 底 + 深色图标),同一个道理反过来。 */
+.be-composer-bottom .be-primary {
+  display: grid;
+  background: var(--color-ink);
+  color: var(--color-workbench);
+  box-shadow: none;
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 9999px;
+  place-items: center;
+}
+.be-composer-bottom .be-primary span {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.be-prompt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.be-prompt-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+}
+.be-prompt-chips button:hover {
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink-soft);
+}
+.be-prompt-chips svg {
+  color: var(--color-faint);
+}
+
+/* 滚动提示。一条在竖槽里往下走的短线。 */
+
+/* ---------------------------------------------------------------------------
+   4. Proof band —— stats-band
+
+   照源件的结构:左边 eyebrow + 标题,右边一段说明,下面是上下横线夹住的四栏。
+   大字用 **sans** 不用 mono——mono 是元数据层(序号),展示数字归 sans;数字本身
+   是这一屏唯一的主角,60px 起步,小了就退回"四句口号"。
+--------------------------------------------------------------------------- */
+.be-proof-section {
+  padding-block: clamp(56px, 8vw, 104px);
+}
+.be-proof-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: end;
+  margin-bottom: clamp(34px, 5vw, 56px);
+}
+.be-proof-lede {
+  font-size: var(--be-body);
+  line-height: 1.6;
+  color: var(--color-muted);
+  max-width: 46ch;
+}
+:lang(zh) .be-proof-lede {
+  line-height: 1.78;
+}
+
+.be-proof {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-block: 1px solid var(--color-hairline);
+}
+.be-proof-item {
+  display: flex;
+  flex-direction: column;
+  padding: 34px 28px 38px;
+}
+.be-proof-item + .be-proof-item {
+  border-left: 1px solid var(--color-hairline);
+}
+/* 序号后面那条短横是源件的记号:它把序号钉在栏宽上,四栏才读成一张表。 */
+.be-proof-item .be-index {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.be-proof-item .be-index i {
+  height: 1px;
+  flex: 1;
+  max-width: 56px;
+  background: var(--color-hairline-strong);
+}
+.be-proof-item strong {
+  font-size: clamp(2.75rem, 5vw, 4rem);
+  font-weight: 510;
+  line-height: 1;
+  letter-spacing: -0.032em;
+  color: var(--color-ink);
+}
+.be-proof-item h3 {
+  margin-top: 28px;
+  font-size: var(--be-title);
+  font-weight: 510;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+.be-proof-detail {
+  margin-top: 8px;
+  font-size: var(--be-caption);
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   5. Use cases —— Animated story collage
+
+   实测复刻。源站 https://pro.beui.dev/components/use-cases 第一个变体,量法与本
+   仓库其它 CDP 采样一致,证据在 animated-dropdown-recreation/evidence/
+   use-cases-collage-{source,motion}
+.json。
+
+   源站(1440 视口)的关键规格,连同它 Tailwind 类名透出的意图:
+     舞台  h-[38rem] = 608px 定高、rounded-[2rem]、overflow-hidden
+     卡容器 inset-0 flex 居中 p-8
+     卡    w-[78%] max-w-md(448 封顶)、sm:min-h-[25rem](400 起)、r28、p32
+     分层  x = 125.44px·offset、rot = 5°·offset(带符号:排在当前卡之前的往左、
+           之后的往右);y = 32px·|offset|、scale .86、opacity .72、z = 20-|offset|
+     圆1   -top-20 -left-16 size-64 + blur(40px)   圆2 right-10 bottom-10 size-40
+   翻卡是 rAF 弹簧(transition-duration 实测 0s),逐帧拟合为
+   cubic-bezier(.32,.2,.1,.96) 340ms,RMSE 0.0082。
+--------------------------------------------------------------------------- */
+[data-beui='use-cases-animated-story-collage'] {
+  /* BeUI dark preview shares the site canvas and surface palette. */
+  --story-background: var(--color-workbench);
+  --story-muted: var(--color-surface);
+  --story-foreground: #f2f2f2;
+  --story-muted-foreground: #868686;
+  --story-border: rgb(255 255 255 / 5.1%);
+  background: var(--story-background);
+}
+:root[data-theme='light'] [data-beui='use-cases-animated-story-collage'] {
+  --story-background: #fcfcfc;
+  --story-muted: #f5f5f5;
+  --story-foreground: #0b0b0b;
+  --story-muted-foreground: #636363;
+  --story-border: rgb(11 11 11 / 6%);
+}
+.be-collage-layout {
+  display: grid;
+  /* 362.16 : 643.84 = 0.5625 : 1,gap 64——源站量出来的比例。 */
+  grid-template-columns: minmax(0, 0.5625fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: center;
+}
+.be-collage-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* 源站:药丸→标题 28、标题→说明 24(在 .be-heading 内)、说明→CTA 32。 */
+  gap: 28px;
+}
+.be-collage-copy .be-heading {
+  gap: 24px;
+}
+.be-collage-copy .be-collage-cta {
+  margin-top: 4px;
+}
+/* 源站量到的标签:83.42×30、padding 6/12、pill、1px 描边、12/500 lh16。
+   它是描边 chip,不是本页去掉的那种「圆点 + 灰字」eyebrow。 */
+.be-collage-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--story-border) 70%, transparent);
+  border-radius: 9999px;
+  background: var(--story-muted);
+  font-size: 12px;
+  font-weight: 510;
+  line-height: 16px;
+  color: var(--story-muted-foreground);
+}
+/* 说明按源站的 lh 28px,不用页面通用的 1.62。 */
+.be-collage-copy .be-description {
+  line-height: 28px;
+  color: var(--story-muted-foreground);
+  text-wrap: pretty;
+}
+:lang(zh) .be-collage-copy .be-description {
+  line-height: 30px;
+}
+/* 这一屏的标题按源站实测的 36px / lh .98 / ls -.05em,不走页面通用的 48px:
+   量到的左栏只有 0.5625fr,48px 在这个宽度里要断四行。 */
+.be-collage-copy .be-heading h2 {
+  font-size: 36px;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  color: var(--story-foreground);
+}
+:lang(zh) .be-collage-copy .be-heading h2 {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+/* 源站:高 40、左右 padding 20、pill、14/500、1px 描边。 */
+.be-collage-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding-inline: 20px;
+  border: 1px solid var(--story-border);
+  border-radius: 9999px;
+  background: var(--story-muted);
+  color: var(--story-foreground);
+  font-size: 14px;
+  font-weight: 510;
+  line-height: 20px;
+  text-decoration: none;
+  transition: border-color 200ms ease;
+}
+.be-collage-cta:hover {
+  border-color: color-mix(in srgb, var(--story-foreground) 16%, transparent);
+}
+.be-collage-cta svg {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-collage-cta:hover svg {
+  transform: translateX(3px);
+}
+
+/* 舞台是定高的,不是按比例缩的。 */
+.be-collage-stage {
+  position: relative;
+  height: 38rem;
+  /* Clip the fan without allowing focus to scroll the clipped cards internally. */
+  overflow: clip;
+  border-radius: 32px;
+  background: color-mix(in srgb, var(--story-muted) 50%, transparent);
+}
+.be-collage-ring {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+/* blur(40px) 是这个圆的全部性格:没有它就是一块硬边方板,有了才是一团洇开的光。 */
+.be-collage-ring.is-fill {
+  top: -80px;
+  left: -64px;
+  width: 256px;
+  height: 256px;
+  background: color-mix(in srgb, var(--story-foreground) 8%, transparent);
+  filter: blur(40px);
+}
+.be-collage-ring.is-line {
+  right: 40px;
+  bottom: 40px;
+  width: 160px;
+  height: 160px;
+  border: 1px solid color-mix(in srgb, var(--story-border) 60%, transparent);
+}
+
+/* 卡容器:flex 居中。卡是绝对定位,靠 static position 落在居中处——源站同样做法,
+   所以它们的 transform 里没有 translate(-50%,-50%) 这类基准位移。 */
+.be-collage {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  inset: 0;
+}
+.be-story {
+  position: absolute;
+  display: flex;
+  width: 78%;
+  max-width: 448px;
+  min-height: 25rem;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 32px;
+  border: 1px solid color-mix(in srgb, var(--story-border) 70%, transparent);
+  border-radius: 28px;
+  background: var(--story-background);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  z-index: calc(20 - var(--depth));
+  opacity: 0.72;
+  /* x 与 rotate 跟 --offset 的符号走,y 与 scale 只看 --depth。
+     125.44px 于 448px 卡宽 = 28%,32px 于 400px 卡高 = 8%;写成百分比,卡被
+     max-width 收窄时扇形也跟着收。 */
+  transform: translate(
+      calc(var(--offset) * var(--story-fan, 28%)),
+      calc(var(--depth) * 8%)
+    )
+    rotate(calc(var(--offset) * var(--story-tilt, 5deg))) scale(0.86);
+  transition:
+    transform 340ms cubic-bezier(0.32, 0.2, 0.1, 0.96),
+    opacity 340ms cubic-bezier(0.32, 0.2, 0.1, 0.96);
+}
+/* 函数列表必须与非激活态一一对应:长度不一致时浏览器退回矩阵插值,位移分量就不
+   再跟着上面那条缓动曲线走(实测曲线偏差会从 0.03 涨到 0.12)。 */
+.be-story.is-active {
+  z-index: 30;
+  opacity: 1;
+  cursor: default;
+  transform: translate(0, 0) rotate(0deg) scale(1);
+}
+
+.be-story-top {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  align-items: center;
+  justify-content: space-between;
+}
+.be-story-label {
+  font-size: 12px;
+  font-weight: 510;
+  line-height: 16px;
+  color: var(--story-muted-foreground);
+}
+.be-story-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--story-muted);
+  color: var(--story-muted-foreground);
+}
+.be-story-title {
+  margin-top: 40px;
+  font-size: 30px;
+  font-weight: 510;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  color: var(--story-foreground);
+  text-wrap: balance;
+}
+:lang(zh) .be-story-title {
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.be-story-body {
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 28px;
+  color: var(--story-muted-foreground);
+  text-wrap: pretty;
+}
+/* 源站:margin-top auto 顶到卡底,上方 1px 分隔 + 20px 内边距。 */
+.be-story-result {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid color-mix(in srgb, var(--story-border) 60%, transparent);
+  font-size: 14px;
+  font-weight: 510;
+  line-height: 20px;
+  color: var(--story-foreground);
+}
+
+/* 源站桌面端 sm:right-8 sm:bottom-7。 */
+.be-collage-hint {
+  position: absolute;
+  right: 32px;
+  bottom: 28px;
+  z-index: 40;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--story-muted-foreground);
+}
+
+.be-story:focus-visible,
+.be-collage-cta:focus-visible {
+  outline: 2px solid var(--story-muted-foreground);
+  outline-offset: 3px;
+}
+
+/* Signal grid 的线与图标底。源站深色实测 #fff/5.1% 与 #1c1c1c。 */
+[data-beui='feature-sections-signal-grid'] {
+  --signal-line: rgb(255 255 255 / 5.1%);
+  --signal-icon-bg: color-mix(
+    in srgb,
+    var(--color-ink) 7%,
+    var(--color-workbench)
+  );
+}
+:root[data-theme='light'] [data-beui='feature-sections-signal-grid'] {
+  --signal-line: rgb(11 11 11 / 7%);
+  --signal-icon-bg: color-mix(in srgb, var(--color-ink) 6%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   6. Features —— Signal grid
+
+   实测复刻。源站 https://pro.beui.dev/components/feature-sections 的 Signal grid,
+   量法与本仓库其它 CDP 采样一致,证据在 animated-dropdown-recreation/evidence/
+   signal-grid-source.json,采集脚本 scripts/inspect-signal-grid-source-cdp.cjs。
+
+   源站(1440 视口,深色)实测:
+     section  padding 80/32,bg = 页面色
+     标题     36/500 lh36 ls-.9px,两个 span.block;说明 14/400 lh28,宽 672 居中
+     网格     mt-12、356px×3 列、四周 1px #fff/5.1%
+     卡       356×256、padding 40/28;右边框除末列、下边框除末行
+     图标     44×44 圆、bg 比卡亮一档
+     卡标题   20/500 lh27.5 ls-.5px 两行 mt-5;卡正文 14/400 lh24 mt-2
+   断点实测:<640 单列、640–1023 两列、≥1024 三列;卡片内边距与标题字号各档不变。
+   源站卡上还有一层与底同色的渐隐遮罩,视觉上是空操作(留给别的变体放 shader),
+   这里没有照搬。没有 hover 效果、没有 canvas——都逐项确认过。
+--------------------------------------------------------------------------- */
+.be-signal {
+  padding-block: 80px;
+}
+.be-signal-heading {
+  max-width: 768px;
+  margin-inline: auto;
+  text-align: center;
+}
+.be-signal-heading h2 {
+  font-size: 36px;
+  font-weight: 510;
+  line-height: 36px;
+  letter-spacing: -0.025em;
+  color: var(--color-ink);
+}
+.be-signal-heading h2 span {
+  display: block;
+}
+:lang(zh) .be-signal-heading h2 {
+  font-weight: 400;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+}
+.be-signal-heading p {
+  max-width: 672px;
+  margin: 16px auto 0;
+  font-size: 14px;
+  line-height: 28px;
+  color: var(--color-muted);
+}
+:lang(zh) .be-signal-heading p {
+  font-size: 15px;
+  line-height: 30px;
+}
+
+/* 网格线就是这个组件的全部结构:四周一圈,内部靠每张卡的右/下边框拼出来。 */
+.be-signal-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 48px;
+  border: 1px solid var(--signal-line);
+}
+
+/* 四角的出头线。源站每角挂两根 12px 的段(共 8 个 span),沿边框线往外探,所以角
+   是交叉不是闭合。这里用每角一个 12×12 的盒子带两条边框还原,元素少一半。
+   -1px 的 margin 是把盒子的边框推到与网格自己那 1px 边框同一列/同一行上,
+   否则错开一像素,放大看就是两条平行线。 */
+.be-signal-tick {
+  position: absolute;
+  z-index: 10;
+  /* 14 而不是 12:盒子自己的 1px 边框和 1px 对齐位移会吃掉两像素,露在网格外的
+     那一段才是源站量到的 12px。 */
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.be-signal-tick.is-tl {
+  right: 100%;
+  bottom: 100%;
+  margin: 0 -1px -1px 0;
+  border-right: 1px solid var(--signal-line);
+  border-bottom: 1px solid var(--signal-line);
+}
+.be-signal-tick.is-tr {
+  bottom: 100%;
+  left: 100%;
+  margin: 0 0 -1px -1px;
+  border-bottom: 1px solid var(--signal-line);
+  border-left: 1px solid var(--signal-line);
+}
+.be-signal-tick.is-bl {
+  top: 100%;
+  right: 100%;
+  margin: -1px -1px 0 0;
+  border-top: 1px solid var(--signal-line);
+  border-right: 1px solid var(--signal-line);
+}
+.be-signal-tick.is-br {
+  top: 100%;
+  left: 100%;
+  margin: -1px 0 0 -1px;
+  border-top: 1px solid var(--signal-line);
+  border-left: 1px solid var(--signal-line);
+}
+/* 卡是自定义元素,得自己声明成块级。overflow hidden 把 shader 裁在格子里。 */
+.be-signal-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 40px 28px;
+  border-right: 1px solid var(--signal-line);
+  border-bottom: 1px solid var(--signal-line);
+  opacity: 0;
+  transform: translateY(16px);
+}
+.be-signal-card.is-entered {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 500ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--signal-index) * 45ms),
+    transform 500ms cubic-bezier(0.16, 1, 0.3, 1)
+      calc(var(--signal-index) * 45ms);
+}
+/* 没有 JS 时不能把内容永远留在 opacity:0 里。 */
+html:not(.js) .be-signal-card {
+  opacity: 1;
+  transform: none;
+}
+
+/* hover 那层网格渐变。几何、遮罩、抹开的关键帧都是对源站实测出来的:
+   容器左右各外扩 16%、下探 64px、高 112%,自下往上 clip 抹开并从 scaleY(.72)
+   长回 1,透明度停在 .58。 */
+.be-signal-shader {
+  position: absolute;
+  right: -16%;
+  bottom: -64px;
+  left: -16%;
+  display: block;
+  height: 112%;
+  opacity: 0;
+  clip-path: inset(86% 0 0);
+  transform: translateY(30%) scaleY(0.72);
+  transform-origin: bottom;
+  mask-image: linear-gradient(to top, #000 0%, #000 44%, transparent 88%);
+  transition:
+    clip-path 240ms ease,
+    opacity 240ms ease,
+    transform 240ms ease;
+  pointer-events: none;
+}
+.be-signal-shader canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.be-signal-card.is-hovered .be-signal-shader {
+  opacity: 0.58;
+  clip-path: inset(0);
+  transform: none;
+  animation: be-signal-reveal 320ms 100ms linear both;
+}
+@keyframes be-signal-reveal {
+  0% {
+    opacity: 0;
+    clip-path: inset(86% 0 0);
+    transform: translateY(30%) scaleY(0.72);
+  }
+  31.25% {
+    opacity: 0.0315;
+    clip-path: inset(81.33% 0 0);
+    transform: translateY(28.45%) scaleY(0.7352);
+  }
+  62.5% {
+    opacity: 0.4866;
+    clip-path: inset(13.84% 0 0);
+    transform: translateY(4.82%) scaleY(0.9549);
+  }
+  100% {
+    opacity: 0.58;
+    clip-path: inset(0);
+    transform: none;
+  }
+}
+/* 与页底同色的遮罩:渐变从上到下变透明,渐变场只从卡底渗上来。 */
+.be-signal-veil {
+  position: absolute;
+  display: block;
+  background: linear-gradient(
+    to bottom,
+    var(--color-workbench) 0%,
+    color-mix(in srgb, var(--color-workbench) 80%, transparent) 50%,
+    color-mix(in srgb, var(--color-workbench) 25%, transparent) 100%
+  );
+  inset: 0;
+  pointer-events: none;
+}
+.be-signal-card > .be-signal-icon,
+.be-signal-card > h3,
+.be-signal-card > p {
+  position: relative;
+  z-index: 2;
+}
+/* 末列不要右边框、末行不要下边框,否则会和外圈那一圈叠成双线。
+   必须用 :nth-of-type 不能用 :nth-child——网格里还有四个 <i> 出头线,
+   nth-child 会把它们一起数进去,列的判定就整体错位。 */
+.be-signal-card:nth-of-type(3n) {
+  border-right: 0;
+}
+.be-signal-card:nth-last-of-type(-n + 3) {
+  border-bottom: 0;
+}
+.be-signal-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--signal-icon-bg);
+  color: var(--color-ink);
+}
+.be-signal-card h3 {
+  margin-top: 20px;
+  font-size: 20px;
+  font-weight: 510;
+  line-height: 27.5px;
+  letter-spacing: -0.025em;
+  color: var(--color-ink);
+}
+.be-signal-card h3 span {
+  display: block;
+}
+:lang(zh) .be-signal-card h3 {
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+.be-signal-card p {
+  max-width: 20rem;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 24px;
+  color: var(--color-muted);
+}
+:lang(zh) .be-signal-card p {
+  font-size: 15px;
+  line-height: 26px;
+}
+
+/* Bento 画面区的底色。比卡片亮一档,让产品仿真浮出来。 */
+/* 深色下画面必须是深灰,和这一页别处一个调子——满饱和的渐变压在近黑底上会
+   整块发光,五块一起更是把整页的重心抢走。所以:深灰底 + 一层很淡的色偏,
+   渐变退成色相提示而不是光源。浅色模式下白底扛得住,保持鲜艳。 */
+[data-beui='feature-sections-feature-bento'] {
+  --bento-base: color-mix(in srgb, var(--color-ink) 6%, var(--color-workbench));
+  --bento-mesh-opacity: 0.14;
+  --bento-fallback-a: color-mix(in srgb, #2f8ff0 22%, transparent);
+  --bento-fallback-b: color-mix(in srgb, #9fdcfb 14%, transparent);
+}
+:root[data-theme='light'] [data-beui='feature-sections-feature-bento'] {
+  --bento-base: transparent;
+  --bento-mesh-opacity: 1;
+  --bento-fallback-a: #2f8ff0;
+  --bento-fallback-b: #9fdcfb;
+}
+
+/* ---------------------------------------------------------------------------
+   7. Review —— Feature bento
+
+   实测复刻。源站 feature-sections 的 Feature bento,证据在
+   animated-dropdown-recreation/evidence/feature-bento-source.json,
+   采集脚本 scripts/inspect-feature-bento-source-cdp.cjs。
+
+   源站(1440 视口,深色)实测:
+     标题块  max-w-2xl 672 **左对齐**;eyebrow 12/500、H2 36/500 lh36 mt-5、
+             说明 14/400 lh28 宽 576 mt-4
+     网格    mt-12、6 列 ×165px、行高 502/326、gap 16
+     布局    span4 + span2 / span2 ×3
+     卡      padding 12、border 1px #fff/3%、r24、底透明
+     画面    r16 overflow hidden;大卡 384 满出血,小卡 208 且内缩 20
+     文字    mt-3,在画面下方、卡内
+--------------------------------------------------------------------------- */
+.be-bento {
+  padding-block: 80px;
+}
+.be-bento-heading {
+  max-width: 672px;
+}
+.be-bento-heading h2 {
+  font-size: 36px;
+  font-weight: 510;
+  line-height: 36px;
+  letter-spacing: -0.025em;
+  color: var(--color-ink);
+}
+.be-bento-heading h2 span {
+  display: block;
+}
+:lang(zh) .be-bento-heading h2 {
+  font-weight: 400;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+}
+.be-bento-heading p {
+  max-width: 576px;
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 28px;
+  color: var(--color-muted);
+}
+:lang(zh) .be-bento-heading p {
+  font-size: 15px;
+  line-height: 30px;
+}
+
+/* 6 列是为了 4/2 与 2/2/2 两种跨度能共用一套轨道。 */
+.be-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 48px;
+}
+.be-bento-card {
+  display: flex;
+  grid-column: span 2;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 3%, transparent);
+  border-radius: 24px;
+}
+.be-bento-card.is-wide {
+  grid-column: span 4;
+}
+.be-bento-art {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  height: 13rem;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--bento-base);
+}
+.be-bento-art.is-tall {
+  height: 24rem;
+}
+/* 大卡的画面是满出血的:里面装的是产品仿真,不该再被内边距框一圈。 */
+.be-bento-art.is-bleed {
+  padding: 0;
+}
+.be-bento-copy {
+  margin-top: 12px;
+  padding: 0 8px 8px;
+}
+.be-bento-copy h3 {
+  font-size: 17px;
+  font-weight: 510;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: var(--color-ink);
+}
+.be-bento-copy p {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-muted);
+}
+
+/* ── 画面:常驻网格渐变 + 浮在上面的玻璃片 ────────────────────────────────
+   源站每块画面里都有一个 canvas(与 Signal grid 同一支 MeshGradient,只是常驻)。
+   玻璃片规格实测:bg white/15、描边 white/20、backdrop-blur 12px、
+   投影 0 20px 40px -28px;深色面板用 neutral-950/85 + white/10 描边。
+   逐卡 hex 没能采到(uniform 钩子挂不上、preserveDrawingBuffer 为 false 读不了
+   像素),配色改用这一页已有的 sky / orchid / emerald 三支。 */
+.be-bento-mesh {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border-radius: inherit;
+  inset: 0;
+  /* 深色下压到 .22:渐变只提供色相,亮度由底下那层深灰给。 */
+  opacity: var(--bento-mesh-opacity);
+  /* WebGL 拿不到时的兜底,免得画面塌成一块黑板。 */
+  background: linear-gradient(
+    150deg,
+    var(--bento-fallback-a),
+    var(--bento-fallback-b)
+  );
+}
+.be-bento-mesh canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.be-bento-mesh[data-tone='orchid'] {
+  --bento-fallback-a: color-mix(in srgb, #8b5cf6 22%, transparent);
+  --bento-fallback-b: color-mix(in srgb, #c4b5fd 14%, transparent);
+}
+.be-bento-mesh[data-tone='emerald'] {
+  --bento-fallback-a: color-mix(in srgb, #34d399 22%, transparent);
+  --bento-fallback-b: color-mix(in srgb, #a7f3d0 14%, transparent);
+}
+:root[data-theme='light'] .be-bento-mesh[data-tone='orchid'] {
+  --bento-fallback-a: #8b5cf6;
+  --bento-fallback-b: #c4b5fd;
+}
+:root[data-theme='light'] .be-bento-mesh[data-tone='emerald'] {
+  --bento-fallback-a: #34d399;
+  --bento-fallback-b: #a7f3d0;
+}
+
+/* 画面里除渐变外的一切都浮在它上面。 */
+.be-bento-art > *:not(.be-bento-mesh) {
+  position: relative;
+  z-index: 1;
+}
+
+/* 玻璃片与深色面板——两种材质,全画面通用。 */
+.be-glass {
+  border: 1px solid rgb(255 255 255 / 18%);
+  background: rgb(9 12 16 / 34%);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 40px -28px rgb(0 0 0 / 0.5);
+  color: #fff;
+}
+.be-panel {
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: color-mix(in srgb, var(--color-workbench) 85%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+/* ---- 大卡:一轮对话 ------------------------------------------------------ */
+.be-bento-art .be-chat {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  inset: 0;
+}
+.be-chat-column {
+  display: flex;
+  width: 100%;
+  max-width: 384px;
+  flex-direction: column;
+  gap: 10px;
+}
+.be-chat-bubble {
+  max-width: 88%;
+  padding: 8px 14px;
+  border-radius: 16px 16px 4px;
+  align-self: flex-end;
+  background: #fff;
+  color: #171717;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+/* 运行面板与提案叠在同一格:两者交替出现,格高固定,气泡不会跟着跳。 */
+.be-chat-stack {
+  display: grid;
+  justify-items: start;
+}
+.be-chat-stack > * {
+  align-self: start;
+  grid-area: 1 / 1;
+  transition:
+    opacity 300ms ease,
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.be-chat-run {
+  width: max-content;
+  min-width: 138px;
+  max-width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 16px;
+  background: rgb(9 12 16 / 34%);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 40px -28px rgb(0 0 0 / 0.5);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+[data-step='1'] .be-chat-run,
+[data-step='2'] .be-chat-run,
+[data-step='3'] .be-chat-run {
+  opacity: 1;
+  transform: none;
+}
+.be-chat-run > header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-chat-orb {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 25%);
+  place-items: center;
+}
+.be-chat-dots {
+  display: flex;
+  margin-left: auto;
+  gap: 3px;
+}
+.be-chat-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  animation: be-chat-pulse 1000ms ease-in-out infinite;
+}
+.be-chat-dots i:nth-child(2) {
+  animation-delay: 180ms;
+}
+.be-chat-dots i:nth-child(3) {
+  animation-delay: 360ms;
+}
+@keyframes be-chat-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.be-chat-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.be-chat-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity 260ms ease,
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+/* 每拍点亮一行:行位始终占着,面板高度不变。 */
+[data-step='1'] .be-chat-steps li:nth-child(1),
+[data-step='2'] .be-chat-steps li:nth-child(-n + 2),
+[data-step='3'] .be-chat-steps li,
+.is-static .be-chat-steps li {
+  opacity: 1;
+  transform: none;
+}
+.be-chat-glyph {
+  position: relative;
+  display: grid;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: rgb(255 255 255 / 55%);
+  place-items: center;
+}
+.be-chat-glyph svg {
+  grid-area: 1 / 1;
+  transition:
+    opacity 220ms ease,
+    transform 260ms ease;
+}
+.be-chat-glyph .is-done {
+  color: #6ee7b7;
+  opacity: 0;
+  transform: scale(0.6);
+}
+/* 上一拍完成的行换成对勾,当前那行还是工具图标。 */
+[data-step='2'] .be-chat-steps li:nth-child(1) .be-chat-glyph,
+[data-step='3'] .be-chat-steps li:nth-child(-n + 2) .be-chat-glyph,
+[data-step='4'] .be-chat-steps li .be-chat-glyph,
+[data-step='5'] .be-chat-steps li .be-chat-glyph,
+.is-static .be-chat-steps li .be-chat-glyph {
+  & svg:not(.is-done) {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  & .is-done {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.be-chat-proposal {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-workbench) 92%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.85);
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+[data-step='4'] .be-chat-proposal,
+[data-step='5'] .be-chat-proposal,
+.is-static .be-chat-proposal {
+  opacity: 1;
+  transform: none;
+}
+.be-chat-proposal > header {
+  display: flex;
+  align-items: center;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--color-hairline);
+  gap: 8px;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 510;
+}
+.be-proposal-mark {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  color: var(--color-accent);
+  place-items: center;
+}
+.be-chat-diff {
+  display: grid;
+  padding: 12px 16px;
+}
+.be-chat-take {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+[data-item='0'] .be-chat-take[data-take='0'],
+[data-item='1'] .be-chat-take[data-take='1'],
+[data-item='2'] .be-chat-take[data-take='2'],
+.is-static .be-chat-take[data-take='0'] {
+  opacity: 1;
+}
+.be-diff {
+  position: relative;
+  padding: 6px 0 6px 22px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.be-diff::before {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 14px;
+  color: var(--color-ink-faint);
+  content: '−';
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: center;
+}
+.be-diff.is-cut {
+  color: var(--color-ink-faint);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--color-ink-faint) 55%,
+    transparent
+  );
+}
+.be-diff.is-add {
+  color: var(--color-ink);
+}
+.be-diff.is-add::before {
+  color: var(--color-add);
+  content: '+';
+}
+/* 跳过时提案整条淡出,接受时保留改写那行——决定看得见结果。 */
+[data-decided='skipped'] .be-chat-take {
+  opacity: 0.35;
+}
+[data-decided='accepted'] .be-diff.is-cut {
+  opacity: 0;
+}
+.be-chat-proposal > footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px 12px;
+  gap: 8px;
+}
+.be-chat-proposal button {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 510;
+  gap: 5px;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease,
+    background 200ms ease;
+}
+.be-chat-proposal button:hover {
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink);
+}
+.be-chat-accept {
+  border-color: transparent !important;
+  background: var(--color-accent) !important;
+  color: #06131c !important;
+}
+.be-chat-proposal button[data-picked] {
+  animation: be-picked 900ms ease;
+}
+@keyframes be-picked {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+/* 悬停接管时给一句话交代,不然「怎么停了」是个疑问。 */
+.be-chat-held {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  padding: 5px 12px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 45%);
+  backdrop-filter: blur(10px);
+  color: rgb(255 255 255 / 80%);
+  font-size: 11px;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition:
+    opacity 240ms ease,
+    transform 320ms ease;
+}
+[data-held] .be-chat-held {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---- 小卡:各演一件事,由节拍器点名 ------------------------------------- */
+/* 静息态就是完成态——节拍只是重放一次入场,卡片不会有大半时间空着。 */
+.be-sim-paper {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+/* 高亮画在 ResumeCard 的第二条骨架线上——量出来的坐标一改版就歪,
+   直接认那一行才对得齐。选择器耦合 product-sim/ResumeCard.astro 的结构。 */
+.be-sim-paper > div > div:nth-of-type(3) > div:nth-of-type(2) {
+  background: color-mix(in srgb, #38bdf8 48%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, #38bdf8 15%, transparent);
+  transform-origin: left center;
+}
+[data-beat='1'] .be-sim-paper > div > div:nth-of-type(3) > div:nth-of-type(2) {
+  animation: be-mark-wipe 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes be-mark-wipe {
+  from {
+    transform: scaleX(0);
+  }
+}
+.be-sim-tag {
+  position: absolute;
+  right: -8px;
+  bottom: -12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgb(13 17 23 / 88%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 510;
+}
+[data-beat='1'] .be-sim-tag {
+  animation: be-tag-in 380ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+}
+@keyframes be-tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.be-sim-reason,
+.be-sim-ask,
+.be-sim-json {
+  width: 240px;
+  max-width: 100%;
+  padding: 14px;
+  border-radius: 16px;
+}
+.be-sim-reason > header,
+.be-sim-ask > header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16.5px;
+}
+.be-sim-reason > header {
+  color: rgb(255 255 255 / 70%);
+}
+.be-sim-reason > header svg {
+  color: #fff;
+}
+.be-sim-takes {
+  display: grid;
+  margin-top: 8px;
+}
+.be-sim-reason p {
+  color: #fff;
+  font-size: 12px;
+  grid-area: 1 / 1;
+  line-height: 18px;
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+[data-item='0'] .be-sim-reason p[data-take='0'],
+[data-item='1'] .be-sim-reason p[data-take='1'],
+[data-item='2'] .be-sim-reason p[data-take='2'],
+.is-static .be-sim-reason p[data-take='0'] {
+  opacity: 1;
+}
+/* 逐词浮出:比打字机克制,中英文都不会切到半个字。 */
+[data-beat='2'] .be-sim-reason p span {
+  animation: be-word-in 300ms ease calc(var(--w) * 42ms) both;
+}
+@keyframes be-word-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+.be-sim-ask > header {
+  color: rgb(255 255 255 / 80%);
+}
+.be-sim-ask > header svg {
+  color: #ffd230;
+}
+.be-sim-ask > p {
+  margin-top: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-sim-ask > footer {
+  display: flex;
+  margin-top: 12px;
+  gap: 8px;
+}
+[data-beat='3'] .be-sim-ask > p {
+  animation: be-rise 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-beat='3'] .be-sim-ask > footer {
+  animation: be-rise 380ms cubic-bezier(0.16, 1, 0.3, 1) 110ms both;
+}
+@keyframes be-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.be-sim-ask button {
+  height: 32px;
+  flex: 1;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+.be-sim-ask button:hover {
+  background: rgb(255 255 255 / 16%);
+}
+.be-sim-ask button.is-primary {
+  border-color: transparent;
+  background: #fff;
+  color: #171717;
+}
+.be-sim-ask button.is-primary:hover {
+  background: rgb(255 255 255 / 88%);
+}
+.be-sim-ask button[data-picked] {
+  animation: be-picked 900ms ease;
+}
+
+.be-sim-json {
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: rgb(11 11 11 / 85%);
+  backdrop-filter: blur(12px);
+}
+.be-sim-json > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.be-sim-json > header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.be-sim-json > header em {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #fff;
+  color: #171717;
+  font-size: 10px;
+  font-style: normal;
+  gap: 4px;
+  line-height: 15px;
+}
+.be-sim-json dl {
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 18px;
+}
+.be-json-brace {
+  color: rgb(255 255 255 / 45%);
+}
+.be-json-row {
+  display: flex;
+  padding-left: 14px;
+  gap: 6px;
+}
+[data-beat='4'] .be-json-row {
+  animation: be-rise 340ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 90ms)
+    both;
+}
+.be-sim-json dt {
+  color: #74d4ff;
+}
+.be-sim-json dt::after {
+  color: rgb(255 255 255 / 45%);
+  content: ':';
+}
+.be-sim-json dd {
+  margin: 0;
+  color: #fff;
+}
+
+/* 当前那张卡浮起半档——五张同时动就是噪音。 */
+.be-bento-card {
+  transition:
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 520ms ease;
+}
+[data-beat='1'] .be-bento-card:nth-of-type(2),
+[data-beat='2'] .be-bento-card:nth-of-type(3),
+[data-beat='3'] .be-bento-card:nth-of-type(4),
+[data-beat='4'] .be-bento-card:nth-of-type(5) {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-3px);
+}
+
+@keyframes be-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   8. Walkthrough —— how-it-works-walkthrough
+
+   舞台背景与 Feature bento 同料:浅色下 mesh 满亮度,深色下压到 .14 铺在深灰底上。
+   卡片一律烟熏玻璃——白玻璃压在浅色 mesh 上白字读不出来,那是 bento 已经踩过的坑。 */
+[data-beui='how-it-works-walkthrough'] {
+  --walk-base: color-mix(in srgb, var(--color-ink) 6%, var(--color-workbench));
+  --walk-mesh-opacity: 0.14;
+  --walk-fallback-a: color-mix(in srgb, #8fd4c6 22%, transparent);
+  --walk-fallback-b: color-mix(in srgb, #cfe9b8 14%, transparent);
+}
+:root[data-theme='light'] [data-beui='how-it-works-walkthrough'] {
+  --walk-base: transparent;
+  --walk-mesh-opacity: 1;
+  --walk-fallback-a: #8fd4c6;
+  --walk-fallback-b: #cfe9b8;
+}
+
+/* 浅色下 band 换白底:sky 药丸压在浅色 mesh 上太跳,白色才是这块玻璃上的重点。 */
+:root[data-theme='light'] [data-beui='how-it-works-walkthrough'] .be-walk-band {
+  background: #fff;
+  color: #171717;
+}
+
+/* ---------------------------------------------------------------------------
+   源站实测:外壳 r32 / 舞台 r22.4 / 步骤卡 381.4×201 r21.6,选中态换底不换尺寸。
+--------------------------------------------------------------------------- */
+.be-walk-head {
+  display: grid;
+  align-items: end;
+  gap: 32px 96px;
+  grid-template-columns: minmax(0, 603fr) minmax(0, 402fr);
+}
+.be-walk-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-walk-head h2 {
+  margin: 18px 0 0;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 0.96;
+}
+.be-walk-head h2 span {
+  display: block;
+}
+:lang(zh) .be-walk-head h2 {
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+}
+.be-walk-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+.be-walk-aside p {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: 16px;
+  line-height: 28px;
+}
+.be-walk-cta {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  padding: 0 18px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  text-decoration: none;
+  transition:
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-walk-cta:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.be-walk-shell {
+  display: grid;
+  margin-top: 64px;
+  padding: 13px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 32px;
+  background: var(--color-surface);
+  gap: 12px;
+  grid-template-columns: minmax(0, 650fr) minmax(0, 381fr);
+}
+.be-walk-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 460px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 22px;
+  background: var(--walk-base);
+}
+.be-walk-mesh {
+  position: absolute;
+  overflow: hidden;
+  display: block;
+  border-radius: inherit;
+  inset: 0;
+  opacity: var(--walk-mesh-opacity);
+  /* WebGL 拿不到时的兜底,免得画面塌成一块黑板。 */
+  background: linear-gradient(
+    150deg,
+    var(--walk-fallback-a),
+    var(--walk-fallback-b)
+  );
+}
+.be-walk-mesh canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.be-walk-scene {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 14px;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 240ms ease,
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+[data-step='0'] .be-walk-scene[data-scene='0'],
+[data-step='1'] .be-walk-scene[data-scene='1'],
+[data-step='2'] .be-walk-scene[data-scene='2'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- 01 给它一个岗位 ---- */
+/* 一列自上而下的时间线:问 → 它去搜到了 → 岗位要求 → 设置谈妥 → 面试间。
+   逐行错峰浮出,读起来才是「发生了一串事」,不是「摆了五个框」。 */
+.be-walk-flow {
+  display: flex;
+  width: 100%;
+  max-width: 352px;
+  flex-direction: column;
+  gap: 10px;
+}
+.be-walk-flow > * {
+  --lift: 0;
+}
+[data-step='0'] .be-walk-flow > * {
+  animation: be-walk-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-step='0'] .be-walk-flow > :nth-child(2) {
+  animation-delay: 140ms;
+}
+[data-step='0'] .be-walk-flow > :nth-child(3) {
+  animation-delay: 280ms;
+}
+[data-step='0'] .be-walk-flow > :nth-child(4) {
+  animation-delay: 420ms;
+}
+[data-step='0'] .be-walk-flow > :nth-child(5) {
+  animation-delay: 560ms;
+}
+@keyframes be-walk-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.be-walk-ask {
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+  margin: 0;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: #fff;
+  color: #171717;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+}
+.be-walk-ask i {
+  width: 1.5px;
+  height: 13px;
+  background: currentcolor;
+  animation: be-walk-caret 1080ms steps(1) infinite;
+}
+@keyframes be-walk-caret {
+  50% {
+    opacity: 0;
+  }
+}
+/* 搜到的那一条:favicon 位 + 标题 + 域名。这是「它自己去搜」的证据行。 */
+.be-walk-hit {
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 12px;
+  gap: 10px;
+}
+.be-walk-favicon {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 7px;
+  background: linear-gradient(140deg, #4aa8f0, #2f6fd0);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  place-items: center;
+}
+.be-walk-hit-text {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+.be-walk-hit-text strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.be-walk-hit-text em {
+  color: rgb(255 255 255 / 45%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-style: normal;
+}
+.be-walk-hit > svg {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-add);
+}
+.be-walk-jd {
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+.be-walk-jd > header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(255 255 255 / 58%);
+  font-size: 11px;
+  font-weight: 500;
+}
+.be-walk-jd ul {
+  display: grid;
+  margin: 9px 0 0;
+  padding: 0;
+  gap: 5px;
+  list-style: none;
+}
+.be-walk-jd li {
+  display: flex;
+  align-items: center;
+  color: rgb(255 255 255 / 88%);
+  font-size: 12px;
+  gap: 7px;
+  line-height: 17px;
+}
+.be-walk-jd li svg {
+  flex: none;
+  color: var(--color-accent);
+}
+/* 面试间入口。照产品里 `interview_room` widget 的排布:图标 chip + 标题、
+   一行 role/时长/风格/语言、再一枚淡色底的按钮——设置不必再单开一个分栏。 */
+.be-walk-room {
+  padding: 14px;
+  border-radius: 14px;
+}
+.be-walk-room > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+.be-walk-room-chip {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+  color: color-mix(in srgb, var(--color-accent) 70%, #fff);
+  place-items: center;
+}
+.be-walk-meta {
+  display: flex;
+  align-items: center;
+  margin: 11px 0 0;
+  color: rgb(255 255 255 / 58%);
+  flex-wrap: wrap;
+  font-size: 11px;
+  gap: 5px 11px;
+}
+.be-walk-meta strong {
+  flex-basis: 100%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+.be-walk-room-cta {
+  display: block;
+  margin-top: 12px;
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: color-mix(in srgb, var(--color-accent) 60%, #fff);
+  font-size: 12px;
+  font-weight: 510;
+  text-align: center;
+}
+
+/* ---- 02 那颗球 ---- */
+/* 盒子要比球大得多:外发光画到 1.7r,挤到边上就会露出方角。 */
+.be-orb {
+  width: min(430px, 88%);
+  aspect-ratio: 1;
+}
+.be-orb canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.be-walk-phase {
+  margin: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 78%);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+/* ---- 03 报告 ---- */
+.be-walk-report {
+  width: 100%;
+  max-width: 372px;
+  padding: 18px;
+  border-radius: 18px;
+}
+.be-walk-report > header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  gap: 14px;
+}
+/* 总分画成环:一个数字读作数据,一个环读作评估。 */
+.be-walk-gauge {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  flex: none;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-accent) calc(var(--gauge) * 1%),
+    rgb(255 255 255 / 12%) 0
+  );
+  place-items: center;
+}
+.be-walk-gauge::before {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgb(9 12 16 / 62%);
+  content: '';
+  grid-area: 1 / 1;
+}
+.be-walk-gauge strong {
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 21px;
+  font-weight: 500;
+  grid-area: 1 / 1;
+}
+[data-step='2'] .be-walk-gauge {
+  animation: be-walk-gauge 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes be-walk-gauge {
+  from {
+    --gauge: 0;
+  }
+}
+/* 只有环用注册属性(要能补间);维度条的 --v 必须留成普通自定义属性,
+   注册成 inherits:false 会把内联在外层的值切断,条就全是空的。 */
+@property --gauge {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+.be-walk-verdict {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+.be-walk-band {
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #06131c;
+  font-size: 11px;
+  font-weight: 510;
+}
+.be-walk-verdict p {
+  display: grid;
+  margin: 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 1px;
+}
+.be-walk-verdict em {
+  color: rgb(255 255 255 / 45%);
+  font-size: 11px;
+  font-style: normal;
+}
+.be-walk-dims {
+  display: grid;
+  margin: 15px 0 0;
+  gap: 9px;
+}
+.be-walk-dims > div {
+  display: grid;
+  align-items: center;
+  gap: 4px 10px;
+  grid-template-columns: 88px minmax(0, 1fr) 24px;
+}
+.be-walk-dims dt {
+  color: rgb(255 255 255 / 72%);
+  font-size: 11px;
+}
+.be-walk-dims dt em {
+  margin-left: 4px;
+  color: rgb(255 255 255 / 38%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-style: normal;
+}
+.be-walk-dims dd {
+  overflow: hidden;
+  height: 4px;
+  margin: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+}
+.be-walk-dims dd i {
+  display: block;
+  width: calc(var(--v) * 1%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transform-origin: left center;
+}
+[data-step='2'] .be-walk-dims dd i {
+  animation: be-walk-bar 620ms cubic-bezier(0.16, 1, 0.3, 1)
+    calc(var(--i) * 90ms) both;
+}
+@keyframes be-walk-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+.be-walk-dims span {
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: right;
+}
+/* 逐题点评带原话。摘录和原话对不上的会被剔除——这条是产品的承重,值得占一块。 */
+.be-walk-quote {
+  margin-top: 15px;
+  padding-top: 14px;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+.be-walk-quote > header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(255 255 255 / 48%);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.be-walk-quote blockquote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 6%);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+}
+.be-walk-quote ul {
+  display: grid;
+  margin: 11px 0 0;
+  padding: 0;
+  gap: 7px;
+  list-style: none;
+}
+.be-walk-quote li {
+  display: flex;
+  align-items: flex-start;
+  color: rgb(255 255 255 / 82%);
+  font-size: 11px;
+  gap: 7px;
+  line-height: 16px;
+}
+.be-walk-quote .is-up svg {
+  flex: none;
+  color: var(--color-add);
+}
+.be-walk-quote .is-down svg {
+  flex: none;
+  color: #ffd230;
+}
+
+/* ---- 右侧步骤轨 ---- */
+.be-walk-rail {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.be-walk-step {
+  display: grid;
+  padding: 25px;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 300ms ease,
+    border-color 300ms ease;
+}
+.be-walk-step[aria-selected='true'] {
+  border-color: var(--color-hairline);
+  background: var(--color-surface-2);
+}
+.be-walk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.be-walk-num {
+  color: var(--color-ink-faint);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+.be-walk-badge {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  place-items: center;
+  transition:
+    background 300ms ease,
+    color 300ms ease,
+    border-color 300ms ease;
+}
+/* 选中那张的徽标反白——一眼能找到「现在在讲哪一步」。 */
+.be-walk-step[aria-selected='true'] .be-walk-badge {
+  border-color: transparent;
+  background: var(--color-ink);
+  color: var(--color-workbench);
+}
+.be-walk-kicker {
+  color: var(--color-ink-faint);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 15px;
+  text-transform: uppercase;
+}
+.be-walk-title {
+  margin-top: 8px;
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+}
+.be-walk-desc {
+  margin-top: 8px;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* ---------------------------------------------------------------------------
+   9. Sync / Export —— trust-security-safeguards
+
+   实测复刻。源站 trust-security 的 Security safeguards,证据在
+   evidence/trust-security-safeguards-source.json。
+--------------------------------------------------------------------------- */
+.be-safe-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-safe-head h2 {
+  margin: 18px 0 0;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+}
+.be-safe-head h2 span {
+  display: block;
+}
+:lang(zh) .be-safe-head h2 {
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+}
+.be-safe-head p {
+  max-width: 672px;
+  margin: 24px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 16px;
+  line-height: 28px;
+}
+
+.be-safe-body {
+  display: grid;
+  margin-top: 56px;
+  gap: 64px;
+  grid-template-columns: minmax(0, 452fr) minmax(0, 553fr);
+}
+
+/* 左侧:居中方块浮在一团柔光上,三圈同心环只是质感。
+   画面里占主导的是**面板自己的径向渐变**(源站实测 前景色/0.07 → 68% 处透明),
+   环的描边只有 4%、再乘 0.18-0.42 的呼吸——实际不到 1%,不该读成三个画出来的圆。 */
+.be-safe-panel {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  min-height: 485px;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 6%, transparent);
+  border-radius: 32px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-ink) 7%, transparent),
+    transparent 68%
+  );
+  place-items: center;
+}
+.be-safe-ring {
+  position: absolute;
+  width: calc(var(--d) * 1%);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 4%, transparent);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  opacity: 0.18;
+  /* 三圈错峰呼吸 4.8s。源站实测的缓动,别换成 ease——那条曲线两头都很慢,才像呼吸。 */
+  animation: be-safe-breathe 4800ms cubic-bezier(0.77, 0, 0.175, 1)
+    calc(var(--i) * 220ms) infinite;
+}
+@keyframes be-safe-breathe {
+  50% {
+    opacity: 0.42;
+  }
+}
+.be-safe-tile {
+  position: relative;
+  display: grid;
+  width: 128px;
+  height: 128px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 32px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  place-items: center;
+}
+.be-safe-pill {
+  position: absolute;
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: var(--color-workbench);
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-safe-pill.is-a {
+  top: 20%;
+  right: 8%;
+}
+.be-safe-pill.is-b {
+  bottom: 20%;
+  left: 8%;
+}
+
+/* 右侧:四行,发丝线分隔。三栏 40 / 195 / 271,间距 24——标题和描述各占一栏,
+   不是标题上、描述下,那样右半边会空一大块。 */
+.be-safe-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+}
+.be-safe-rows {
+  width: 100%;
+  border-top: 1px solid var(--color-hairline);
+}
+.be-safe-rows article {
+  display: grid;
+  align-items: start;
+  padding: 24px 0;
+  gap: 24px;
+  grid-template-columns: 40px minmax(0, 195fr) minmax(0, 271fr);
+}
+.be-safe-rows article + article {
+  border-top: 1px solid var(--color-hairline);
+}
+.be-safe-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  color: var(--color-ink-soft);
+  place-items: center;
+}
+.be-safe-rows h3 {
+  margin: 0;
+  padding-top: 8px;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+.be-safe-rows p {
+  margin: 0;
+  padding-top: 8px;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  line-height: 24px;
+}
+.be-safe-cta {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  padding: 0 18px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  line-height: 20px;
+  text-decoration: none;
+  transition:
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-safe-cta:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------------------------
+   10. Pricing —— Aurora duo
+
+   数值照源件实测(catalog.css:917–931):24px 圆角、29/28 内边距、名称 20、
+   $ 24 基线对齐、数字 48、单位 14 且**不是** mono、说明在价格之下、分隔线
+   11px/.1em、列表 16px 缝、CTA 48px pill、极光带占卡底 288px 并向上淡出。
+
+   只留一处偏离:说明文字用页面的 16px 正文而不是源件的 14px——这一版刚把全站
+   正文从 13/14 拉到 16,套餐卡没有理由自己缩回去。
+--------------------------------------------------------------------------- */
+.be-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: clamp(46px, 6vw, 72px);
+}
+.be-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-hairline);
+  /* 24px:Aurora 卡是全页唯一超出 2/6/12 半径词汇表的地方,源件的形状就是这个。 */
+  border-radius: 24px;
+  background: var(--color-surface);
+}
+
+/* 极光。卡底 288px 的带,向上淡出;里面那层画布**溢出到带外** 140%×122%,
+   源件那种"从卡外渗进来"的散射全靠这一步,规规矩矩铺满反而是一团糊。
+   色相取源件 WebGL 的三支:深蓝 #071328 → 蓝 #0668e8 → 青 #22d3ee。 */
+pricing-aurora.be-plan-aurora {
+  display: block;
+}
+.be-plan-aurora {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 288px;
+  overflow: hidden;
+  mask-image: linear-gradient(to top, #000 18%, #000 68%, transparent 100%);
+  pointer-events: none;
+}
+/* WebGL 起来了就不要这层兜底渐变——两层叠在一起会把波面糊掉。 */
+.be-plan-aurora.is-live i {
+  display: none;
+}
+.be-plan-aurora canvas {
+  position: absolute;
+  right: -20%;
+  bottom: -8%;
+  left: -20%;
+  display: block;
+  width: 140%;
+  height: 122%;
+}
+.be-plan-aurora i {
+  position: absolute;
+  right: -20%;
+  bottom: -8%;
+  left: -20%;
+  display: block;
+  height: 122%;
+  background:
+    radial-gradient(
+      56% 74% at 24% 66%,
+      rgba(34, 211, 238, 0.68),
+      transparent 72%
+    ),
+    radial-gradient(
+      74% 92% at 66% 86%,
+      rgba(6, 104, 232, 0.7),
+      transparent 70%
+    ),
+    radial-gradient(
+      104% 64% at 50% 128%,
+      rgba(7, 19, 40, 0.58),
+      transparent 78%
+    );
+  filter: blur(22px);
+  animation: be-aurora 19s ease-in-out infinite alternate;
+}
+/* 浅色下同一组渐变会压得太实,源件那一版是很淡的一层青洗。 */
+:root[data-theme='light'] .be-plan-aurora i {
+  opacity: 0.5;
+}
+/* WebGL 拿不到时的兜底也要分色,不然 Max 会退成跟 Pro 一样的蓝。 */
+.be-plan-aurora[data-tone='max'] i {
+  background:
+    radial-gradient(
+      56% 74% at 24% 66%,
+      rgba(244, 114, 182, 0.62),
+      transparent 72%
+    ),
+    radial-gradient(
+      74% 92% at 66% 86%,
+      rgba(124, 58, 237, 0.72),
+      transparent 70%
+    ),
+    radial-gradient(104% 64% at 50% 128%, rgba(24, 6, 42, 0.6), transparent 78%);
+}
+
+@keyframes be-aurora {
+  from {
+    transform: translate3d(-2.5%, 1.5%, 0) scale(1.02);
+  }
+  to {
+    transform: translate3d(3.5%, -1.5%, 0) scale(1.1);
+  }
+}
+
+.be-plan-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 29px 28px 28px;
+}
+.be-plan-body h3 {
+  font-size: var(--be-title);
+  font-weight: 510;
+  letter-spacing: -0.012em;
+  color: var(--color-ink);
+}
+
+/* 价格紧跟名称,说明在它下面——源件的顺序。48px 的数字是这一屏的全部力量。 */
+.be-plan-price {
+  display: flex;
+  align-items: baseline;
+  /* 高度写死:三张卡的价格内容不一样高(有的带符号和单位,有的只有一个词),
+     不锁住的话下面那行说明就各起各的,横着看是错开的。 */
+  height: 52px;
+  margin-top: 25px;
+  letter-spacing: -0.045em;
+}
+.be-plan-symbol {
+  font-size: 24px;
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+.be-plan-price strong {
+  font-size: 48px;
+  font-weight: 510;
+  line-height: 1;
+  color: var(--color-ink);
+}
+/* 汉字撑满 em 框,拉丁数字只占到 cap height——同样 48px,「免费」看着比「19」大
+   一大圈。只有词形价格(唯一子元素)要压,数字不动。 */
+:lang(zh) .be-plan-price strong:only-child {
+  font-size: 36px;
+}
+.be-plan-price small {
+  margin-left: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+
+.be-plan-copy {
+  width: 90%;
+  min-height: 52px;
+  margin-top: 20px;
+  font-size: var(--be-body);
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+/* ───── 套餐包含 ───── */
+.be-plan-rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 31px 0 28px;
+}
+.be-plan-rule::before,
+.be-plan-rule::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--color-hairline);
+}
+.be-plan-rule span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+/* 汉字进不了 Geist Mono,会在这一行掉回系统等宽——中文改回 sans,靠字距撑气质。 */
+:lang(zh) .be-plan-rule span {
+  font-family: var(--font-sans);
+  font-size: var(--be-label);
+  letter-spacing: 0.22em;
+  text-transform: none;
+}
+
+.be-plan-body ul {
+  display: grid;
+  gap: 16px;
+}
+.be-plan-body li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.25;
+  color: var(--color-ink-soft);
+}
+.be-plan-body li svg {
+  flex: 0 0 16px;
+  color: var(--color-ink);
+}
+
+.be-plan-action {
+  margin-top: auto;
+  padding-top: 28px;
+}
+.be-plan-action a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9999px;
+  /* 压在极光最亮那一段上,72% 的半透明底会被冲淡到读不出字——加背板并把底提实。 */
+  background: color-mix(in srgb, var(--color-surface-2) 90%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 510;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+.be-plan-action a:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-1px);
+}
+/* 主推卡的 CTA 是**白 pill**,不是 sky:全页的实心强调色只留给首屏提交与结尾
+   CTA(design.md §2.2)。白底黑字是这套系统里第二高的对比,正好够用。 */
+.be-plan.is-featured .be-plan-action a {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-workbench);
+}
+.be-plan.is-featured .be-plan-action a:hover {
+  border-color: var(--color-ink);
+}
+.be-pricing-note {
+  margin-top: 34px;
+  text-align: center;
+  font-size: var(--be-caption);
+  color: var(--color-faint);
+}
+
+/* ---------------------------------------------------------------------------
+   11. Trust —— trust-compliance-marks
+
+   实测复刻。源站 trust-security 的 Compliance marks,证据在
+   evidence/trust-compliance-marks-source.json。
+--------------------------------------------------------------------------- */
+.be-marks-head {
+  display: grid;
+  align-items: end;
+  gap: 24px;
+  grid-template-columns: minmax(0, 768fr) auto;
+}
+.be-marks-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-marks-head h2 {
+  margin: 18px 0 0;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+}
+.be-marks-head h2 span {
+  display: block;
+}
+:lang(zh) .be-marks-head h2 {
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+}
+.be-marks-head > div > p {
+  max-width: 672px;
+  margin: 24px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 16px;
+  line-height: 28px;
+}
+.be-marks-cta {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  padding: 0 20px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  line-height: 20px;
+  text-decoration: none;
+  transition:
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-marks-cta:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-1px);
+}
+
+/* 四栏标记带。竖发丝线分栏,不加卡片外框——源站这一块是靠留白和线分的。 */
+.be-marks-band {
+  display: grid;
+  margin-top: 56px;
+  border-top: 1px solid var(--color-hairline);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.be-marks-band article {
+  padding: 32px 28px;
+}
+.be-marks-band article + article {
+  border-left: 1px solid var(--color-hairline);
+}
+.be-marks-band article > svg {
+  color: var(--color-ink-soft);
+}
+/* 标记与后缀按基线对齐:后缀是给标记加注的,不是另起一行的第二个标题。 */
+.be-mark-line {
+  display: flex;
+  align-items: baseline;
+  margin-top: 32px;
+  gap: 8px;
+}
+.be-mark-line h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 36px;
+}
+.be-mark-line p {
+  margin: 0;
+  padding-bottom: 4px;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.be-mark-desc {
+  margin: 16px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.be-marks-checks {
+  display: flex;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+.be-marks-checks span {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  gap: 8px;
+  line-height: 20px;
+}
+.be-marks-checks svg {
+  flex: none;
+  color: var(--color-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   12. FAQ —— faq-numbered
+--------------------------------------------------------------------------- */
+.be-numbered-list {
+  max-width: 800px;
+  margin: clamp(34px, 5vw, 56px) auto 0;
+  border-top: 1px solid var(--color-hairline);
+}
+.be-faq-item {
+  border-bottom: 1px solid var(--color-hairline);
+}
+.be-faq-item summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding-block: 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.be-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.be-faq-item summary h3 {
+  flex: 1;
+  font-size: var(--be-title);
+  font-weight: 510;
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+  transition: color 200ms ease;
+}
+.be-faq-item[open] summary h3,
+.be-faq-item summary:hover h3 {
+  color: var(--color-ink);
+}
+.be-faq-item[open] summary .be-index {
+  color: var(--color-ink-soft);
+}
+/* 加号 → 减号：两条线，竖的那条在展开时转 90°。 */
+.be-faq-icon {
+  position: relative;
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.be-faq-icon i {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 1.5px;
+  border-radius: 9999px;
+  background: var(--color-muted);
+  transform: translateY(-50%);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-faq-icon i:last-child {
+  transform: translateY(-50%) rotate(90deg);
+}
+.be-faq-item[open] .be-faq-icon i:last-child {
+  transform: translateY(-50%) rotate(0deg);
+}
+/* 高度走 grid-template-rows 0fr→1fr:直接动 height 要么算不出来,要么每帧触发布局。
+   内边距必须挂在内层,挂在网格上收不回 0。 */
+.be-faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-faq-answer.is-open {
+  grid-template-rows: 1fr;
+}
+.be-faq-answer > div {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+.be-faq-answer.is-open > div {
+  opacity: 1;
+  transition-delay: 80ms;
+}
+.be-faq-answer p {
+  max-width: 68ch;
+  padding-bottom: 22px;
+  padding-left: 44px;
+  font-size: var(--be-body);
+  line-height: 1.68;
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   13. Team —— team-grid
+
+   实测复刻。源站 team 的 Team grid,证据在 evidence/team-grid-source.json。
+--------------------------------------------------------------------------- */
+.be-team-head {
+  display: grid;
+  align-items: end;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.be-team-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 5%, transparent);
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+/* 这里的标题是 400,不是别的 section 的 510——源站实测,别顺手统一。 */
+.be-team-head h2 {
+  margin: 20px 0 0;
+  max-width: 20ch;
+  font-size: 36px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.be-team-head > div > p {
+  margin: 16px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  line-height: 28px;
+}
+.be-team-cta {
+  display: inline-flex;
+  height: 38px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  gap: 10px;
+  line-height: 20px;
+  text-decoration: none;
+  transition:
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-team-cta:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-1px);
+}
+.be-team-dot {
+  position: relative;
+  display: grid;
+  width: 6px;
+  height: 6px;
+  place-items: center;
+}
+.be-team-dot i {
+  grid-area: 1 / 1;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-add);
+}
+/* 外圈的 ping:1s 内放大到 2 倍并淡出。源站实测。 */
+.be-team-dot i:first-child {
+  opacity: 0.7;
+  animation: be-team-ping 1000ms cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes be-team-ping {
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+.be-team-grid {
+  display: grid;
+  margin-top: 48px;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.be-team-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 24px;
+  background: var(--color-surface);
+  transition:
+    border-color 300ms ease,
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-team-card:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-4px);
+}
+.be-team-avatar {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  aspect-ratio: 1;
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--color-add) 10%, transparent) 0%,
+    var(--color-surface-2) 50%,
+    var(--color-surface-2) 100%
+  );
+}
+.be-team-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-team-card:hover .be-team-avatar img {
+  transform: scale(1.04);
+}
+/* 社交入口平时收在下面,悬停才滑上来——头像才是这张卡的主体。 */
+.be-team-socials {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-team-card:hover .be-team-socials,
+.be-team-card:focus-within .be-team-socials {
+  opacity: 1;
+  transform: none;
+}
+.be-team-socials a {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 8px;
+  background: rgb(10 10 10 / 70%);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  place-items: center;
+  transition: background 200ms ease;
+}
+.be-team-socials a:hover {
+  background: rgb(10 10 10 / 88%);
+}
+.be-team-name {
+  padding: 12px 4px 4px;
+}
+.be-team-name h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.be-team-name p {
+  margin: 2px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* ---------------------------------------------------------------------------
+   14. Footer —— footer-spotlight
+--------------------------------------------------------------------------- */
+.be-footer {
+  position: relative;
+  padding-block: clamp(48px, 6vw, 72px) 0;
+  border-top: 1px solid var(--color-hairline);
+  background: var(--be-section-background);
+}
+.be-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+.be-footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 34ch;
+}
+.be-footer-brand .landing-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 510;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.be-footer-brand p {
+  font-size: var(--be-caption);
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+.be-footer-brand small {
+  margin-top: 2px;
+  font-size: var(--be-label);
+  color: var(--color-faint);
+}
+.be-footer-grid > div:not(.be-footer-brand) {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.be-footer-grid h2 {
+  font-size: 12px;
+  font-weight: 510;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+.be-footer-grid a:not(.landing-brand):not(.be-text-link) {
+  font-size: 13px;
+  color: var(--color-muted);
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+.be-footer-grid a:not(.landing-brand):not(.be-text-link):hover {
+  color: var(--color-ink);
+}
+
+/* 大字水印。底色是描边字，跟随指针的那层用 mask 开一个圆窗露出实心字。 */
+.be-footer-wordmark {
+  position: relative;
+  display: block;
+  margin-top: clamp(40px, 6vw, 72px);
+  border-bottom: 1px solid var(--color-hairline);
+  /* 只露上半截:字沉进底栏那条发丝线里,线就是切口。em 跟着 font-size 的 clamp
+     走,所以各档视口下露出的比例是同一个。 */
+  height: 0.6em;
+  overflow: hidden;
+  font-size: clamp(2.4rem, 9.2vw, 8rem);
+  font-weight: 510;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+}
+.be-footer-wordmark span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-hairline-strong);
+}
+/* 选择器必须比 `.be-footer-wordmark span`(0,1,1)更具体,否则那条的 transparent
+   会一直压着填充色,聚光看着像没实现。 */
+.be-footer-wordmark .be-wordmark-fill {
+  position: absolute;
+  inset: 0;
+  color: var(--color-ink);
+  -webkit-text-stroke: 0;
+  /* 常显的话它就是第二个标题;只有指针扫过的那一段亮起来才是聚光。 */
+  opacity: var(--spot-visible, 0);
+  transition: opacity 220ms ease;
+  mask-image: radial-gradient(
+    200px at var(--spot-x, -999px) var(--spot-y, -999px),
+    #000,
+    transparent 70%
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   15. 响应式 —— 断点只有两档，390px 必须不横向溢出
+--------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .be-proof-head {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .be-proof {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .be-proof-item:nth-child(n + 3) {
+    border-top: 1px solid var(--color-hairline);
+  }
+  .be-team-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 窄屏:标记带两栏,第三张起补上横发丝线。 */
+  .be-marks-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-marks-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .be-marks-band article:nth-child(odd) {
+    border-left: 0;
+  }
+  .be-marks-band article:nth-child(n + 3) {
+    border-top: 1px solid var(--color-hairline);
+  }
+  /* 窄屏:面板落到列表上方,行内的标题与描述并成一栏。 */
+  .be-safe-body {
+    gap: 40px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-safe-panel {
+    min-height: 360px;
+  }
+  .be-safe-rows article {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .be-safe-rows p {
+    grid-column: 2;
+    padding-top: 4px;
+  }
+  .be-collage-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* 窄屏不能再按源站那个 643.84/608 的比例走:卡按比例缩了但字没缩,一定被外壳
+     裁掉。改成让当前那张卡自己撑高度,背后两张退成绝对定位、收窄扇形。 */
+  .be-collage-stage {
+    height: auto;
+  }
+  .be-collage {
+    position: relative;
+    display: block;
+    inset: auto;
+    padding: 28px;
+  }
+  .be-story {
+    right: 28px;
+    left: 28px;
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    padding: 24px;
+    transform: translate(calc(var(--offset) * 13%), calc(var(--depth) * 5%))
+      rotate(calc(var(--offset) * 4deg)) scale(0.9);
+  }
+  .be-story.is-active {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  .be-story-title {
+    margin-top: 28px;
+    font-size: 22px;
+  }
+  .be-story-body {
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 26px;
+  }
+  .be-story-result {
+    margin-top: 28px;
+  }
+  .be-collage-hint {
+    right: 28px;
+    bottom: 10px;
+  }
+  .be-plan-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-walk-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-walk-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-walk-rail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .be-walk-step {
+    padding: 18px;
+  }
+  .be-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* Bento:六列 → 两列,前两张各占满一行(源站断点实测)。 */
+  .be-bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .be-bento-card {
+    grid-column: auto;
+  }
+  .be-bento-card.is-wide,
+  .be-bento-card:nth-of-type(2) {
+    grid-column: span 2;
+  }
+
+  /* 两列。内部线靠每张卡的右/下边框拼,列数一变就要重排哪几张不画。 */
+  .be-signal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .be-signal-card:nth-of-type(3n) {
+    border-right: 1px solid var(--signal-line);
+  }
+  .be-signal-card:nth-of-type(2n) {
+    border-right: 0;
+  }
+  .be-signal-card:nth-last-of-type(-n + 3) {
+    border-bottom: 1px solid var(--signal-line);
+  }
+  .be-signal-card:nth-last-of-type(-n + 2) {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .be-container {
+    padding-inline: 18px;
+  }
+  .be-proof {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-proof-item + .be-proof-item {
+    border-left: 0;
+    border-top: 1px solid var(--color-hairline);
+  }
+  .be-proof-item {
+    padding-inline: 0;
+  }
+  .be-marks-band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-marks-band article:nth-child(n + 2) {
+    border-top: 1px solid var(--color-hairline);
+  }
+  .be-bento-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-bento-card,
+  .be-bento-card.is-wide,
+  .be-bento-card:nth-of-type(2) {
+    grid-column: auto;
+  }
+  /* 源站的大卡画面在各档都锁 384——它装的是英文短句。中文提案卡在 324px 宽下
+     装不进 384,只好放开让内容撑高,否则底部的采纳/跳过会被裁掉。 */
+  .be-bento-art.is-tall {
+    height: auto;
+    min-height: 24rem;
+  }
+  .be-signal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* :nth-child(n) 只为把权重提到和两列那档的 :nth-child(3n) 齐平——否则第三张卡
+     会一路带着右边框掉到单列里。 */
+  .be-signal-card:nth-of-type(n) {
+    border-right: 0;
+  }
+  .be-signal-card:nth-last-of-type(-n + 2) {
+    border-bottom: 1px solid var(--signal-line);
+  }
+  .be-signal-card:last-child {
+    border-bottom: 0;
+  }
+  .be-faq-answer p {
+    padding-left: 0;
+  }
+  /* ---- 移动端实测修正(390px)---- */
+  /* 步骤轨在 1023 断点是三栏,到窄屏必须落成一列,否则每栏只有 103px。 */
+  .be-walk-shell {
+    padding: 10px;
+    border-radius: 24px;
+  }
+  .be-walk-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .be-walk-step {
+    padding: 16px 18px;
+    border-radius: 18px;
+  }
+  .be-walk-row {
+    margin-bottom: 10px;
+  }
+  .be-walk-title {
+    margin-top: 4px;
+    font-size: 18px;
+    line-height: 25px;
+  }
+  /* 320 装不下场景 01 的四块,入口卡会被切掉。舞台按内容给高,场景内边距收紧。 */
+  .be-walk-stage {
+    min-height: 420px;
+    border-radius: 18px;
+  }
+  .be-walk-scene {
+    padding: 20px;
+    gap: 10px;
+  }
+  .be-walk-flow {
+    gap: 8px;
+  }
+  .be-walk-jd,
+  .be-walk-room {
+    padding: 11px 13px;
+  }
+  .be-walk-jd ul {
+    gap: 4px;
+  }
+  .be-orb {
+    width: min(300px, 82%);
+  }
+  /* 扇开幅度按桌面值缩一半多:28% 于 304px 的卡 = 85px,两侧会被切掉。 */
+  .be-story {
+    --story-fan: 11%;
+    --story-tilt: 3deg;
+
+    width: 84%;
+    min-height: 21rem;
+    padding: 22px;
+    border-radius: 22px;
+  }
+  /* 标题两行的分组在窄屏会糊成一片,补一点行间气口。 */
+  .be-hero h1 {
+    font-size: clamp(1.9rem, 8vw, 2.5rem);
+    max-width: 100%;
+  }
+  .be-hero-line + .be-hero-line {
+    margin-top: 0.14em;
+  }
+  /* 示例横成一条可滑的带子,不再折行被右边缘切掉。 */
+  .be-prompt-chips {
+    justify-content: flex-start;
+    margin-inline: -18px;
+    padding-inline: 18px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .be-prompt-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .be-prompt-chips button {
+    flex: none;
+  }
+  .be-composer-top {
+    padding: 14px 16px 0;
+  }
+  .be-composer-field {
+    padding: 6px 16px 10px;
+  }
+  .be-composer-bottom {
+    padding: 0 12px 8px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   16. 触屏 —— 可点的东西不小于 44px
+
+   按 pointer 而不是按宽度：iPad 横屏是宽屏也是手指，按断点挑会漏掉它。
+--------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  /* 44 的最小点按区要宽高一起给,只给 min-height 会把圆钮拉成竖药丸。 */
+  .be-composer-bottom .be-primary {
+    width: 44px;
+    height: 44px;
+  }
+
+  .be-hero-eyebrow,
+  .be-prompt-chips button,
+  .be-composer-bottom .be-primary,
+  .be-proposal > footer button,
+  .be-marks-cta {
+    min-height: 44px;
+  }
+  .be-plan-action a {
+    min-height: 48px;
+  }
+  .be-prompt-chips button,
+  .be-hero-eyebrow {
+    padding-inline: 16px;
+  }
+  .be-footer-brand .landing-brand,
+  .be-footer-grid a:not(.landing-brand) {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .be-footer-grid > div:not(.be-footer-brand) {
+    gap: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   17. Reduced motion —— 关动效，不关内容
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .be-signal-card,
+  .be-signal-shader,
+  .be-proposal,
+  .be-faq-answer,
+  .be-plan-aurora i {
+    animation: none;
+  }
+  .be-signal-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .be-story,
+  .be-text-link svg,
+  .be-text-link span[aria-hidden],
+  .be-hero-eyebrow svg {
+    transition-duration: 1ms;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   15. Blog index —— blog-index
+
+   实测复刻。源站 blog-pages 的 Blog index,证据在 evidence/blog-index-source.json。
+   结构是三段:居中引导 → featured 大卡 → The latest / Recent stories + 网格。
+--------------------------------------------------------------------------- */
+.be-blog-intro {
+  display: grid;
+  max-width: 896px;
+  margin: 0 auto;
+  gap: 20px;
+  justify-items: center;
+  text-align: center;
+}
+.be-blog-intro > p:first-child {
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.be-blog-intro h1 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 40px;
+}
+:lang(zh) .be-blog-intro h1 {
+  letter-spacing: -0.01em;
+  line-height: 1.28;
+}
+.be-blog-lede {
+  max-width: 672px;
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: 16px;
+  line-height: 28px;
+}
+
+/* 头条大卡:图左 图右文字,内边距 56。标题只有 20px——源站没有为了「头条」放大字号,
+   靠面积和留白拉开层级。 */
+.be-blog-hero {
+  display: grid;
+  margin-top: 56px;
+  padding: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 16px;
+  background: var(--color-surface);
+  color: inherit;
+  gap: 0;
+  grid-template-columns: minmax(0, 473fr) minmax(0, 578fr);
+  text-decoration: none;
+  transition:
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-blog-hero:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-3px);
+}
+.be-blog-hero > .be-blog-cover {
+  aspect-ratio: 473 / 384;
+}
+.be-blog-hero-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px;
+  gap: 24px;
+}
+.be-blog-hero h2 {
+  margin: 20px 0 0;
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 25px;
+}
+.be-blog-hero .be-blog-desc {
+  margin-top: 20px;
+  line-height: 28px;
+}
+.be-blog-hero-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.be-blog-hero-foot p {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+.be-blog-hero-foot em {
+  margin-left: 6px;
+  color: var(--color-ink-soft);
+  font-style: normal;
+}
+.be-blog-hero-foot i {
+  color: var(--color-ink);
+  font-size: 20px;
+  font-style: normal;
+  line-height: 1;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-blog-hero:hover .be-blog-hero-foot i {
+  transform: translateX(4px);
+}
+
+.be-blog-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 64px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.be-blog-head > div > p {
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  line-height: 20px;
+}
+.be-blog-head h1,
+.be-blog-head h2 {
+  margin: 4px 0 0;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 40px;
+}
+/* 筛选药丸 40 高、内边距 6/16、间距 4;选中那枚是**反白**,不是浅灰底。 */
+.be-blog-filters {
+  display: flex;
+  gap: 4px;
+}
+.be-blog-filters button {
+  height: 40px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    color 200ms ease;
+}
+.be-blog-filters button:hover {
+  color: var(--color-ink);
+}
+.be-blog-filters button[aria-pressed='true'] {
+  background: var(--color-ink);
+  color: var(--color-workbench);
+}
+
+.be-blog-grid {
+  display: grid;
+  margin-top: 32px;
+  gap: 48px 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.be-blog-card[hidden] {
+  display: none;
+}
+.be-blog-card > a {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 16px;
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.be-blog-card > a:hover {
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-3px);
+}
+/* 封面没有图,用站内渐变生成。走 CSS 而不是 WebGL:一页六张卡开六个上下文不值得。 */
+.be-blog-cover {
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 322 / 242;
+}
+.be-blog-cover[data-tone='sky'] {
+  background: linear-gradient(150deg, #2f8ff0, #9fdcfb);
+}
+.be-blog-cover[data-tone='mist'] {
+  background: linear-gradient(150deg, #8fd4c6, #cfe9b8);
+}
+.be-blog-cover[data-tone='orchid'] {
+  background: linear-gradient(150deg, #8b5cf6, #e0a9f0);
+}
+.be-blog-cover[data-tone='emerald'] {
+  background: linear-gradient(150deg, #34d399, #a7f3d0);
+}
+.be-blog-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 20px 12px 12px;
+}
+/* 元信息是大写加宽的一行,源站实测 letter-spacing 1.68px。 */
+.be-blog-meta {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.68px;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+.be-blog-body h3 {
+  margin: 12px 0 0;
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 25px;
+}
+.be-blog-desc {
+  margin: 12px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 16px;
+  line-height: 24px;
+}
+.be-blog-more {
+  display: flex;
+  align-items: center;
+  margin: auto 0 0;
+  padding-top: 20px;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  line-height: 20px;
+}
+/* 工具卡没有封面,正文自己顶到卡边。 */
+.be-blog-card.is-flat .be-blog-body {
+  padding: 20px 16px 16px;
+}
+.be-blog-empty {
+  margin-top: 32px;
+  padding: 32px;
+  border: 1px dashed var(--color-hairline);
+  border-radius: 16px;
+  color: var(--color-ink-soft);
+}

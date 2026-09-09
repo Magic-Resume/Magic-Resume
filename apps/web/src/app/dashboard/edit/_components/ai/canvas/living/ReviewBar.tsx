@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ChevronUp, ChevronDown, Check, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
+import { EASE_ENTER } from '@magic-resume/utils';
 type ReviewBarProps = {
   count: number;
   onPrev: () => void;
@@ -24,7 +25,7 @@ export default function ReviewBar({ count, onPrev, onNext, onAcceptAll, onDiscar
       exit={{ opacity: 0, y: reduce ? 0 : 16 }}
       // 这里原来是全 AI 面板唯一一处 spring。三份规范都写「不弹跳」，评审条又是
       // 停留时间最长的浮层，回弹在它身上最显眼。
-      transition={{ duration: reduce ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: reduce ? 0 : 0.24, ease: EASE_ENTER }}
       className="absolute bottom-4 left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 flex-nowrap items-center gap-2 overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-900/95 px-2.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.14)] backdrop-blur"
     >
       <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap pl-1.5 pr-1 text-xs text-neutral-300">

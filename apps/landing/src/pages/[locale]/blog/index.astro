@@ -1,0 +1,65 @@
+---
+import ArticleCard from '@/components/content/ArticleCard.astro';
+import FeaturedArticle from '@/components/content/FeaturedArticle.astro';
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { getArticles } from '@/lib/articles';
+
+export function getStaticPaths() {
+  return LOCALES.map((locale) => ({ params: { locale }, props: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+if (!isLocale(localeParam)) return Astro.redirect('/en/blog');
+const locale = localeParam as Locale;
+const entries = await getArticles(locale);
+const title = locale === 'zh' ? '求职与 AI 简历文章 | Magic Resume' : 'Resume and job-search guides | Magic Resume';
+const description = locale === 'zh'
+  ? '围绕 AI 简历、ATS、岗位 JD 匹配和 Resume MCP 的实操文章。'
+  : 'Practical guides about AI resumes, ATS checks, job-description matching, and Resume MCP.';
+const base = new URL(Astro.url.pathname.replace(/\/+$/, ''), Astro.site).href;
+const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', href: new URL(`/${loc}/blog`, Astro.site).href }));
+// 筛选药丸取真实标签,按出现次数排序,最多四个——源站那组也是四个。
+const tagCounts = new Map<string, number>();
+for (const entry of entries) for (const tag of entry.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+const filters = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([tag]) => tag);
+// 头条取标记 featured 的那篇,没有就取最新的;它不再出现在下面的网格里。
+const hero = entries.find((entry) => entry.data.featured) ?? entries[0];
+const rest = entries.filter((entry) => entry !== hero);
+---
+
+<ContentLayout locale={locale} title={title} description={description} canonical={base} alternates={alternates}>
+  <section class="be-section" data-beui="blog-index">
+    <div class="be-container">
+      <header class="be-blog-intro">
+        <p>{locale === 'zh' ? '求职知识' : 'Job-search knowledge'}</p>
+        <h1>{locale === 'zh' ? '把每一次投递，变成可复用的方法' : 'Turn every application into a reusable method'}</h1>
+        <p class="be-blog-lede">{description}</p>
+      </header>
+
+      {hero && <FeaturedArticle entry={hero} locale={locale} />}
+
+      <blog-filter class="be-blog-head">
+        <div>
+          <p>{locale === 'zh' ? '最新' : 'The latest'}</p>
+          <h2>{locale === 'zh' ? '近期文章' : 'Recent stories'}</h2>
+        </div>
+        {filters.length > 0 && (
+          <div class="be-blog-filters" role="group" aria-label={locale === 'zh' ? '按标签筛选' : 'Filter stories'}>
+            <button type="button" data-tag="" aria-pressed="true">{locale === 'zh' ? '全部' : 'All'}</button>
+            {filters.map((tag) => <button type="button" data-tag={tag} aria-pressed="false">{tag}</button>)}
+          </div>
+        )}
+      </blog-filter>
+
+      <div class="be-blog-grid">
+        {rest.map((entry, i) => <ArticleCard entry={entry} locale={locale} index={i + 1} />)}
+      </div>
+      {entries.length === 0 && <p class="be-blog-empty">{locale === 'zh' ? '文章正在准备中' : 'Articles are being prepared'}</p>}
+    </div>
+  </section>
+</ContentLayout>
+
+<script>
+  import '@/components/landing-ui/blog-filter';
+</script>

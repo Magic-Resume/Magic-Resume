@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@magic-resume/icons';
 import { cn } from '@magic-resume/utils';
 import { WidgetItem } from '../motion';
 import type { WidgetOption } from '../contract';
@@ -45,16 +45,16 @@ export function Gallery({
               title={o.label}
               className={cn(
                 'group relative w-full overflow-hidden rounded-lg transition-colors cursor-pointer',
-                selected ? 'ring-2 ring-ink-sky' : 'ring-1 ring-hairline hover:ring-strong',
+                selected ? 'ring-2 ring-mr-accent' : 'ring-1 ring-mr-line hover:ring-mr-line-strong',
               )}
             >
               {renderTile(o, selected)}
               {selected && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-fill-sky text-on-fill-sky">
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-mr-accent text-mr-accent-ink">
                   <Check size={11} strokeWidth={3} />
                 </span>
               )}
-              <span className="block truncate px-1.5 py-1 text-left text-[11px] text-secondary">
+              <span className="block truncate px-1.5 py-1 text-left text-mr-label text-mr-ink-secondary">
                 {o.label}
               </span>
             </button>

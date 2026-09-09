@@ -106,41 +106,9 @@ export function generateSnapshot(options?: {
   });
 };
 
-// 导出质量预设
-export const EXPORT_PRESETS = {
-  // 高质量 - 适合打印
-  high: {
-    scale: 2,
-    quality: 0.95,
-    format: 'png' as const,
-    compress: true,
-    description: '高质量 (适合打印, 文件较大)'
-  },
-  // 标准质量 - 平衡质量和文件大小
-  standard: {
-    scale: 1.5,
-    quality: 0.8,
-    format: 'jpeg' as const,
-    compress: true,
-    description: '标准质量 (推荐)'
-  },
-  // 压缩质量 - 文件最小
-  compressed: {
-    scale: 1,
-    quality: 0.6,
-    format: 'jpeg' as const,
-    compress: true,
-    description: '压缩质量 (文件最小)'
-  },
-  // 快速预览
-  preview: {
-    scale: 0.5,
-    quality: 0.5,
-    format: 'jpeg' as const,
-    compress: true,
-    description: '快速预览'
-  }
-} as const;
+// 这里原本有一张 `EXPORT_PRESETS` 导出质量预设表（高/标准/压缩/预览），全仓没有任何
+// 引用点——PDF 导出走的是 react-pdf 那条路，从没读过它。四条中文 description 因此也从没
+// 被渲染过。删掉：留着只会让下一个人以为导出质量是可配的。
 
 // 颜色解析
 function oklchToRgb(l: number, c: number, h: number){

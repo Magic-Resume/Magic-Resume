@@ -2,6 +2,9 @@ import React, { useMemo } from 'react';
 import { MagicTemplateDSL } from '../types/magic-dsl';
 import { Resume } from '../types/resume';
 import get from 'lodash.get';
+import { isBuiltInSection, zhTitleForSection } from '../sectionSemantics';
+import { compileTreeComponent } from '../primitives/treeComponent';
+import { renderNode as renderTreeNode } from '../primitives/dom/renderNode';
 
 import { Header } from '../templateLayout/Header';
 import { CenteredPhotoHeader } from '../templateLayout/CenteredPhotoHeader';
@@ -62,10 +65,10 @@ function synthesiseCustomSection(
   data: Resume,
   sectionOrderItem: { key: string; label?: string },
 ) {
-  // Only for keys the app never defined. A built-in that a template leaves out
-  // was left out on purpose, and its label is an i18n key — synthesising it
-  // printed `sections.skills` as a heading.
-  if (ZH_TITLE_BY_SECTION_KEY[sectionOrderItem.key]) return null;
+  // 内建分区不合成：模板把它留空是有意的，而它的 label 是 i18n key——
+  // 合成出来会把 `sections.skills` 当标题印在纸上。
+  // 判据来自 `sectionSemantics`，**与 PDF 渲染器共用同一份**。
+  if (isBuiltInSection(sectionOrderItem.key)) return null;
 
   const items = (data.sections as Record<string, unknown> | undefined)?.[
     sectionOrderItem.key
@@ -93,35 +96,6 @@ interface Props {
   data: Resume;
   locale?: string;
 }
-
-const ZH_TITLE_BY_SECTION_KEY: Record<string, string> = {
-  experience: '工作经历',
-  education: '教育经历',
-  projects: '项目经历',
-  skills: '专业技能',
-  languages: '语言能力',
-  certificates: '证书资质',
-  profiles: '个人主页',
-};
-
-const ZH_TITLE_BY_ENGLISH: Record<string, string> = {
-  header: '基本信息',
-  summary: '个人总结',
-  profile: '个人信息',
-  contact: '联系方式',
-  experience: '工作经历',
-  'work experience': '工作经历',
-  'professional experience': '专业经历',
-  education: '教育经历',
-  projects: '项目经历',
-  skills: '专业技能',
-  'technical skills': '技术技能',
-  languages: '语言能力',
-  certificates: '证书资质',
-  certifications: '证书资质',
-  profiles: '个人主页',
-  awards: '奖项',
-};
 
 function getSectionData(data: Resume, dataBinding: string) {
   // Defensive: a malformed resume (no `sections`/`info`) must render empty, not
@@ -232,6 +206,24 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
   
   const LayoutContainer = getLayoutComponent(layout.type);
 
+  /**
+   * 整棵模板树接管渲染。**放在最前面**：有它就完全不看 `template.components`。
+   *
+   * 与第 2 期的组件级接缝是两个层级——那个是「某一个分区用树画」，
+   * 这个是「整份简历用树画」。两者共用同一个编译入口，坏树都降级成不渲染。
+   */
+  const overrideRoot = useMemo(
+    () =>
+      data.templateOverride
+        ? compileTreeComponent(
+            data.templateOverride,
+            data as unknown as Record<string, unknown>,
+            'templateOverride',
+          )
+        : undefined,
+    [data],
+  );
+
   // `sectionOrder` is where an explicit icon choice lives; the component list
   // is keyed by dataBinding and knows nothing about it.
   const iconBySectionKey = useMemo(() => {
@@ -289,10 +281,30 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
     // it "this section is empty" stayed cached after the user filled it in.
   }, [components, data.sectionOrder, data.sections]);
 
+  if (data.templateOverride) {
+    // 外层的 CSS 变量照留：`.wysiwyg` 那套全局正文样式仍然靠它取色与字号。
+    // 编译失败时这里是一个空壳而不是白屏——上游还能看见页面框架。
+    return <div style={cssVariables}>{overrideRoot ? renderTreeNode(overrideRoot) : null}</div>;
+  }
+
   return (
     <div style={cssVariables}>
       <LayoutContainer layout={layout} designTokens={designTokens}>
         {sortedComponents.map(component => {
+          // ── 绞杀榕接缝 ──
+          // 声明了原语树就走新路径。19 个旧模板都没有这个字段，因此一行不改地
+          // 继续走下面的 legacy 注册表。
+          if (component.tree) {
+            const root = compileTreeComponent(
+              component.tree,
+              data as unknown as Record<string, unknown>,
+              component.id,
+            );
+            return root ? (
+              <React.Fragment key={component.id}>{renderTreeNode(root)}</React.Fragment>
+            ) : null;
+          }
+
           const Component = componentRegistry[component.type as keyof typeof componentRegistry];
           if (!Component) {
             console.warn(`Component "${component.type}" not found in registry.`);
@@ -330,12 +342,7 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
             if (typeof explicitChineseTitle === 'string' && explicitChineseTitle.trim()) {
               return explicitChineseTitle;
             }
-            if (sectionKey) {
-              const mappedByKey = ZH_TITLE_BY_SECTION_KEY[sectionKey];
-              if (mappedByKey) return mappedByKey;
-            }
-            const normalizedTitle = rawTitle.trim().toLowerCase();
-            return ZH_TITLE_BY_ENGLISH[normalizedTitle] || rawTitle;
+            return zhTitleForSection(sectionKey, rawTitle);
           })();
 
           const props = {

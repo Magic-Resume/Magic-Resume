@@ -186,11 +186,10 @@ All variables live in `apps/web/.env.local` (copy from `apps/web/.env.example`).
 | `NEXT_PUBLIC_APP_URL` | both | `https://magic-resume.cn` | Canonical base URL for OG tags / SEO. Set to your origin (e.g. `http://localhost:3000` in dev). |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | cloud | — | Clerk publishable key (`pk_...`). |
 | `CLERK_SECRET_KEY` | cloud | — | Clerk secret key (`sk_...`). |
-| `NEXT_PUBLIC_CLOUD_API_URL` | cloud | `http://localhost:3111` | NestJS Core API — resumes, settings, sharing, PATs. |
-| `BACKEND_URL` | AI features | `http://localhost:8000` | Agent server — interview, translate, AI optimize/analyze. |
+| `NEXT_PUBLIC_API_URL` | cloud | `http://localhost:3110` | Single NestJS Core gateway for all API and AI routes. |
 
 - **`self-hosted`** — pure browser. No Clerk, no Core API; only `NEXT_PUBLIC_APP_URL` matters.
-- **`cloud`** — requires the two Clerk keys plus `NEXT_PUBLIC_CLOUD_API_URL`; AI features additionally require `BACKEND_URL`.
+- **`cloud`** — requires the two Clerk keys plus `NEXT_PUBLIC_API_URL`; the gateway routes API and AI paths to the appropriate Core service.
 
 </details>
 

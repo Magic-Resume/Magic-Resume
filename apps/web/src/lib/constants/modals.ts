@@ -57,7 +57,7 @@ export interface ModelProvider {
 export const CUSTOM_PROVIDER_ID = 'custom';
 
 /** fallback max tokens — long resume optimize/translate/create outputs need headroom. */
-export const DEFAULT_MAX_TOKENS = 8192;
+export const DEFAULT_MAX_TOKENS = 16_384;
 
 export const MODEL_PROVIDERS: ModelProvider[] = [
   // ── 国外 ────────────────────────────────────────────────────────────────

@@ -14,9 +14,14 @@ import {
   Trash2,
   FlaskConical,
   Cloud,
-} from 'lucide-react';
+} from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { DropMenu } from '@/components/ui/drop-menu';
+import {
+  HoverSurface,
+  useHoverSurface,
+  type HoverSurfaceBinding,
+} from '@/components/ui/hover-surface';
 import { Resume } from '@/types/frontend/resume';
 import { useSettingStore } from '@/store/useSettingStore';
 import { useAccountUiStore } from '@/store/useAccountUiStore';
@@ -57,7 +62,7 @@ function StoragePill() {
 
   if (!isCloudMode) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[11px] text-neutral-500">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-mr-line-soft bg-white/[0.02] px-2.5 py-1 text-mr-label text-neutral-500">
         <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
         {t('dashboard.library.storageLocal')}
       </span>
@@ -74,7 +79,7 @@ function StoragePill() {
     <button
       type="button"
       onClick={() => openSettings('cloudSync')}
-      className="group inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[11px] text-neutral-400 transition-colors hover:border-sky-400/25 hover:text-sky-200"
+      className="group inline-flex items-center gap-1.5 rounded-full border border-mr-line-soft bg-white/[0.02] px-2.5 py-1 text-mr-label text-neutral-400 transition-colors hover:border-sky-400/25 hover:text-sky-200"
     >
       <Cloud size={12} className="text-neutral-500 transition-colors group-hover:text-sky-300" />
       <span>{t('dashboard.library.storageLocal')}</span>
@@ -95,7 +100,7 @@ function SpecimenStack() {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="absolute right-0 top-1/2 h-28 w-20 rounded-md border border-white/10 bg-white/[0.04] shadow-lg shadow-black/40"
+            className="absolute right-0 top-1/2 h-28 w-20 rounded-md border border-white/10 bg-mr-surface-subtle shadow-lg shadow-black/40"
             style={{
               transform: `translateY(-50%) translateX(${i * -20}px) rotate(${(i - 1) * -7}deg)`,
               opacity: 0.3 + i * 0.22,
@@ -138,11 +143,8 @@ function CreatePanel({ onClick }: { onClick: () => void }) {
           <div className="text-lg font-semibold tracking-tight text-neutral-50">
             {t('dashboard.create.title')}
           </div>
-          <div className="mt-0.5 text-[13px] text-neutral-400">
-            {t('dashboard.create.description')}
-          </div>
         </div>
-        <span className="inline-flex items-center gap-1 text-[13px] font-medium text-sky-300">
+        <span className="inline-flex items-center gap-1 text-mr-caption font-medium text-sky-300">
           {t('dashboard.create.cta')}
           <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" />
         </span>
@@ -163,17 +165,14 @@ function ImportPanel({ onClick }: { onClick: () => void }) {
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className="group flex h-40 flex-col justify-center gap-2.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 text-left transition-colors duration-200 hover:border-white/15 hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+      className="group flex h-40 flex-col justify-center gap-2.5 rounded-2xl border border-mr-line-soft bg-white/[0.02] px-6 text-left transition-colors duration-200 hover:border-white/15 hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.05] text-neutral-300 transition-colors group-hover:text-neutral-100">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-mr-surface-muted text-neutral-300 transition-colors group-hover:text-neutral-100">
         <Upload size={18} />
       </span>
       <div>
         <div className="text-base font-semibold tracking-tight text-neutral-100">
           {t('dashboard.import.title')}
-        </div>
-        <div className="mt-0.5 text-[13px] text-neutral-500">
-          {t('dashboard.import.description')}
         </div>
       </div>
     </motion.button>
@@ -188,12 +187,15 @@ const ResumeCard = React.memo(
     onDuplicate,
     onRename,
     templates,
+    surface,
   }: {
     resume: Resume;
     onDelete: (id: string) => void;
     onDuplicate: (id: string) => void;
     onRename: (resume: Resume) => void;
     templates: MagicTemplateDSL[];
+    /** `useHoverSurface().bind(id)`。hover 描边交给网格上那圈共享的环。 */
+    surface?: HoverSurfaceBinding;
   }) => {
     const { t } = useTranslation();
     const template = templates.find((tpl) => tpl.id === resume.template);
@@ -227,6 +229,7 @@ const ResumeCard = React.memo(
         layout
       >
         <div
+          {...surface}
           // Which resume a click inside this card refers to. Anything reported
           // from within picks these up, so individual controls don't each have
           // to carry them. Ids only — the collector drops anything else.
@@ -239,7 +242,8 @@ const ResumeCard = React.memo(
             // reflow during the sidebar animation only costs the visible ones. The
             // intrinsic-size reserves each card's box so scroll height stays stable.
             'group relative overflow-hidden rounded-2xl border bg-white/[0.02] transition-colors duration-200 [content-visibility:auto] [contain-intrinsic-size:auto_15rem]',
-            isMenuOpen ? 'border-sky-400/25' : 'border-white/[0.06] hover:border-sky-400/20',
+            // hover 描边由网格上那圈共享的环承担，这里只剩「菜单开着」这一个状态。
+            isMenuOpen ? 'border-sky-400/25' : 'border-mr-line-soft',
           )}
         >
           <Link href={`/dashboard/edit/${resume.id}`} className="block">
@@ -260,7 +264,7 @@ const ResumeCard = React.memo(
             </div>
 
             {/* info bar — the open cue is an arrow that slides in beside the title */}
-            <div className="border-t border-white/[0.06] px-3.5 py-3">
+            <div className="border-t border-mr-line-soft px-3.5 py-3">
               <div className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-100 transition-colors group-hover:text-sky-300">
                   {resume.name}
@@ -271,7 +275,7 @@ const ResumeCard = React.memo(
                   className="shrink-0 -translate-x-1 text-sky-300 opacity-0 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
                 />
               </div>
-              <div className="mt-1 flex items-center gap-1.5 text-[11px] text-neutral-500">
+              <div className="mt-1 flex items-center gap-1.5 text-mr-label text-neutral-500">
                 <span className="shrink-0">
                   {t('dashboard.resumeCard.lastUpdated', { time: formatTime(resume.updatedAt) })}
                 </span>
@@ -307,7 +311,7 @@ const ResumeCard = React.memo(
                     'flex h-8 w-8 items-center justify-center rounded-lg border backdrop-blur-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40',
                     isMenuOpen
                       ? 'border-white/10 bg-neutral-900/90 text-neutral-100'
-                      : 'border-white/[0.06] bg-neutral-900/70 text-neutral-400 hover:text-neutral-100',
+                      : 'border-mr-line-soft bg-neutral-900/70 text-neutral-400 hover:text-neutral-100',
                   )}
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -324,13 +328,13 @@ ResumeCard.displayName = 'ResumeCard';
 
 function ResumeCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+    <div className="overflow-hidden rounded-2xl border border-mr-line-soft bg-white/[0.02]">
       <div className="flex h-44 items-center justify-center bg-sunk p-3">
-        <div className="aspect-[1/1.33] h-full animate-pulse rounded bg-white/[0.04]" />
+        <div className="aspect-[1/1.33] h-full animate-pulse rounded bg-mr-surface-subtle" />
       </div>
-      <div className="border-t border-white/[0.06] px-3.5 py-3">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-white/[0.06]" />
-        <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-white/[0.04]" />
+      <div className="border-t border-mr-line-soft px-3.5 py-3">
+        <div className="h-4 w-3/4 animate-pulse rounded bg-mr-surface-soft" />
+        <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-mr-surface-subtle" />
       </div>
     </div>
   );
@@ -344,7 +348,7 @@ function DashboardSkeleton() {
       <div className="mx-auto w-full max-w-[1400px] px-6 py-10 md:px-12">
         {/* 标题 */}
         <header className="mb-8 flex items-end justify-between gap-4">
-          <div className="h-7 w-32 animate-pulse rounded-lg bg-white/[0.06]" />
+          <div className="h-7 w-32 animate-pulse rounded-lg bg-mr-surface-soft" />
           <div className="h-6 w-24 animate-pulse rounded-full bg-white/[0.03]" />
         </header>
 
@@ -352,13 +356,13 @@ function DashboardSkeleton() {
         <section className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_1fr]">
           <div className="h-40 rounded-2xl border border-sky-400/15 bg-sky-400/[0.05] px-6 py-6">
             <div className="h-9 w-9 animate-pulse rounded-xl bg-sky-400/15" />
-            <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/[0.06]" />
-            <div className="mt-2 h-3.5 w-40 animate-pulse rounded bg-white/[0.04]" />
+            <div className="mt-4 h-5 w-32 animate-pulse rounded bg-mr-surface-soft" />
+            <div className="mt-2 h-3.5 w-40 animate-pulse rounded bg-mr-surface-subtle" />
           </div>
-          <div className="h-40 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-6">
-            <div className="h-9 w-9 animate-pulse rounded-xl bg-white/[0.05]" />
-            <div className="mt-4 h-5 w-28 animate-pulse rounded bg-white/[0.06]" />
-            <div className="mt-2 h-3.5 w-32 animate-pulse rounded bg-white/[0.04]" />
+          <div className="h-40 rounded-2xl border border-mr-line-soft bg-white/[0.02] px-6 py-6">
+            <div className="h-9 w-9 animate-pulse rounded-xl bg-mr-surface-muted" />
+            <div className="mt-4 h-5 w-28 animate-pulse rounded bg-mr-surface-soft" />
+            <div className="mt-2 h-3.5 w-32 animate-pulse rounded bg-mr-surface-subtle" />
           </div>
         </section>
 
@@ -376,14 +380,11 @@ function DashboardSkeleton() {
 function EmptyState() {
   const { t } = useTranslation();
   return (
-    <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.01] px-6 py-16 text-center">
+    <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-mr-line bg-white/[0.01] px-6 py-16 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-400/10 text-sky-300">
         <FlaskConical size={22} />
       </div>
       <h3 className="mt-4 text-base font-semibold text-neutral-200">{t('dashboard.empty.title')}</h3>
-      <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-neutral-500">
-        {t('dashboard.empty.description')}
-      </p>
     </div>
   );
 }
@@ -394,6 +395,9 @@ const ResumeList = React.memo(
     const [isMounted, setIsMounted] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [templates, setTemplates] = useState<MagicTemplateDSL[]>([]);
+    /* 卡片网格的共享高亮环。没有「选中项」，所以指针离开整片网格时它淡出；
+       下次进来是直接就位而不是从上一张飞过来（见 useHoverSurface 的 shownRef）。 */
+    const cardSurface = useHoverSurface();
 
     useEffect(() => {
       setIsMounted(true);
@@ -438,10 +442,11 @@ const ResumeList = React.memo(
               the viewport, so columns stay fixed and cards resize smoothly instead of
               teleporting between rows (auto-fill would re-flow rows mid-animation). */}
           <motion.div
-            className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className="relative grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             variants={gridVariants}
             initial="hidden"
             animate="show"
+            {...cardSurface.containerProps}
           >
             {resumes.length === 0 ? (
               <EmptyState />
@@ -450,6 +455,7 @@ const ResumeList = React.memo(
                 {resumes.map((resume) => (
                   <ResumeCard
                     key={resume.id}
+                    surface={cardSurface.bind(resume.id)}
                     resume={resume}
                     onDelete={(id) => setDeleteId(id)}
                     onDuplicate={onDuplicate}
@@ -459,6 +465,17 @@ const ResumeList = React.memo(
                 ))}
               </AnimatePresence>
             )}
+            {/*
+              放在卡片**之后**：同层内后来的元素画在上面，不必依赖 z-index 去赌
+              卡片有没有因为 framer 的 layout 而自建层叠上下文。
+              用 border 不用 ring：全局 `box-sizing: border-box`，描边正好画在卡片
+              自己那圈边线的位置上；ring 画在盒子外面，读起来是一圈光晕不是边。
+              （另：Tailwind v4 里 `ring-inset` 已改名 `inset-ring`，老写法会被静默丢掉。）
+            */}
+            <HoverSurface
+              {...cardSurface.surfaceProps}
+              className="z-10 rounded-2xl border border-sky-400/45 bg-sky-400/[0.04] shadow-[0_10px_34px_-16px_rgba(56,189,248,0.45)]"
+            />
           </motion.div>
         </div>
 

@@ -1,45 +1,134 @@
 ---
 import type { Copy } from '@/i18n/ui';
+import ResumeCard from '@/components/product-sim/ResumeCard.astro';
 import Icon from '@/components/Icon.astro';
-import ProposalStream from '@/components/islands/ProposalStream';
-
-interface Props {
-  copy: Copy;
-}
+interface Props { copy: Copy; }
 const { copy } = Astro.props;
-const w = copy.workflow;
+const r = copy.landing.review;
+const sim = r.sim;
+const stream = copy.workflow.stream;
+// 三条提案轮播,每轮换一条;大卡的 diff 和第三张卡的理由读同一个 index,说的是同一件事。
+const items = r.items;
+const stepIcons = ['file', 'search', 'target'] as const;
 ---
+<section id="review" class="be-bento" data-beui="feature-sections-feature-bento">
+  <div class="be-container">
+    <header class="be-bento-heading reveal">
+      <h2>{r.title.split('\n').map((line) => <span>{line}</span>)}</h2>
+      <p>{r.subtitle}</p>
+    </header>
 
-<section id="workflow" class="relative border-t border-hair py-24 md:py-32">
-  <div class="mx-auto max-w-[1120px] px-5 md:px-6">
-    <div class="reveal max-w-2xl">
-      <p class="eyebrow">{w.eyebrow}</p>
-      <h2 class="type-heading mt-4 text-ink">
-        {w.title}
-      </h2>
-      <p class="type-body mt-3 max-w-xl text-muted">
-        {w.subtitle}
-      </p>
-    </div>
+    <bento-stage class="be-bento-grid reveal" data-step="0" data-beat="0" data-item="0">
+      <article class="be-bento-card is-wide">
+        <div class="be-bento-art is-tall is-bleed">
+          <bento-mesh class="be-bento-mesh" data-tone="sky" aria-hidden="true"><canvas></canvas></bento-mesh>
+          <div class="be-chat">
+            <div class="be-chat-column">
+            <p class="be-chat-bubble">{sim.prompt}</p>
 
-    <!-- live proposal stream + audit ledger -->
-    <div class="reveal relative mt-12" style="--reveal-delay:1">
-      <div class="linear-frame">
-        <ProposalStream client:visible labels={w.stream} />
-      </div>
-    </div>
+            <div class="be-chat-stack">
+              <div class="be-chat-run">
+                <header>
+                  <span class="be-chat-orb" aria-hidden="true"><Icon name="sparkle" size={10}/></span>
+                  {sim.working}
+                  <span class="be-chat-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                </header>
+                <ul class="be-chat-steps">
+                  {sim.steps.map((step, i) => (
+                    <li style={`--i:${i}`}>
+                      <span class="be-chat-glyph" aria-hidden="true">
+                        <Icon name={stepIcons[i]} size={14}/>
+                        <Icon name="check" size={14} class="is-done"/>
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-    <div class="reveal mt-8 flex flex-wrap gap-x-8 gap-y-3" style="--reveal-delay:2">
-      {
-        w.points.map((point) => (
-          <div class="flex items-center gap-2.5 text-[14px] text-ink-soft">
-            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-muted">
-              <Icon name="check" size={12} />
-            </span>
-            {point}
+              <article class="be-chat-proposal">
+                <header><span class="be-proposal-mark" aria-hidden="true"><Icon name="pen" size={11}/></span>{stream.proposal}</header>
+                <div class="be-chat-diff">
+                  {items.map((item, i) => (
+                    <div class="be-chat-take" data-take={i}>
+                      <p class="be-diff is-cut"><span class="sr-only">{r.before}</span>{item.before}</p>
+                      <p class="be-diff is-add"><span class="sr-only">{r.after}</span>{item.after}</p>
+                    </div>
+                  ))}
+                </div>
+                <footer>
+                  <button type="button" class="be-chat-skip">{stream.skip}</button>
+                  <button type="button" class="be-chat-accept">{stream.accept}<Icon name="check" size={13}/></button>
+                </footer>
+              </article>
+            </div>
+            </div>
+            <span class="be-chat-held">{sim.paused}</span>
           </div>
-        ))
-      }
-    </div>
+        </div>
+        <div class="be-bento-copy"><h3>{r.cards[0].title}</h3><p>{r.cards[0].desc}</p></div>
+      </article>
+
+      <article class="be-bento-card">
+        <div class="be-bento-art is-tall">
+          <bento-mesh class="be-bento-mesh" data-tone="sky" aria-hidden="true"><canvas></canvas></bento-mesh>
+          <div class="be-sim-paper">
+            <ResumeCard docLabel={copy.landing['export'].doc}/>
+            <span class="be-sim-tag">{stream.pending}</span>
+          </div>
+        </div>
+        <div class="be-bento-copy"><h3>{r.cards[1].title}</h3><p>{r.cards[1].desc}</p></div>
+      </article>
+
+      <article class="be-bento-card">
+        <div class="be-bento-art">
+          <bento-mesh class="be-bento-mesh" data-tone="orchid" aria-hidden="true"><canvas></canvas></bento-mesh>
+          <div class="be-glass be-sim-reason">
+            <header><Icon name="sparkle" size={12}/>{r.reason}</header>
+            <div class="be-sim-takes">
+              {items.map((item, i) => (
+                <p data-take={i}>{item.reason.split(' ').map((w, j) => <span style={`--w:${j}`}>{w} </span>)}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div class="be-bento-copy"><h3>{r.cards[2].title}</h3><p>{r.cards[2].desc}</p></div>
+      </article>
+
+      <article class="be-bento-card">
+        <div class="be-bento-art">
+          <bento-mesh class="be-bento-mesh" data-tone="emerald" aria-hidden="true"><canvas></canvas></bento-mesh>
+          <div class="be-glass be-sim-ask">
+            <header><Icon name="alert" size={12}/>{sim.ask.label}</header>
+            <p>{sim.ask.question}</p>
+            <footer>
+              <button type="button">{sim.ask.a}</button>
+              <button type="button" class="is-primary">{sim.ask.b}</button>
+            </footer>
+          </div>
+        </div>
+        <div class="be-bento-copy"><h3>{r.cards[3].title}</h3><p>{r.cards[3].desc}</p></div>
+      </article>
+
+      <article class="be-bento-card">
+        <div class="be-bento-art">
+          <bento-mesh class="be-bento-mesh" data-tone="sky" aria-hidden="true"><canvas></canvas></bento-mesh>
+          <div class="be-sim-json">
+            <header>
+              <span><Icon name="braces" size={12}/>{sim.json.file}</span>
+              <em><Icon name="history" size={10}/>{sim.json.chip}</em>
+            </header>
+            <dl>
+              <div class="be-json-brace">{'{'}</div>
+              {sim.json.lines.map((line, i) => (
+                <div class="be-json-row" style={`--i:${i}`}><dt>{line[0]}</dt><dd>{line[1]}</dd></div>
+              ))}
+              <div class="be-json-brace">{'}'}</div>
+            </dl>
+          </div>
+        </div>
+        <div class="be-bento-copy"><h3>{r.cards[4].title}</h3><p>{r.cards[4].desc}</p></div>
+      </article>
+    </bento-stage>
   </div>
 </section>

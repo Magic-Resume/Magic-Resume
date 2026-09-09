@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles } from '@magic-resume/icons';
 import { cn } from '@/lib/utils';
 import { getProvider, resolveProviderIdFromModel } from '@/lib/constants/modals';
 import { ProviderMark } from '@/components/llm/ProviderMark';
@@ -17,7 +17,7 @@ import { ProviderMark } from '@/components/llm/ProviderMark';
  */
 export default function ModelMark({
   model,
-  /** 「自动」这类没有具体模型的态：系统替你挑，用中性的 sparkle 表达。 */
+  /** 「自动」这类没有具体模型的态：系统替你挑，用中性的 sparkle。 */
   generic,
   size = 28,
   className,
@@ -34,7 +34,7 @@ export default function ModelMark({
   return (
     <span
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-white/[0.06]',
+        'flex shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-mr-line-soft',
         // 单色标跟随文字色 —— 让 ProviderMark 的 currentColor 落到一个能读的值上。
         provider?.monochrome !== false && 'text-neutral-200',
         className
@@ -44,8 +44,8 @@ export default function ModelMark({
         height: size,
         // 盘底用品牌色极淡染，小尺寸下也能一眼分出是哪家。
         background: provider && !provider.monochrome
-          ? `color-mix(in oklab, ${provider.brandColor} 16%, var(--surface-sunk))`
-          : 'var(--surface-sunk)',
+          ? `color-mix(in oklab, ${provider.brandColor} 16%, var(--mr-sunk))`
+          : 'var(--mr-sunk)',
       }}
     >
       {provider ? (

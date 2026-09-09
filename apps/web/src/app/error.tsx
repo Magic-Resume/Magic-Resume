@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, RotateCcw, Home } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import ErrorSurface from '@/components/shared/ErrorSurface';
+import { identifyCrash } from '@/lib/errors/crashIdentity';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 
+/**
+ * 应用级边界——整页都没能渲染出来。
+ *
+ * 这里的上报不能省：渲染期崩溃永远到不了 `window.onerror`，React 直接把它交给边界。少了
+ * 这一行，应用最严重的一类故障（白屏）恰好是唯一一类我们永远收不到告警的。
+ */
 export default function Error({
   error,
   reset,
@@ -16,12 +20,10 @@ export default function Error({
   reset: () => void;
 }) {
   const { t } = useTranslation();
+  const { code, fingerprint } = identifyCrash(error, 'app');
+
   useEffect(() => {
-    // Log the error to an error reporting service
     console.error('Global Error Boundary caught:', error);
-    // A render-time crash never reaches `window.onerror` — React catches it and
-    // hands it to this boundary instead. Without this call the most severe
-    // failure the app has (a blank screen) is the one failure it never reports.
     appLifecycle.reactErrorCaught({
       message: error.message,
       name: error.name,
@@ -32,65 +34,20 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-desk flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Gradients */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[20%] right-[20%] w-[400px] h-[400px] bg-red-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] left-[20%] w-[400px] h-[400px] bg-orange-500/5 rounded-full blur-[120px]" />
-      </div>
-
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-neutral-900/50 backdrop-blur-xl border border-neutral-800 rounded-3xl p-8 md:p-12 max-w-lg mx-auto text-center relative z-10 shadow-2xl"
-      >
-        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertCircle className="w-8 h-8 text-red-500" />
-        </div>
-
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-          {t('errorPage.title')}
-        </h2>
-        
-        <p className="text-neutral-400 mb-8 leading-relaxed">
-          {t('errorPage.description')}
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Button 
-            onClick={() => reset()}
-            size="lg" 
-            className="w-full sm:w-auto gap-2 bg-[#fff] text-black hover:bg-neutral-200"
-          >
-            <RotateCcw className="w-4 h-4" />
-            {t('errorPage.buttons.tryAgain')}
-          </Button>
-          
-          <Link href="/" className="w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="w-full gap-2 bg-transparent border-neutral-800 text-neutral-300 hover:bg-neutral-900"
-            >
-              <Home className="w-4 h-4" />
-              {t('errorPage.buttons.backHome')}
-            </Button>
-          </Link>
-        </div>
-
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-sunk rounded-lg text-left overflow-auto max-h-48 border border-neutral-800">
-            <p className="font-mono text-xs text-red-400">
-              {error.message || "Unknown error occurred"}
-            </p>
-            {error.stack && (
-              <pre className="mt-2 text-[10px] text-neutral-500 whitespace-pre-wrap">
-                {error.stack}
-              </pre>
-            )}
-          </div>
-        )}
-      </motion.div>
-    </div>
+    <ErrorSurface
+      fill="screen"
+      title={t('errorPage.fault.app.title')}
+      promise={t('errorPage.fault.app.promise')}
+      note={t('errorPage.note')}
+      onRetry={reset}
+      fingerprint={fingerprint}
+      secondary={{ label: t('errorPage.actions.backHome'), href: '/' }}
+      code={code}
+      detail={
+        process.env.NODE_ENV === 'development'
+          ? `${error.message}\n\n${error.stack ?? ''}`
+          : undefined
+      }
+    />
   );
 }

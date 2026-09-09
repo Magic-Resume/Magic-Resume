@@ -62,7 +62,7 @@ export function BillingTab({ entitlement }: { entitlement: Entitlement | null })
   return (
     <>
       {error && (
-        <div className="rounded-xl border border-red-900/60 bg-red-950/30 px-4 py-3 text-[13px] text-red-300">
+        <div className="rounded-xl border border-red-900/60 bg-red-950/30 px-4 py-3 text-mr-caption text-red-300">
           <p>{t('account.billing.loadFailed')}</p>
           <button
             type="button"
@@ -74,8 +74,8 @@ export function BillingTab({ entitlement }: { entitlement: Entitlement | null })
         </div>
       )}
 
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <h3 className="mb-4 text-[14px] font-medium text-neutral-100">
+      <section className="rounded-xl border border-mr-line-soft bg-white/[0.02] p-5">
+        <h3 className="mb-4 text-mr-body font-medium text-neutral-100">
           {t('account.billing.planTitle')}
         </h3>
         <SubscriptionCard
@@ -85,12 +85,12 @@ export function BillingTab({ entitlement }: { entitlement: Entitlement | null })
         />
       </section>
 
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <h3 className="mb-4 text-[14px] font-medium text-neutral-100">
+      <section className="rounded-xl border border-mr-line-soft bg-white/[0.02] p-5">
+        <h3 className="mb-4 text-mr-body font-medium text-neutral-100">
           {t('account.billing.ordersTitle')}
         </h3>
         <OrderHistoryTable orders={orders} loading={loading} />
-        <p className="mt-4 text-[12px] text-neutral-500">
+        <p className="mt-4 text-mr-overline text-neutral-500">
           {t('account.billing.refundHint')}{' '}
           <Link
             href="/legal/refund"

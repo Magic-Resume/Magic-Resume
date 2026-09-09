@@ -1,0 +1,32 @@
+---
+import type { ArticleEntry } from '@/lib/articles';
+import { articleHref, articleReadMinutes } from '@/lib/articles';
+import type { Locale } from '@/i18n/ui';
+
+interface Props {
+  entry: ArticleEntry;
+  locale: Locale;
+}
+const { entry, locale } = Astro.props;
+const minutes = articleReadMinutes(entry);
+const label = `${locale === 'zh' ? '精选' : 'Featured'} / ${entry.data.tags[0] ?? ''}`;
+const date = entry.data.datePublished.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+---
+<a class="be-blog-hero" href={articleHref(locale, entry)}>
+  <span class="be-blog-cover" data-tone="sky" aria-hidden="true"></span>
+  <span class="be-blog-hero-body">
+    <span>
+      <p class="be-blog-meta">{label}</p>
+      <h2>{entry.data.title}</h2>
+      <p class="be-blog-desc">{entry.data.description}</p>
+    </span>
+    <span class="be-blog-hero-foot">
+      <p>{date}<em>/ {minutes} {locale === 'zh' ? '分钟' : 'min read'}</em></p>
+      <i aria-hidden="true">→</i>
+    </span>
+  </span>
+</a>

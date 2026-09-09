@@ -5,15 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUp } from "@clerk/nextjs";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from '@magic-resume/icons';
 import { AuthShell } from "./AuthShell";
 import { AuthButton, AuthField, FieldError, OtpField } from "./AuthPrimitives";
 import { SocialButtons, type OAuthProvider } from "./SocialButtons";
 import { getClerkErrorMessage } from "./authErrors";
 import { readLastMethod, writeLastMethod, type AuthMethod } from "./lastMethod";
 import { afterAuthUrl } from "./afterAuthUrl";
+import { isSessionExistsError, useRedirectIfSignedIn } from "./useSignedInRedirect";
 import { LegalConsent } from "./LegalConsent";
+import { useTermsGate } from "./TermsGate";
 
+import { EASE_ENTER } from '@magic-resume/utils';
 const SSO_CALLBACK_URL = "/sso-callback";
 
 
@@ -28,6 +31,7 @@ export default function SignUpCard() {
   const afterAuth = afterAuthUrl(useSearchParams()?.toString());
   const { isLoaded, signUp, setActive } = useSignUp();
   const reduce = useReducedMotion();
+  const redirectingSignedIn = useRedirectIfSignedIn(afterAuth);
 
   const [step, setStep] = React.useState<Step>("start");
   const [email, setEmail] = React.useState("");
@@ -36,6 +40,8 @@ export default function SignUpCard() {
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [pendingOAuth, setPendingOAuth] = React.useState<OAuthProvider | null>(null);
+  // 条款门禁：只包住入口动作，不碰下面任何一步的注册逻辑。
+  const terms = useTermsGate();
   const [lastMethod, setLastMethod] = React.useState<AuthMethod | null>(null);
 
   React.useEffect(() => setLastMethod(readLastMethod()), []);
@@ -43,6 +49,15 @@ export default function SignUpCard() {
   const goTo = (next: Step) => {
     setError(null);
     setStep(next);
+  };
+
+  /** 见 SignInCard：`session_exists` 是「你已经登录了」，不是错误。 */
+  const onAuthError = (err: unknown) => {
+    if (isSessionExistsError(err)) {
+      router.replace(afterAuth);
+      return;
+    }
+    setError(getClerkErrorMessage(err, t));
   };
 
   const handleOAuth = async (provider: OAuthProvider) => {
@@ -58,7 +73,7 @@ export default function SignUpCard() {
       });
     } catch (err) {
       setPendingOAuth(null);
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     }
   };
 
@@ -73,7 +88,7 @@ export default function SignUpCard() {
       setCode("");
       goTo("verify");
     } catch (err) {
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     } finally {
       setBusy(false);
     }
@@ -94,7 +109,7 @@ export default function SignUpCard() {
         setError(t("auth.errors.generic"));
       }
     } catch (err) {
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     } finally {
       setBusy(false);
     }
@@ -106,7 +121,7 @@ export default function SignUpCard() {
     try {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
     } catch (err) {
-      setError(getClerkErrorMessage(err, t));
+      onAuthError(err);
     }
   };
 
@@ -115,8 +130,11 @@ export default function SignUpCard() {
     initial: { opacity: reduce ? 1 : 0 },
     animate: { opacity: 1 },
     exit: { opacity: 0 },
-    transition: { duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: reduce ? 0 : 0.18, ease: EASE_ENTER },
   };
+
+  // 见 SignInCard：已登录时正在跳走，别再渲染注册表单。
+  if (redirectingSignedIn) return null;
 
   return (
     <AuthShell
@@ -131,16 +149,19 @@ export default function SignUpCard() {
           {step === "start" && (
             <div className="flex flex-col gap-2.5">
               <SocialButtons
-                onSelect={handleOAuth}
+                onSelect={(provider) => terms.guard(() => void handleOAuth(provider))()}
                 pending={pendingOAuth}
                 disabled={!isLoaded}
                 lastMethod={lastMethod}
               />
-              <AuthButton onClick={() => goTo("email")} disabled={!isLoaded}>
+              <AuthButton onClick={terms.guard(() => goTo("email"))} disabled={!isLoaded}>
                 {t("auth.continueWith.email")}
               </AuthButton>
+              {/* 主动勾选取代了这一步原来的被动 `LegalConsent`——它比「注册即视为同意」
+                  更强。`email` 那一步仍保留那句话：那是账号真正被创建的时刻，
+                  `LegalConsent` 的注释里对这个位置有过刻意论证。 */}
+              <div className="pt-1.5">{terms.checkbox}</div>
               {error && <FieldError>{error}</FieldError>}
-              <LegalConsent />
             </div>
           )}
 
@@ -163,7 +184,7 @@ export default function SignUpCard() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="-mt-1 text-[12px] text-[color:var(--text-muted)]">
+              <p className="-mt-1 text-mr-overline text-muted">
                 {t("auth.passwordHint")}
               </p>
               {/* Clerk 智能验证码挂载点(若实例开启 bot 防护) */}
@@ -184,7 +205,7 @@ export default function SignUpCard() {
           {step === "verify" && (
             <form onSubmit={submitVerify} className="flex flex-col gap-4">
               <BackRow label={t("auth.back")} onBack={() => goTo("email")} />
-              <p className="text-[13.5px] text-[color:var(--text-secondary)]">
+              <p className="text-mr-body-tight text-secondary">
                 {t("auth.codeSentTo", { email })}
               </p>
               <OtpField
@@ -201,7 +222,7 @@ export default function SignUpCard() {
                 <button
                   type="button"
                   onClick={resendCode}
-                  className="text-[13px] font-medium text-ink-sky transition-colors hover:text-ink-sky-hover"
+                  className="text-mr-caption font-medium text-ink-sky transition-colors hover:text-ink-sky-hover"
                 >
                   {t("auth.resend")}
                 </button>
@@ -210,6 +231,7 @@ export default function SignUpCard() {
           )}
         </motion.div>
       </AnimatePresence>
+      {terms.dialog}
     </AuthShell>
   );
 }
@@ -219,7 +241,7 @@ function BackRow({ label, onBack }: { label: string; onBack: () => void }) {
     <button
       type="button"
       onClick={onBack}
-      className="inline-flex items-center gap-1.5 self-start text-[13px] text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-secondary)]"
+      className="inline-flex items-center gap-1.5 self-start text-mr-caption text-muted transition-colors hover:text-secondary"
     >
       <ArrowLeft className="h-3.5 w-3.5" />
       <span className="max-w-[240px] truncate">{label}</span>

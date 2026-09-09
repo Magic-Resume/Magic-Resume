@@ -1,0 +1,102 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '@/styles/global.css';
+import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
+import '@/styles/beui.css';
+import { getCopy, type Locale } from '@/i18n/ui';
+import ContentSeo from '@/components/ContentSeo.astro';
+import Header from '@/components/sections/Header.astro';
+import Footer from '@/components/sections/Footer.astro';
+import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
+
+interface Alternate {
+  lang: string;
+  href: string;
+}
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  canonical: string;
+  alternates?: Alternate[];
+  type?: 'article' | 'website' | 'software';
+  published?: Date;
+  modified?: Date;
+  author?: string;
+}
+
+const { locale, title, description, canonical, alternates = [], type, published, modified, author } = Astro.props;
+const isZh = locale === 'zh';
+// 内容页与首页共用同一套 Header / Footer / 主题开关,锚点用 base 指回首页。
+const copy = getCopy(locale);
+const home = `/${locale}`;
+---
+
+<!doctype html>
+<html lang={isZh ? 'zh-CN' : 'en'} class="landing-site scroll-smooth scroll-pt-20">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/magic-resume-mark.png" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <ContentSeo
+      title={title}
+      description={description}
+      canonical={canonical}
+      locale={locale}
+      type={type}
+      published={published}
+      modified={modified}
+      author={author}
+      alternates={alternates}
+    />
+    <meta name="theme-color" content="#151515" />
+    <ClientRouter />
+    <ThemeScript />
+  </head>
+  <body class="landing-body min-h-screen antialiased">
+    <a href="#main" class="sr-only rounded-md bg-ink px-4 py-2 text-workbench focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]">
+      {isZh ? '跳到主要内容' : 'Skip to content'}
+    </a>
+    <Header copy={copy} stars={null} locale={locale} base={home} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer copy={copy} locale={locale} base={home} />
+    <UtilityDock locale={locale} />
+    <script>
+      const win = window as typeof window & { __magicResumeRevealBound?: boolean };
+
+      const initReveal = () => {
+        // Scroll-reveal: add .is-visible when elements enter the viewport once.
+        const els = document.querySelectorAll<HTMLElement>('.reveal:not(.is-visible)');
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce || !('IntersectionObserver' in window)) {
+          els.forEach((el) => el.classList.add('is-visible'));
+          return;
+        }
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add('is-visible');
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -10% 0px', threshold: 0.08 },
+        );
+        els.forEach((el) => io.observe(el));
+      };
+
+      if (!win.__magicResumeRevealBound) {
+        win.__magicResumeRevealBound = true;
+        document.addEventListener('astro:page-load', initReveal);
+      }
+      initReveal();
+    </script>
+  </body>
+</html>

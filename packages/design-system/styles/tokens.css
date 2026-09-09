@@ -1,0 +1,174 @@
+/*
+ * Magic Resume design-system tokens.
+ *
+ * The `mr-*` namespace is intentional: web and landing have different visual
+ * systems and must be able to consume the shared contract without overwriting
+ * each other's unprefixed Tailwind variables.
+ */
+@theme {
+  --text-mr-label: 0.6875rem;
+  --text-mr-label--line-height: 1rem;
+  --text-mr-label--font-weight: 500;
+  --text-mr-body: 0.875rem;
+  --text-mr-body--line-height: 1.25rem;
+  --text-mr-body--font-weight: 400;
+  --text-mr-body-medium: 0.875rem;
+  --text-mr-body-medium--line-height: 1.25rem;
+  --text-mr-body-medium--font-weight: 500;
+  --text-mr-caption: 0.8125rem;
+  --text-mr-caption--line-height: 1.125rem;
+  --text-mr-caption--font-weight: 400;
+  --text-mr-overline: 0.75rem;
+  --text-mr-overline--line-height: 1rem;
+  --text-mr-overline--font-weight: 400;
+  --text-mr-ui: 0.78125rem;
+  --text-mr-ui--line-height: 1rem;
+  --text-mr-ui--font-weight: 400;
+  --text-mr-subtitle: 0.9375rem;
+  --text-mr-subtitle--line-height: 1.25rem;
+  --text-mr-subtitle--font-weight: 400;
+  --text-mr-body-tight: 0.84375rem;
+  --text-mr-body-tight--line-height: 1.125rem;
+  --text-mr-body-tight--font-weight: 400;
+  --text-mr-label-tight: 0.71875rem;
+  --text-mr-label-tight--line-height: 1rem;
+  --text-mr-label-tight--font-weight: 400;
+  --text-mr-micro-plus: 0.65625rem;
+  --text-mr-micro-plus--line-height: 0.875rem;
+  --text-mr-micro-plus--font-weight: 400;
+  --text-mr-micro: 0.625rem;
+  --text-mr-micro--line-height: 0.875rem;
+  --text-mr-micro--font-weight: 400;
+  --text-mr-tiny: 0.5625rem;
+  --text-mr-tiny--line-height: 0.75rem;
+  --text-mr-tiny--font-weight: 400;
+  --text-mr-micro-small: 0.5rem;
+  --text-mr-micro-small--line-height: 0.6875rem;
+  --text-mr-micro-small--font-weight: 400;
+  --text-mr-tiny-plus: 0.59375rem;
+  --text-mr-tiny-plus--line-height: 0.75rem;
+  --text-mr-tiny-plus--font-weight: 400;
+  --text-mr-nano: 0.4375rem;
+  --text-mr-nano--line-height: 0.625rem;
+  --text-mr-nano--font-weight: 400;
+  --text-mr-title: 1rem;
+  --text-mr-title--line-height: 1.375rem;
+  --text-mr-title--font-weight: 600;
+
+  --radius-mr-control: 8px;
+  --radius-mr-compact: 5px;
+  --radius-mr-compact-plus: 7px;
+  --radius-mr-card: 10px;
+  --radius-mr-panel: 14px;
+  --radius-mr-pill: 999px;
+}
+
+:root,
+.dark,
+:root[data-theme='dark'] {
+  --mr-desk: oklch(0.145 0 0);
+  --mr-sunk: oklch(0.12 0 0);
+  --mr-surface: oklch(0.205 0 0);
+  --mr-overlay: oklch(0.18 0 0 / 0.86);
+  --mr-ink: oklch(0.93 0 0);
+  --mr-ink-secondary: oklch(0.72 0 0);
+  --mr-muted: oklch(0.56 0 0);
+  --mr-line: oklch(1 0 0 / 0.08);
+  --mr-line-soft: oklch(1 0 0 / 0.06);
+  --mr-line-strong: oklch(1 0 0 / 0.16);
+  --mr-surface-soft: oklch(1 0 0 / 0.06);
+  --mr-surface-subtle: oklch(1 0 0 / 0.04);
+  --mr-surface-muted: oklch(1 0 0 / 0.05);
+  --mr-accent: #38bdf8;
+  --mr-accent-hover: #7dd3fc;
+  --mr-accent-ink: #0a0a0a;
+  --mr-accent-tint: rgb(56 189 248 / 0.12);
+  --mr-focus: #38bdf8;
+  --mr-danger: #ef4444;
+  --mr-danger-hover: #f87171;
+  --mr-danger-ink: #ffffff;
+  --mr-danger-muted: #fca5a5;
+  --mr-danger-tint: rgb(239 68 68 / 0.12);
+  --mr-success: #10b981;
+  --mr-success-ink: #6ee7b7;
+  --mr-success-tint: rgb(16 185 129 / 0.12);
+  --mr-warning: #f59e0b;
+  --mr-warning-ink: #fcd34d;
+  --mr-warning-tint: rgb(245 158 11 / 0.12);
+  --mr-scrim: rgb(0 0 0 / 0.6);
+  --mr-shadow-panel: 0 18px 44px -22px rgb(0 0 0 / 0.7);
+  --mr-shadow-control: 0 1px 2px rgb(0 0 0 / 0.18);
+}
+
+.light,
+:root[data-theme='light'] {
+  --mr-desk: oklch(0.975 0.004 85);
+  --mr-sunk: oklch(0.955 0.005 85);
+  --mr-surface: oklch(0.992 0.002 85);
+  --mr-overlay: oklch(1 0 0 / 0.86);
+  --mr-ink: oklch(0.27 0.01 85);
+  --mr-ink-secondary: oklch(0.44 0.01 85);
+  --mr-muted: oklch(0.55 0.01 85);
+  --mr-line: oklch(0.9 0.004 85);
+  --mr-line-soft: oklch(0.9 0.004 85 / 0.7);
+  --mr-line-strong: oklch(0.83 0.006 85);
+  --mr-surface-soft: oklch(0.2 0.01 85 / 0.06);
+  --mr-surface-subtle: oklch(0.2 0.01 85 / 0.04);
+  --mr-surface-muted: oklch(0.2 0.01 85 / 0.05);
+  --mr-accent: oklch(0.6 0.14 233);
+  --mr-accent-hover: oklch(0.52 0.13 233);
+  --mr-accent-ink: oklch(0.99 0.01 233);
+  --mr-accent-tint: oklch(0.6 0.14 233 / 0.12);
+  --mr-focus: oklch(0.52 0.13 233);
+  --mr-danger: oklch(0.58 0.22 25);
+  --mr-danger-hover: oklch(0.65 0.2 25);
+  --mr-danger-ink: oklch(0.99 0.01 25);
+  --mr-danger-muted: oklch(0.56 0.16 25);
+  --mr-danger-tint: oklch(0.58 0.22 25 / 0.12);
+  --mr-success: oklch(0.62 0.17 155);
+  --mr-success-ink: oklch(0.5 0.14 155);
+  --mr-success-tint: oklch(0.62 0.17 155 / 0.12);
+  --mr-warning: oklch(0.72 0.16 75);
+  --mr-warning-ink: oklch(0.52 0.13 75);
+  --mr-warning-tint: oklch(0.72 0.16 75 / 0.12);
+  --mr-scrim: rgb(0 0 0 / 0.55);
+  --mr-shadow-panel: 0 12px 32px oklch(0.2 0.02 85 / 0.12);
+  --mr-shadow-control: 0 1px 2px oklch(0.2 0.02 85 / 0.06);
+}
+
+@theme inline {
+  --color-mr-desk: var(--mr-desk);
+  --color-mr-sunk: var(--mr-sunk);
+  --color-mr-surface: var(--mr-surface);
+  --color-mr-overlay: var(--mr-overlay);
+  --color-mr-ink: var(--mr-ink);
+  --color-mr-ink-secondary: var(--mr-ink-secondary);
+  --color-mr-muted: var(--mr-muted);
+  --color-mr-line: var(--mr-line);
+  --color-mr-line-soft: var(--mr-line-soft);
+  --color-mr-line-strong: var(--mr-line-strong);
+  --color-mr-surface-soft: var(--mr-surface-soft);
+  --color-mr-surface-subtle: var(--mr-surface-subtle);
+  --color-mr-surface-muted: var(--mr-surface-muted);
+  --color-mr-accent: var(--mr-accent);
+  --color-mr-accent-hover: var(--mr-accent-hover);
+  --color-mr-accent-ink: var(--mr-accent-ink);
+  --color-mr-accent-tint: var(--mr-accent-tint);
+  --color-mr-focus: var(--mr-focus);
+  --color-mr-danger: var(--mr-danger);
+  --color-mr-danger-hover: var(--mr-danger-hover);
+  --color-mr-danger-ink: var(--mr-danger-ink);
+  --color-mr-danger-muted: var(--mr-danger-muted);
+  --color-mr-danger-tint: var(--mr-danger-tint);
+  --color-mr-success: var(--mr-success);
+  --color-mr-success-ink: var(--mr-success-ink);
+  --color-mr-success-tint: var(--mr-success-tint);
+  --color-mr-warning: var(--mr-warning);
+  --color-mr-warning-ink: var(--mr-warning-ink);
+  --color-mr-warning-tint: var(--mr-warning-tint);
+  --color-mr-scrim: var(--mr-scrim);
+  --shadow-mr-panel: var(--mr-shadow-panel);
+  --shadow-mr-control: var(--mr-shadow-control);
+  --ease-mr-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-mr-state: cubic-bezier(0.4, 0, 0.2, 1);
+}

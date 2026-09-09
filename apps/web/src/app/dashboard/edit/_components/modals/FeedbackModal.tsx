@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { Loader2, Bug, X, CheckCircle2, Send } from "lucide-react";
+import { Loader2, Bug, X, CheckCircle2, Send } from '@magic-resume/icons';
 import { cn } from "@/lib/utils";
 import { useAppAuth } from "@/lib/auth";
 import { feedbackApi } from "@/lib/api/feedback";

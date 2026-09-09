@@ -26,7 +26,7 @@ export type PlanFeatureIcon =
 
 export interface PlanFeatureRow {
   icon: PlanFeatureIcon;
-  /** 可含 `{{dailyLimit}}` / `{{weeklyLimit}}` / `{{modelCount}}`，渲染时由计划本身填入。 */
+  /** 可含 `{{modelCount}}`；每日/每周次数模板变量已停止使用。 */
   text: string;
 }
 
@@ -45,8 +45,8 @@ export interface PlanSummary {
   priceCents: number;
   currency: string;
   modelAllowlist: string[];
-  dailyLimit: number;
-  weeklyLimit: number;
+  /** 计划默认模型；旧 Core 响应缺席时仍按模型白名单回落。 */
+  defaultModel?: string | null;
   interval?: string | null;
   isDefault: boolean;
   /** 每分钟请求数——各档之间唯一真正拉开差距的字段。 */
@@ -60,7 +60,7 @@ export interface PlanSummary {
 
 export interface OrderSummary {
   id: string;
-  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  status: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
   amountCents: number;
   currency: string;
   channel: string;
@@ -97,19 +97,10 @@ export interface SubscriptionSummary {
   plan?: PlanSummary | null;
 }
 
-export interface UsageSummary {
-  dailyUsed: number;
-  weeklyUsed: number;
-  dailyLimit: number;
-  weeklyLimit: number;
-  dailyResetAt: string;
-  weeklyResetAt: string;
-}
-
 /** GET /api/billing/ai-entitlement 的响应。 */
 export interface Entitlement {
   mode: 'internal' | 'byok_required';
-  /** 此刻能不能用内置 AI（已综合额度与日/周上限）。 */
+  /** 此刻能不能用内置 AI（仅由积分余额与模型可用性决定）。 */
   canUseInternal: boolean;
   reason?: string | null;
   currentPlan: PlanSummary | null;

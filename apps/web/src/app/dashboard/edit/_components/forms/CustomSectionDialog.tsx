@@ -55,14 +55,14 @@ export default function CustomSectionDialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" />
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[min(420px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-2xl">
-          <DialogPrimitive.Title className="text-[15px] font-semibold text-neutral-100">
+          <DialogPrimitive.Title className="text-mr-subtitle font-semibold text-neutral-100">
             {initial
               ? t('customSection.renameTitle', { defaultValue: '重命名模块' })
               : t('customSection.createTitle', { defaultValue: '添加自定义模块' })}
           </DialogPrimitive.Title>
-          <DialogPrimitive.Description className="mt-1 text-[12px] text-neutral-500">
+          <DialogPrimitive.Description className="mt-1 text-mr-overline text-neutral-500">
             {t('customSection.hint', {
-              defaultValue: '模块标题会原样显示在简历上。',
+              defaultValue: '模块标题会原样显示在简历上',
             })}
           </DialogPrimitive.Description>
 
@@ -76,11 +76,11 @@ export default function CustomSectionDialog({
             placeholder={t('customSection.placeholder', {
               defaultValue: '例如：个人优势、获奖经历',
             })}
-            className="mt-4 h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-sky-400/50"
+            className="mt-4 h-9 w-full rounded-lg border border-white/10 bg-mr-surface-subtle px-3 text-mr-caption text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-sky-400/50"
           />
 
           <div className="mt-4">
-            <div className="mb-2 text-[12px] text-neutral-500">
+            <div className="mb-2 text-mr-overline text-neutral-500">
               {t('customSection.iconLabel', { defaultValue: '图标（可选）' })}
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -112,14 +112,14 @@ export default function CustomSectionDialog({
           </div>
 
           <div className="mt-5 flex justify-end gap-2">
-            <DialogPrimitive.Close className="h-8 rounded-lg border border-white/10 px-3 text-[13px] text-neutral-400 transition-colors hover:text-neutral-100">
+            <DialogPrimitive.Close className="h-8 rounded-lg border border-white/10 px-3 text-mr-caption text-neutral-400 transition-colors hover:text-neutral-100">
               {t('common.cancel', { defaultValue: '取消' })}
             </DialogPrimitive.Close>
             <button
               type="button"
               onClick={submit}
               disabled={!trimmed}
-              className="h-8 rounded-lg bg-sky-500 px-3 text-[13px] font-medium text-white transition-opacity disabled:opacity-40"
+              className="h-8 rounded-lg bg-sky-500 px-3 text-mr-caption font-medium text-white transition-opacity disabled:opacity-40"
             >
               {t('common.confirm', { defaultValue: '确定' })}
             </button>

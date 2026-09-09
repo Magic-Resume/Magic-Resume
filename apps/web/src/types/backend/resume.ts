@@ -32,6 +32,8 @@ export type AddCommentRequest = {
   position?: Record<string, unknown>;
   color?: string;
   selectedText?: string;
+  /** Parent comment id; Core uses the same shared-comments endpoint for replies. */
+  parentId?: string;
 };
 
 export type AddReplyRequest = {

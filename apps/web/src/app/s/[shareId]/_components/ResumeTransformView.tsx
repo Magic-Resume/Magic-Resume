@@ -4,6 +4,7 @@ import React from 'react';
 import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import { cn } from "@/lib/utils";
 import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
+import { TemplateErrorBoundary } from '@/components/shared/TemplateErrorBoundary';
 
 interface ResumeTransformViewProps {
     transformComponentRef: React.RefObject<ReactZoomPanPinchRef | null>;
@@ -66,7 +67,10 @@ export const ResumeTransformView = React.memo(({
                             style={{ minHeight: '297mm' }}
                             onMouseUp={handleResumeMouseUp}
                         >
-                            <MagicResumeRenderer template={template} data={resume} locale={locale} />
+                            {/* 分享页更需要这道边界：访客不是本人，看到白屏只会以为链接坏了。 */}
+                            <TemplateErrorBoundary resetKey={template.id}>
+                                <MagicResumeRenderer template={template} data={resume} locale={locale} />
+                            </TemplateErrorBoundary>
                             {children}
                         </div>
                     </TransformComponent>

@@ -46,8 +46,8 @@ export function SubscriptionCard({
   if (loading) {
     return (
       <div>
-        <div className="h-5 w-40 animate-pulse rounded bg-white/[0.06]" />
-        <div className="mt-2.5 h-4 w-56 animate-pulse rounded bg-white/[0.04]" />
+        <div className="h-5 w-40 animate-pulse rounded bg-mr-surface-soft" />
+        <div className="mt-2.5 h-4 w-56 animate-pulse rounded bg-mr-surface-subtle" />
       </div>
     );
   }
@@ -63,20 +63,20 @@ export function SubscriptionCard({
   return (
     <div className="flex items-start justify-between gap-6">
       <div className="min-w-0">
-        <p className="text-[15px] font-medium text-neutral-100">
+        <p className="text-mr-subtitle font-medium text-neutral-100">
           {planName ?? t("account.billing.freePlan")}
         </p>
 
         {dunning ? (
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-amber-400">
+          <p className="mt-1.5 text-mr-ui leading-relaxed text-amber-400">
             {t("account.billing.paymentFailed")}
           </p>
         ) : subscription?.cancelAtPeriodEnd && periodEnd ? (
-          <p className="mt-1.5 text-[12.5px] text-neutral-500">
+          <p className="mt-1.5 text-mr-ui text-neutral-500">
             {t("account.billing.endsOn", { date: periodEnd })}
           </p>
         ) : periodEnd ? (
-          <p className="mt-1.5 text-[12.5px] text-neutral-500">
+          <p className="mt-1.5 text-mr-ui text-neutral-500">
             {t("account.billing.renewsOn", { date: periodEnd })}
           </p>
         ) : null}
@@ -85,7 +85,7 @@ export function SubscriptionCard({
       <button
         type="button"
         onClick={openPricing}
-        className="h-9 shrink-0 rounded-full border border-white/15 px-4 text-[13px] font-medium text-neutral-100 transition-colors hover:border-white/25 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+        className="h-9 shrink-0 rounded-full border border-white/15 px-4 text-mr-caption font-medium text-neutral-100 transition-colors hover:border-white/25 hover:bg-mr-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
       >
         {subscription
           ? t("account.billing.manageCta")

@@ -4,7 +4,10 @@ import { getRolloutConfig } from '@/lib/config/rollout';
 
 function metaGrantsAccess(meta: unknown): boolean {
   const m = (meta ?? {}) as { betaAccess?: boolean; role?: string };
-  return m.betaAccess === true || m.role === 'admin';
+  // Core keeps `owner` compatible with legacy `admin` routes; preserve that
+  // access during the role migration while developer/product still require an
+  // explicit betaAccess flag.
+  return m.betaAccess === true || m.role === 'admin' || m.role === 'owner';
 }
 
 /**
@@ -13,7 +16,7 @@ function metaGrantsAccess(meta: unknown): boolean {
  * - self-hosted: no gate, always true.
  * - cloud, gate disabled (backend `gateEnabled=false`): full launch, always true.
  * - cloud, gate enabled: signed-in users whose Clerk `publicMetadata` grants
- *   `betaAccess` (or `role: 'admin'`) pass; everyone else is gated.
+ *   `betaAccess` (or `role: 'owner'|'admin'`) pass; everyone else is gated.
  *
  * The per-user check reads Clerk session claims first (zero API call); only if
  * the JWT template doesn't expose `public_metadata` does it fall back to one

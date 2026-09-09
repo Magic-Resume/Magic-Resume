@@ -18,8 +18,11 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint",
+    "lint": "turbo lint && pnpm check:tailwind && pnpm check:turbo",
+    "check:ui": "node scripts/check-ui-architecture.mjs",
     "test": "turbo test",
+    "check:tailwind": "node scripts/check-tailwind-architecture.mjs",
+    "check:turbo": "node scripts/check-turbo-architecture.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -33,6 +36,8 @@
     "@commitlint/cli": "^19.8.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "husky": "^9.1.7",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
     "turbo": "^2.5.4"
   }
 }
