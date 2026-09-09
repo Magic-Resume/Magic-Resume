@@ -13,13 +13,13 @@ const rings = [38.9, 56.7, 74.6];
 ---
 <section id="sync" class="be-section be-section-tinted" data-beui="trust-security-safeguards">
   <div class="be-container">
-    <header class="be-safe-head reveal">
+    <header class="be-safe-head reveal" style="--reveal-delay:0">
       <span class="be-safe-eyebrow">{s.eyebrow}</span>
       <h2>{s.title.split('\n').map((line) => <span>{line}</span>)}</h2>
       <p>{s.subtitle}</p>
     </header>
 
-    <div class="be-safe-body reveal">
+    <div class="be-safe-body reveal" style="--reveal-delay:1">
       <div class="be-safe-panel">
         {rings.map((d, i) => <span class="be-safe-ring" style={`--d:${d};--i:${i}`} aria-hidden="true"></span>)}
         <div class="be-safe-tile" aria-hidden="true"><Icon name="lock" size={48}/></div>

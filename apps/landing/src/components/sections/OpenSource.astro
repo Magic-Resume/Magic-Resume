@@ -14,7 +14,7 @@ const marks = t.marks.map((item, i) =>
 ---
 <section id="open-source" class="be-section" data-beui="trust-compliance-marks">
   <div class="be-container">
-    <div class="be-marks-head reveal">
+    <div class="be-marks-head reveal" style="--reveal-delay:0">
       <div>
         <span class="be-marks-eyebrow">{t.eyebrow}</span>
         <h2>{t.title.split('\n').map((line) => <span>{line}</span>)}</h2>
@@ -25,9 +25,9 @@ const marks = t.marks.map((item, i) =>
       </a>
     </div>
 
-    <div class="be-marks-band reveal">
+    <div class="be-marks-band">
       {marks.map((item, i) => (
-        <article>
+        <article class="reveal" style={`--reveal-delay:${i + 1}`}>
           <Icon name={icons[i]} size={20}/>
           <div class="be-mark-line"><h3>{item.mark}</h3><p>{item.suffix}</p></div>
           <p class="be-mark-desc">{item.desc}</p>
@@ -35,7 +35,7 @@ const marks = t.marks.map((item, i) =>
       ))}
     </div>
 
-    <div class="be-marks-checks reveal">
+    <div class="be-marks-checks reveal" style="--reveal-delay:4">
       {t.checks.map((check) => <span><Icon name="check" size={16}/>{check}</span>)}
     </div>
   </div>

@@ -12,7 +12,7 @@ const p = copy.landing.proof;
       <p class="be-proof-lede reveal">{p.subtitle}</p>
     </div>
     <div class="be-proof">
-      {p.items.map((item, i) => <div class="be-proof-item reveal" style={`--reveal-delay:${i}`}>
+      {p.items.map((item, i) => <div class="be-proof-item reveal" style={`--reveal-delay:${i + 1}`}>
         <p class="be-index">{String(i + 1).padStart(2, '0')}<i aria-hidden="true"></i></p>
         <strong>{item.value}</strong>
         <h3>{item.label}</h3>

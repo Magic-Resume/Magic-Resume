@@ -9,7 +9,7 @@ const t = copy.team;
 ---
 <section id="team" class="be-section" data-beui="team-grid">
   <div class="be-container">
-    <div class="be-team-head reveal">
+    <div class="be-team-head reveal" style="--reveal-delay:0">
       <div>
         <span class="be-team-eyebrow">{t.eyebrow}</span>
         <h2>{t.title}</h2>
@@ -21,9 +21,9 @@ const t = copy.team;
     </div>
 
     {contributors.length > 0 && (
-      <div class="be-team-grid reveal">
+      <div class="be-team-grid">
         {contributors.map((person, i) => (
-          <article class="be-team-card">
+          <article class="be-team-card reveal" style={`--reveal-delay:${Math.min(i + 1, 6)}`}>
             <div class="be-team-avatar">
               <img src={person.avatar} alt="" width="240" height="240" loading="lazy" decoding="async"/>
               <div class="be-team-socials">
