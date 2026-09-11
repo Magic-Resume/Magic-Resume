@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 
@@ -16,25 +17,29 @@ import { HttpClientProvider } from "@/components/providers/HttpClientProvider";
 import { GlobalErrorListener } from "@/components/providers/GlobalErrorListener";
 import { CommercialRuntimeProvider } from "@/lib/commercial/runtime";
 import { RuntimeEnvScript } from "@/lib/commercial/runtime-env";
+import { runtimePublicUrl } from "@/lib/config/runtime-public-url";
 import { CloudAuthBridge } from "@/lib/auth";
 import { NotificationRealtimeProvider } from "@/components/providers/NotificationRealtimeProvider";
 
-export const metadata: Metadata = {
-  // The application is a product surface, not the public marketing site. Keep
-  // its canonical base on the app host and opt the whole surface out of
-  // indexing; landing/docs own the searchable entity pages.
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.magic-resume.cn'),
-  ...metaConfig.Landing,
-  robots: {
-    index: false,
-    follow: false,
-    googleBot: {
+export async function generateMetadata(): Promise<Metadata> {
+  await headers();
+  return {
+    // The application is a product surface, not the public marketing site. Keep
+    // its canonical base on the app host and opt the whole surface out of
+    // indexing; landing/docs own the searchable entity pages.
+    metadataBase: new URL(runtimePublicUrl()),
+    ...metaConfig.Landing,
+    robots: {
       index: false,
       follow: false,
-      noimageindex: true,
+      googleBot: {
+        index: false,
+        follow: false,
+        noimageindex: true,
+      },
     },
-  },
-};
+  };
+}
 
 // Provider tree (cloud):    ClerkProvider → CloudAuthBridge → HttpClientProvider → ...
 // Provider tree (self-hosted): Fragment → HttpClientProvider → ... (default context)

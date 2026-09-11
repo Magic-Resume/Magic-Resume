@@ -1,4 +1,7 @@
 import { MetadataRoute } from 'next'
+import { runtimePublicUrl } from '@/lib/config/runtime-public-url'
+
+export const dynamic = 'force-dynamic'
 
 // robots.txt 的分组语义：一个爬虫只服从**最具体**的那一组，且那一组会**完全替换**
 // `*` 组 —— 不是叠加。所以任何具名 UA 组都必须自带完整的 disallow，
@@ -19,7 +22,7 @@ const DISALLOW = [
 // `robots: { index: false, follow: false }` 明确要求除名，才是能真正生效的那条路。
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://app.magic-resume.cn').replace(/\/+$/, '')
+  const baseUrl = runtimePublicUrl()
 
   return {
     rules: [
