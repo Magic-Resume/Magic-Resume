@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.6.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.5.2...v2.6.0) (2026-09-11)
+
+## ✨ New Features
+- [`1a8e35c`](https://github.com/Magic-Resume/Magic-Resume/commit/1a8e35c)  feat(web): read public app URL at runtime (#205) (Issues: [`#205`](https://github.com/Magic-Resume/Magic-Resume/issues/205))
+
 # [v2.5.2](https://github.com/Magic-Resume/Magic-Resume/compare/v2.5.1...v2.5.2) (2026-08-09)
 
 ## 🐛 Bug Fixes
