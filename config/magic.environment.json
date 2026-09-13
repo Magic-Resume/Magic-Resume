@@ -53,5 +53,49 @@
     "requiredAlwaysBy": [
       "web"
     ]
+  },
+  {
+    "name": "MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev managed private overlay path; server/build only",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "MAGIC_RESUME_COMMERCIAL_BILLING_ROOT",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev managed private overlay path; server/build only",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "MAGIC_RESUME_COMMERCIAL_LEGAL_ROOT",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev managed private overlay path; server/build only",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_DIST_DIR",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev build directory, isolated from ordinary production checks.",
+    "requiredAlwaysBy": [
+      "web"
+    ]
   }
 ]

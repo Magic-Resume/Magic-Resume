@@ -28,7 +28,16 @@
           "@magic-resume/web",
           "test"
         ]
-      ]
+      ],
+      "prepare": [
+        [
+          "--filter",
+          "./packages/*",
+          "--workspace-concurrency=1",
+          "build"
+        ]
+      ],
+      "startupTimeoutMs": 300000
     }
   },
   "allowedOverrides": []
