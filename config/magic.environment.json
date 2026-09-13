@@ -1,0 +1,57 @@
+[
+  {
+    "name": "NEXT_PUBLIC_APP_MODE",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_PUBLIC_APP_URL",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_PUBLIC_API_URL",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "CLERK_SECRET_KEY",
+    "services": [
+      "web"
+    ],
+    "secret": true,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  }
+]

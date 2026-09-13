@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "web",
+  "cli": ">=0.1.0 <0.2.0",
+  "registry": "config/magic.environment.json",
+  "services": {
+    "web": {
+      "cwd": ".",
+      "command": [
+        "corepack",
+        "pnpm",
+        "--filter",
+        "@magic-resume/web",
+        "dev",
+        "--hostname",
+        "0.0.0.0",
+        "--port",
+        "{port}"
+      ],
+      "health": "/",
+      "port": 3000,
+      "envDirs": [
+        "apps/web"
+      ],
+      "check": [
+        [
+          "--filter",
+          "@magic-resume/web",
+          "test"
+        ]
+      ]
+    }
+  },
+  "allowedOverrides": []
+}
