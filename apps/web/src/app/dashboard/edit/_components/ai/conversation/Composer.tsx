@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CornerUpLeft, Mic, Plus, SendArrow, Square, X } from '@magic-resume/icons';
+import { Mic, Plus, SendArrow, Square, X } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ import ModeGlyph from './ModeGlyph';
 import ModePicker from './ModePicker';
 import ProUpgradeBanner from './ProUpgradeBanner';
 import AttachmentChips from './AttachmentChips';
+import QuoteChip, { type QuoteChipHandle, type QuotedContext } from './QuoteChip';
 import {
   ACCEPT_ATTR,
   MAX_ATTACHMENTS,
@@ -48,8 +49,7 @@ const MODE_SETTLE_MS = 620;
 // during SSR — fall back to useEffect on the server.
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-/** A snippet lifted from the canvas ("自定义 / 问 AI"), shown as a quoted chip above the input. */
-export type QuotedContext = { label: string; text: string };
+export type { QuotedContext };
 
 type ComposerProps = {
   /** Run a skill picked via `/`, carrying whatever the user typed after the chip. */
@@ -295,6 +295,8 @@ function Composer({
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
+  const quoteChipRef = useRef<QuoteChipHandle>(null);
+
   const submit = () => {
     if (attachmentPending) return;
     if (slashActive) {
@@ -311,6 +313,8 @@ function Composer({
       return;
     }
     if (quotedContext) {
+      // 必须先标、再清引用：引用卡在引用变成 null 的那一刻决定按「并入消息」还是「取消」退场。
+      quoteChipRef.current?.markSend();
       onSendWithContext?.(value.trim());
       setValue('');
       return;
@@ -462,33 +466,8 @@ function Composer({
           )}
         </AnimatePresence>
 
-        <AnimatePresence>
-          {quotedContext && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.16, ease: EASE_ENTER }}
-              className="mb-2 flex items-start gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5"
-            >
-              <CornerUpLeft size={13} className="mt-0.5 shrink-0 text-sky-400" />
-              <div className="min-w-0 flex-1">
-                <div className="text-mr-micro font-medium uppercase tracking-wide text-neutral-500">
-                  {quotedContext.label}
-                </div>
-                <div className="truncate text-mr-overline text-neutral-300">{quotedContext.text}</div>
-              </div>
-              <button
-                type="button"
-                onClick={onClearQuoted}
-                aria-label={t('aiLab.composer.clearQuote')}
-                className="shrink-0 text-neutral-500 hover:text-neutral-200 transition-colors cursor-pointer"
-              >
-                <X size={13} />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* 引用卡与整段「递纸条」进出场都在 QuoteChip 里（docs/specs/ai-quote-handoff）。 */}
+        <QuoteChip ref={quoteChipRef} quote={quotedContext ?? null} onClear={onClearQuoted} />
 
         {/* 三层表面：外壳（最亮）→ 内层面板 → 凹槽输入井（最暗）。
             设计稿的绝对值不能照搬——它的页面底是中灰紫 oklch(0.251)，输入井 oklch(0.134)

@@ -514,7 +514,9 @@ function PendingChangeCard({
             lineHeight: 1.3,
             textAlign: 'left',
             cursor: pending.rationaleDetail ? 'pointer' : 'default',
-            flex: '1 1 auto',
+            // 宽度必须归零、由 flex 撑开：nowrap 理由的 min-content 否则会顶宽模板里的 grid 列，把整张卡撑出纸面。
+            flex: '1 1 0%',
+            width: 0,
             minWidth: 0,
             overflow: 'hidden',
           }}

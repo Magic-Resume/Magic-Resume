@@ -3,12 +3,16 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { nanoid } from "nanoid";
+import { EASE_EXIT } from "@magic-resume/utils";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import type { QuoteRect } from "../../conversation/quoteHandoff";
 import { ListChecks } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { InfoType, Resume, Section } from "@/types/frontend/resume";
@@ -228,11 +232,17 @@ type LivingCanvasProps = {
   ) => void;
   /** lift a snippet into the chat composer for a freeform instruction. */
   onAskWithTarget?: (ctx: {
+    /** 画布侧生成；输入框回传同一个 id，画布据此只给「当前这条引用」留淡标记。 */
+    id: string;
     path: string;
     label: string;
     text: string;
     selectionText?: string;
+    /** 「递纸条」的起飞点：片段在 viewport 里的包围盒（docs/specs/ai-quote-handoff）。 */
+    origin?: QuoteRect | null;
   }) => void;
+  /** 输入框里当前那条引用的 id。与画布记下的一致时，纸面上保留那段文字的淡标记。 */
+  activeQuoteId?: string | null;
   batchRequest?: BatchRequest | null;
   focusRequest?: FocusRequest | null;
   /**
@@ -265,7 +275,69 @@ type SelectionState = {
   rect: DOMRect;
   rects: HighlightRect[];
   text: string;
+  range: Range;
 };
+
+/** 经「询问 Polaris」交出去的片段在纸面上的锚点（docs/specs/ai-quote-handoff §4）。 */
+type QuoteMark = {
+  id: string;
+  path: string;
+  /** 选中的原文；整字段引用时为空，靠 `whole` 重新框住整个字段。 */
+  text: string;
+  whole: boolean;
+  range: Range;
+};
+
+/**
+ * 取回淡标记该框住的 Range。
+ *
+ * 模板重渲染会换掉文本节点，存下的 Range 随之失效；这时按原文在同一字段里再找一次，
+ * 找不到就放弃——淡标记静默消失，引用卡照常保留。
+ */
+function resolveQuoteRange(
+  root: HTMLElement | null,
+  mark: QuoteMark,
+): Range | null {
+  const { range } = mark;
+  if (
+    range.startContainer.isConnected &&
+    range.endContainer.isConnected &&
+    !range.collapsed
+  ) {
+    return range;
+  }
+  const anchor = root?.querySelector<HTMLElement>(
+    `[data-resume-path="${mark.path}"]`,
+  );
+  if (!anchor) return null;
+  const next = document.createRange();
+  if (mark.whole) {
+    next.selectNodeContents(anchor);
+    return next;
+  }
+  const needle = mark.text.trim();
+  const nodes: Text[] = [];
+  const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    nodes.push(node as Text);
+  }
+  const start = needle ? nodes.map((node) => node.data).join("").indexOf(needle) : -1;
+  if (start < 0) return null;
+  const end = start + needle.length;
+  let offset = 0;
+  for (const node of nodes) {
+    const length = node.data.length;
+    if (start >= offset && start <= offset + length) {
+      next.setStart(node, start - offset);
+    }
+    if (end <= offset + length) {
+      next.setEnd(node, end - offset);
+      break;
+    }
+    offset += length;
+  }
+  return next;
+}
 type SectionPopoverState = { sectionKey: string; title: string; rect: DOMRect };
 
 // 把原始 client rects 按视觉行合并成一个。含行内元素的选区会多返回重叠的 rect，
@@ -315,8 +387,12 @@ function LivingCanvas({
   previewResume,
   working,
   onResolveWorkspace,
+  activeQuoteId,
 }: LivingCanvasProps) {
   const { t } = useTranslation();
+  const [quoteMark, setQuoteMark] = useState<QuoteMark | null>(null);
+  const [quoteRects, setQuoteRects] = useState<HighlightRect[]>([]);
+  const paperRef = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState<Record<string, PendingChange>>({});
   const [order, setOrder] = useState<string[]>([]);
   const [processing, setProcessing] = useState<string[]>([]);
@@ -412,6 +488,36 @@ function LivingCanvas({
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
   }, [selection]);
+
+  // 淡标记只跟「输入框里当前那条引用」走：引用被发送、取消或替换，id 一变它就淡出。
+  const markVisible = Boolean(quoteMark && quoteMark.id === activeQuoteId);
+
+  // 画在纸面内部而不是 viewport 上：跟着纸滚动、跟着缩放，不必像选区高亮那样一滚就撤。
+  useLayoutEffect(() => {
+    const paper = paperRef.current;
+    if (!markVisible || !quoteMark || !paper) return;
+    const measure = () => {
+      const range = resolveQuoteRange(scrollRef.current, quoteMark);
+      if (!range) {
+        setQuoteRects([]);
+        return;
+      }
+      const box = paper.getBoundingClientRect();
+      setQuoteRects(
+        mergeSelectionRects(Array.from(range.getClientRects())).map((r) => ({
+          top: (r.top - box.top) / SCALE,
+          left: (r.left - box.left) / SCALE,
+          width: r.width / SCALE,
+          height: r.height / SCALE,
+        })),
+      );
+    };
+    measure();
+    // 模板异步加载、字体晚到都会让纸面重排；纸的尺寸一变就重量一次。
+    const observer = new ResizeObserver(measure);
+    observer.observe(paper);
+    return () => observer.disconnect();
+  }, [markVisible, quoteMark, shown]);
 
   const scrollToPath = useCallback((path: string) => {
     const el = scrollRef.current?.querySelector(`[data-resume-path="${path}"]`);
@@ -512,10 +618,22 @@ function LivingCanvas({
       setInteracted(true);
       // 询问 Polaris → lift this element into the chat composer.
       if (action === "free" && onAskWithTarget) {
+        const path = pathOf(target);
+        const anchor = scrollRef.current?.querySelector<HTMLElement>(
+          `[data-resume-path="${path}"]`,
+        );
+        const id = nanoid();
+        if (anchor) {
+          const range = document.createRange();
+          range.selectNodeContents(anchor);
+          setQuoteMark({ id, path, text: "", whole: true, range });
+        }
         onAskWithTarget({
-          path: pathOf(target),
+          id,
+          path,
           label: target.label,
           text: stripHtml(fieldHtml(target)),
+          origin: anchor ? anchor.getBoundingClientRect() : popover.rect,
         });
         return;
       }
@@ -557,20 +675,29 @@ function LivingCanvas({
     const target: EditableTarget = {
       ...parsed,
       kind: parsed.sectionKey === "info" ? "text" : "html",
-      label: `选中片段 · ${sectionTitle(parsed.sectionKey)}`,
+      label: t("aiLab.living.selectionLabel", {
+        section: sectionTitle(parsed.sectionKey),
+      }),
     };
-    // 在下面清掉原生选区之前，先快照几何（每视觉行一个 rect）与文本。
+    // 在下面清掉原生选区之前，先快照几何（每视觉行一个 rect）、文本与 Range。
     const rects = mergeSelectionRects(Array.from(range.getClientRects()));
     const boundingRect = range.getBoundingClientRect();
     const text = sel.toString();
     setPopover(null);
     setSectionPopover(null);
     setInteracted(true);
-    setSelection({ target, rect: boundingRect, rects, text });
+    setSelection({
+      target,
+      rect: boundingRect,
+      rects,
+      text,
+      // 克隆一份：「询问 Polaris」之后，淡标记靠它锚在纸面文字上。
+      range: range.cloneRange(),
+    });
     // 鼠标一挪到浮动工具条浏览器就会清掉原生选区，所以不依赖它：现在就清掉，
     // 改用快照自绘持久高亮；动作也走存下来的 text 而非实时选区。
     sel.removeAllRanges();
-  }, []);
+  }, [t]);
 
   const runSelectionAction = useCallback(
     (action: SelectionActionId | "free", arg?: string) => {
@@ -583,11 +710,16 @@ function LivingCanvas({
       setSelection(null);
       // 询问 Polaris → 把选中片段抬进输入框作为上下文；对话结果稍后 diff 回同一 path。
       if (action === "free" && onAskWithTarget) {
+        const id = nanoid();
+        const path = pathOf(target);
+        setQuoteMark({ id, path, text, whole: false, range: sel.range });
         onAskWithTarget({
-          path: pathOf(target),
+          id,
+          path,
           label: target.label,
           text,
           selectionText: text,
+          origin: sel.rect,
         });
         return;
       }
@@ -1348,6 +1480,7 @@ function LivingCanvas({
         <div className="flex justify-center pt-6 pb-24 px-12">
           <div style={{ width: PAGE_WIDTH * SCALE }}>
             <div
+              ref={paperRef}
               className="relative bg-[#fff] rounded-lg shadow-2xl"
               style={{
                 width: PAGE_WIDTH,
@@ -1366,6 +1499,36 @@ function LivingCanvas({
                   />
                 </div>
               </EditableCanvasProvider>
+              {/* 已经交给 Polaris 的那段文字（docs/specs/ai-quote-handoff §4）。 */}
+              <AnimatePresence>
+                {markVisible && quoteRects.length > 0 && (
+                  <motion.div
+                    key={quoteMark?.id}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    initial={false}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.16, ease: EASE_EXIT }}
+                  >
+                    {quoteRects.map((r, i) => (
+                      <div
+                        key={i}
+                        className="lc-quote-mark absolute"
+                        style={{
+                          top: r.top,
+                          left: r.left,
+                          width: r.width,
+                          height: r.height,
+                          borderRadius: 2,
+                          // 与选区高亮同一浓度，由 .lc-quote-mark 压到一半；multiply 让黑字不被染色。
+                          background: "rgba(56,189,248,0.28)",
+                          mixBlendMode: "multiply",
+                        }}
+                      />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {/* 「纸面入定」——AI 工作中就在这张纸上压一层，而不是另开一块画布。
                   与主编辑器预览用的是同一个组件。 */}
               <AiThinkingOverlay isVisible={Boolean(working)} />
