@@ -1964,6 +1964,8 @@
       "attachFile": "添加文件",
       "send": "发送",
       "clearQuote": "移除引用",
+      "quoteAdded": "已引用「{{label}}」，接着输入要怎么改",
+      "quoteRemoved": "已移除引用",
       "clearMode": "退出「{{skill}}」模式",
       "voice": {
         "start": "语音输入",
@@ -2319,6 +2321,7 @@
     "living": {
       "askPolarisDetail": "询问 Polaris · 说说怎么改",
       "askPolaris": "询问 Polaris",
+      "selectionLabel": "选中片段 · {{section}}",
       "allChanges": "全部改动",
       "changeCountShort": "{{count}} 处",
       "inserted": "新增",

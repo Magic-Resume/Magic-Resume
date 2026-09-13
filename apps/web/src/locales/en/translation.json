@@ -1964,6 +1964,8 @@
       "attachFile": "Add files",
       "send": "Send",
       "clearQuote": "Remove quote",
+      "quoteAdded": "Quoted “{{label}}”. Tell Polaris what to change.",
+      "quoteRemoved": "Quote removed",
       "clearMode": "Leave {{skill}} mode",
       "voice": {
         "start": "Voice input",
@@ -2319,6 +2321,7 @@
     "living": {
       "askPolarisDetail": "Ask Polaris · explain how to improve it",
       "askPolaris": "Ask Polaris",
+      "selectionLabel": "Selection · {{section}}",
       "allChanges": "All changes",
       "changeCountShort": "{{count}} changes",
       "inserted": "New",

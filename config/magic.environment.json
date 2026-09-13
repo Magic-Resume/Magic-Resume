@@ -1,0 +1,101 @@
+[
+  {
+    "name": "NEXT_PUBLIC_APP_MODE",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_PUBLIC_APP_URL",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_PUBLIC_API_URL",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "CLERK_SECRET_KEY",
+    "services": [
+      "web"
+    ],
+    "secret": true,
+    "description": "Magic Dev web configuration",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev managed private overlay path; server/build only",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "MAGIC_RESUME_COMMERCIAL_BILLING_ROOT",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev managed private overlay path; server/build only",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "MAGIC_RESUME_COMMERCIAL_LEGAL_ROOT",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev managed private overlay path; server/build only",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  },
+  {
+    "name": "NEXT_DIST_DIR",
+    "services": [
+      "web"
+    ],
+    "secret": false,
+    "description": "Magic Dev build directory, isolated from ordinary production checks.",
+    "requiredAlwaysBy": [
+      "web"
+    ]
+  }
+]

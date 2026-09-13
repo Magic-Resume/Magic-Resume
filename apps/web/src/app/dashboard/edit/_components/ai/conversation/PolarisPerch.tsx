@@ -3,28 +3,38 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { PolarisAvatar } from '../PolarisMark';
-import { takeFlightOrigin } from './polarisFlight';
+import { FLIGHT_APEX_AT, FLIGHT_ARC_PX, takeFlightOrigin } from './polarisFlight';
 
 /**
  * 这一跳的三个数。
  *
  * 弧幅要和实际 travel 成比例才读得出来：欢迎态的宠物在面板中央、工位在底部，
  * 垂直距离两三百 px——十几 px 的弧占比不到 5%，等于没有。
+ * 弧幅与顶点位置和「递纸条」共用一份（见 polarisFlight）。
  */
 const FLIGHT_MS = 620;
-const ARC_PX = 72;
-/** 抛物线顶点落在整段时间的哪个位置。偏早 = 先起跳、后长落，更像跳而不是上下摆。 */
-const APEX_AT = 0.34;
+const ARC_PX = FLIGHT_ARC_PX;
+const APEX_AT = FLIGHT_APEX_AT;
 
 const PERCH_SIZE = 28;
 
+/** polaris-pet-excited.svg 里 `exhop` 的周期。姿态要演满整周期，截在帧中间会闪一下。 */
+const EXCITED_CYCLE_MS = 520;
+/** 完整版「递纸条」里，纸条飞到约 300ms 时小宠抬头（docs/specs/ai-quote-handoff §5A）。 */
+const CHEER_LEAD_MS = 300;
+
 type Flight = { dx: number; dy: number; scale: number };
+
+/** 一次「接住」。`full` = 会话内首次引用，演满一个周期；否则只闪半拍。 */
+export type PerchCheer = { nonce: number; full: boolean };
 
 /**
  * Polaris 的工位——落在输入框正上方的一只小宠。
  *
  * **只做身份，不念旁白**：「agent 此刻在干什么」由线程里那颗 orb 说（见
  * ActivityOrb / agentActivity）。两处同时念同一句话，就是同一条信息说了两遍。
+ * 唯一的例外是画布片段递进输入框时抬头「接住」一下（`cheer`）——那是交接动作的一部分，
+ * 不是状态播报。
  *
  * 它不是「又一个头像」：欢迎态那只 56px 的大宠**就是这一只**，用户发出第一句话时
  * 它从屏幕中央跳下来落到这儿。因为宠物成了一个连续在场的角色，对话里就不必再每条
@@ -39,11 +49,12 @@ type Flight = { dx: number; dy: number; scale: number };
  * 落地那一下起伏是**角色动作**，不是 UI 缓动——`.impeccable.md` 里「不弹跳、不
  * elastic」约束的是面板与卡片，而小蓝宠的人格设定里明写着「会蹦跳」。
  */
-function PolarisPerch() {
+function PolarisPerch({ cheer }: { cheer?: PerchCheer | null }) {
   const reduce = useReducedMotion() ?? false;
   const petRef = useRef<HTMLDivElement>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
   const [flying, setFlying] = useState(false);
+  const [cheering, setCheering] = useState(false);
 
   // useLayoutEffect：起点必须在浏览器绘制**之前**算好并写进 transform，否则会先闪
   // 一帧「已经落在工位上」，再跳回起点开始飞。
@@ -66,6 +77,18 @@ function PolarisPerch() {
     const timer = window.setTimeout(() => setFlying(false), FLIGHT_MS);
     return () => window.clearTimeout(timer);
   }, [flying]);
+
+  useEffect(() => {
+    if (!cheer || reduce) return;
+    const lead = cheer.full ? CHEER_LEAD_MS : 0;
+    const hold = cheer.full ? EXCITED_CYCLE_MS : EXCITED_CYCLE_MS / 2;
+    const on = window.setTimeout(() => setCheering(true), lead);
+    const off = window.setTimeout(() => setCheering(false), lead + hold);
+    return () => {
+      window.clearTimeout(on);
+      window.clearTimeout(off);
+    };
+  }, [cheer, reduce]);
 
   const duration = FLIGHT_MS / 1000;
 
@@ -103,7 +126,10 @@ function PolarisPerch() {
           }}
         >
           {/* 落地即坐下：站姿贴在边上读作「踩着」，坐姿才是「栖」 */}
-          <PolarisAvatar size={PERCH_SIZE} pose={flying ? 'jump' : 'sit'} />
+          <PolarisAvatar
+            size={PERCH_SIZE}
+            pose={flying ? 'jump' : cheering ? 'excited' : 'sit'}
+          />
         </motion.div>
       </div>
     </div>

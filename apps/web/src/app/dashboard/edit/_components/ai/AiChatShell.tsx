@@ -50,7 +50,8 @@ import type {
 } from "./types";
 import ChatThread from "./conversation/ChatThread";
 import Composer from "./conversation/Composer";
-import PolarisPerch from "./conversation/PolarisPerch";
+import PolarisPerch, { type PerchCheer } from "./conversation/PolarisPerch";
+import type { QuoteRect } from "./conversation/quoteHandoff";
 import { setFlightOrigin } from "./conversation/polarisFlight";
 import {
   AGENT_MODES,
@@ -368,11 +369,18 @@ export default function AiChatShell({
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   // 经「询问 Polaris」抬进输入框的画布片段。
   const [quoted, setQuoted] = useState<{
+    /** 画布侧生成并回传：画布据此只给「当前这条引用」留淡标记。 */
+    id: string;
     path: string;
     label: string;
     text: string;
     selectionText?: string;
+    origin?: QuoteRect | null;
+    motion: "full" | "lite";
   } | null>(null);
+  /** 本会话引用过几次。只有第一次演完整的「递纸条」（docs/specs/ai-quote-handoff §5B）。 */
+  const quoteCountRef = useRef(0);
+  const [perchCheer, setPerchCheer] = useState<PerchCheer | null>(null);
   const [batchRequest, setBatchRequest] = useState<BatchRequest | null>(null);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const batchNonce = useRef(0);
@@ -2361,19 +2369,27 @@ export default function AiChatShell({
   // 画布片段经「询问 Polaris」以引用形式抬进输入框。
   const onAskWithTarget = useCallback(
     (ctx: {
+      id?: string;
       path: string;
       label: string;
       text: string;
       selectionText?: string;
+      origin?: QuoteRect | null;
     }) => {
+      const full = quoteCountRef.current === 0;
+      quoteCountRef.current += 1;
       setStarted(true);
       setLivingOpen(true);
       setQuoted({
+        id: ctx.id ?? nanoid(),
         path: ctx.path,
         label: ctx.label,
         text: ctx.text.slice(0, 400),
         selectionText: ctx.selectionText,
+        origin: ctx.origin,
+        motion: full ? "full" : "lite",
       });
+      setPerchCheer((prev) => ({ nonce: (prev?.nonce ?? 0) + 1, full }));
     },
     [setLivingOpen, setStarted],
   );
@@ -2588,6 +2604,7 @@ export default function AiChatShell({
     const nextSession = resetAiSession(resumeId);
     sessionIdRef.current = nextSession.sessionId;
     sessionUsedRef.current = false;
+    quoteCountRef.current = 0;
     setAwaitingReply(false);
     setDraftReady(null);
     setConversationView("conversation");
@@ -2714,7 +2731,16 @@ export default function AiChatShell({
   }, [draftReady, addAssistant, t]);
 
   const quotedContext = useMemo(
-    () => (quoted ? { label: quoted.label, text: quoted.text } : null),
+    () =>
+      quoted
+        ? {
+            id: quoted.id,
+            label: quoted.label,
+            text: quoted.text,
+            origin: quoted.origin,
+            motion: quoted.motion,
+          }
+        : null,
     [quoted],
   );
   const clearQuoted = useCallback(() => setQuoted(null), []);
@@ -3086,10 +3112,15 @@ export default function AiChatShell({
               )}
             </AnimatePresence>
 
-            {started && conversationView === "conversation" && <PolarisPerch />}
+            {started && conversationView === "conversation" && (
+              <PolarisPerch cheer={perchCheer} />
+            )}
 
             <motion.div
               layout="position"
+              // 只在开场（欢迎态 ↔ 对话态）这类整体换位时做弹簧。不设依赖的话每次重渲染都会
+              // 重测布局：引用卡展开、输入框长高期间一来流式输出，外壳就被弹簧拖在布局后面。
+              layoutDependency={`${started}-${conversationView}`}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
               className="relative"
             >
@@ -3160,6 +3191,7 @@ export default function AiChatShell({
                     onLog={logChange}
                     onWarn={warnDropped}
                     onAskWithTarget={onAskWithTarget}
+                    activeQuoteId={quoted?.id ?? null}
                     batchRequest={batchRequest}
                     focusRequest={focusRequest}
                     previewResume={draftReady}

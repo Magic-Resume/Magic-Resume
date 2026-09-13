@@ -12,6 +12,15 @@
  * 还能给 x / y 各配一条曲线，做出真正的抛物线（layoutId 只能两点直线插值）。
  */
 
+/**
+ * Polaris 的世界里东西只有一种飞法：x 匀速，y 先 easeOut 升到顶点、再 easeIn 落下。
+ * 小宠那一跳与「递纸条」（docs/specs/ai-quote-handoff）共用这两个数。
+ */
+/** 抛物线顶点落在整段时间的哪个位置。偏早 = 先起跳、后长落，更像跳而不是上下摆。 */
+export const FLIGHT_APEX_AT = 0.34;
+/** 弧幅上限。 */
+export const FLIGHT_ARC_PX = 72;
+
 export type FlightOrigin = { x: number; y: number; size: number };
 
 let origin: FlightOrigin | null = null;
