@@ -13,6 +13,7 @@ const MARKS = {
   pet: '/marks/polaris-pet.svg',
   petJump: '/marks/polaris-pet-jump.svg',
   petSit: '/marks/polaris-pet-sit.svg',
+  petExcited: '/marks/polaris-pet-excited.svg',
 } as const;
 
 export function PolarisGlyph({
@@ -57,6 +58,13 @@ export function LabMark({
   return <MaskIcon src={MARKS.flask} size={size} className={className} />;
 }
 
+const POSE_MARK = {
+  default: MARKS.pet,
+  jump: MARKS.petJump,
+  sit: MARKS.petSit,
+  excited: MARKS.petExcited,
+} as const;
+
 /**
  * The hero avatar — the pixel pet「小北极星」standing free on the canvas (no
  * plate, no frame), only a soft pulsing glow behind it. The pet's own motion
@@ -71,15 +79,18 @@ export function PolarisAvatar({
   className?: string;
   /** 欢迎态 56，落到输入框上的工位 28——同一只宠物，只是远近不同。 */
   size?: number;
-  /** `jump` = 腾空帧（飞行途中）；`sit` = 坐姿帧（落在输入框上沿时）。 */
-  pose?: 'default' | 'jump' | 'sit';
+  /**
+   * `jump` = 腾空帧（飞行途中）；`sit` = 坐姿帧（落在输入框上沿时）；
+   * `excited` = 接住引用片段时抬头的那一拍。
+   */
+  pose?: keyof typeof POSE_MARK;
 }) {
   return (
     <div className={cn('relative', className)} style={{ width: size, height: size }}>
       {/* ambient glow — slow pulse behind the pet */}
       <div className="polaris-glow absolute inset-0 rounded-full bg-sky-500/25 blur-xl" aria-hidden="true" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={pose === 'jump' ? MARKS.petJump : pose === 'sit' ? MARKS.petSit : MARKS.pet} width={size} height={size} alt="" aria-hidden="true" className="relative" />
+      <img src={POSE_MARK[pose]} width={size} height={size} alt="" aria-hidden="true" className="relative" />
       <style jsx>{`
         /* 全局心跳的整数倍（两拍一次），而不是另取一个 4s：同屏的呼吸元素周期互质
            时，明暗会缓慢错开又对齐，看久了像在飘。 */

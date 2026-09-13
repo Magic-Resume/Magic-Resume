@@ -670,7 +670,11 @@ function Bubble({
             />
           ) : null}
           {message.quote && (
-            <div className="mb-2 flex items-start gap-2 rounded-lg bg-mr-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]">
+            // data-quote-block：发送时引用卡的替身按它找落点（QuoteChip / quoteHandoff）。
+            <div
+              data-quote-block
+              className="mb-2 flex items-start gap-2 rounded-lg bg-mr-sunk px-2.5 py-2 text-left ring-1 ring-white/[0.05]"
+            >
               <CornerUpLeft
                 size={12}
                 className="mt-0.5 shrink-0 text-sky-400/80"

@@ -608,12 +608,51 @@
   }
 }
 
+/* 引用片段在纸面上的淡标记（docs/specs/ai-quote-handoff §4）。
+   色块本身是选区高亮的浓度，这里压到一半：80ms 的收敛让「选中」自然过渡成「已引用」。
+   悬停输入框里的引用卡时加深回来，两端互相指认。 */
+.lc-quote-mark {
+  opacity: 0.5;
+  transition: opacity 160ms var(--state-ease);
+  animation: lc-quote-settle 80ms var(--state-ease);
+}
+
+:root[data-quote-hover] .lc-quote-mark {
+  opacity: 0.85;
+}
+
+/* 只写 from：收敛到元素自身的 opacity，结束后 hover 的 transition 才接得上。 */
+@keyframes lc-quote-settle {
+  from {
+    opacity: 1;
+  }
+}
+
+/* 输入框上方引用卡占的空间（QuoteChip）。行高 0fr ↔ 1fr：展开走主曲线；收起晚 60ms 起跑，
+   与卡片淡出重叠，不留空洞。收起的两个数与 QuoteChip 的 CLOSE_MS / CLOSE_DELAY_MS 成对。 */
+.quote-slot {
+  display: grid;
+  transition: grid-template-rows 200ms var(--exit-ease) 60ms;
+}
+
+.quote-slot[data-open] {
+  transition: grid-template-rows 300ms var(--narrate-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quote-slot,
+  .quote-slot[data-open] {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ai-narrate,
   .ai-narrate-enter,
   .lc-shimmer::before,
   .lc-flash,
   .lc-highlight,
+  .lc-quote-mark,
   .lc-enter {
     animation: none;
   }
