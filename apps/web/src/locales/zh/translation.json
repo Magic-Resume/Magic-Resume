@@ -2020,7 +2020,8 @@
         "low": "低",
         "medium": "中",
         "high": "高"
-      }
+      },
+      "catalogStale": "列表可能不是最新的，个别模型或许暂时用不了。"
     },
     "widgets": {
       "unsupported": "（无法渲染的卡片：{{kind}}）",

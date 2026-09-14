@@ -2020,7 +2020,8 @@
         "low": "Low",
         "medium": "Medium",
         "high": "High"
-      }
+      },
+      "catalogStale": "This list may be out of date — some models might be unavailable right now."
     },
     "widgets": {
       "unsupported": "(Unable to render card: {{kind}})",
