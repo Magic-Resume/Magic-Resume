@@ -53,6 +53,9 @@ export default function ModelStrengthPicker({
   // server). Empty plan allowlist → the full catalog, so the menu still lists our
   // models instead of collapsing to just "Auto".
   const internalModels = data?.availableModels ?? [];
+  // 服务端没能与 relay 对齐时如实说一句。静默展示一份可能调不通的列表，正是「删了账号
+  // 前端还在展示」那个 bug 的形态——宁可承认不确定，也别让用户点进去才发现。
+  const catalogStale = data?.catalogDegraded === true;
   const canInternal = data?.canUseInternal ?? false;
 
   // The user explicitly picks the source here; the choice drives `source` in
@@ -233,6 +236,11 @@ export default function ModelStrengthPicker({
                             : t("aiLab.picker.needCredits")
                         }
                       />
+                      {catalogStale && (
+                        <div className="px-2 pb-1 text-mr-label text-neutral-500">
+                          {t("aiLab.picker.catalogStale")}
+                        </div>
+                      )}
                       {internalModels.map((m) => (
                         <ModelRow
                           key={m}
