@@ -84,8 +84,11 @@
   --mr-surface-subtle: oklch(1 0 0 / 0.04);
   --mr-surface-muted: oklch(1 0 0 / 0.05);
   /* 行内代码。刻意不用 accent：sky 蓝要留给链接与强调，被行内代码占着，一段技术回答
-     满屏都是蓝的，强调就失效了。暖橙与暖底同族但跳得出来，扫读时一眼认出标识符。 */
-  --mr-code-ink: oklch(0.8 0.1 65);
+     满屏都是蓝的，强调就失效了。暖珊瑚与暖底同族但跳得出来，扫读时一眼认出标识符。
+     底色必须**比页面亮一档**：用通用凹槽色（比页面暗）会让 chip 沉下去，几乎和正文底
+     分不开——参照实现是把它抬到页面之上，读起来才像一颗浮起的药丸。 */
+  --mr-code-ink: oklch(0.79 0.12 55);
+  --mr-code-surface: oklch(0.24 0.008 70);
   --mr-accent: #38bdf8;
   --mr-accent-hover: #7dd3fc;
   --mr-accent-ink: #0a0a0a;
@@ -123,6 +126,7 @@
   --mr-surface-subtle: oklch(0.2 0.01 85 / 0.04);
   --mr-surface-muted: oklch(0.2 0.01 85 / 0.05);
   --mr-code-ink: oklch(0.48 0.13 55);
+  --mr-code-surface: oklch(0.94 0.012 70);
   --mr-accent: oklch(0.6 0.14 233);
   --mr-accent-hover: oklch(0.52 0.13 233);
   --mr-accent-ink: oklch(0.99 0.01 233);
@@ -153,6 +157,7 @@
   --color-mr-ink-secondary: var(--mr-ink-secondary);
   --color-mr-muted: var(--mr-muted);
   --color-mr-code-ink: var(--mr-code-ink);
+  --color-mr-code-surface: var(--mr-code-surface);
   --color-mr-line: var(--mr-line);
   --color-mr-line-soft: var(--mr-line-soft);
   --color-mr-line-strong: var(--mr-line-strong);

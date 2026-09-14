@@ -45,10 +45,11 @@ function CodeRenderer({
   const writing = code !== raw;
   if (!lang) {
     return (
-      // 令牌而非写死色：浅色主题切过去时它会跟着走。用暖橙而不是 accent——sky 蓝要留给
-      // 真正的链接与强调，被行内代码占着，一段技术回答里满屏都是蓝的，强调就失效了；
-      // 暖橙与暖底同族，跳得出来又不抢戏，大段中文里一眼认出标识符。
-      <code className="bg-mr-sunk text-mr-code-ink shadow-mr-control rounded-mr-compact px-[0.4em] py-[0.15em] font-mono text-mr-caption">
+      // 令牌而非写死色：浅色主题切过去时它会跟着走。用暖珊瑚而不是 accent——sky 蓝要留给
+      // 真正的链接与强调，被行内代码占着，一段技术回答里满屏都是蓝的，强调就失效了。
+      // 底色比页面**亮**一档（不是 sunk 那种凹槽色），chip 才浮得起来；有了这一档就不再
+      // 需要投影去描边。
+      <code className="bg-mr-code-surface text-mr-code-ink rounded-mr-compact px-[0.4em] py-[0.15em] font-mono text-mr-caption">
         {code}
         {writing && <Caret />}
       </code>
