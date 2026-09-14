@@ -45,6 +45,12 @@ const MIN_TEXTAREA_HEIGHT = 66;
 const MAX_TEXTAREA_HEIGHT = 132;
 /** 切模式后停在「正在进入…」多久才翻成「已就绪」。 */
 const MODE_SETTLE_MS = 620;
+
+/**
+ * 主操作键的蓝。发送与停止在同一个槽位里换位，颜色必须同源——各写各的时候它们已经
+ * 漂成了两种蓝（发送靛蓝、停止 sky-500），换位瞬间肉眼可见地跳一下。
+ */
+const PRIMARY_ACTION_BLUE = 'bg-[#3f72d1] hover:bg-[#4a7dde]';
 // useLayoutEffect writes the height before paint (no clipped frame) but warns
 // during SSR — fall back to useEffect on the server.
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -665,7 +671,10 @@ function Composer({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
                         transition={{ duration: 0.14, ease: EASE_ENTER }}
-                        className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border border-transparent bg-sky-500 text-[#fff] transition-colors hover:bg-sky-400 cursor-pointer"
+                        className={cn(
+                          'grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border border-transparent text-[#fff] transition-colors cursor-pointer',
+                          PRIMARY_ACTION_BLUE
+                        )}
                       >
                         <Square size={12} fill="currentColor" />
                       </motion.button>
@@ -684,7 +693,7 @@ function Composer({
                           'grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full border transition-colors duration-150',
                           // 可发送时沿用蓝底白色上箭头，和深色输入框形成明确但不过分刺眼的主操作。
                           sendLit
-                            ? 'border-transparent bg-[#3f72d1] text-[#fff] hover:bg-[#4a7dde] cursor-pointer'
+                            ? cn('border-transparent text-[#fff] cursor-pointer', PRIMARY_ACTION_BLUE)
                             : 'border-white/[0.1] text-neutral-500 cursor-default'
                         )}
                       >
