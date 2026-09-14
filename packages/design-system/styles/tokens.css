@@ -66,16 +66,17 @@
 :root,
 .dark,
 :root[data-theme='dark'] {
-  /* 中性色向暖微染（hue 85，与浅色主题同一支）。明度一个没动，只加了 0.003~0.006 的
-     chroma——纯灰的深色底和已经暖染的浅色底放在一起不是一套语言，而这点暖意肉眼可辨。
-     越亮 chroma 越低，否则接近白的地方会发黄。发丝线保持中性白透明，压在暖面上才不浑。 */
-  --mr-desk: oklch(0.145 0.004 85);
-  --mr-sunk: oklch(0.12 0.004 85);
+  /* 中性色向暖微染（hue 85，与浅色主题同一支）并抬高一档明度。越亮 chroma 越低，否则
+     接近白的地方会发黄；发丝线保持中性白透明，压在暖面上才不浑。明度三层改成
+     0.155/0.18/0.205 的均匀阶——原来 desk 太暗且到 raised 有个 0.06 的大跳。
+     与 globals.css 的 `--surface-*` 是同一套值，改一处必须同步另一处。 */
+  --mr-desk: oklch(0.18 0.004 85);
+  --mr-sunk: oklch(0.155 0.004 85);
   --mr-surface: oklch(0.205 0.005 85);
-  --mr-overlay: oklch(0.18 0.004 85 / 0.86);
+  --mr-overlay: oklch(0.21 0.004 85 / 0.86);
   --mr-ink: oklch(0.93 0.003 85);
   --mr-ink-secondary: oklch(0.72 0.005 85);
-  --mr-muted: oklch(0.56 0.006 85);
+  --mr-muted: oklch(0.61 0.006 85);
   --mr-line: oklch(1 0 0 / 0.08);
   --mr-line-soft: oklch(1 0 0 / 0.06);
   --mr-line-strong: oklch(1 0 0 / 0.16);
