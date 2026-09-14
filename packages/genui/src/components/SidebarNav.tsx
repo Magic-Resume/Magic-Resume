@@ -102,7 +102,10 @@ export default function SidebarNav({
     const containerRect = container.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     setBox({
-      top: targetRect.top - containerRect.top,
+      // 必须加 `scrollTop`：这个容器是 `overflow-y-auto`，`getBoundingClientRect()` 给的是
+      // **可视框**坐标，而高亮是绝对定位、贴的是**内容框**。列表一滚起来，两者就差了整整
+      // 一个 scrollTop——高亮停在上面几行的位置，看着像错位了半行。
+      top: targetRect.top - containerRect.top + container.scrollTop,
       height: targetRect.height,
     });
   }, [hovered, active, sections]);
