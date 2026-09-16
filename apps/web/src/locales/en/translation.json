@@ -2020,7 +2020,8 @@
         "low": "Low",
         "medium": "Medium",
         "high": "High"
-      }
+      },
+      "catalogStale": "This list may be out of date — some models might be unavailable right now."
     },
     "widgets": {
       "unsupported": "(Unable to render card: {{kind}})",
@@ -2422,6 +2423,7 @@
       "delete": "Delete",
       "confirmDelete": "Delete this conversation?",
       "loadFailed": "Could not open that conversation — try again shortly",
+      "restoreFailed": "Couldn't load your history just now, so this is a new conversation. Nothing was lost — reopen shortly to see it.",
       "switchWhileBusy": "This reply is not finished. Switching now will interrupt it.",
       "switchAnyway": "Switch anyway",
       "group": {

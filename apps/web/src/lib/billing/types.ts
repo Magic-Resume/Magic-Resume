@@ -108,6 +108,8 @@ export interface Entitlement {
   remainingPercent: number | null;
   resetAt?: string | null;
   availableModels?: string[];
+  /** 为真表示这份列表没能与 relay 的可路由集对齐，可能含调不通的模型。 */
+  catalogDegraded?: boolean;
   /** 上次成功支付的渠道，仅用作渠道选择器的默认值；`manual`（线下记账）不会出现。 */
   lastPaidChannel?: string | null;
 }

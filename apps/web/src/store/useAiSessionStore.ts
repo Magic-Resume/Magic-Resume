@@ -88,10 +88,20 @@ interface CreateAiSessionStoreOptions {
   sync?: ConversationSyncPort;
 }
 
+export interface AiSessionLoad {
+  session: AiSessionSnapshot;
+  cold: boolean;
+}
+
 export interface AiSessionState {
   sessions: Record<string, AiSessionSnapshot>;
   ensureSession: (resumeId: string) => AiSessionSnapshot;
-  loadSession: (resumeId: string) => Promise<AiSessionSnapshot>;
+  /**
+   * 读本地缓存。`cold` 表示本地**没有可用条目**（从没存过或已过期并被清掉）——
+   * 调用方据此决定要不要回源拉云端。不能用「消息为空」去猜：用户主动点「新对话」
+   * 得到的也是空会话，那种情况下回源就把他刚清空的对话又拉回来了。
+   */
+  loadSession: (resumeId: string) => Promise<AiSessionLoad>;
   patchSession: (resumeId: string, patch: AiSessionPatch) => AiSessionSnapshot;
   resetSession: (resumeId: string) => AiSessionSnapshot;
   /** 把这条会话里还没投递的消息推给服务端。在一轮跑完时调用——**那才是时间线不再变的时刻**。 */
@@ -197,26 +207,27 @@ export function createAiSessionStore(
 
       loadSession: async (resumeId) => {
         const cached = get().sessions[resumeId];
-        if (cached && !isExpired(cached)) return cached;
+        if (cached && !isExpired(cached)) return { session: cached, cold: false };
 
         const fallback = createEmptySession();
         const saved = await db.getItem<Partial<AiSessionSnapshot>>(getAiSessionStorageKey(resumeId));
         const current = get().sessions[resumeId];
-        if (current && !isExpired(current)) return current;
+        if (current && !isExpired(current)) return { session: current, cold: false };
         const session = normalizeSession(saved, fallback);
 
+        // 过期只是**缓存失效**，不是数据失效：云端才是权威，调用方会拿 `cold` 去回源。
         if (saved && isExpired(session)) {
           await db.removeItem(getAiSessionStorageKey(resumeId));
           set((state) => ({
             sessions: { ...state.sessions, [resumeId]: fallback },
           }));
-          return fallback;
+          return { session: fallback, cold: true };
         }
 
         set((state) => ({
           sessions: { ...state.sessions, [resumeId]: session },
         }));
-        return session;
+        return { session, cold: !saved };
       },
 
       patchSession: (resumeId, patch) => {
