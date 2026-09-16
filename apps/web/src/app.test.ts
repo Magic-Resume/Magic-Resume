@@ -302,13 +302,15 @@ async function testAiSessionStore() {
       persistDelayMs: 0,
       sync: new RecordingSync(),
     });
-    const session = await reloaded.getState().loadSession("resume-a");
+    const { session, cold } = await reloaded.getState().loadSession("resume-a");
 
     assert.equal(session.sessionId, "session-a");
     assert.equal(session.sessionUsed, true);
     assert.equal(session.messages.length, 2);
     assert.equal(session.messages[0].content, "帮我优化简历");
     assert.equal(session.analysis?.overall_score, 83);
+    // 本地读到了就不该回源。
+    assert.equal(cold, false);
   }
 
   {
@@ -336,10 +338,31 @@ async function testAiSessionStore() {
     const a = await store.getState().loadSession("resume-a");
     const b = await store.getState().loadSession("resume-b");
 
-    assert.equal(a.sessionId, "session-a");
-    assert.equal(a.messages.length, 2);
-    assert.equal(b.sessionId, "session-b");
-    assert.equal(b.messages.length, 0);
+    assert.equal(a.session.sessionId, "session-a");
+    assert.equal(a.session.messages.length, 2);
+    assert.equal(b.session.sessionId, "session-b");
+    // 空会话不等于冷启动：用户主动清空过，回源会把他刚丢掉的那场又拉回来。
+    assert.equal(b.session.messages.length, 0);
+    assert.equal(b.cold, false);
+  }
+
+  {
+    // 换台机器/清了站点数据：本地从没存过。这正是「聊天记录丢了」的那条路径——
+    // 必须报 cold，调用方才会去云端把记录捞回来，而不是默默开一场空对话。
+    const db = new MemoryDb();
+    const store = createAiSessionStore({
+      db,
+      now: () => 1_000,
+      idFactory: () => "fresh-cold-start",
+      persistDelayMs: 0,
+      sync: new RecordingSync(),
+    });
+
+    const { session, cold } = await store.getState().loadSession("resume-never-seen");
+
+    assert.equal(session.sessionId, "fresh-cold-start");
+    assert.equal(session.messages.length, 0);
+    assert.equal(cold, true);
   }
 
   {
@@ -357,12 +380,14 @@ async function testAiSessionStore() {
       sync: new RecordingSync(),
     });
 
-    const session = await store.getState().loadSession("resume-a");
+    const { session, cold } = await store.getState().loadSession("resume-a");
 
     assert.equal(session.sessionId, "fresh-after-expiry");
     assert.equal(session.started, false);
     assert.equal(session.messages.length, 0);
     assert.equal(db.items.has(getAiSessionStorageKey("resume-a")), false);
+    // 过期是缓存失效而非数据失效：必须报 cold，调用方才会去云端把记录捞回来。
+    assert.equal(cold, true);
   }
 
   {
