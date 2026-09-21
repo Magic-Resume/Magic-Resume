@@ -2228,7 +2228,7 @@
       }
     },
     "interview": {
-      "title": "模拟面试 · 前端专家",
+      "title": "模拟面试",
       "prompt": "“能聊聊你在项目里最有挑战的一次性能优化吗？”",
       "microphone": "麦克风",
       "end": "结束面试",
@@ -2288,7 +2288,19 @@
           "early": "这是第一步——下面几条改完，下次会很不一样"
         },
         "emptyHint": "多答几题，这里就会逐题告诉你怎么改",
-        "questionIndex": "第 {{index}} 题"
+        "questionIndex": "第 {{index}} 题",
+        "didNotStart": {
+          "title": "这场没真正开始",
+          "body": "只过了几句寒暄，面试官还没拿到可以点评的内容。这里不出分，是因为没有可打分的东西，不是因为你答得差。",
+          "exampleLabel": "下次可以这样开场",
+          "example": "最近一段前端经历是在一个中后台项目里负责表格和表单，React + TypeScript，把首屏从 3.2 秒压到 1.1 秒——一句话里有项目、有技术栈、有数字。"
+        },
+        "actions": {
+          "again": "再来一场",
+          "editResume": "回去改简历",
+          "copy": "复制",
+          "copied": "已复制"
+        }
       },
       "micDeniedHint": "拿不到麦克风权限，你也可以打字回答",
       "composerPlaceholder": "输入你的回答…",

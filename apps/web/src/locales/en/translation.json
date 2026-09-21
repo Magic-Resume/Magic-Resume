@@ -2228,7 +2228,7 @@
       }
     },
     "interview": {
-      "title": "Mock interview · Frontend expert",
+      "title": "Mock interview",
       "prompt": "\"Could you talk about your most challenging performance optimization project?\"",
       "microphone": "Microphone",
       "end": "End interview",
@@ -2288,7 +2288,19 @@
           "early": "This is step one — fix the points below and the next round will look different"
         },
         "emptyHint": "Answer a few more questions and this will tell you what to change, one by one",
-        "questionIndex": "Question {{index}}"
+        "questionIndex": "Question {{index}}",
+        "didNotStart": {
+          "title": "This round never really started",
+          "body": "Only small talk came through, so there was nothing to review. The blank scores mean there was no material — not that you answered badly.",
+          "exampleLabel": "Try opening like this",
+          "example": "My most recent frontend work was an internal dashboard — tables and forms, React and TypeScript, first paint down from 3.2s to 1.1s. One sentence with a project, a stack and a number."
+        },
+        "actions": {
+          "again": "Run it again",
+          "editResume": "Back to the resume",
+          "copy": "Copy",
+          "copied": "Copied"
+        }
       },
       "micDeniedHint": "No microphone access — you can type your answers instead",
       "composerPlaceholder": "Type your answer…",

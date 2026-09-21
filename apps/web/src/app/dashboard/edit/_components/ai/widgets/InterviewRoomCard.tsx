@@ -95,6 +95,7 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
                 },
                 // 简历上下文在**这里**算：面试页在编辑器之外，不知道你在编辑哪一份。
                 resumeContext: buildResumeContext(activeResume),
+                resumeId: activeResume.id,
               },
               // 退出面试回 **AI Lab**——面试就是从这儿点进去的。回编辑器根路径会把
               // 对话关掉，用户得自己再点开一次才能接着聊。

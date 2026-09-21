@@ -28,6 +28,14 @@ export interface InterviewLaunch {
    * 创建，这段上下文就存进服务端会话里了，之后恢复现场不再需要它。
    */
   resumeContext: string;
+  /**
+   * 库里那份简历的 id。
+   *
+   * 与 `resumeContext` 并存而不是替代它：那份字符串在这里就算好了、会话建好即消费；
+   * 而 id 让服务端能回源拿结构化简历——gpt-voice 要把简历当 prompt 素材喂给上游面试官，
+   * 编辑器算好的那份带着 HTML 和排版字段，不适合。
+   */
+  resumeId?: string;
 }
 
 interface InterviewUiState {

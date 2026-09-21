@@ -9,8 +9,12 @@ import {
   interviewApi,
   type InterviewReport,
   type InterviewStage,
+  type InterviewVoiceTransport,
 } from '@/lib/api/interviewApi';
-import { useInterviewUiStore } from '@/store/useInterviewUiStore';
+import {
+  useInterviewUiStore,
+  type InterviewLaunch,
+} from '@/store/useInterviewUiStore';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import i18n from '@/i18n';
 import { fromAxiosError } from '@/lib/errors/normalize';
@@ -21,7 +25,9 @@ import { useCaptionPacing } from './useCaptionPacing';
 import CaptionSlot, { type CaptionTone } from './CaptionSlot';
 import VoiceOrb from './VoiceOrb';
 import type { OrbPhase } from './orbStates';
-import InterviewReportView from './InterviewReportView';
+import InterviewReportView, {
+  countSubstantiveAnswers,
+} from './InterviewReportView';
 import InterviewComposer from './InterviewComposer';
 import Transcript from './Transcript';
 import LeaveConfirm from './LeaveConfirm';
@@ -79,6 +85,7 @@ export default function InterviewRoom({
   const router = useRouter();
   const launch = useInterviewUiStore((s) => s.launch);
   const clearLaunch = useInterviewUiStore((s) => s.clearLaunch);
+  const setLaunch = useInterviewUiStore((s) => s.setLaunch);
   const returnTo = useInterviewUiStore((s) => s.returnTo);
   const clearReturnTo = useInterviewUiStore((s) => s.clearReturnTo);
 
@@ -113,6 +120,13 @@ export default function InterviewRoom({
    * 恢复 effect 会被新的 routeId 触发，把刚建好的内存状态用一次服务端往返盖掉。
    */
   const selfStartedRef = useRef(false);
+  /**
+   * 「再来一场」要用的那份启动参数。
+   *
+   * store 里的 `launch` 在会话建好那一刻就被消费掉，而简历上下文由编辑器算好交接
+   * 过来、面试页自己拿不到（见 `useInterviewUiStore`）——所以开场时留一份在内存里。
+   */
+  const relaunchRef = useRef<InterviewLaunch | null>(null);
 
   const voice = useVoiceInterview(sessionId);
   const {
@@ -197,13 +211,24 @@ export default function InterviewRoom({
         const result = await interviewApi.startStream(
           {
             resume_context: launch.resumeContext,
+            ...(launch.resumeId ? { resume_id: launch.resumeId } : {}),
             role: launch.brief.role,
             job_description: launch.brief.jobDescription,
-            // 永远按语音开：打字也经由房间送进去，所以这一场始终需要 LiveKit 凭据。
+            /*
+             * 永远按语音开：打字也经由同一条语音链路送进去。
+             * 传输用环境变量切——缺省仍是 LiveKit；设成 `gpt-voice` 就改走 ChatGPT
+             * 网页语音（服务端得配 `INTERVIEW_GPT_VOICE_TOKEN`，否则会报不可用）。
+             */
             config: {
               mode: 'voice',
               language: launch.brief.language,
               difficulty: launch.brief.difficulty,
+              ...(process.env.NEXT_PUBLIC_INTERVIEW_VOICE_TRANSPORT
+                ? {
+                    transport: process.env
+                      .NEXT_PUBLIC_INTERVIEW_VOICE_TRANSPORT as InterviewVoiceTransport,
+                  }
+                : {}),
             },
           },
           setPrep,
@@ -212,12 +237,21 @@ export default function InterviewRoom({
         setPrep('connecting');
         setSessionId(result.session_id);
         setStage(result.stage);
-        setTurns([{ role: 'interviewer', text: result.message }]);
+        /*
+          * gpt-voice 不再由服务端生成开场白——开口权归上游，它说的第一句会通过转写
+          * 回来。这里塞一条空的面试官发言，逐字稿开头就会出现一个空气泡。
+          */
+        setTurns(
+          result.message
+            ? [{ role: 'interviewer', text: result.message }]
+            : [],
+        );
         setScreen('live');
         startedAtRef.current = Date.now();
         appLifecycle.aiInterviewStarted();
         // URL 换成真正的 sessionId：从这里开始刷新能续上。
         router.replace(`/dashboard/interview/${result.session_id}`);
+        relaunchRef.current = launch;
         clearLaunch();
       } catch (err) {
         setError(describeFailure(err, t('aiLab.interview.startFailed')));
@@ -394,6 +428,34 @@ export default function InterviewRoom({
     router.push(destination);
   }, [disconnectVoice, router, returnTo, clearReturnTo]);
 
+  /**
+   * 再来一场：同岗位、同 JD 重开。
+   *
+   * **不能靠路由让组件重挂**——球每次重建都会闪（见文件头那条），而恢复现场那条路
+   * 要的是服务端会话，这里还没有。所以原地复位，URL 退回 `new` 再走一次开场。
+   */
+  const restart = useCallback(() => {
+    const again = relaunchRef.current;
+    if (!again) return;
+    disconnectVoice();
+    beginRef.current = false;
+    selfStartedRef.current = false;
+    startedAtRef.current = null;
+    setSessionId(null);
+    setTurns([]);
+    setReport(null);
+    setFinished(false);
+    setError(null);
+    setStage('introduction');
+    setExpanded(false);
+    setLingering(null);
+    setPrep('session');
+    setPrepStalled(false);
+    setScreen('restoring');
+    setLaunch(again, returnTo ?? '/dashboard');
+    router.replace('/dashboard/interview/new');
+  }, [disconnectVoice, returnTo, router, setLaunch]);
+
   const onBack = useCallback(() => {
     if (inProgress) setLeaving(true);
     else leave();
@@ -521,9 +583,14 @@ export default function InterviewRoom({
         )}
 
         {screen === 'report' && (
-          <div className="absolute inset-0 overflow-y-auto px-5 pb-8 pt-2">
+          <div className="absolute inset-0 overflow-y-auto px-5 pb-32 pt-2">
             {report ? (
-              <InterviewReportView report={report} />
+              <InterviewReportView
+                report={report}
+                answered={countSubstantiveAnswers(allTurns)}
+                onRestart={relaunchRef.current ? restart : undefined}
+                onEditResume={leave}
+              />
             ) : (
               <div className="flex items-center justify-center gap-2 pt-16 text-mr-caption text-secondary">
                 <Loader2 size={14} className="animate-spin" />
