@@ -65,15 +65,16 @@ function packageDir(resolveFrom: NodeRequire, dep: string): string | null {
  * a hand-written list is one more thing to forget when the overlay grows a
  * dependency, and forgetting reproduces exactly the bugs above.
  *
- * `resolve.alias` is the right mechanism here even though it is dead code for
- * the `@/lib/...` slots below — that limitation is specific to requests
- * tsconfig `paths` already claims, and does not apply to bare package names.
- * (Next itself dedupes react this way.)
+ * 别名是这里的正确机制，尽管它对下面那些 `@/lib/...` 槽是死代码——那个限制只针对
+ * tsconfig `paths` 已经认领的请求，对裸包名不适用。（Next 自己就是这么去重 react 的。）
+ *
+ * 返回一张 `包名 → 目录` 的表而不是直接改 config：webpack 要 `dep$` 的精确匹配语法，
+ * Turbopack 的 `resolveAlias` 要裸键，同一份计算结果得能翻译成两种写法。
  */
-function shareRuntimeSingletons(
-  config: { resolve?: { alias?: Record<string, unknown> } },
+function runtimeSingletonPackages(
   overlayRoots: string[],
-) {
+): Record<string, string> {
+  if (overlayRoots.length === 0) return {};
   const appDir = process.cwd();
   const appManifest = path.join(appDir, 'package.json');
   if (!fs.existsSync(path.join(appDir, 'node_modules')) || !fs.existsSync(appManifest)) {
@@ -84,9 +85,7 @@ function shareRuntimeSingletons(
   }
   const appRequire = createRequire(appManifest);
 
-  config.resolve = config.resolve ?? {};
-  config.resolve.alias = { ...(config.resolve.alias ?? {}) };
-
+  const packages: Record<string, string> = {};
   const shared: string[] = [];
   const knownDuplicates: string[] = [];
 
@@ -111,17 +110,12 @@ function shareRuntimeSingletons(
         knownDuplicates.push(dep);
         continue;
       }
-      // Exact-match (`$`) on purpose. A prefix alias would rewrite deep paths
-      // like `lucide-react/dist/...` too, bypassing the package's exports map;
-      // and the only package here reached by subpath is lucide-react, whose
-      // icons hold no state, so a second copy of those costs bytes and nothing
-      // else. Everything with module-level state is imported bare.
-      config.resolve.alias[`${dep}$`] = appCopy;
+      packages[dep] = appCopy;
       shared.push(dep);
     }
   }
 
-  if (singletonsReported) return;
+  if (singletonsReported) return packages;
   singletonsReported = true;
   if (shared.length > 0) {
     console.log(`[overlay] sharing one copy of: ${[...new Set(shared)].sort().join(', ')}`);
@@ -132,6 +126,76 @@ function shareRuntimeSingletons(
         `${[...new Set(knownDuplicates)].sort().join(', ')} — see FRAMEWORK_MANAGED`,
     );
   }
+  return packages;
+}
+
+/**
+ * dev 下 overlay 必须**显式选择**：env 配了 root，并且命令行带了 `--commercial`
+ * （由 `scripts/dev.mjs` 翻成这个变量）。此前只要 `.env.local` 里有 root 就一直带着
+ * 商业化仓跑，想要一个干净的开源环境只能去注释环境变量。
+ *
+ * **生产构建不设这道门**：它由 `Magic-Resume-Commercial/scripts/build-commercial-web.mjs`
+ * 显式注入 root 驱动，那里不存在「顺手带上」；给它再加一个开关，只是多一个能忘、
+ * 而且忘了就静默掉付费墙的地方。
+ */
+/**
+ * 这个 key 是**配置加载时求值**的，不像 `webpack()` 那样按需调用。不加这道判断，
+ * webpack 模式下也会白跑一遍单例解析（要读若干 package.json 并解析依赖），
+ * 结果还没人用。
+ */
+function usingTurbopack(): boolean {
+  return process.argv.includes('--turbopack');
+}
+
+function commercialOptIn(): boolean {
+  if (process.env.NODE_ENV !== 'development') return true;
+  return process.env.MAGIC_RESUME_COMMERCIAL === '1';
+}
+
+/** overlay 的三个 root。都没配 = 开源构建，槽留在自带的桩上。 */
+function overlayRoots() {
+  return {
+    runtime: process.env.MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT,
+    billing: process.env.MAGIC_RESUME_COMMERCIAL_BILLING_ROOT,
+    legal: process.env.MAGIC_RESUME_COMMERCIAL_LEGAL_ROOT,
+  };
+}
+
+/**
+ * `槽请求 → overlay 实现文件`。
+ *
+ * 提到顶层而不是留在 `webpack()` 里：Turbopack 根本不读那个钩子，而两个 bundler 必须
+ * 换进同一批文件。只有一份计算结果，才不会出现「webpack 下有付费墙、Turbopack 下没有」。
+ */
+function overlaySlots(): Record<string, string> {
+  if (!commercialOptIn()) return {};
+  const { runtime, billing, legal } = overlayRoots();
+  const slots: Record<string, string> = {};
+  if (runtime) {
+    slots['@/lib/commercial/runtime'] = path.join(runtime, 'src/runtime.tsx');
+    slots['@/lib/extensions/app-lifecycle'] = path.join(runtime, 'src/app-lifecycle.ts');
+  }
+  if (billing) {
+    slots['@/lib/extensions/billing-client'] = path.join(billing, 'src/billing-client.ts');
+    slots['@/lib/extensions/billing-ui'] = path.join(billing, 'src/billing-ui.tsx');
+    slots['@/lib/extensions/billing-proxy'] = path.join(billing, 'src/billing-proxy.ts');
+  }
+  if (legal) {
+    // The policy documents. The route shells under `app/legal/` stay in this
+    // repo — the overlay has no way to add a route — but everything they
+    // render, including the operating entity and its filing numbers, comes
+    // from the commercial package.
+    slots['@/lib/extensions/legal'] = path.join(legal, 'src/legal.tsx');
+  }
+  return slots;
+}
+
+/** 配了 root 的那几个 overlay 根目录，供单例去重扫描。 */
+function activeOverlayRoots(): string[] {
+  if (!commercialOptIn()) return [];
+  return Object.values(overlayRoots()).filter(
+    (root): root is string => Boolean(root),
+  );
 }
 
 const nextConfig: NextConfig = {
@@ -162,36 +226,38 @@ const nextConfig: NextConfig = {
       ? ['tsx', 'ts', 'jsx', 'js']
       : ['tsx', 'ts', 'jsx', 'js', 'dev.tsx', 'dev.ts'],
 
-  // Magic-Resume commercial overlay alias. Roots are provided only by private commercial builds.
+  /**
+   * `onnxruntime-web`（端侧 VAD 的运行时）里有一处动态 `require`，webpack 静态分析不了，
+   * 于是每次编译刷四条 `Critical dependency` 警告。那是库自身的形态，改不了也不影响运行
+   * ——我们只用 wasm 后端，走的是它的 `onnxruntime-web/wasm` 子路径。
+   *
+   * 只静音这一个模块的这一类警告，别的照旧。
+   */
   webpack: (config, { webpack }) => {
-    const runtimeRoot = process.env.MAGIC_RESUME_COMMERCIAL_RUNTIME_ROOT;
-    const billingRoot = process.env.MAGIC_RESUME_COMMERCIAL_BILLING_ROOT;
-    const legalRoot = process.env.MAGIC_RESUME_COMMERCIAL_LEGAL_ROOT;
-    if (!runtimeRoot && !billingRoot && !legalRoot) return config;
-
-    const slots: Record<string, string> = {};
-    if (runtimeRoot) {
-      slots['@/lib/commercial/runtime'] = path.join(runtimeRoot, 'src/runtime.tsx');
-      slots['@/lib/extensions/app-lifecycle'] = path.join(runtimeRoot, 'src/app-lifecycle.ts');
-    }
-    if (billingRoot) {
-      slots['@/lib/extensions/billing-client'] = path.join(billingRoot, 'src/billing-client.ts');
-      slots['@/lib/extensions/billing-ui'] = path.join(billingRoot, 'src/billing-ui.tsx');
-      slots['@/lib/extensions/billing-proxy'] = path.join(billingRoot, 'src/billing-proxy.ts');
-    }
-    if (legalRoot) {
-      // The policy documents. The route shells under `app/legal/` stay in this
-      // repo — the overlay has no way to add a route — but everything they
-      // render, including the operating entity and its filing numbers, comes
-      // from the commercial package.
-      slots['@/lib/extensions/legal'] = path.join(legalRoot, 'src/legal.tsx');
-    }
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      {
+        module: /node_modules[\\/].*onnxruntime-web[\\/]/,
+        message: /Critical dependency: require function is used/,
+      },
+    ];
+    const slots = overlaySlots();
+    if (Object.keys(slots).length === 0) return config;
 
     // Must run whenever a slot is swapped in: overlay code entering this bundle
     // is what creates the duplicate-instance problem in the first place.
-    shareRuntimeSingletons(config, [runtimeRoot, billingRoot, legalRoot].filter(
-      (root): root is string => Boolean(root),
-    ));
+    config.resolve = config.resolve ?? {};
+    config.resolve.alias = { ...(config.resolve.alias ?? {}) };
+    for (const [dep, dir] of Object.entries(
+      runtimeSingletonPackages(activeOverlayRoots()),
+    )) {
+      // Exact-match (`$`) on purpose. A prefix alias would rewrite deep paths
+      // like `lucide-react/dist/...` too, bypassing the package's exports map;
+      // and the only package here reached by subpath is lucide-react, whose
+      // icons hold no state, so a second copy of those costs bytes and nothing
+      // else. Everything with module-level state is imported bare.
+      (config.resolve.alias as Record<string, unknown>)[`${dep}$`] = dir;
+    }
 
     // Replacement at the module-factory stage, not `resolve.alias`. These
     // requests start with `@/`, which tsconfig `paths` already claims, and
@@ -301,15 +367,35 @@ const nextConfig: NextConfig = {
         as: '*.js',
       },
     },
+    /**
+     * 和上面 `webpack()` 换的是同一批文件。**Turbopack 不读那个钩子**，所以槽必须在
+     * 这里再声明一次；漏掉不会报错，只会让付费墙、法务文案、埋点一起无声消失。
+     * `instrumentation.ts` 的断言就是为这个失败模式准备的。
+     *
+     * 单例去重在这里用裸键：`dep$` 是 webpack 的精确匹配语法，Turbopack 不认。
+     */
+    resolveAlias: usingTurbopack()
+      ? { ...overlaySlots(), ...runtimeSingletonPackages(activeOverlayRoots()) }
+      : {},
   },
 
   // 实验性功能
   experimental: {
-    // 优化包导入
+    /**
+     * 默认 `true` = dev 一启动就把**全部**入口（38 page + 18 route + 6 layout）
+     * 预加载进同一个 compilation，于是任何一个新入口都要在整张图上重建：一条只
+     * import 四个本地文件的 API 路由因此报 17,526 modules、编译 22.4s。
+     *
+     * 关掉改为按需编译。代价是每条路由首次访问时才编译（慢几秒），换来的是不再为
+     * 这次开发根本没打开过的路由付重建成本。
+     */
+    preloadEntriesOnStart: false,
+    /** 大型 compilation 下少留内存。webpack 模式专用，默认 false。 */
+    webpackMemoryOptimizations: true,
+    // 优化包导入。只列真的装了的——`react-icons` 与 `@radix-ui/react-icons` 都不在
+    // 依赖里，列着是死配置（图标现在走 @magic-resume/icons → @hugeicons）。
     optimizePackageImports: [
-      'react-icons',
       'lucide-react',
-      '@radix-ui/react-icons',
       'framer-motion',
       '@langchain/core',
     ],

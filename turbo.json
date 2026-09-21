@@ -15,7 +15,8 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["MAGIC_RESUME_COMMERCIAL"]
     },
     "lint": {
       "dependsOn": ["^lint"]
