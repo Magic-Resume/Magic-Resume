@@ -553,18 +553,64 @@ export default function AiChatShell({
     sessionUsedRef.current = true;
     patchAiSession(resumeId, { sessionUsed: true });
   }, [patchAiSession, resumeId]);
+  /**
+   * 本地缓存没有可用条目时回源拉云端。
+   *
+   * 消息一直是**单向**上传的：`sealSession` 往服务端投，而这里只读 IndexedDB，于是换台
+   * 机器、清了站点数据、或者七天 TTL 到期，就会开出一场空对话，云端那条随即变成孤儿——
+   * 用户看到的就是「聊天记录丢了」，其实一条没少。
+   *
+   * 只在 `cold`（本地真的没有）时回源：用「消息为空」去猜会把用户主动点的「新对话」
+   * 也当成丢失，转头把他刚清空的那场又拉回来。
+   *
+   * 刻意**不带快照**：自动恢复只还原消息，一打开面板就自己弹出上次的画布和报告太突兀，
+   * 那一步留给用户。手动从历史里选仍然是全量恢复（`pickConversation`）。
+   */
   useEffect(() => {
     let active = true;
-    void loadAiSession(resumeId).then((loaded) => {
+    void (async () => {
+      const { session, cold } = await loadAiSession(resumeId);
       if (!active) return;
-      sessionIdRef.current = loaded.sessionId;
-      sessionUsedRef.current = loaded.sessionUsed;
-    });
+      sessionIdRef.current = session.sessionId;
+      sessionUsedRef.current = session.sessionUsed;
+      if (!cold) return;
+
+      try {
+        const [latest] = await conversationApi.list(resumeId, 1);
+        if (!active || !latest) return;
+        const detail = await conversationApi.get(latest.id);
+        if (!active) return;
+        const restored = detail.messages.map((m) => ({
+          ...((m.payload ?? {}) as Record<string, unknown>),
+          role: m.role,
+          content: m.content ?? undefined,
+        })) as ChatMessage[];
+        if (!restored.length) return;
+        adoptAiSession(resumeId, {
+          ...session,
+          sessionId: detail.id,
+          sessionUsed: true,
+          started: true,
+          messages: restored,
+          // 服务端本来就有这些消息，别再投一遍。
+          syncedCount: restored.length,
+          canvas: CLOSED_CANVAS,
+          livingOpen: false,
+          livingSkillId: null,
+          updatedAt: Date.now(),
+        });
+        sessionIdRef.current = detail.id;
+        sessionUsedRef.current = true;
+      } catch {
+        // 离线或后端不可用。不阻断使用，但必须说一声——不然用户又会以为记录没了。
+        toast.error(t("aiLab.history.restoreFailed"));
+      }
+    })();
     return () => {
       active = false;
       void flushAiSession(resumeId);
     };
-  }, [flushAiSession, loadAiSession, resumeId]);
+  }, [adoptAiSession, flushAiSession, loadAiSession, resumeId, t]);
   // 卸载时中止在飞行的运行并失效回调；不删服务端会话——对话可恢复，"新对话"才显式清理。
   useEffect(
     () => () => {

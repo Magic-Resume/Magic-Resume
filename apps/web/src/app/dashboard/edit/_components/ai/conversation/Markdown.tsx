@@ -45,9 +45,11 @@ function CodeRenderer({
   const writing = code !== raw;
   if (!lang) {
     return (
-      // 令牌而非写死色：浅色主题切过去时它会跟着走。字色刻意**中性**——sky 蓝要留给
+      // 令牌而非写死色：浅色主题切过去时它会跟着走。用暖珊瑚而不是 accent——sky 蓝要留给
       // 真正的链接与强调，被行内代码占着，一段技术回答里满屏都是蓝的，强调就失效了。
-      <code className="bg-mr-sunk text-mr-ink shadow-mr-control rounded-mr-compact px-[0.4em] py-[0.15em] font-mono text-mr-caption">
+      // 底色比页面**亮**一档（不是 sunk 那种凹槽色），chip 才浮得起来；有了这一档就不再
+      // 需要投影去描边。
+      <code className="bg-mr-code-surface text-mr-code-ink rounded-mr-compact px-[0.4em] py-[0.15em] font-mono text-mr-caption">
         {code}
         {writing && <Caret />}
       </code>
@@ -183,18 +185,22 @@ function Words({ children }: { children?: React.ReactNode }) {
  * 界面其余部分（卡片、投递面板、审批卡）都已经在这套语义色上，正文还留在 Tailwind
  * 默认灰阶里，两者放在同一屏就是两种冷暖——这才是它显脏的根因，不是字号。
  *
- * 层级靠**上间距和字重**拉开，不靠字号堆。正文基准是 16px/28（在 `ChatThread` 的气泡
- * 容器上），原来 h1/h2/h3 是 18/17/16px——三级之间各差 1px，等于没有层级，而 h3 和正文
- * 完全同号。这是对话不是文档，标题不能靠放大来占位置。
+ * 层级靠**上间距和字重**拉开，字号只补最后一点差。正文基准是 16px/28（在 `ChatThread`
+ * 的气泡容器上）。
+ *
+ * 字重必须是 700，不能用 600。思源黑只有 Regular 与 Bold 两个文件，`@font-face` 把
+ * Regular 声明成覆盖 `400 600`——浏览器不会给「自称覆盖了该字重」的字体做合成加粗，所以
+ * 中文的 600 与 400 **渲染完全一致**（实测同一串字墨量 873533 vs 873533，700 才跳到
+ * 1221652）。此前所有中文标题和 `<strong>` 其实都是常规字重，这才是标题不跳的首要原因。
  * ───────────────────────────────────────────────────────── */
 const COMPONENTS: Components = {
   p: ({ children }) => (
-    <p className="my-3.5 first:mt-0 last:mb-0">
+    <p className="my-4 first:mt-0 last:mb-0">
       <Words>{children}</Words>
     </p>
   ),
   strong: ({ children }) => (
-    <strong className="text-mr-ink font-semibold">
+    <strong className="text-mr-ink font-bold">
       <Words>{children}</Words>
     </strong>
   ),
@@ -204,12 +210,12 @@ const COMPONENTS: Components = {
     </em>
   ),
   ul: ({ children }) => (
-    <ul className="my-3.5 list-disc space-y-1.5 pl-[1.4rem] first:mt-0 last:mb-0">
+    <ul className="my-4 list-disc space-y-1.5 pl-[1.4rem] first:mt-0 last:mb-0">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="my-3.5 list-decimal space-y-1.5 pl-[1.4rem] first:mt-0 last:mb-0">
+    <ol className="my-4 list-decimal space-y-1.5 pl-[1.4rem] first:mt-0 last:mb-0">
       {children}
     </ol>
   ),
@@ -222,17 +228,18 @@ const COMPONENTS: Components = {
   // 层级主要靠**上间距**（24 / 20 / 16）拉开——h3 和正文同号，只靠字重区分，
   // 因为再往下缩就比正文还小，读起来不像标题像批注。
   h1: ({ children }) => (
-    <h1 className="text-mr-ink mb-2 mt-6 text-[19px] font-semibold leading-snug first:mt-0">
+    <h1 className="text-mr-ink mb-2 mt-7 text-[22px] font-bold leading-snug first:mt-0">
       <Words>{children}</Words>
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-mr-ink mb-1.5 mt-5 text-[17px] font-semibold leading-snug first:mt-0">
+    <h2 className="text-mr-ink mb-2 mt-6 text-[18px] font-bold leading-snug first:mt-0">
       <Words>{children}</Words>
     </h2>
   ),
+  // 与正文同号，只靠字重和上距区分——再放大就压过 h2，再缩就比正文还小、读起来像批注。
   h3: ({ children }) => (
-    <h3 className="text-mr-ink mb-1 mt-4 text-base font-semibold leading-snug first:mt-0">
+    <h3 className="text-mr-ink mb-1.5 mt-5 text-base font-bold leading-snug first:mt-0">
       <Words>{children}</Words>
     </h3>
   ),

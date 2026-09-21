@@ -276,19 +276,24 @@
 .dark {
   color-scheme: dark;
 
-  /* 表面 / 中性 */
-  --surface-desk: oklch(0.145 0 0);        /* ≈ #0a0a0a 桌面底 */
-  --surface-sunk: oklch(0.12 0 0);         /* 凹槽 */
-  --surface-raised: oklch(0.205 0 0);      /* ≈ #171717 面板/卡片 */
-  --surface-overlay: oklch(0.18 0 0 / 0.72);/* 浮层/磨砂 */
-  --surface-paper: oklch(0.995 0 0);       /* 简历画布,恒定近白(不随主题) */
+  /* 表面 / 中性 —— 向暖微染(hue 85,与浅色主题同一支)并抬高一档明度。
+     暖染:纯灰深色底与已经暖染的浅色底不是一套语言。越亮 chroma 越低,否则接近白处发黄;
+     发丝线与 hover 叠加保持中性白透明,压在暖面上才不浑。
+     明度:原来 desk 落在 rgb(11,10,8),比参照的 rgb(19,18,17) 暗一大截,并排看是两种黑。
+     抬到 0.18 后三层变成 0.155/0.18/0.205 的均匀阶,原来 desk→raised 那个 0.06 的大跳
+     也一并抹平。 */
+  --surface-desk: oklch(0.18 0.004 85);    /* 桌面底 ≈ rgb(18,17,16) */
+  --surface-sunk: oklch(0.155 0.004 85);   /* 凹槽 */
+  --surface-raised: oklch(0.205 0.005 85); /* 面板/卡片 */
+  --surface-overlay: oklch(0.21 0.004 85 / 0.72);/* 浮层/磨砂 */
+  --surface-paper: oklch(0.995 0 0);       /* 简历画布,恒定近白且**不染**(所见即所得) */
   --surface-hover: oklch(1 0 0 / 0.06);    /* 交互态叠加,不是一个新的面 */
   --surface-hover-2: oklch(1 0 0 / 0.10);  /* 更强一档 */
   --border-hairline: oklch(1 0 0 / 0.08);  /* 分隔/描边 */
   --border-strong: oklch(1 0 0 / 0.16);    /* 输入框/强边界 */
-  --text-primary: oklch(0.93 0 0);         /* ≈ #ededed 正文 */
-  --text-secondary: oklch(0.72 0 0);       /* 次要 */
-  --text-muted: oklch(0.56 0 0);           /* 弱化/占位 */
+  --text-primary: oklch(0.93 0.003 85);    /* 正文 */
+  --text-secondary: oklch(0.72 0.005 85);  /* 次要 */
+  --text-muted: oklch(0.61 0.006 85);      /* 弱化/占位；随底色抬高而上调,否则跌破 AA */
 
   /* 强调色 sky —— 拆两支:墨(承载对比) vs 光(仅装饰) */
   --ink-sky: #38bdf8;                       /* 深色下亮 sky 即可承载 */
