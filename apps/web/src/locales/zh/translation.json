@@ -103,6 +103,7 @@
     "subscription": {
       "currentPlan": "当前计划",
       "monthly": "本月额度",
+      "interviewRemaining": "本周面试剩余",
       "today": "今日",
       "week": "本周",
       "usage": "本期用量",

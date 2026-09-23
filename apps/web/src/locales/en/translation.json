@@ -103,6 +103,7 @@
     "subscription": {
       "currentPlan": "Current plan",
       "monthly": "This month",
+      "interviewRemaining": "Interview left",
       "today": "Today",
       "week": "This week",
       "usage": "Usage this period",

@@ -142,6 +142,7 @@ import { ModelConfigFields } from "@/components/llm/ModelConfigFields";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import i18nInstance from "@/i18n";
 import { useEntitlement } from "@/lib/extensions/billing-client";
+import { formatInterviewRemaining } from "@/lib/billing/interview-time";
 import { isCloudMode } from "@/lib/config/app";
 import {
   buildWorkspacePreparedChanges,
@@ -3379,6 +3380,37 @@ function HeaderQuota() {
                       )}
                     </div>
                   )}
+                  <div className="mt-3 border-t border-white/10 pt-3">
+                    <div className="flex items-center justify-between gap-3 text-mr-label">
+                      <span className="text-neutral-400">
+                        {t("account.subscription.interviewRemaining")}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-neutral-200">
+                        {formatInterviewRemaining(
+                          data.interviewQuota?.remainingSeconds,
+                          i18n.language,
+                        ) ?? "—"}
+                      </span>
+                    </div>
+                    {data.interviewQuota?.remainingSeconds !== null &&
+                      data.interviewQuota?.remainingSeconds !== undefined && (
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-mr-surface-soft">
+                          <div
+                            className="h-full rounded-full bg-sky-400/70"
+                            style={{
+                              width: `${data.interviewQuota.weeklySeconds > 0 ? Math.max(0, Math.min(100, (data.interviewQuota.remainingSeconds / data.interviewQuota.weeklySeconds) * 100)) : 0}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+                    {data.interviewQuota?.resetAt && (
+                      <div className="mt-1 text-mr-micro text-neutral-600">
+                        {t("account.subscription.resetAt", {
+                          time: fmtReset(data.interviewQuota.resetAt),
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </motion.div>
