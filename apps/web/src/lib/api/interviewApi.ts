@@ -153,13 +153,20 @@ export interface LiveInterview {
  * `primer` 由调用方在通道开启后灌给上游；`connection_id` 是这条连接的租约凭据——
  * 之后的续租与归还都认它，不续就会被服务端回收。
  */
-export interface GptVoiceSession {
+export interface VoiceSessionResult {
   connection_id: string;
   expires_in_seconds: number;
   heartbeat_interval_seconds: number;
   answer_sdp: string;
-  transport: string;
+  /** **最终是谁接的**——链首没有可派账号时这里会是降级后的那一条。 */
+  channel: InterviewVoiceChannel;
   voice: string;
+  /**
+   * 面试官人格，由调用方在通道开启后灌给上游。
+   *
+   * **只有客户端投递的渠道才有**（lyra）。vega 的人格在建连时就写进了上游
+   * `session.instructions`，这里是空串——再发一遍等于多一条能被改掉的路径。
+   */
   primer: string;
   /** 这一场的时长预算（秒）。到点要自己收尾——服务端掐不断已经接通的通话。 */
   session_budget_seconds: number | null;
@@ -168,24 +175,30 @@ export interface GptVoiceSession {
 }
 
 /** 续租的回执。`should_stop` 是告知，不是强制——媒体直连上游，服务端掐不断。 */
-export interface GptVoiceHeartbeat {
+export interface VoiceHeartbeatResult {
   expires_in_seconds: number;
   remaining_seconds: number | null;
   should_stop: boolean;
 }
 
-/** 语音传输的种类。与后端 `InterviewVoiceTransport` 对齐。 */
-export type InterviewVoiceTransport =
-  | 'livekit'
-  | 'legacy-websocket'
-  | 'gpt-voice';
+/**
+ * 语音渠道的代号。与后端 `InterviewVoiceChannel` 对齐。
+ *
+ * **名字不带厂商**——换上游不用改这里。对照见
+ * `Magic-Resume-Core/docs/reference/interview-voice-channels.md`。
+ */
+export type InterviewVoiceChannel = 'vega' | 'lyra' | 'atlas';
 
 /**
- * 建连凭据。`transport` 决定走哪条路；`url`/`token` 只有 livekit 才有——
- * gpt-voice 由浏览器直接和上游换 SDP，服务端不签发任何凭据。
+ * 建连入口。
+ *
+ * `channel` 是**入口不是结论**：vega / lyra 要到换 SDP 那一刻才知道池子里有没有
+ * 账号，**最终是谁接的以 answer 响应里的 `channel` 为准**。`chain` 是这个订阅
+ * 还能往下落到哪条。`url`/`token` 只有 atlas 才有。
  */
 export interface VoiceCredentials {
-  transport: InterviewVoiceTransport;
+  channel: InterviewVoiceChannel | null;
+  chain: InterviewVoiceChannel[];
   url?: string;
   token?: string;
 }
@@ -196,7 +209,7 @@ export interface StartInterviewInput {
   role?: string;
   job_description?: string;
   /**
-   * 库里那份简历的 id。服务端据此回源拿结构化简历，转成 Markdown 灌给 gpt-voice 的
+   * 库里那份简历的 id。服务端据此回源拿结构化简历，转成 Markdown 灌给 上游语音渠道 的
    * 上游面试官——`resume_context` 是编辑器算好的字符串，够开场但不够当 prompt 素材。
    */
   resume_id?: string;
@@ -208,8 +221,8 @@ export interface StartInterviewInput {
     mode?: 'voice';
     language?: 'zh' | 'en';
     difficulty?: 'entry' | 'standard' | 'hard';
-    /** 点名语音传输；缺省走服务端默认优先序（LiveKit 优先、legacy 兜底）。 */
-    transport?: InterviewVoiceTransport;
+    /** 点名语音渠道；缺省按订阅声明的顺序。点名越不过订阅。 */
+    channel?: InterviewVoiceChannel;
   };
 }
 
@@ -334,8 +347,8 @@ export const interviewApi = {
   },
 
   /**
-   * 建连凭据。响应里的 `transport` 决定走 LiveKit 还是 gpt-voice——
-   * 后者没有 url/token，客户端拿 offer 去 `gptVoiceSession` 换 answer。
+   * 建连凭据。响应里的 `transport` 决定走 LiveKit 还是 上游语音渠道——
+   * 后者没有 url/token，客户端拿 offer 去 `voiceSession` 换 answer。
    */
   async voiceToken(sessionId: string): Promise<VoiceCredentials> {
     return unwrap(
@@ -351,14 +364,14 @@ export const interviewApi = {
    * 响应里的 `primer` 是面试官 prompt——上游的 session schema 没有 instructions 字段，
    * 只能在 DataChannel 开启后当成一条对话消息灌进去，所以随这次往返一起带回来。
    */
-  async gptVoiceSession(
+  async voiceSession(
     sessionId: string,
     offerSdp: string,
     connectionId: string,
-  ): Promise<GptVoiceSession> {
+  ): Promise<VoiceSessionResult> {
     return unwrap(
-      await httpClient.agent.post<ApiResponse<GptVoiceSession>>(
-        AGENT_ROUTES.interview.gptVoiceSession(sessionId),
+      await httpClient.agent.post<ApiResponse<VoiceSessionResult>>(
+        AGENT_ROUTES.interview.voiceSession(sessionId),
         { offer_sdp: offerSdp, connection_id: connectionId },
       ),
     );
@@ -370,14 +383,14 @@ export const interviewApi = {
    * 顺带把上游报的账号剩余音频秒数捎回去——服务端自己探不到这个数
    * （它的额度探针是 Codex 口径），只有通话中的 `usage_update` 里才有。
    */
-  async gptVoiceHeartbeat(
+  async voiceHeartbeat(
     sessionId: string,
     connectionId: string,
     audioSecondsRemaining?: number | null,
-  ): Promise<GptVoiceHeartbeat> {
+  ): Promise<VoiceHeartbeatResult> {
     return unwrap(
-      await httpClient.agent.post<ApiResponse<GptVoiceHeartbeat>>(
-        AGENT_ROUTES.interview.gptVoiceHeartbeat(sessionId),
+      await httpClient.agent.post<ApiResponse<VoiceHeartbeatResult>>(
+        AGENT_ROUTES.interview.voiceHeartbeat(sessionId),
         {
           connection_id: connectionId,
           ...(typeof audioSecondsRemaining === 'number'
@@ -395,25 +408,25 @@ export const interviewApi = {
    * HTTP 照回 201——服务端签发 answer 时看不出来，只有我们等得到这个超时。
    * 服务端据此标记那个账号；`retryable` 为真就换个 connection_id 重连。
    */
-  async gptVoiceDegraded(
+  async voiceDegraded(
     sessionId: string,
     connectionId: string,
   ): Promise<{ retryable: boolean }> {
     return unwrap(
       await httpClient.agent.post<ApiResponse<{ retryable: boolean }>>(
-        AGENT_ROUTES.interview.gptVoiceDegraded(sessionId),
+        AGENT_ROUTES.interview.voiceDegraded(sessionId),
         { connection_id: connectionId },
       ),
     );
   },
 
   /** 主动归还。正常离开时发，省得占着租约等它过期。 */
-  async gptVoiceRelease(
+  async voiceRelease(
     sessionId: string,
     connectionId: string,
   ): Promise<void> {
     await httpClient.agent.post(
-      AGENT_ROUTES.interview.gptVoiceRelease(sessionId),
+      AGENT_ROUTES.interview.voiceRelease(sessionId),
       { connection_id: connectionId },
     );
   },
@@ -421,7 +434,7 @@ export const interviewApi = {
   /**
    * 回传一轮转写。**只发定稿的**：上游是逐字增量推送，发中间态会把半句话灌进会话。
    */
-  async recordGptVoiceTranscript(
+  async recordVoiceTranscript(
     sessionId: string,
     input: {
       /**
@@ -437,7 +450,7 @@ export const interviewApi = {
     return unwrap(
       await httpClient.agent.post<
         ApiResponse<{ session_id: string; message_count: number }>
-      >(AGENT_ROUTES.interview.gptVoiceTranscript(sessionId), input),
+      >(AGENT_ROUTES.interview.voiceTranscript(sessionId), input),
     );
   },
 

@@ -50,7 +50,12 @@ export interface VoiceInterviewState {
   turns: VoiceTurn[];
   stage: InterviewStage;
   error: string | null;
-  errorCode: 'connection' | 'mic_denied' | null;
+  /**
+   * `quota` 与另外两个分开：额度用完**不是故障**，用户能升级或等下周重置，
+   * 和「语音断了」共用一句提示等于什么都没说（后端把它投影成一级码
+   * `quota_exceeded`，见 ADR-0018）。
+   */
+  errorCode: 'connection' | 'mic_denied' | 'quota' | null;
   /**
    * 拿不到麦克风。**这不是错误状态**——房间照常连着，面试官照常出声，
    * 只是这一场你得用打字回答。输入框本来就常驻，所以它只是少了一种输入方式。
@@ -110,10 +115,10 @@ export function useVoiceInterview(sessionId: string | null) {
   const audioRef = useRef<AudioContext | null>(null);
   const metersRef = useRef<{ input?: LevelMeter; output?: LevelMeter }>({});
   /**
-   * gpt-voice 那条链路没有房间、也没有 agent 参与者，只有一条浏览器直连 ChatGPT
+   * 上游主持的那两条渠道没有房间、也没有 agent 参与者，只有一条浏览器直连 ChatGPT
    * 网页语音的 PeerConnection。它和 LiveKit 的 Room 互斥，同一时刻只有一个非空。
    */
-  const gptRef = useRef<{
+  const voiceRef = useRef<{
     pc: RTCPeerConnection;
     dc: RTCDataChannel | null;
     stream: MediaStream | null;
@@ -132,6 +137,11 @@ export function useVoiceInterview(sessionId: string | null) {
      */
     bootstrapTimer: ReturnType<typeof setTimeout> | null;
     vad: LocalVadHandle | null;
+    /**
+     * 最终接手的渠道。**由 answer 响应告知，不是请求时定的**——链首没有可派账号
+     * 时服务端会降到下一条，而两条渠道的 DataChannel 说的不是一套话。
+     */
+    channel: 'vega' | 'lyra';
   } | null>(null);
   /** 上游最近一次报的账号剩余音频秒数，随心跳捎回服务端。 */
   const audioLeftRef = useRef<number | null>(null);
@@ -140,10 +150,10 @@ export function useVoiceInterview(sessionId: string | null) {
   /** 这一场已经因为「接通但不说话」重连过几次。服务端的窗口只允许 3 条连接。 */
   const degradedRetriesRef = useRef(0);
   /**
-   * gpt-voice 的转写中间态。上游是「先 add 骨架、再按路径 patch 追加」，所以要按消息
+   * 上游语音渠道 的转写中间态。上游是「先 add 骨架、再按路径 patch 追加」，所以要按消息
    * 序号索引。放 ref 不放 state：它只是解析过程，界面要的是解析结果。
    */
-  const gptMessagesRef = useRef<
+  const lyraMessagesRef = useRef<
     Map<
       number,
       {
@@ -185,9 +195,9 @@ export function useVoiceInterview(sessionId: string | null) {
     audioRef.current = null;
     void room?.disconnect();
 
-    // gpt-voice 那条链路：关通道、关连接、停麦克风、摘掉播放元素。
-    const gpt = gptRef.current;
-    gptRef.current = null;
+    // 上游主持的那两条渠道：关通道、关连接、停麦克风、摘掉播放元素。
+    const gpt = voiceRef.current;
+    voiceRef.current = null;
     if (gpt) {
       try {
         gpt.dc?.close();
@@ -206,7 +216,7 @@ export function useVoiceInterview(sessionId: string | null) {
       if (gpt.audio) gpt.audio.srcObject = null;
       // 主动归还，别占着租约等它自己过期。失败无所谓——服务端到期会回收。
       void interviewApi
-        .gptVoiceRelease(gpt.sessionId, gpt.connectionId)
+        .voiceRelease(gpt.sessionId, gpt.connectionId)
         .catch(() => undefined);
     }
   }, []);
@@ -226,7 +236,7 @@ export function useVoiceInterview(sessionId: string | null) {
       .replace(/[\s，,。.、；;：:！!？?""''（）()【】[\]—\-~·]/g, '')
       .toLowerCase();
 
-  const gptTextOf = (m: { parts: string[] }) => m.parts.join('').trim();
+  const lyraTextOf = (m: { parts: string[] }) => m.parts.join('').trim();
 
   /**
    * 上游眼里的「用户消息」。这是我们唯一能往那条对话里写字的通道——它的 session schema
@@ -268,11 +278,11 @@ export function useVoiceInterview(sessionId: string | null) {
   const primerRef = useRef('');
 
   /** 定稿的那一轮并入对话并回传后端；中途态只更新实时回显。 */
-  const settleGptTurn = useCallback(
+  const settleLyraTurn = useCallback(
     (seq: number) => {
-      const m = gptMessagesRef.current.get(seq);
+      const m = lyraMessagesRef.current.get(seq);
       if (!m) return;
-      const text = gptTextOf(m);
+      const text = lyraTextOf(m);
       if (!text) return;
       // primer 不是候选人说的话。比前缀而不是全等：上游回显时可能截断。
       const primer = primerRef.current;
@@ -304,9 +314,9 @@ export function useVoiceInterview(sessionId: string | null) {
       });
       if (!sessionId) return;
       void interviewApi
-        .recordGptVoiceTranscript(sessionId, {
+        .recordVoiceTranscript(sessionId, {
           // 上游的消息序号在一条连接内稳定，配上连接 id 就是全局稳定的幂等键。
-          transcript_id: `${gptRef.current?.connectionId ?? 'unknown'}:${seq}`,
+          transcript_id: `${voiceRef.current?.connectionId ?? 'unknown'}:${seq}`,
           role: role === 'candidate' ? 'user' : 'assistant',
           text,
         })
@@ -319,13 +329,119 @@ export function useVoiceInterview(sessionId: string | null) {
   );
 
   /**
+   * 解 vega 的下行事件。
+   *
+   * **和 lyra 不是一套词汇**：那边是 `relay_message` / `chat_message_delta` 的
+   * JSON-Patch 流，这边是 `session.*` / `turn.*`。两套共用一个 handler 只会让
+   * 两边都读不懂，所以刻意分开写。
+   *
+   * 好处是这套简单得多：`turn.done` 一条事件就带着角色与整句转写，不用自己拼补丁。
+   */
+  const handleVegaEvent = useCallback(
+    (raw: string) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return;
+      }
+      if (!parsed || typeof parsed !== 'object') return;
+      const message = parsed as Record<string, unknown>;
+      const type = String(message.type ?? '');
+
+      // 上游真的起来了——解除「接通但不说话」的看门狗。
+      if (type === 'session.started') {
+        const gpt = voiceRef.current;
+        if (gpt?.bootstrapTimer) {
+          clearTimeout(gpt.bootstrapTimer);
+          gpt.bootstrapTimer = null;
+        }
+        return;
+      }
+
+      // 面试官正在说：只更新实时回显，定稿交给 turn.done。
+      if (type === 'output_transcript.delta' || type === 'turn.delta') {
+        const delta = typeof message.delta === 'string' ? message.delta : '';
+        if (!delta) return;
+        setState((s) => ({
+          ...s,
+          phase: 'speaking',
+          liveReply: s.liveReply + delta,
+        }));
+        return;
+      }
+
+      // 候选人正在说。
+      if (type === 'input_transcript.added') {
+        const text = typeof message.text === 'string' ? message.text : '';
+        if (text) setState((s) => ({ ...s, liveTranscript: text }));
+        return;
+      }
+
+      /*
+       * 一轮定稿。两边的角色都从这一条来——**不靠猜、不靠匹配口头禅**，
+       * 这是 vega 比 lyra 干净的地方。
+       */
+      if (type === 'turn.done') {
+        const turn = (message.turn ?? {}) as Record<string, unknown>;
+        const text = String(turn.transcript ?? '').trim();
+        if (!text) return;
+        const role = turn.role === 'user' ? 'candidate' : 'interviewer';
+        const id = String(turn.id ?? `${Date.now()}`);
+        setState((s) => {
+          const turns = [...s.turns];
+          const key = normalizeTurnText(text);
+          const at = turns.findIndex(
+            (item) => item.role === role && normalizeTurnText(item.text) === key,
+          );
+          if (at >= 0) turns[at] = { role, text };
+          else turns.push({ role, text });
+          return {
+            ...s,
+            turns,
+            liveTranscript: role === 'candidate' ? '' : s.liveTranscript,
+            liveReply: role === 'interviewer' ? '' : s.liveReply,
+            phase: role === 'candidate' ? 'speaking' : 'listening',
+          };
+        });
+        if (!sessionId) return;
+        void interviewApi
+          .recordVoiceTranscript(sessionId, {
+            // 上游的 turn id 在一条连接内稳定，配上连接 id 就是全局幂等键。
+            transcript_id: `${voiceRef.current?.connectionId ?? 'unknown'}:${id}`,
+            role: role === 'candidate' ? 'user' : 'assistant',
+            text,
+          })
+          .catch((error) => {
+            console.warn('[interview voice] transcript report failed', error);
+          });
+        return;
+      }
+
+      /*
+       * 账号额度。vega 和写代码共用同一个 Codex 桶，所以这个数的口径与 lyra
+       * 的 `limits.audio` 不同——只拿它做心跳上报，不往界面上摆。
+       */
+      if (type === 'session.usage.updated') {
+        const limits = (message.limits ?? {}) as Record<
+          string,
+          { remaining_seconds?: unknown } | null
+        >;
+        const audio = limits.audio?.remaining_seconds;
+        if (typeof audio === 'number') audioLeftRef.current = audio;
+      }
+    },
+    [sessionId],
+  );
+
+  /**
    * 解 DataChannel 的下行事件。
    *
    * 信封是 `{ type: 'data_message', data: '<json>' }`，内层才是真事件。转写走
    * `chat_message_delta`，JSON Patch 风格：先 add 出骨架（这里能拿到角色与方向），
    * 之后按 `/message/content/parts/0/text` 追加。
    */
-  const handleGptEvent = useCallback(
+  const handleLyraEvent = useCallback(
     (raw: string) => {
       let outer: unknown;
       try {
@@ -369,7 +485,7 @@ export function useVoiceInterview(sessionId: string | null) {
        */
       // 上游真的起来了——解除「接通但不说话」的看门狗。
       if (message.type === 'session_bootstrap') {
-        const gpt = gptRef.current;
+        const gpt = voiceRef.current;
         if (gpt?.bootstrapTimer) {
           clearTimeout(gpt.bootstrapTimer);
           gpt.bootstrapTimer = null;
@@ -433,7 +549,7 @@ export function useVoiceInterview(sessionId: string | null) {
           head.direction === 'in' ? 'candidate' : 'interviewer';
         const parts = [String(head.text ?? '')];
         const now = performance.now();
-        gptMessagesRef.current.set(delta.c, {
+        lyraMessagesRef.current.set(delta.c, {
           role,
           parts,
           settled: false,
@@ -456,8 +572,8 @@ export function useVoiceInterview(sessionId: string | null) {
           ? [delta]
           : [];
       if (ops.length === 0) return;
-      const seq = Math.max(...gptMessagesRef.current.keys(), -1);
-      const current = seq >= 0 ? gptMessagesRef.current.get(seq) : undefined;
+      const seq = Math.max(...lyraMessagesRef.current.keys(), -1);
+      const current = seq >= 0 ? lyraMessagesRef.current.get(seq) : undefined;
       if (!current) return;
 
       for (const op of ops) {
@@ -472,7 +588,7 @@ export function useVoiceInterview(sessionId: string | null) {
                 `跨度 ${Math.round(lastAt - first)}ms，` +
                 `定稿距首片 ${Math.round(performance.now() - first)}ms`,
             );
-            settleGptTurn(seq);
+            settleLyraTurn(seq);
           }
           continue;
         }
@@ -482,7 +598,7 @@ export function useVoiceInterview(sessionId: string | null) {
         current.timing.deltas += 1;
         current.timing.lastAt = performance.now();
         current.parts[index] = (current.parts[index] ?? '') + String(op.v ?? '');
-        const text = gptTextOf(current);
+        const text = lyraTextOf(current);
         setState((s) =>
           current.role === 'candidate'
             ? { ...s, liveTranscript: text }
@@ -490,14 +606,14 @@ export function useVoiceInterview(sessionId: string | null) {
         );
       }
     },
-    [settleGptTurn],
+    [settleLyraTurn],
   );
 
   /**
-   * gpt-voice 的建连：浏览器直连 ChatGPT 网页语音，没有房间、也没有 agent 参与者。
+   * 上游语音渠道 的建连：浏览器直连 ChatGPT 网页语音，没有房间、也没有 agent 参与者。
    * 面试由上游模型自己主持，我们只做三件事——递 SDP、翻字幕、回传定稿。
    */
-  const connectGptVoice = useCallback(
+  const connectUpstreamVoice = useCallback(
     async (superseded: () => boolean) => {
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -516,19 +632,29 @@ export function useVoiceInterview(sessionId: string | null) {
         heartbeat: null as ReturnType<typeof setInterval> | null,
         bootstrapTimer: null as ReturnType<typeof setTimeout> | null,
         vad: null as LocalVadHandle | null,
+        /** 最终接手的渠道，由 answer 响应告知；决定用哪套事件解析。 */
+        channel: 'lyra' as 'vega' | 'lyra',
       };
-      gptRef.current = session;
+      voiceRef.current = session;
 
       const dc = pc.createDataChannel('oai-events', { negotiated: true, id: 0 });
       session.dc = dc;
-      dc.onmessage = (event) => handleGptEvent(String(event.data));
+      /*
+       * 解析器**要等 answer 回来才能定**：链首没有可派账号时服务端会降到下一条，
+       * 而两条渠道说的不是一套话。先挂一个转发器，拿到 `channel` 再定向。
+       */
+      dc.onmessage = (event) => {
+        const handle =
+          voiceRef.current?.channel === 'vega' ? handleVegaEvent : handleLyraEvent;
+        handle(String(event.data));
+      };
 
       pc.ontrack = (event) => {
         if (superseded()) return;
         const stream = event.streams[0] ?? new MediaStream([event.track]);
         audio.srcObject = stream;
         void audio.play().catch(() => {
-          console.warn('[interview voice] gpt-voice autoplay blocked');
+          console.warn('[interview voice] upstream channel autoplay blocked');
         });
         const context = audioRef.current;
         // 传**和上面 `audio.srcObject` 同一个** stream 实例，不是 track：
@@ -545,7 +671,7 @@ export function useVoiceInterview(sessionId: string | null) {
           setState((s) => ({
             ...s,
             phase: 'error',
-            error: '语音连接中断',
+            error: 'voice connection lost',
             errorCode: 'connection',
           }));
         } else if (pc.connectionState === 'disconnected') {
@@ -588,20 +714,20 @@ export function useVoiceInterview(sessionId: string | null) {
             audioContext: context,
             onSpeechStart: () => {
               // 候选人开口，立刻把面试官压下去并切回聆听态——不等上游那个跨境往返。
-              const current = gptRef.current;
+              const current = voiceRef.current;
               if (current?.audio) current.audio.volume = DUCKED_VOLUME;
               setState((s) =>
                 s.phase === 'speaking' ? { ...s, phase: 'listening' } : s,
               );
             },
             onSpeechEnd: () => {
-              const current = gptRef.current;
+              const current = voiceRef.current;
               if (current?.audio) current.audio.volume = 1;
             },
           }).then((handle) => {
             if (!handle) return;
             // 这一场可能在模型加载完之前就结束了，那就直接扔掉。
-            if (gptRef.current !== session || superseded()) handle.destroy();
+            if (voiceRef.current !== session || superseded()) handle.destroy();
             else session.vad = handle;
           });
         }
@@ -639,13 +765,15 @@ export function useVoiceInterview(sessionId: string | null) {
       // 空 offer 发出去必然被服务端 DTO 挡成 400，而那个错说不清是这里出的问题。
       const offerSdp = pc.localDescription?.sdp ?? '';
       if (!offerSdp) throw new Error('local SDP offer is empty');
-      const { answer_sdp, primer, heartbeat_interval_seconds } =
-        await interviewApi.gptVoiceSession(
+      const { answer_sdp, primer, channel, heartbeat_interval_seconds } =
+        await interviewApi.voiceSession(
           sessionId,
           offerSdp,
           session.connectionId,
         );
       if (superseded()) return;
+      // 以服务端回的为准：它可能因为池子空了而降级到另一条。
+      session.channel = channel === 'vega' ? 'vega' : 'lyra';
 
       /*
        * 续租间隔**由服务端给**，不在这里写死——租约时长改了，客户端不跟着改就会
@@ -654,7 +782,7 @@ export function useVoiceInterview(sessionId: string | null) {
       const everyMs = Math.max(5, heartbeat_interval_seconds) * 1000;
       session.heartbeat = setInterval(() => {
         void interviewApi
-          .gptVoiceHeartbeat(
+          .voiceHeartbeat(
             sessionId,
             session.connectionId,
             audioLeftRef.current,
@@ -698,10 +826,10 @@ export function useVoiceInterview(sessionId: string | null) {
        */
       session.bootstrapTimer = setTimeout(() => {
         session.bootstrapTimer = null;
-        if (gptRef.current !== session) return;
+        if (voiceRef.current !== session) return;
         console.warn('[interview voice] upstream never bootstrapped');
         void interviewApi
-          .gptVoiceDegraded(sessionId, session.connectionId)
+          .voiceDegraded(sessionId, session.connectionId)
           .then((result) => {
             if (!result.retryable) return;
             if (degradedRetriesRef.current >= MAX_DEGRADED_RETRIES) return;
@@ -717,7 +845,7 @@ export function useVoiceInterview(sessionId: string | null) {
       connectingRef.current = false;
       setState((s) => ({ ...s, phase: 'listening' }));
     },
-    [handleGptEvent, sessionId, teardown],
+    [handleLyraEvent, handleVegaEvent, sessionId, teardown],
   );
 
   const connect = useCallback(async () => {
@@ -864,11 +992,11 @@ export function useVoiceInterview(sessionId: string | null) {
       if (superseded()) return;
 
       /*
-       * 后端按会话配置决定走哪条链路：默认 LiveKit；在 `config.transport` 里点名
-       * 过的会话走 gpt-voice。后者的媒体直连 ChatGPT 网页语音，服务端不签发凭据，
-       * 所以到这一步就分叉，不能再往下走 LiveKit 的建连。
+       * 后端按**订阅声明的渠道链**决定入口：上游主持的那两条（vega / lyra）媒体
+       * 直连 ChatGPT，服务端不签发凭据，所以到这一步就分叉，不能再往下走 atlas 的
+       * 建连。最终是谁接的，要等 answer 响应回来才知道。
        */
-      if (creds.transport === 'gpt-voice') {
+      if (creds.channel === 'vega' || creds.channel === 'lyra') {
         const context = new AudioContext();
         if (context.state === 'suspended') await context.resume();
         if (superseded()) {
@@ -876,7 +1004,7 @@ export function useVoiceInterview(sessionId: string | null) {
           return;
         }
         audioRef.current = context;
-        await connectGptVoice(superseded);
+        await connectUpstreamVoice(superseded);
         return;
       }
 
@@ -933,18 +1061,29 @@ export function useVoiceInterview(sessionId: string | null) {
     } catch (error) {
       if (superseded()) return;
       const message = error instanceof Error ? error.message : String(error);
+      /*
+       * 后端把「本周面试时长用完」投影成一级码 `quota_exceeded` + 402——一级码就是
+       * 给 UI 判定用的，所以这里必须读它。曾经只按 message 正则分派，于是一个
+       * 额度和登录都分得清的用户，看到的却是「语音断了，可以改用打字继续」。
+       */
+      const appError = (
+        error as { appError?: { errorCode?: string; httpStatus?: number } }
+      )?.appError;
       teardown();
       setState((s) => ({
         ...s,
         phase: 'error',
         error: message,
         // 麦克风权限是唯一一个用户自己能修的，值得单独一句提示。
-        errorCode: /notallowed|permission|denied/i.test(message)
-          ? 'mic_denied'
-          : 'connection',
+        errorCode:
+          appError?.errorCode === 'quota_exceeded' || appError?.httpStatus === 402
+            ? 'quota'
+            : /notallowed|permission|denied/i.test(message)
+              ? 'mic_denied'
+              : 'connection',
       }));
     }
-  }, [connectGptVoice, sessionId, teardown]);
+  }, [connectUpstreamVoice, sessionId, teardown]);
 
   /**
    * 把打的字当作一次发言送给面试官。
@@ -957,17 +1096,17 @@ export function useVoiceInterview(sessionId: string | null) {
    */
   const sendText = useCallback(async (text: string): Promise<boolean> => {
     /*
-     * gpt-voice 这条链路没有 LiveKit 的文本流，走的是 DataChannel 的 `relay_message`：
+     * 上游语音渠道 这条链路没有 LiveKit 的文本流，走的是 DataChannel 的 `relay_message`：
      * 它以上游眼里的「用户消息」身份进入对话，模型会把它当对话内容来遵循。
      */
-    const gpt = gptRef.current;
+    const gpt = voiceRef.current;
     if (gpt) {
       if (!gpt.dc || gpt.dc.readyState !== 'open') return false;
       try {
         gpt.dc.send(relayMessage(text));
         return true;
       } catch (error) {
-        console.warn('[interview voice] gpt-voice sendText failed', error);
+        console.warn('[interview voice] upstream channel sendText failed', error);
         return false;
       }
     }
@@ -985,8 +1124,8 @@ export function useVoiceInterview(sessionId: string | null) {
 
   /** 自己静音。拿不到麦克风时（`micDenied`）没有可切的东西。 */
   const toggleMute = useCallback(async () => {
-    // gpt-voice 没有 participant，直接开关本地音轨。
-    const gpt = gptRef.current;
+    // 上游语音渠道 没有 participant，直接开关本地音轨。
+    const gpt = voiceRef.current;
     if (gpt) {
       const track = gpt.stream?.getAudioTracks()[0];
       if (!track) return;

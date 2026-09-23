@@ -9,7 +9,7 @@ import {
   interviewApi,
   type InterviewReport,
   type InterviewStage,
-  type InterviewVoiceTransport,
+  type InterviewVoiceChannel,
 } from '@/lib/api/interviewApi';
 import {
   useInterviewUiStore,
@@ -216,17 +216,17 @@ export default function InterviewRoom({
             job_description: launch.brief.jobDescription,
             /*
              * 永远按语音开：打字也经由同一条语音链路送进去。
-             * 传输用环境变量切——缺省仍是 LiveKit；设成 `gpt-voice` 就改走 ChatGPT
+             * 传输用环境变量切——缺省仍是 LiveKit；设成 `lyra` 或 `vega` 就改走上游主持的渠道
              * 网页语音（服务端得配 `INTERVIEW_GPT_VOICE_TOKEN`，否则会报不可用）。
              */
             config: {
               mode: 'voice',
               language: launch.brief.language,
               difficulty: launch.brief.difficulty,
-              ...(process.env.NEXT_PUBLIC_INTERVIEW_VOICE_TRANSPORT
+              ...(process.env.NEXT_PUBLIC_INTERVIEW_VOICE_CHANNEL
                 ? {
-                    transport: process.env
-                      .NEXT_PUBLIC_INTERVIEW_VOICE_TRANSPORT as InterviewVoiceTransport,
+                    channel: process.env
+                      .NEXT_PUBLIC_INTERVIEW_VOICE_CHANNEL as InterviewVoiceChannel,
                   }
                 : {}),
             },
@@ -238,7 +238,7 @@ export default function InterviewRoom({
         setSessionId(result.session_id);
         setStage(result.stage);
         /*
-          * gpt-voice 不再由服务端生成开场白——开口权归上游，它说的第一句会通过转写
+          * 上游主持的渠道不再由服务端生成开场白——开口权归上游，它说的第一句会通过转写
           * 回来。这里塞一条空的面试官发言，逐字稿开头就会出现一个空气泡。
           */
         setTurns(

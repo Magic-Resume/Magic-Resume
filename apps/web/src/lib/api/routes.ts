@@ -152,14 +152,14 @@ export const AGENT_ROUTES = {
     /** LiveKit 房间凭据；房间与鉴权都交给 LiveKit，我们只回答「这场是不是你的」。 */
     voiceToken:  (sessionId: string) => `/api/interview/voice-token/${sessionId}`,
     /** GPT Voice 的 SDP 交换；这条链路不经过 LiveKit，媒体直连 ChatGPT 网页语音。 */
-    gptVoiceSession:    (sessionId: string) => `/api/interview/voice-gpt/${sessionId}`,
+    voiceSession:    (sessionId: string) => `/api/interview/voice-channel/${sessionId}`,
     /** 回传一轮转写。只落库：不触发模型、不推进阶段。 */
-    gptVoiceTranscript: (sessionId: string) => `/api/interview/voice-gpt/${sessionId}/transcript`,
+    voiceTranscript: (sessionId: string) => `/api/interview/voice-channel/${sessionId}/transcript`,
     /** 续租。服务端按 `connection_id` 记连接，断了不续就自动回收。 */
-    gptVoiceHeartbeat:  (sessionId: string) => `/api/interview/voice-gpt/${sessionId}/heartbeat`,
+    voiceHeartbeat:  (sessionId: string) => `/api/interview/voice-channel/${sessionId}/heartbeat`,
     /** 主动归还连接。正常离开时发，别等租约自己过期。 */
-    gptVoiceRelease:    (sessionId: string) => `/api/interview/voice-gpt/${sessionId}/release`,
-    gptVoiceDegraded:   (sessionId: string) => `/api/interview/voice-gpt/${sessionId}/degraded`,
+    voiceRelease:    (sessionId: string) => `/api/interview/voice-channel/${sessionId}/release`,
+    voiceDegraded:   (sessionId: string) => `/api/interview/voice-channel/${sessionId}/degraded`,
   },
 } as const;
 

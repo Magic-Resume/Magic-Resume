@@ -2310,7 +2310,8 @@
       "finishFailed": "The interview could not be ended. Try again.",
       "reportFailed": "The debrief could not be generated. Try again.",
       "voiceError": {
-        "connection": "Voice dropped — you can keep going by typing"
+        "connection": "Voice dropped — you can keep going by typing",
+        "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan"
       },
       "backToDashboard": "Back to dashboard",
       "leaveTitle": "Leaving now ends this interview",

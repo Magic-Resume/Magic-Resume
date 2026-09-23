@@ -2310,7 +2310,8 @@
       "finishFailed": "这场面试还没能结束，再试一次",
       "reportFailed": "复盘报告没能生成，重试一次",
       "voiceError": {
-        "connection": "语音断了，可以改用打字继续"
+        "connection": "语音断了，可以改用打字继续",
+        "quota": "本周面试时长已用完，可以改用打字继续，或升级套餐"
       },
       "backToDashboard": "回到工作台",
       "leaveTitle": "现在离开会结束这场面试",
