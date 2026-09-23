@@ -2174,6 +2174,7 @@
       "interviewRoom": {
         "title": "Interview room ready",
         "enter": "Enter interview",
+        "reenter": "Return to this interview",
         "duration": "~{{count}} min",
         "style": {
           "standard": "Standard",
@@ -2233,6 +2234,9 @@
       "prompt": "\"Could you talk about your most challenging performance optimization project?\"",
       "microphone": "Microphone",
       "end": "End interview",
+      "timeRemaining": "{{time}} remaining",
+      "timeUp": "Time is up. Ending the interview…",
+      "timeUpRetry": "Could not end automatically. Select End interview to retry.",
       "comingSoonBadge": "Not live yet",
       "comingSoon": "Voice mock interviews are still being built. They'll draw questions from your resume and target role, follow up as you answer, and leave you a transcript worth reviewing. Not ready yet — and we'd rather not fake it.",
       "starting": "Getting the interview ready…",
@@ -2261,6 +2265,11 @@
       "report": {
         "title": "Debrief",
         "generating": "Generating your debrief…",
+        "skippedTitle": "No debrief was generated",
+        "skippedBody": "The saved interview record did not provide enough evidence for specific feedback. This reflects this session's record, not an assessment of your ability.",
+        "transcriptTitle": "Interview transcript",
+        "archivedWithoutReportTitle": "This interview has ended",
+        "archivedWithoutReportBody": "There is no saved debrief for this interview. You can still review the transcript.",
         "overall": "Interview readiness",
         "retry": "Regenerate",
         "strengths": "What went well",
@@ -2309,7 +2318,9 @@
       "startFailed": "The interview could not start. Try again shortly.",
       "turnFailed": "That answer did not go through. Say it once more.",
       "finishFailed": "The interview could not be ended. Try again.",
+      "transcriptSaveFailed": "The interview transcript has not finished saving. Try ending the interview again.",
       "reportFailed": "The debrief could not be generated. Try again.",
+      "reportRateLimited": "Too many requests. Wait a moment, then retry the debrief.",
       "voiceError": {
         "connection": "Voice dropped — you can keep going by typing",
         "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan"

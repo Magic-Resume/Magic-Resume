@@ -73,6 +73,8 @@ export interface VoiceInterviewState {
    * 共用这一个池子，所以它是 admin 容量面唯一的真实数据源。
    */
   upstreamAudioSecondsLeft: number | null;
+  /** 服务端批准的单场窗口截止时间；周余额不足时会早于页面预设时长。 */
+  budgetDeadline: number | null;
 }
 
 const INITIAL_STATE: VoiceInterviewState = {
@@ -87,6 +89,7 @@ const INITIAL_STATE: VoiceInterviewState = {
   muted: false,
   upstreamSessionSecondsLeft: null,
   upstreamAudioSecondsLeft: null,
+  budgetDeadline: null,
 };
 
 /**
@@ -142,6 +145,8 @@ export function useVoiceInterview(sessionId: string | null) {
      * 时服务端会降到下一条，而两条渠道的 DataChannel 说的不是一套话。
      */
     channel: 'vega' | 'lyra';
+    /** 这条连接上面试官是否已经说过话；在那之前的「候选人发言」不是候选人说的。 */
+    interviewerSpoke: boolean;
   } | null>(null);
   /** 上游最近一次报的账号剩余音频秒数，随心跳捎回服务端。 */
   const audioLeftRef = useRef<number | null>(null);
@@ -149,6 +154,16 @@ export function useVoiceInterview(sessionId: string | null) {
   const connectRef = useRef<(() => Promise<void>) | null>(null);
   /** 这一场已经因为「接通但不说话」重连过几次。服务端的窗口只允许 3 条连接。 */
   const degradedRetriesRef = useRef(0);
+  /** 转写写入未确认前不能结束服务端会话，否则迟到的作答会被 finished 状态拒收。 */
+  const transcriptWritesRef = useRef<
+    Map<
+      string,
+      {
+        payload: { transcript_id: string; role: 'user' | 'assistant'; text: string };
+        delivery: Promise<unknown>;
+      }
+    >
+  >(new Map());
   /**
    * 上游语音渠道 的转写中间态。上游是「先 add 骨架、再按路径 patch 追加」，所以要按消息
    * 序号索引。放 ref 不放 state：它只是解析过程，界面要的是解析结果。
@@ -226,7 +241,6 @@ export function useVoiceInterview(sessionId: string | null) {
     setState(INITIAL_STATE);
   }, [teardown]);
 
-
   /** 候选人开口时把面试官压到这个音量——压成 0 会让人以为断了。 */
   const DUCKED_VOLUME = 0.15;
 
@@ -237,6 +251,42 @@ export function useVoiceInterview(sessionId: string | null) {
       .toLowerCase();
 
   const lyraTextOf = (m: { parts: string[] }) => m.parts.join('').trim();
+
+  const recordTranscript = useCallback(
+    (transcriptId: string, role: 'user' | 'assistant', text: string) => {
+      if (!sessionId) return;
+      const key = `${sessionId}:${transcriptId}`;
+      if (transcriptWritesRef.current.has(key)) return;
+      const payload = { transcript_id: transcriptId, role, text };
+      const delivery = interviewApi.recordVoiceTranscript(sessionId, payload);
+      transcriptWritesRef.current.set(key, { payload, delivery });
+      void delivery.catch((error) => {
+        console.warn('[interview voice] transcript report failed', error);
+      });
+    },
+    [sessionId],
+  );
+
+  const flushTranscripts = useCallback(async () => {
+    if (!sessionId) return;
+    const writes = [...transcriptWritesRef.current.entries()].filter(([key]) =>
+      key.startsWith(`${sessionId}:`),
+    );
+    const results = await Promise.allSettled(
+      writes.map(async ([key, { payload, delivery }]) => {
+        try {
+          await delivery;
+        } catch {
+          // 幂等 transcript_id：首次请求即使已经落库，重试也不会重复记一轮。
+          await interviewApi.recordVoiceTranscript(sessionId, payload);
+        }
+        transcriptWritesRef.current.delete(key);
+      }),
+    );
+    if (results.some((result) => result.status === 'rejected')) {
+      throw new Error('Interview transcript could not be saved');
+    }
+  }, [sessionId]);
 
   /**
    * 上游眼里的「用户消息」。这是我们唯一能往那条对话里写字的通道——它的 session schema
@@ -288,6 +338,15 @@ export function useVoiceInterview(sessionId: string | null) {
       const primer = primerRef.current;
       if (primer && text.startsWith(primer.slice(0, 60))) return;
       const role = m.role;
+      /*
+       * 上游处理 primer 时会先生成一条「候选人」应答（实测「好的」「Mm-hmm」，只推静音也有），
+       * 不挡住就进面试记录。代价是候选人抢在开场前说的话也不记——那只会是寒暄。
+       */
+      const connection = voiceRef.current;
+      if (connection && !connection.interviewerSpoke) {
+        if (role === 'candidate') return;
+        connection.interviewerSpoke = true;
+      }
       setState((s) => {
         const turns = [...s.turns];
         /*
@@ -300,8 +359,7 @@ export function useVoiceInterview(sessionId: string | null) {
          */
         const key = normalizeTurnText(text);
         const at = turns.findIndex(
-          (turn) =>
-            turn.role === role && normalizeTurnText(turn.text) === key,
+          (turn) => turn.role === role && normalizeTurnText(turn.text) === key,
         );
         if (at >= 0) turns[at] = { role, text };
         else turns.push({ role, text });
@@ -312,20 +370,14 @@ export function useVoiceInterview(sessionId: string | null) {
           liveReply: role === 'interviewer' ? '' : s.liveReply,
         };
       });
-      if (!sessionId) return;
-      void interviewApi
-        .recordVoiceTranscript(sessionId, {
-          // 上游的消息序号在一条连接内稳定，配上连接 id 就是全局稳定的幂等键。
-          transcript_id: `${voiceRef.current?.connectionId ?? 'unknown'}:${seq}`,
-          role: role === 'candidate' ? 'user' : 'assistant',
-          text,
-        })
-        .catch((error) => {
-          // 回传失败不影响面试继续，只是这一轮不会进报告。
-          console.warn('[interview voice] transcript report failed', error);
-        });
+      // 上游消息序号配连接 id 是全局稳定的幂等键；结束时等这次写入确认。
+      recordTranscript(
+        `${voiceRef.current?.connectionId ?? 'unknown'}:${seq}`,
+        role === 'candidate' ? 'user' : 'assistant',
+        text,
+      );
     },
-    [sessionId],
+    [recordTranscript],
   );
 
   /**
@@ -392,7 +444,8 @@ export function useVoiceInterview(sessionId: string | null) {
           const turns = [...s.turns];
           const key = normalizeTurnText(text);
           const at = turns.findIndex(
-            (item) => item.role === role && normalizeTurnText(item.text) === key,
+            (item) =>
+              item.role === role && normalizeTurnText(item.text) === key,
           );
           if (at >= 0) turns[at] = { role, text };
           else turns.push({ role, text });
@@ -404,17 +457,12 @@ export function useVoiceInterview(sessionId: string | null) {
             phase: role === 'candidate' ? 'speaking' : 'listening',
           };
         });
-        if (!sessionId) return;
-        void interviewApi
-          .recordVoiceTranscript(sessionId, {
-            // 上游的 turn id 在一条连接内稳定，配上连接 id 就是全局幂等键。
-            transcript_id: `${voiceRef.current?.connectionId ?? 'unknown'}:${id}`,
-            role: role === 'candidate' ? 'user' : 'assistant',
-            text,
-          })
-          .catch((error) => {
-            console.warn('[interview voice] transcript report failed', error);
-          });
+        // 上游 turn id 配连接 id 是全局稳定的幂等键；结束时等这次写入确认。
+        recordTranscript(
+          `${voiceRef.current?.connectionId ?? 'unknown'}:${id}`,
+          role === 'candidate' ? 'user' : 'assistant',
+          text,
+        );
         return;
       }
 
@@ -431,7 +479,7 @@ export function useVoiceInterview(sessionId: string | null) {
         if (typeof audio === 'number') audioLeftRef.current = audio;
       }
     },
-    [sessionId],
+    [recordTranscript],
   );
 
   /**
@@ -452,7 +500,10 @@ export function useVoiceInterview(sessionId: string | null) {
       if (!outer || typeof outer !== 'object') return;
       const envelope = outer as { type?: string; data?: unknown };
       let inner: unknown = envelope;
-      if (envelope.type === 'data_message' && typeof envelope.data === 'string') {
+      if (
+        envelope.type === 'data_message' &&
+        typeof envelope.data === 'string'
+      ) {
         try {
           inner = JSON.parse(envelope.data);
         } catch {
@@ -597,7 +648,8 @@ export function useVoiceInterview(sessionId: string | null) {
         const index = Number(match[1]);
         current.timing.deltas += 1;
         current.timing.lastAt = performance.now();
-        current.parts[index] = (current.parts[index] ?? '') + String(op.v ?? '');
+        current.parts[index] =
+          (current.parts[index] ?? '') + String(op.v ?? '');
         const text = lyraTextOf(current);
         setState((s) =>
           current.role === 'candidate'
@@ -634,10 +686,14 @@ export function useVoiceInterview(sessionId: string | null) {
         vad: null as LocalVadHandle | null,
         /** 最终接手的渠道，由 answer 响应告知；决定用哪套事件解析。 */
         channel: 'lyra' as 'vega' | 'lyra',
+        interviewerSpoke: false,
       };
       voiceRef.current = session;
 
-      const dc = pc.createDataChannel('oai-events', { negotiated: true, id: 0 });
+      const dc = pc.createDataChannel('oai-events', {
+        negotiated: true,
+        id: 0,
+      });
       session.dc = dc;
       /*
        * 解析器**要等 answer 回来才能定**：链首没有可派账号时服务端会降到下一条，
@@ -645,7 +701,9 @@ export function useVoiceInterview(sessionId: string | null) {
        */
       dc.onmessage = (event) => {
         const handle =
-          voiceRef.current?.channel === 'vega' ? handleVegaEvent : handleLyraEvent;
+          voiceRef.current?.channel === 'vega'
+            ? handleVegaEvent
+            : handleLyraEvent;
         handle(String(event.data));
       };
 
@@ -742,7 +800,9 @@ export function useVoiceInterview(sessionId: string | null) {
        * `createOffer({ offerToReceiveAudio })` 是废弃选项，新版 Chrome 不再据此补
        * m-line，所以这里显式建一个只收的 transceiver。
        */
-      if (!pc.getTransceivers().some((t) => t.receiver.track?.kind === 'audio')) {
+      if (
+        !pc.getTransceivers().some((t) => t.receiver.track?.kind === 'audio')
+      ) {
         pc.addTransceiver('audio', { direction: 'recvonly' });
       }
 
@@ -765,13 +825,29 @@ export function useVoiceInterview(sessionId: string | null) {
       // 空 offer 发出去必然被服务端 DTO 挡成 400，而那个错说不清是这里出的问题。
       const offerSdp = pc.localDescription?.sdp ?? '';
       if (!offerSdp) throw new Error('local SDP offer is empty');
-      const { answer_sdp, primer, channel, heartbeat_interval_seconds } =
-        await interviewApi.voiceSession(
-          sessionId,
-          offerSdp,
-          session.connectionId,
-        );
+      const {
+        answer_sdp,
+        primer,
+        channel,
+        heartbeat_interval_seconds,
+        remaining_seconds,
+      } = await interviewApi.voiceSession(
+        sessionId,
+        offerSdp,
+        session.connectionId,
+      );
       if (superseded()) return;
+      if (
+        typeof remaining_seconds === 'number' &&
+        Number.isFinite(remaining_seconds)
+      ) {
+        const grantedDeadline =
+          Date.now() + Math.max(0, remaining_seconds) * 1000;
+        setState((current) => ({
+          ...current,
+          budgetDeadline: grantedDeadline,
+        }));
+      }
       // 以服务端回的为准：它可能因为池子空了而降级到另一条。
       session.channel = channel === 'vega' ? 'vega' : 'lyra';
 
@@ -782,12 +858,19 @@ export function useVoiceInterview(sessionId: string | null) {
       const everyMs = Math.max(5, heartbeat_interval_seconds) * 1000;
       session.heartbeat = setInterval(() => {
         void interviewApi
-          .voiceHeartbeat(
-            sessionId,
-            session.connectionId,
-            audioLeftRef.current,
-          )
+          .voiceHeartbeat(sessionId, session.connectionId, audioLeftRef.current)
           .then((beat) => {
+            if (
+              typeof beat.remaining_seconds === 'number' &&
+              Number.isFinite(beat.remaining_seconds)
+            ) {
+              const grantedDeadline =
+                Date.now() + Math.max(0, beat.remaining_seconds) * 1000;
+              setState((current) => ({
+                ...current,
+                budgetDeadline: grantedDeadline,
+              }));
+            }
             // 服务端掐不断已经接通的通话，只能请我们自己收尾——走正常的结束流程
             // 进复盘，而不是弹一个错误屏。
             if (beat.should_stop) {
@@ -915,7 +998,9 @@ export function useVoiceInterview(sessionId: string | null) {
         text += chunk;
         // 逐字回显。面试官那一路是**跟着语音播放**推的，字与声音同步。
         setState((s) =>
-          fromAgent ? { ...s, liveReply: text } : { ...s, liveTranscript: text },
+          fromAgent
+            ? { ...s, liveReply: text }
+            : { ...s, liveTranscript: text },
         );
       }
 
@@ -931,7 +1016,9 @@ export function useVoiceInterview(sessionId: string | null) {
       }
 
       setState((s) => {
-        const role = fromAgent ? ('interviewer' as const) : ('candidate' as const);
+        const role = fromAgent
+          ? ('interviewer' as const)
+          : ('candidate' as const);
         const turns = [...s.turns];
         const last = turns[turns.length - 1];
 
@@ -1076,7 +1163,8 @@ export function useVoiceInterview(sessionId: string | null) {
         error: message,
         // 麦克风权限是唯一一个用户自己能修的，值得单独一句提示。
         errorCode:
-          appError?.errorCode === 'quota_exceeded' || appError?.httpStatus === 402
+          appError?.errorCode === 'quota_exceeded' ||
+          appError?.httpStatus === 402
             ? 'quota'
             : /notallowed|permission|denied/i.test(message)
               ? 'mic_denied'
@@ -1106,7 +1194,10 @@ export function useVoiceInterview(sessionId: string | null) {
         gpt.dc.send(relayMessage(text));
         return true;
       } catch (error) {
-        console.warn('[interview voice] upstream channel sendText failed', error);
+        console.warn(
+          '[interview voice] upstream channel sendText failed',
+          error,
+        );
         return false;
       }
     }
@@ -1151,5 +1242,13 @@ export function useVoiceInterview(sessionId: string | null) {
 
   useEffect(() => teardown, [teardown]);
 
-  return { state, connect, disconnect, readLevels, sendText, toggleMute };
+  return {
+    state,
+    connect,
+    disconnect,
+    flushTranscripts,
+    readLevels,
+    sendText,
+    toggleMute,
+  };
 }

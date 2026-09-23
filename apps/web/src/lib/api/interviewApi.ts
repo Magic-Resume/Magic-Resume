@@ -56,8 +56,11 @@ export type InterviewStage =
 
 export interface StartInterviewResult {
   session_id: string;
+  resumed?: boolean;
   message: string;
   stage: InterviewStage;
+  started_at?: string;
+  duration_seconds?: number;
   /** 仅语音会话返回；120 秒有效。 */
   voiceTicket?: string;
 }
@@ -70,10 +73,7 @@ export interface InterviewTurnResult {
 }
 
 export type InterviewDimension =
-  | 'expression'
-  | 'depth'
-  | 'jobFit'
-  | 'structure';
+  'expression' | 'depth' | 'jobFit' | 'structure';
 
 /** 档位说的是**准备度**，不是录用结论——一场模拟面试评不出该不该录。 */
 export type InterviewBand = 'ready' | 'nearly' | 'developing' | 'early';
@@ -100,6 +100,11 @@ export interface InterviewReport {
   droppedReviews: number;
 }
 
+export interface InterviewReportSkipped {
+  skipped: true;
+  reason: 'insufficient_content';
+}
+
 export interface ArchivedInterview {
   id: string;
   role: string;
@@ -111,8 +116,10 @@ export interface ArchivedInterview {
   report: { overall: number; band: InterviewBand } | null;
 }
 
-export interface ArchivedInterviewDetail
-  extends Omit<ArchivedInterview, 'report' | 'jobDescription'> {
+export interface ArchivedInterviewDetail extends Omit<
+  ArchivedInterview,
+  'report' | 'jobDescription'
+> {
   jobDescription: string | null;
   transcript: Array<{
     role: 'user' | 'assistant';
@@ -132,6 +139,8 @@ export interface FinishInterviewResult {
 export interface LiveInterview {
   session_id: string;
   stage: InterviewStage;
+  started_at?: string;
+  duration_seconds?: number;
   role?: string;
   config: {
     mode?: string;
@@ -205,6 +214,8 @@ export interface VoiceCredentials {
 
 /** 开一场面试要带的东西。`start` 与 `startStream` 共用，两者只是取回方式不同。 */
 export interface StartInterviewInput {
+  /** Fixed when the entry card is issued; retries resume the same room. */
+  room_id?: string;
   resume_context: string;
   role?: string;
   job_description?: string;
@@ -221,6 +232,8 @@ export interface StartInterviewInput {
     mode?: 'voice';
     language?: 'zh' | 'en';
     difficulty?: 'entry' | 'standard' | 'hard';
+    /** 本场预计时长；服务端限制最多 20 分钟。 */
+    duration_minutes?: number;
     /** 点名语音渠道；缺省按订阅声明的顺序。点名越不过订阅。 */
     channel?: InterviewVoiceChannel;
   };
@@ -322,13 +335,15 @@ export const interviewApi = {
    * 走强模型，第一次可能要十几秒；服务端会把结果缓存在会话里，重复请求不再付第二次钱。
    * 超时放宽到 90 秒——默认 30 秒会在报告还在生成时就断掉。
    */
-  async report(sessionId: string): Promise<InterviewReport> {
+  async report(
+    sessionId: string,
+  ): Promise<InterviewReport | InterviewReportSkipped> {
     return unwrap(
-      await httpClient.agent.post<ApiResponse<InterviewReport>>(
-        AGENT_ROUTES.interview.report(sessionId),
-        undefined,
-        { timeout: 90_000 },
-      ),
+      await httpClient.agent.post<
+        ApiResponse<InterviewReport | InterviewReportSkipped>
+      >(AGENT_ROUTES.interview.report(sessionId), undefined, {
+        timeout: 90_000,
+      }),
     );
   },
 
@@ -394,7 +409,12 @@ export const interviewApi = {
         {
           connection_id: connectionId,
           ...(typeof audioSecondsRemaining === 'number'
-            ? { audio_seconds_remaining: Math.max(0, Math.round(audioSecondsRemaining)) }
+            ? {
+                audio_seconds_remaining: Math.max(
+                  0,
+                  Math.round(audioSecondsRemaining),
+                ),
+              }
             : {}),
         },
       ),
@@ -421,10 +441,7 @@ export const interviewApi = {
   },
 
   /** 主动归还。正常离开时发，省得占着租约等它过期。 */
-  async voiceRelease(
-    sessionId: string,
-    connectionId: string,
-  ): Promise<void> {
+  async voiceRelease(sessionId: string, connectionId: string): Promise<void> {
     await httpClient.agent.post(
       AGENT_ROUTES.interview.voiceRelease(sessionId),
       { connection_id: connectionId },

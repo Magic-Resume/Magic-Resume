@@ -21,6 +21,9 @@ export interface InterviewBrief {
 /** 从编辑器交接给面试页的一整包启动参数。 */
 export interface InterviewLaunch {
   brief: InterviewBrief;
+  roomId?: string;
+  /** The originating card, so returning to it resumes this session. */
+  cardId?: string;
   /**
    * 由编辑器用 `buildResumeContext(resumeData)` 算好带过来。
    *
@@ -40,6 +43,7 @@ export interface InterviewLaunch {
 
 interface InterviewUiState {
   launch: InterviewLaunch | null;
+  cardSessions: Record<string, string>;
   /**
    * 面试结束/离开时回哪儿。
    *
@@ -48,7 +52,9 @@ interface InterviewUiState {
    */
   returnTo: string | null;
   setLaunch: (launch: InterviewLaunch, returnTo: string) => void;
+  setReturnTo: (returnTo: string) => void;
   clearLaunch: () => void;
+  rememberCardSession: (cardId: string, sessionId: string) => void;
   clearReturnTo: () => void;
 }
 
@@ -66,9 +72,15 @@ export const useInterviewUiStore = create<InterviewUiState>()(
   persist(
     (set) => ({
       launch: null,
+      cardSessions: {},
       returnTo: null,
       setLaunch: (launch, returnTo) => set({ launch, returnTo }),
+      setReturnTo: (returnTo) => set({ returnTo }),
       clearLaunch: () => set({ launch: null }),
+      rememberCardSession: (cardId, sessionId) =>
+        set((state) => ({
+          cardSessions: { ...state.cardSessions, [cardId]: sessionId },
+        })),
       clearReturnTo: () => set({ returnTo: null }),
     }),
     {

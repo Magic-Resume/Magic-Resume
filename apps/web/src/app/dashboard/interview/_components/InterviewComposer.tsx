@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Mic, MicOff, Send, X } from '@magic-resume/icons';
+import { Loader2, Mic, MicOff, Send } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -24,6 +24,8 @@ export default function InterviewComposer({
   busy,
   muted,
   micDenied,
+  expired,
+  error,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -33,9 +35,11 @@ export default function InterviewComposer({
   busy: boolean;
   muted: boolean;
   micDenied: boolean;
+  expired: boolean;
+  error: string | null;
 }) {
   const { t } = useTranslation();
-  const canSend = Boolean(value.trim()) && !busy;
+  const canSend = Boolean(value.trim()) && !busy && !expired;
 
   return (
     <motion.div
@@ -46,14 +50,23 @@ export default function InterviewComposer({
       className="shrink-0 px-5 pb-6"
     >
       {micDenied && (
-        <p className="mx-auto mb-2 max-w-2xl text-center text-mr-overline text-secondary">
+        <p className="text-mr-overline text-secondary mx-auto mb-2 max-w-2xl text-center">
           {t('aiLab.interview.micDeniedHint')}
         </p>
       )}
-      <div className="mx-auto flex max-w-2xl items-center gap-1.5 rounded-full bg-raised/80 py-1.5 pl-5 pr-1.5 backdrop-blur">
+      {expired && (
+        <p
+          className="text-mr-overline text-rev-del mx-auto mb-2 max-w-2xl text-center"
+          role="status"
+        >
+          {t(error ? 'aiLab.interview.timeUpRetry' : 'aiLab.interview.timeUp')}
+        </p>
+      )}
+      <div className="bg-raised/80 mx-auto flex max-w-2xl items-center gap-1.5 rounded-full py-1.5 pl-5 pr-1.5 backdrop-blur">
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          disabled={expired}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
@@ -61,16 +74,16 @@ export default function InterviewComposer({
             }
           }}
           placeholder={t('aiLab.interview.composerPlaceholder')}
-          className="min-w-0 flex-1 bg-transparent py-2 text-mr-caption text-primary outline-none placeholder:text-muted"
+          className="text-mr-caption text-primary placeholder:text-muted min-w-0 flex-1 bg-transparent py-2 outline-none disabled:opacity-40"
         />
 
-        {canSend || busy ? (
+        {(canSend || busy) && !expired ? (
           <button
             type="button"
             onClick={onSend}
             disabled={!canSend}
             aria-label={t('aiLab.interview.send')}
-            className="cursor-pointer rounded-full bg-tint-sky p-2.5 text-ink-sky transition-colors hover:bg-tint-sky/80 disabled:opacity-40"
+            className="bg-tint-sky text-ink-sky hover:bg-tint-sky/80 cursor-pointer rounded-full p-2.5 transition-colors disabled:opacity-40"
           >
             {busy ? (
               <Loader2 size={15} className="animate-spin" />
@@ -82,11 +95,11 @@ export default function InterviewComposer({
           <button
             type="button"
             onClick={onToggleMute}
-            disabled={micDenied}
+            disabled={micDenied || expired}
             aria-label={t(
               muted ? 'aiLab.interview.unmute' : 'aiLab.interview.mute',
             )}
-            className="cursor-pointer rounded-full p-2.5 text-secondary transition-colors hover:text-primary disabled:opacity-30"
+            className="text-secondary hover:text-primary cursor-pointer rounded-full p-2.5 transition-colors disabled:opacity-30"
           >
             {muted || micDenied ? <MicOff size={15} /> : <Mic size={15} />}
           </button>
@@ -95,10 +108,15 @@ export default function InterviewComposer({
         <button
           type="button"
           onClick={onEnd}
+          disabled={busy}
           aria-label={t('aiLab.interview.end')}
-          className="cursor-pointer rounded-full bg-sunk p-2.5 text-rev-del transition-colors hover:bg-desk"
+          className="bg-sunk text-mr-label text-rev-del hover:bg-desk cursor-pointer rounded-full px-4 py-2.5 font-medium transition-colors disabled:cursor-wait disabled:opacity-50"
         >
-          <X size={15} />
+          {busy ? (
+            <Loader2 size={15} className="animate-spin" />
+          ) : (
+            t('aiLab.interview.end')
+          )}
         </button>
       </div>
     </motion.div>
