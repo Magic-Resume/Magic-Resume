@@ -178,6 +178,12 @@ const nextConfig: NextConfig = {
       slots['@/lib/extensions/billing-client'] = path.join(billingRoot, 'src/billing-client.ts');
       slots['@/lib/extensions/billing-ui'] = path.join(billingRoot, 'src/billing-ui.tsx');
       slots['@/lib/extensions/billing-proxy'] = path.join(billingRoot, 'src/billing-proxy.ts');
+      // Referrals pay out in credit and their API sits under /api/billing, so
+      // they ship in the billing package rather than behind a root of their own.
+      slots['@/lib/extensions/growth'] = path.join(billingRoot, 'src/growth.tsx');
+      // Copy for everything the billing package renders. Billing is the only
+      // slot package that reads the app's i18n; legal carries its own copy.
+      slots['@/lib/extensions/locales'] = path.join(billingRoot, 'src/locales.ts');
     }
     if (legalRoot) {
       // The policy documents. The route shells under `app/legal/` stay in this
@@ -201,7 +207,7 @@ const nextConfig: NextConfig = {
     // open-source stub.
     config.plugins.push(
       new webpack.NormalModuleReplacementPlugin(
-        /^@\/lib\/(commercial\/runtime|extensions\/(app-lifecycle|billing-client|billing-ui|billing-proxy|legal))$/,
+        /^@\/lib\/(commercial\/runtime|extensions\/(app-lifecycle|billing-client|billing-ui|billing-proxy|growth|locales|legal))$/,
         (resource: { request: string }) => {
           const target = slots[resource.request];
           if (target) resource.request = target;
