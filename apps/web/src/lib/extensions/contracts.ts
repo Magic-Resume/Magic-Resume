@@ -3,13 +3,18 @@ import type { HoverSurfaceBinding } from '@/components/ui/hover-surface';
 import type { AccountTab } from '@/store/useAccountUiStore';
 
 /**
- * Shapes shared by the open-source stubs and the commercial overlay.
+ * The shapes of the slot contract: what the stubs export and the mount points
+ * pass.
  *
  * Deliberately NOT a slot: nothing replaces this module. The overlay's build
  * step rewrites each slot stub into a shim that forwards runtime values only,
  * so a type declared inside a stub is gone the moment the stub is replaced.
- * Types both sides compile against therefore live here, where the overlay can
- * import them by the same `@/` specifier the app uses.
+ * The stubs and the mount points therefore type against this file.
+ *
+ * The commercial overlay keeps structural copies rather than importing these:
+ * it has to type-check against app versions that predate this file. Nothing
+ * can drift unnoticed — once a mount point renders the overlay's component,
+ * `next build`'s type check compares the two.
  *
  * Types only — no values, so importing it can never pull code into a bundle.
  */
