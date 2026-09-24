@@ -2323,7 +2323,8 @@
       "reportRateLimited": "Too many requests. Wait a moment, then retry the debrief.",
       "voiceError": {
         "connection": "Voice dropped — you can keep going by typing",
-        "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan"
+        "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan",
+        "connection_limit": "This interview has used all its reconnects — keep going by typing"
       },
       "backToDashboard": "Back to dashboard",
       "leaveTitle": "Leaving now ends this interview",
