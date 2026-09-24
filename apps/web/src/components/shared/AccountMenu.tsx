@@ -4,16 +4,15 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  ChevronRight,
   LogOut,
   Settings,
-  Sparkles,
   User as UserIcon,
 } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { useAppAuth, useAppUser } from "@/lib/auth";
 import { isCloudMode } from "@/lib/config/app";
 import { useAccountUiStore } from "@/store/useAccountUiStore";
+import { UpgradeMenuItem } from "@/lib/extensions/billing-ui";
 import { setPreferredLanguage } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/userDisplay";
@@ -51,7 +50,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
   const { t, i18n } = useTranslation();
   const { user } = useAppUser();
   const { signOut } = useAppAuth();
-  const { openSettings, openAccount, openPricing } = useAccountUiStore();
+  const { openSettings, openAccount } = useAccountUiStore();
   const reduce = useReducedMotion();
 
   const [mounted, setMounted] = useState(false);
@@ -205,20 +204,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
         className="rounded-lg bg-mr-surface-soft data-[surface-variant=accent]:rounded-xl data-[surface-variant=accent]:bg-sky-400/10 data-[surface-variant=danger]:bg-red-500/10"
       />
       {isCloudMode && (
-        <button
-          type="button"
-          role="menuitem"
-          {...rowSurface.bind('upgrade', 'accent')}
-          onClick={() => run(openPricing)}
-          className="relative z-[1] mb-1 flex w-full items-center gap-2.5 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2.5 text-left transition-colors hover:border-sky-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
-        >
-          <Sparkles size={16} className="shrink-0 text-sky-300" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-mr-caption font-medium text-sky-100">{t("account.menu.upgrade")}</p>
-            <p className="truncate text-mr-label text-sky-300/50">{t("account.menu.upgradeHint")}</p>
-          </div>
-          <ChevronRight size={16} className="shrink-0 text-sky-300/70" />
-        </button>
+        <UpgradeMenuItem surface={rowSurface.bind('upgrade', 'accent')} run={run} />
       )}
 
       {isCloudMode && (

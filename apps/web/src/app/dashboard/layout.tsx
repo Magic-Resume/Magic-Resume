@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import DashboardSidebar from "./_components/DashboardSidebar";
 import AccountUiHost from "@/components/providers/AccountUiHost";
-import ReferralClaimer from "@/components/account/invite/ReferralClaimer";
+import { ReferralClaimer } from "@/lib/extensions/growth";
 import TermsGuard from "@/components/account/TermsGuard";
 import OnboardingGate from "@/components/account/OnboardingGate";
 import metaConfig from "@/lib/constants/metaConfig";

@@ -84,9 +84,6 @@
   "account": {
     "menu": {
       "title": "Account",
-      "upgrade": "Upgrade to Pro",
-      "upgradeHint": "Unlock every AI capability",
-      "upgradeSoon": "Coming soon",
       "profile": "Profile",
       "settings": "Settings",
       "language": "Language",
@@ -100,25 +97,12 @@
     "modal": {
       "title": "Account"
     },
-    "subscription": {
-      "currentPlan": "Current plan",
-      "monthly": "This month",
-      "today": "Today",
-      "week": "This week",
-      "usage": "Usage this period",
-      "unlimited": "Unlimited",
-      "remaining": "{{count}} left",
-      "resetAt": "Resets {{time}}",
-      "upgrade": "Upgrade to Pro"
-    },
     "profile": {
       "tabs": {
         "profile": "Profile",
         "security": "Security",
         "activity": "Activity",
-        "subscription": "Subscription",
-        "billing": "Billing",
-        "invite": "Invite"
+        "subscription": "Subscription"
       },
       "personalInfo": "Personal information",
       "firstName": "First name",
@@ -189,58 +173,6 @@
         "languageEnglish": "English",
         "languageChinese": "中文"
       }
-    },
-    "billing": {
-      "planTitle": "Subscription",
-      "freePlan": "Free",
-      "renewsOn": "Renews on {{date}}",
-      "endsOn": "Cancelled — ends {{date}}",
-      "paymentFailed": "A charge failed. Update your payment method before the grace period ends.",
-      "manageCta": "Manage plan",
-      "upgradeCta": "Upgrade",
-      "ordersTitle": "Payments",
-      "noOrders": "No payments yet.",
-      "unknownItem": "—",
-      "colDate": "Date",
-      "colItem": "Item",
-      "colAmount": "Amount",
-      "colChannel": "Method",
-      "colStatus": "Status",
-      "loadFailed": "Could not load your billing information.",
-      "retry": "Retry",
-      "refundHint": "Need a refund? See the",
-      "refundPolicy": "refund policy",
-      "status": {
-        "paid": "Paid",
-        "pending": "Pending",
-        "failed": "Failed",
-        "refunded": "Refunded",
-        "partially_refunded": "Partially refunded"
-      },
-      "channel": {
-        "alipay": "Alipay",
-        "paypal": "PayPal",
-        "wechat": "WeChat Pay",
-        "stripe": "Stripe",
-        "manual": "Manual"
-      },
-      "colOrderId": "Order ID",
-      "copyOrderId": "Copy full order ID"
-    },
-    "invite": {
-      "copied": "Copied",
-      "savePoster": "Save invite poster",
-      "posterAlt": "Magic Resume invite poster",
-      "posterError": "Could not build the poster. Please try again.",
-      "rule": "Rewards land automatically once your friend finishes their first AI chat, for both of you. Paying on signup alone invites bulk fake accounts, so we wait for one real use.",
-      "stats": {
-        "invited": "Invited",
-        "rewarded": "Rewarded",
-        "pending": "Pending"
-      },
-      "headerAction": "Invite friends",
-      "emptyHint": "Send the poster or link to a friend who's job hunting — you both get extra AI allowance, and they get a head start.",
-      "remaining": "{{count}} more rewards available"
     },
     "security": {
       "on": "On",
@@ -1671,74 +1603,6 @@
     "confirm": "Confirm",
     "retry": "Retry"
   },
-  "pricing": {
-    "buyPack": "Buy credit pack",
-    "title": "Upgrade plan",
-    "popular": "Popular",
-    "qrcodeUnsupported": "Scan-to-pay is not available in this version yet; please use another payment method",
-    "current": "Your current plan",
-    "upgradeTo": "Upgrade to {{name}}",
-    "included": "Included",
-    "free": "Free",
-    "perMonth": "/mo",
-    "perYear": "/yr",
-    "regionMainland": "Chinese mainland",
-    "regionInternational": "Rest of world",
-    "regionPrompt": "Choose region",
-    "created": "Subscription created",
-    "error": "Something went wrong, please try again",
-    "loadFailed": "Could not load plans",
-    "channelPrompt": "Choose a region first",
-    "channelUnavailable": "Not sold in this region",
-    "manualRenewal": "One month at a time — we email you before it ends, no auto-debit"
-  },
-  "billing": {
-    "return": {
-      "waitingTitle": "Confirming your payment",
-      "waitingDetail": "The payment result is on its way back. This usually takes a few seconds — please keep this page open.",
-      "paidTitle": "Payment received",
-      "paidDetail": "You are all set — head back to the dashboard to carry on.",
-      "alreadyPaidTitle": "This order is already paid",
-      "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
-      "failedTitle": "Payment did not go through",
-      "failedDetail": "The payment channel marked this order as failed and you were not charged. You can go back and order again.",
-      "refundedTitle": "Order refunded",
-      "refundedDetail": "This order has been refunded. The money returns by the payment channel’s own schedule.",
-      "partially_refundedTitle": "Order partially refunded",
-      "partially_refundedDetail": "Part of this order has been refunded. The money returns by the payment channel’s own schedule.",
-      "timeoutTitle": "No confirmation yet",
-      "timeoutDetail": "If you completed the payment, nothing is lost — the payment provider retries its notification for several hours. Check your balance from the dashboard shortly.",
-      "errorTitle": "Could not confirm this order",
-      "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
-      "backToDashboard": "Back to dashboard"
-    },
-    "checkout": {
-      "summaryHeading": "Purchase",
-      "planRow": "Plan",
-      "amountRow": "Plan price",
-      "feeRow": "Tax / fees",
-      "totalRow": "Total due",
-      "payHeading": "Payment details",
-      "detailsToggle": "Order details",
-      "accountRow": "Account",
-      "methodHeading": "Choose a payment method",
-      "payNow": "Pay now",
-      "paying": "Taking you to payment…",
-      "back": "Back",
-      "agree": "By continuing you confirm you have read and agree to our",
-      "and": "and",
-      "termsLabel": "Terms of Service",
-      "privacyLabel": "Privacy Policy",
-      "secure": "Payment happens on the channel’s own page — we never see your payment details",
-      "loading": "Loading your order",
-      "missingPlan": "The link carries no plan, so there is nothing to check out.",
-      "planNotFound": "We could not find that plan — it may have been withdrawn.",
-      "noMethod": "No payment method is available in this region yet.",
-      "notSoldHere": "This plan is not sold in this region.",
-      "notBuyable": "This plan cannot be purchased right now.",
-      "loadFailed": "Could not load the plan. Please try again."
-    }
-  },
   "aiLab": {
     "configGate": {
       "title": "Account credits are unavailable",
@@ -1761,9 +1625,6 @@
       "liveCanvas": "Live canvas",
       "liveCanvasTitle": "Edit directly on the resume with AI",
       "newChat": "New chat",
-      "quota": "Quota",
-      "quotaTitle": "View remaining quota",
-      "quotaUnavailable": "Quota is unavailable right now",
       "untitledResume": "Untitled resume"
     },
     "closeConfirm": {
@@ -1997,13 +1858,6 @@
         "hint": "Questions only — your resume is never read or changed",
         "placeholder": "Ask anything — I won't touch your resume"
       }
-    },
-    "pro": {
-      "regionLabel": "Upgrade notice",
-      "title": "Upgrade to Pro.",
-      "benefits": "See Pro benefits",
-      "cta": "Upgrade",
-      "dismiss": "Dismiss upgrade notice"
     },
     "picker": {
       "model": "Model",

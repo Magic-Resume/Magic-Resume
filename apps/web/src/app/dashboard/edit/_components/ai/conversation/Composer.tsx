@@ -13,7 +13,7 @@ import ModelStrengthPicker from './ModelStrengthPicker';
 import ModeDotField from './ModeDotField';
 import ModeGlyph from './ModeGlyph';
 import ModePicker from './ModePicker';
-import ProUpgradeBanner from './ProUpgradeBanner';
+import { ComposerUpgradeBanner } from '@/lib/extensions/billing-ui';
 import AttachmentChips from './AttachmentChips';
 import QuoteChip, { type QuoteChipHandle, type QuotedContext } from './QuoteChip';
 import {
@@ -707,7 +707,7 @@ function Composer({
           </div>
         </div>
 
-        <ProUpgradeBanner retired={conversationStarted} />
+        <ComposerUpgradeBanner retired={conversationStarted} />
       </div>
     </div>
   );

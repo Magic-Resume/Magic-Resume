@@ -1559,7 +1559,8 @@ function testAfterAuthUrl() {
   // The middleware puts the original path in `redirect_url`. Nothing read it,
   // so a lapsed session on /billing/return?orderId=… came back to /dashboard
   // and the order id was gone — no polling, and no sync, which is the only
-  // thing that captures a PayPal payment from the browser.
+  // thing that captures a payment from the browser when the channel's
+  // notification is late.
   assert.equal(
     afterAuthUrl("redirect_url=%2Fbilling%2Freturn%3ForderId%3Dcmxyz"),
     "/billing/return?orderId=cmxyz",

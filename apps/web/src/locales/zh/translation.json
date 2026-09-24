@@ -84,9 +84,6 @@
   "account": {
     "menu": {
       "title": "账户",
-      "upgrade": "升级到 Pro",
-      "upgradeHint": "解锁全部 AI 能力",
-      "upgradeSoon": "即将推出",
       "profile": "个人资料",
       "settings": "设置",
       "language": "语言",
@@ -100,25 +97,12 @@
     "modal": {
       "title": "账户"
     },
-    "subscription": {
-      "currentPlan": "当前计划",
-      "monthly": "本月额度",
-      "today": "今日",
-      "week": "本周",
-      "usage": "本期用量",
-      "unlimited": "无限制",
-      "remaining": "剩 {{count}} 次",
-      "resetAt": "{{time}} 重置",
-      "upgrade": "升级到 Pro"
-    },
     "profile": {
       "tabs": {
         "profile": "资料",
         "security": "安全",
         "activity": "活动",
-        "subscription": "订阅",
-        "billing": "账单",
-        "invite": "邀请有礼"
+        "subscription": "订阅"
       },
       "personalInfo": "个人信息",
       "firstName": "名字",
@@ -189,58 +173,6 @@
         "languageEnglish": "English",
         "languageChinese": "中文"
       }
-    },
-    "billing": {
-      "planTitle": "订阅",
-      "freePlan": "免费版",
-      "renewsOn": "{{date}} 续期",
-      "endsOn": "已取消，{{date}} 到期",
-      "paymentFailed": "扣款失败——请更新支付方式，宽限期结束后订阅会终止",
-      "manageCta": "管理套餐",
-      "upgradeCta": "升级",
-      "ordersTitle": "付款记录",
-      "noOrders": "还没有付款记录",
-      "unknownItem": "—",
-      "colDate": "时间",
-      "colItem": "项目",
-      "colAmount": "金额",
-      "colChannel": "支付方式",
-      "colStatus": "状态",
-      "loadFailed": "账单信息加载失败",
-      "retry": "重试",
-      "refundHint": "需要退款？先看看",
-      "refundPolicy": "退款政策",
-      "status": {
-        "paid": "已支付",
-        "pending": "待支付",
-        "failed": "失败",
-        "refunded": "已退款",
-        "partially_refunded": "部分退款"
-      },
-      "channel": {
-        "alipay": "支付宝",
-        "paypal": "PayPal",
-        "wechat": "微信支付",
-        "stripe": "Stripe",
-        "manual": "人工"
-      },
-      "colOrderId": "账单 ID",
-      "copyOrderId": "复制完整账单 ID"
-    },
-    "invite": {
-      "copied": "已复制",
-      "savePoster": "保存邀请海报",
-      "posterAlt": "Magic Resume 邀请海报",
-      "posterError": "海报生成失败，请重试",
-      "rule": "奖励在对方完成首次 AI 对话后自动到账，双方同时生效。注册即得会被批量刷号，所以我们等一次真实使用",
-      "stats": {
-        "invited": "已邀请",
-        "rewarded": "已到账",
-        "pending": "待完成"
-      },
-      "headerAction": "邀请好友",
-      "emptyHint": "把海报或链接发给正在找工作的朋友——你们都会多一份 AI 额度，他也少走点弯路",
-      "remaining": "本月还可获得 {{count}} 次奖励"
     },
     "security": {
       "on": "已启用",
@@ -1671,74 +1603,6 @@
     "confirm": "确定",
     "retry": "重试"
   },
-  "pricing": {
-    "buyPack": "购买令牌包",
-    "title": "升级套餐",
-    "popular": "热门",
-    "qrcodeUnsupported": "当前版本暂不支持扫码支付，请改用其他支付方式",
-    "current": "你当前的套餐",
-    "upgradeTo": "升级至 {{name}}",
-    "included": "已包含",
-    "free": "免费",
-    "perMonth": "/月",
-    "perYear": "/年",
-    "regionMainland": "中国大陆",
-    "regionInternational": "其他地区",
-    "regionPrompt": "选择地区",
-    "created": "订阅已创建",
-    "error": "操作失败，请重试",
-    "loadFailed": "套餐加载失败",
-    "channelPrompt": "请先选择地区",
-    "channelUnavailable": "该地区暂不出售此套餐",
-    "manualRenewal": "按月购买，到期邮件提醒，不自动扣款"
-  },
-  "billing": {
-    "return": {
-      "waitingTitle": "正在确认支付结果",
-      "waitingDetail": "支付结果正在回传，通常几秒内完成，请不要关闭本页",
-      "paidTitle": "支付成功",
-      "paidDetail": "权益已生效，回工作台即可继续使用",
-      "alreadyPaidTitle": "这笔订单已支付",
-      "alreadyPaidDetail": "此前已完成付款并到账，本次没有重复扣款或重复加额",
-      "failedTitle": "支付未成功",
-      "failedDetail": "这笔订单已被支付渠道判为失败，款项未扣。你可以返回后重新下单",
-      "refundedTitle": "订单已退款",
-      "refundedDetail": "这笔订单已完成退款，款项将按支付渠道的时效退回原路",
-      "partially_refundedTitle": "订单已部分退款",
-      "partially_refundedDetail": "这笔订单已部分退款，款项将按支付渠道的时效退回原路",
-      "timeoutTitle": "暂未收到到账通知",
-      "timeoutDetail": "如果你已完成付款，款项不会丢失——支付渠道会在数小时内重试通知。稍后回到工作台查看余额即可",
-      "errorTitle": "无法确认订单",
-      "missingOrder": "链接里没有订单号，无法查询支付结果",
-      "backToDashboard": "返回工作台"
-    },
-    "checkout": {
-      "summaryHeading": "购买",
-      "planRow": "套餐类型",
-      "amountRow": "套餐费用",
-      "feeRow": "税费 / 手续费",
-      "totalRow": "应付总额",
-      "payHeading": "支付详情",
-      "detailsToggle": "订单详情",
-      "accountRow": "账户",
-      "methodHeading": "选择支付方式",
-      "payNow": "立即结账",
-      "paying": "正在前往支付…",
-      "back": "返回",
-      "agree": "点击「立即结账」即表示你已阅读并同意",
-      "and": "与",
-      "termsLabel": "用户协议",
-      "privacyLabel": "隐私政策",
-      "secure": "支付在支付渠道自己的页面完成，我们不接触你的付款信息",
-      "loading": "正在载入订单",
-      "missingPlan": "链接里没有套餐信息，无法结账",
-      "planNotFound": "找不到这个套餐，它可能已经下架",
-      "noMethod": "当前地区暂时没有可用的支付方式",
-      "notSoldHere": "这个套餐在当前地区不出售",
-      "notBuyable": "这个套餐当前无法购买",
-      "loadFailed": "载入套餐失败，请稍后重试"
-    }
-  },
   "aiLab": {
     "configGate": {
       "title": "账户额度不足",
@@ -1761,9 +1625,6 @@
       "liveCanvas": "实时画布",
       "liveCanvasTitle": "在简历上直接让 AI 改",
       "newChat": "新对话",
-      "quota": "剩余额度",
-      "quotaTitle": "查看剩余额度",
-      "quotaUnavailable": "暂时无法获取额度",
       "untitledResume": "未命名简历"
     },
     "closeConfirm": {
@@ -1997,13 +1858,6 @@
         "hint": "纯咨询，不读取也不修改简历",
         "placeholder": "问点什么，我不会碰你的简历"
       }
-    },
-    "pro": {
-      "regionLabel": "升级提示",
-      "title": "升级到 Pro",
-      "benefits": "查看 Pro 权益",
-      "cta": "升级",
-      "dismiss": "关闭升级提示"
     },
     "picker": {
       "model": "模型",

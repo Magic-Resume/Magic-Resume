@@ -1,6 +1,5 @@
-import { Bug, ChevronLeft, Gift, History } from '@magic-resume/icons';
-import { useAccountUiStore } from '@/store/useAccountUiStore';
-import { warmInvitePoster } from '@/lib/utils/invite-poster';
+import { Bug, ChevronLeft, History } from '@magic-resume/icons';
+import { InviteHeaderAction } from '@/lib/extensions/growth';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +30,6 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
        sky），互不影响——面只负责底。 */
     const toolSurface = useHoverSurface();
 
-    const openInvitePoster = useAccountUiStore((state) => state.openInvitePoster);
     const cloudSync = useSettingStore((state) => state.cloudSync);
     const reduce = useReducedMotion();
 
@@ -98,31 +96,8 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
                                 </span>
                             </button>
                         )}
-                        {/* 邀请入口放这儿而不是账户弹窗深处：增长入口要在人干活的路上，
-                            不能等人主动去翻第五个 tab。 */}
-                        {isCloudMode && (
-                            <button
-                                {...toolSurface.bind('invite')}
-                                onClick={openInvitePoster}
-                                // 覆盖绑定里的同名接管点，把这一颗自己的预热并进去。
-                                onPointerEnter={() => {
-                                    toolSurface.bind('invite').onPointerEnter();
-                                    void warmInvitePoster();
-                                }}
-                                onFocus={() => {
-                                    toolSurface.bind('invite').onFocus();
-                                    void warmInvitePoster();
-                                }}
-                                aria-label={t('account.invite.headerAction')}
-                                type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-sky-300"
-                            >
-                                <Gift size={16} />
-                                <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
-                                    {t('account.invite.headerAction')}
-                                </span>
-                            </button>
-                        )}
+                        {/* 邀请入口（growth 槽）。放在顶栏：增长入口要在人干活的路上。 */}
+                        <InviteHeaderAction surface={toolSurface.bind('invite')} />
                         {isCloudMode && (
                             <button
                                 {...toolSurface.bind('feedback')}

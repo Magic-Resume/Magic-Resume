@@ -1,3 +1,5 @@
+import type { AccountTabContribution, MenuItemProps } from './contracts';
+
 /**
  * Pricing UI slot — the open-source build has no paywall to show.
  *
@@ -23,3 +25,33 @@ export function PricingModal() {
 export function CheckoutPage() {
   return null;
 }
+
+/** Body of `/billing/return` — the payment channel's `return_url`. Nothing to poll here. */
+export function BillingReturnPage() {
+  return null;
+}
+
+/** The upgrade strip under the AI composer. */
+export function ComposerUpgradeBanner(props: { retired?: boolean }) {
+  void props;
+  return null;
+}
+
+/** The quota popover in the AI panel header. */
+export function AiQuotaIndicator() {
+  return null;
+}
+
+/** The plan-and-usage card in the account modal header. */
+export function AccountPlanSummary() {
+  return null;
+}
+
+/** The upgrade row at the top of the account menu. */
+export function UpgradeMenuItem(props: MenuItemProps) {
+  void props;
+  return null;
+}
+
+/** No billing tab in the account modal. */
+export const billingAccountTab: AccountTabContribution | null = null;

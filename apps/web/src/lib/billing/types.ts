@@ -3,6 +3,10 @@
  *
  * 积分是内部计费单位，任何字段都不对客户端暴露：这里只有计划类型、能不能用、
  * 剩余百分比。下面所有 credits/includedCredits 的缺席都是这条规则的结果。
+ *
+ * 只留 billing 槽契约携带的形状：`Entitlement` 及它引用到的计划类型。订单、收据、
+ * 结账、订阅只有渲染它们的界面才读，那些界面在商业包里，类型也随之搬到商业包的
+ * `types.ts`。
  */
 
 export type PlanKind = 'credit_pack' | 'subscription';
@@ -56,45 +60,6 @@ export interface PlanSummary {
   copy?: Record<string, PlanCardCopy>;
   /** 只出现在计划列表里；缺席=未加载，不代表"哪儿都不卖"。 */
   offers?: PlanOffer[];
-}
-
-export interface OrderSummary {
-  id: string;
-  status: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
-  amountCents: number;
-  currency: string;
-  channel: string;
-  paidAt?: string | null;
-  createdAt?: string;
-}
-
-/** 买家自己的订单历史行：带计划名而非整个计划——收据只需要说明买了什么。 */
-export interface OrderHistoryRow extends OrderSummary {
-  planName: string | null;
-  planKind: PlanKind | null;
-}
-
-export interface OrderHistoryPage {
-  records: OrderHistoryRow[];
-  total: number;
-  current: number;
-  size: number;
-}
-
-export interface OrderCheckout {
-  orderId: string;
-  /** `redirect` → 跳转到 payUrl；`qrcode` → 把 payUrl 渲染成二维码。 */
-  kind: 'redirect' | 'qrcode';
-  payUrl: string;
-}
-
-export interface SubscriptionSummary {
-  id: string;
-  planId: string;
-  status: string;
-  currentPeriodEnd?: string | null;
-  cancelAtPeriodEnd: boolean;
-  plan?: PlanSummary | null;
 }
 
 /** GET /api/billing/ai-entitlement 的响应。 */
