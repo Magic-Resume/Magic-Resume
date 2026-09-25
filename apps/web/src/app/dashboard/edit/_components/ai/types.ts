@@ -1,5 +1,6 @@
 import type { LucideIcon } from '@magic-resume/icons';
 import type { WidgetInstance } from "@magic-resume/genui";
+import type { HitlDecision } from "./lib/services/agentClient";
 import type { AgentActivity } from "./conversation/agentActivity";
 
 export type SkillId =
@@ -302,10 +303,19 @@ export interface ChatMessage {
    * not match, so each card remembers which slot it answers.
    */
   interruptSlot?: { requestId: string; index: number };
+  /** Decisions already entered before a reload, scoped to the current interrupt. */
+  interruptDecision?: HitlDecision;
+  interruptDecisions?: Record<number, HitlDecision>;
   /** 这条用户消息带附件。渲染层据此画回形针图标。 */
   attachment?: boolean;
   /** 同一条用户消息中的附件名。文字与文件不再拆成两个气泡。 */
   attachmentNames?: string[];
+  /** Stable identity of this server turn, used to locate its pre-turn checkpoint. */
+  serverTurnId?: string;
+  /** The exact chat mode used by that turn, so regeneration repeats its command. */
+  serverTurnMode?: "create" | "general";
+  /** Private object references; URLs are freshly signed when regenerating. */
+  attachmentRefs?: Array<{ id: string; name: string; contentType: string; key: string }>;
   /** present when a user message quotes a canvas snippet (「询问 Polaris」bridge) */
   quote?: { label: string; text: string };
 }
