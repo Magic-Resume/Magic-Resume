@@ -899,7 +899,7 @@ export const WIDGETS: WidgetRegistry = {
   },
 
   /**
-   * 实时语音面试的入口。`client`：点「进入」就地开浮层，不回传 agent——决定已经做完了，
+   * 实时语音面试的入口。`client`：点「进入」打开已绑定的空间，不回传 agent——决定已经做完了，
    * 绕一圈只多一次停顿和一次计费。
    */
   interview_room: {
@@ -914,11 +914,19 @@ export const WIDGETS: WidgetRegistry = {
         props.style === 'pressure' || props.style === 'behavioral' ? props.style : 'standard';
       return {
         role,
+        ...(typeof props.roomId === 'string' && /^[0-9a-f-]{36}$/i.test(props.roomId)
+          ? { roomId: props.roomId }
+          : {}),
         ...(typeof props.jobDescription === 'string' && props.jobDescription.trim()
           ? { jobDescription: props.jobDescription }
           : {}),
         durationMinutes: Number.isFinite(duration) && duration > 0 ? Math.round(duration) : 20,
         style,
+        language: props.language === 'en' ? 'en' : 'zh',
+        difficulty:
+          props.difficulty === 'entry' || props.difficulty === 'hard'
+            ? props.difficulty
+            : 'standard',
       };
     },
   },

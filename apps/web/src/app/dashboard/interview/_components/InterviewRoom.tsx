@@ -3,14 +3,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Loader2 } from '@magic-resume/icons';
+import { ChevronLeft, Clock, Loader2 } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import {
   interviewApi,
   type InterviewReport,
   type InterviewStage,
+  type InterviewVoiceChannel,
 } from '@/lib/api/interviewApi';
-import { useInterviewUiStore } from '@/store/useInterviewUiStore';
+import {
+  useInterviewUiStore,
+  type InterviewLaunch,
+} from '@/store/useInterviewUiStore';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import i18n from '@/i18n';
 import { fromAxiosError } from '@/lib/errors/normalize';
@@ -21,7 +25,9 @@ import { useCaptionPacing } from './useCaptionPacing';
 import CaptionSlot, { type CaptionTone } from './CaptionSlot';
 import VoiceOrb from './VoiceOrb';
 import type { OrbPhase } from './orbStates';
-import InterviewReportView from './InterviewReportView';
+import InterviewReportView, {
+  countSubstantiveAnswers,
+} from './InterviewReportView';
 import InterviewComposer from './InterviewComposer';
 import Transcript from './Transcript';
 import LeaveConfirm from './LeaveConfirm';
@@ -69,6 +75,25 @@ const CAPTION_LINGER_MS = 4000;
  * 都会让球一直呼吸下去。**永远转圈是最糟的失败方式**：用户不知道该等还是该走。
  */
 const PREP_TIMEOUT_MS = 15_000;
+const DEFAULT_DURATION_SECONDS = 20 * 60;
+
+function sessionDeadline(startedAt?: string, durationSeconds?: number) {
+  const start = startedAt ? Date.parse(startedAt) : NaN;
+  if (!Number.isFinite(start)) return null;
+  const duration =
+    typeof durationSeconds === 'number' && Number.isFinite(durationSeconds)
+      ? Math.max(0, durationSeconds)
+      : DEFAULT_DURATION_SECONDS;
+  return start + duration * 1000;
+}
+
+function secondsUntil(deadline: number) {
+  return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+}
+
+function formatRemaining(seconds: number) {
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+}
 
 export default function InterviewRoom({
   sessionId: routeId,
@@ -79,6 +104,7 @@ export default function InterviewRoom({
   const router = useRouter();
   const launch = useInterviewUiStore((s) => s.launch);
   const clearLaunch = useInterviewUiStore((s) => s.clearLaunch);
+  const setLaunch = useInterviewUiStore((s) => s.setLaunch);
   const returnTo = useInterviewUiStore((s) => s.returnTo);
   const clearReturnTo = useInterviewUiStore((s) => s.clearReturnTo);
 
@@ -86,6 +112,7 @@ export default function InterviewRoom({
   const [sessionId, setSessionId] = useState<string | null>(
     routeId === 'new' ? null : routeId,
   );
+  const rememberCardSession = useInterviewUiStore((s) => s.rememberCardSession);
   const [stage, setStage] = useState<InterviewStage>('introduction');
   // 岗位名进组件状态：`launch` 在会话建好那一刻就消费掉了，直接读它标题会在开始面试
   // 的瞬间把岗位名弄丢。恢复现场时它来自服务端。
@@ -95,10 +122,14 @@ export default function InterviewRoom({
   const [busy, setBusy] = useState(false);
   const [finished, setFinished] = useState(false);
   const [report, setReport] = useState<InterviewReport | null>(null);
+  const [reportSkipped, setReportSkipped] = useState(false);
+  const [archivedWithoutReport, setArchivedWithoutReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [lingering, setLingering] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   /**
    * 入场准备到哪一步了。**跟着服务端的真实事件走，不按固定顺序点亮**——
    * 检索面经经常被跳过，屏幕上不该出现一个没发生过的步骤。
@@ -106,6 +137,8 @@ export default function InterviewRoom({
   const [prep, setPrep] = useState<PrepStep>('session');
   const [prepStalled, setPrepStalled] = useState(false);
   const startedAtRef = useRef<number | null>(null);
+  const autoFinishAttemptedRef = useRef(false);
+  const reportAttemptedRef = useRef(false);
   /**
    * 这一场是不是本组件自己开的。
    *
@@ -113,11 +146,19 @@ export default function InterviewRoom({
    * 恢复 effect 会被新的 routeId 触发，把刚建好的内存状态用一次服务端往返盖掉。
    */
   const selfStartedRef = useRef(false);
+  /**
+   * 「再来一场」要用的那份启动参数。
+   *
+   * store 里的 `launch` 在会话建好那一刻就被消费掉，而简历上下文由编辑器算好交接
+   * 过来、面试页自己拿不到（见 `useInterviewUiStore`）——所以开场时留一份在内存里。
+   */
+  const relaunchRef = useRef<InterviewLaunch | null>(null);
 
   const voice = useVoiceInterview(sessionId);
   const {
     connect: connectVoice,
     disconnect: disconnectVoice,
+    flushTranscripts,
     readLevels,
     sendText,
     toggleMute,
@@ -129,7 +170,25 @@ export default function InterviewRoom({
    * 开场白**两边都有**——worker 会把同一段文本念出来、转写再送回来，所以要在接缝处去重。
    */
   const allTurns = mergeInterviewTurns(turns, voice.state.turns);
-  const isFinished = finished || voicePhase === 'finished';
+  const isFinished = finished;
+  const effectiveDeadline =
+    deadline === null
+      ? voice.state.budgetDeadline
+      : voice.state.budgetDeadline === null
+        ? deadline
+        : Math.min(deadline, voice.state.budgetDeadline);
+
+  useEffect(() => {
+    if (effectiveDeadline === null || screen !== 'live' || isFinished) return;
+    const tick = () => setRemainingSeconds(secondsUntil(effectiveDeadline));
+    tick();
+    const interval = setInterval(tick, 1000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [effectiveDeadline, screen, isFinished]);
 
   // ── 恢复现场 ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -141,6 +200,14 @@ export default function InterviewRoom({
         if (cancelled) return;
         setStage(live.stage);
         setRole(live.role);
+        const restoredDeadline = sessionDeadline(
+          live.started_at,
+          live.duration_seconds,
+        );
+        setDeadline(restoredDeadline);
+        setRemainingSeconds(
+          restoredDeadline === null ? null : secondsUntil(restoredDeadline),
+        );
         setTurns(
           live.messages.map((m) => ({
             role: m.role === 'assistant' ? 'interviewer' : 'candidate',
@@ -148,7 +215,7 @@ export default function InterviewRoom({
           })),
         );
         // 已经出过报告 = 这场结束了，直接进复盘，不要再连一次语音。
-        if (live.hasReport) {
+        if (live.hasReport || live.stage === 'finished') {
           setFinished(true);
           setScreen('report');
           return;
@@ -160,7 +227,8 @@ export default function InterviewRoom({
         try {
           const archived = await interviewApi.archived(routeId);
           if (cancelled) return;
-          if (!archived.report) throw new Error('Archived report is missing');
+          if (!archived || archived.stage !== 'finished')
+            throw new Error('Finished interview archive is missing');
           setStage('finished');
           setRole(archived.role);
           setTurns(
@@ -170,6 +238,9 @@ export default function InterviewRoom({
             })),
           );
           setReport(archived.report);
+          setArchivedWithoutReport(!archived.report);
+          // 归档没有报告时，热态可能已经过期，不能再向报告接口发起生成请求。
+          if (!archived.report) reportAttemptedRef.current = true;
           setFinished(true);
           setScreen('report');
         } catch {
@@ -196,44 +267,122 @@ export default function InterviewRoom({
       try {
         const result = await interviewApi.startStream(
           {
+            ...(launch.roomId ? { room_id: launch.roomId } : {}),
             resume_context: launch.resumeContext,
+            ...(launch.resumeId ? { resume_id: launch.resumeId } : {}),
             role: launch.brief.role,
             job_description: launch.brief.jobDescription,
-            // 永远按语音开：打字也经由房间送进去，所以这一场始终需要 LiveKit 凭据。
+            /*
+             * 永远按语音开：打字也经由同一条语音链路送进去。
+             * 传输用环境变量切——缺省仍是 LiveKit；设成 `lyra` 或 `vega` 就改走上游主持的渠道
+             * 网页语音（服务端得配 `INTERVIEW_GPT_VOICE_TOKEN`，否则会报不可用）。
+             */
             config: {
               mode: 'voice',
               language: launch.brief.language,
               difficulty: launch.brief.difficulty,
+              duration_minutes: launch.brief.durationMinutes,
+              ...(process.env.NEXT_PUBLIC_INTERVIEW_VOICE_CHANNEL
+                ? {
+                    channel: process.env
+                      .NEXT_PUBLIC_INTERVIEW_VOICE_CHANNEL as InterviewVoiceChannel,
+                  }
+                : {}),
             },
           },
           setPrep,
         );
+        if (launch.cardId) {
+          rememberCardSession(launch.cardId, result.session_id);
+        }
+        if (result.resumed) {
+          // 这张卡已经启动过：交给 live/归档恢复完整逐字稿，不能再记一次开场事件。
+          setSessionId(result.session_id);
+          relaunchRef.current = launch;
+          clearLaunch();
+          router.replace(`/dashboard/interview/${result.session_id}`);
+          return;
+        }
         selfStartedRef.current = true;
         setPrep('connecting');
         setSessionId(result.session_id);
         setStage(result.stage);
-        setTurns([{ role: 'interviewer', text: result.message }]);
-        setScreen('live');
+        const startedDeadline = sessionDeadline(
+          result.started_at,
+          result.duration_seconds,
+        );
+        setDeadline(startedDeadline);
+        setRemainingSeconds(
+          startedDeadline === null ? null : secondsUntil(startedDeadline),
+        );
+        /*
+         * 上游主持的渠道不再由服务端生成开场白——开口权归上游，它说的第一句会通过转写
+         * 回来。这里塞一条空的面试官发言，逐字稿开头就会出现一个空气泡。
+         */
+        setTurns(
+          result.message ? [{ role: 'interviewer', text: result.message }] : [],
+        );
+        if (result.stage === 'finished') {
+          setFinished(true);
+          setScreen('report');
+        } else {
+          setScreen('live');
+        }
         startedAtRef.current = Date.now();
         appLifecycle.aiInterviewStarted();
         // URL 换成真正的 sessionId：从这里开始刷新能续上。
         router.replace(`/dashboard/interview/${result.session_id}`);
+        relaunchRef.current = launch;
         clearLaunch();
       } catch (err) {
+        // 同一张卡跨标签页重进时，本地可能没有 session 映射。热态过期后服务端
+        // 会拒绝重建这个 roomId；改走已归档的只读页面，不能给它再开一场。
+        if (launch.roomId) {
+          try {
+            const archived = await interviewApi.archived(launch.roomId);
+            if (archived?.stage === 'finished') {
+              if (launch.cardId)
+                rememberCardSession(launch.cardId, launch.roomId);
+              setSessionId(launch.roomId);
+              relaunchRef.current = launch;
+              clearLaunch();
+              router.replace(`/dashboard/interview/${launch.roomId}`);
+              return;
+            }
+          } catch {
+            // 没有已结束的归档，显示原始开场失败原因。
+          }
+        }
         setError(describeFailure(err, t('aiLab.interview.startFailed')));
         setScreen('unavailable');
       } finally {
         setBusy(false);
       }
     })();
-  }, [routeId, launch, router, clearLaunch, t]);
+  }, [routeId, launch, router, clearLaunch, rememberCardSession, t]);
 
   // 会话建好之后才连房间。
   useEffect(() => {
-    if (screen === 'live' && sessionId && voicePhase === 'idle' && !isFinished) {
+    if (
+      screen === 'live' &&
+      sessionId &&
+      voicePhase === 'idle' &&
+      !isFinished &&
+      !busy &&
+      remainingSeconds !== 0 &&
+      !autoFinishAttemptedRef.current
+    ) {
       void connectVoice();
     }
-  }, [screen, sessionId, voicePhase, isFinished, connectVoice]);
+  }, [
+    screen,
+    sessionId,
+    voicePhase,
+    isFinished,
+    busy,
+    remainingSeconds,
+    connectVoice,
+  ]);
 
   /**
    * 还在准备：从点进入到面试官真正开口之间。
@@ -259,7 +408,7 @@ export default function InterviewRoom({
   // ── 送出一轮 ────────────────────────────────────────────────────────────
   const send = useCallback(async () => {
     const text = draft.trim();
-    if (!text || !sessionId || busy) return;
+    if (!text || !sessionId || busy || remainingSeconds === 0) return;
     setDraft('');
     setBusy(true);
     try {
@@ -271,7 +420,10 @@ export default function InterviewRoom({
       // 房间不在（连不上/已断开）才退回 HTTP：这时只出字，不出声。
       setTurns((prev) => [...prev, { role: 'candidate', text }]);
       const turn = await interviewApi.chat(sessionId, text);
-      setTurns((prev) => [...prev, { role: 'interviewer', text: turn.message }]);
+      setTurns((prev) => [
+        ...prev,
+        { role: 'interviewer', text: turn.message },
+      ]);
       setStage(turn.stage);
       if (turn.finished) setFinished(true);
     } catch (err) {
@@ -279,7 +431,7 @@ export default function InterviewRoom({
     } finally {
       setBusy(false);
     }
-  }, [draft, sessionId, busy, sendText, t]);
+  }, [draft, sessionId, busy, remainingSeconds, sendText, t]);
 
   // ── 字幕 ────────────────────────────────────────────────────────────────
   /*
@@ -332,12 +484,36 @@ export default function InterviewRoom({
   // ── 报告 ────────────────────────────────────────────────────────────────
   const loadReport = useCallback(async () => {
     if (!sessionId) return;
+    reportAttemptedRef.current = true;
     setBusy(true);
     setError(null);
     try {
-      setReport(await interviewApi.report(sessionId));
+      let result;
+      try {
+        result = await interviewApi.report(sessionId);
+      } catch (err) {
+        const normalized = fromAxiosError(err);
+        if (normalized.errorCode !== 'rate_limited') throw err;
+        const seconds = Number(normalized.params?.retryAfterSec);
+        await new Promise<void>((resolve) =>
+          setTimeout(
+            resolve,
+            (Number.isFinite(seconds)
+              ? Math.min(30, Math.max(1, seconds))
+              : 5) * 1000,
+          ),
+        );
+        result = await interviewApi.report(sessionId);
+      }
+      if ('skipped' in result) setReportSkipped(true);
+      else setReport(result);
     } catch (err) {
-      setError(describeFailure(err, t('aiLab.interview.reportFailed')));
+      const normalized = fromAxiosError(err);
+      setError(
+        normalized.errorCode === 'rate_limited'
+          ? t('aiLab.interview.reportRateLimited')
+          : describeFailure(err, t('aiLab.interview.reportFailed')),
+      );
     } finally {
       setBusy(false);
     }
@@ -348,7 +524,28 @@ export default function InterviewRoom({
     setBusy(true);
     setError(null);
     try {
+      // 先停止收音，再等待已定稿转写落库；否则 finished 会拒收迟到的作答，
+      // 报告判定模型只能看见一份空记录。
+      disconnectVoice();
+      try {
+        await flushTranscripts();
+      } catch {
+        setError(t('aiLab.interview.transcriptSaveFailed'));
+        return;
+      }
       const result = await interviewApi.finish(sessionId);
+      // 结果页展示与模型使用同一份服务端记录，而不是浏览器内未确认的字幕。
+      try {
+        const live = await interviewApi.live(sessionId);
+        setTurns(
+          live.messages.map((message) => ({
+            role: message.role === 'assistant' ? 'interviewer' : 'candidate',
+            text: message.content,
+          })),
+        );
+      } catch {
+        // 结束状态已提交；读取失败不阻断报告，重新打开仍可恢复。
+      }
       setStage(result.stage);
       setFinished(result.finished);
     } catch (err) {
@@ -356,7 +553,29 @@ export default function InterviewRoom({
     } finally {
       setBusy(false);
     }
-  }, [busy, sessionId, t]);
+  }, [busy, disconnectVoice, flushTranscripts, sessionId, t]);
+
+  useEffect(() => {
+    if (
+      screen !== 'live' ||
+      isFinished ||
+      busy ||
+      !sessionId ||
+      autoFinishAttemptedRef.current ||
+      (remainingSeconds !== 0 && voicePhase !== 'finished')
+    )
+      return;
+    autoFinishAttemptedRef.current = true;
+    void finishInterview();
+  }, [
+    screen,
+    isFinished,
+    busy,
+    sessionId,
+    remainingSeconds,
+    voicePhase,
+    finishInterview,
+  ]);
 
   useEffect(() => {
     if (!isFinished) return;
@@ -371,7 +590,7 @@ export default function InterviewRoom({
         durationSec: Math.round((Date.now() - startedAt) / 1000),
       });
     }
-    if (!report && !busy) void loadReport();
+    if (!report && !busy && !reportAttemptedRef.current) void loadReport();
   }, [busy, disconnectVoice, isFinished, loadReport, report]);
 
   // ── 离开 ────────────────────────────────────────────────────────────────
@@ -394,6 +613,44 @@ export default function InterviewRoom({
     router.push(destination);
   }, [disconnectVoice, router, returnTo, clearReturnTo]);
 
+  /**
+   * 再来一场：同岗位、同 JD 重开。
+   *
+   * **不能靠路由让组件重挂**——球每次重建都会闪（见文件头那条），而恢复现场那条路
+   * 要的是服务端会话，这里还没有。所以原地复位，URL 退回 `new` 再走一次开场。
+   */
+  const restart = useCallback(() => {
+    const again = relaunchRef.current;
+    if (!again) return;
+    disconnectVoice();
+    beginRef.current = false;
+    selfStartedRef.current = false;
+    startedAtRef.current = null;
+    autoFinishAttemptedRef.current = false;
+    reportAttemptedRef.current = false;
+    setDeadline(null);
+    setRemainingSeconds(null);
+    setSessionId(null);
+    setTurns([]);
+    setReport(null);
+    setReportSkipped(false);
+    setArchivedWithoutReport(false);
+    setFinished(false);
+    setError(null);
+    setStage('introduction');
+    setExpanded(false);
+    setLingering(null);
+    setPrep('session');
+    setPrepStalled(false);
+    setScreen('restoring');
+    // “再来一场”是显式新面试，不能复用入口卡预分配的空间 ID。
+    setLaunch(
+      { ...again, roomId: undefined, cardId: undefined },
+      returnTo ?? '/dashboard',
+    );
+    router.replace('/dashboard/interview/new');
+  }, [disconnectVoice, returnTo, router, setLaunch]);
+
   const onBack = useCallback(() => {
     if (inProgress) setLeaving(true);
     else leave();
@@ -415,7 +672,6 @@ export default function InterviewRoom({
             ? voicePhase
             : 'idle';
 
-  // 出错那一屏也得让球退开：它满尺寸停在正中央，而文案也居中，两者直接叠在一起。
   const docked = expanded || screen === 'report' || screen === 'unavailable';
 
   const rawVoiceError = voice.state.error;
@@ -427,59 +683,88 @@ export default function InterviewRoom({
         defaultValue: t('aiLab.interview.voiceError.connection'),
       })
     : null;
+  const voiceFailure = screen === 'live' ? voiceError : null;
 
   /**
    * 槽里显示什么——**唯一的判定处**。
    *
-   * 优先级：出错 > 还在准备 > 对话字幕。三路都写同一个槽，所以必须在这里定次序；
-   * 否则它们会互相盖，而且展开逐字稿时字幕本该让位（那边已经有全文了）。
+   * 等待与对话字幕共用一个槽；语音故障另用居中的状态卡片。
    */
   const slot: { text: string | null; tone: CaptionTone; shimmer?: boolean } =
-    voiceError
-      ? { text: voiceError, tone: 'error' }
-      : preparing
-        ? {
-            text: t(
-              prepStalled
-                ? 'aiLab.interview.prep.stalled'
-                : `aiLab.interview.prep.${prep}`,
-            ),
-            tone: 'interviewer',
-            // 只有等待才有流光：它说的是「还在跑」。给已经说完的字幕加流光，
-            // 会让人以为那句话还没完。
-            shimmer: !prepStalled,
-          }
-        : !docked && caption
-          ? { text: caption.text, tone: caption.mine ? 'mine' : 'interviewer' }
-          : { text: null, tone: 'interviewer' };
+    preparing
+      ? {
+          text: t(
+            prepStalled
+              ? 'aiLab.interview.prep.stalled'
+              : `aiLab.interview.prep.${prep}`,
+          ),
+          tone: 'interviewer',
+          // 只有等待才有流光：它说的是「还在跑」。给已经说完的字幕加流光，
+          // 会让人以为那句话还没完。
+          shimmer: !prepStalled,
+        }
+      : !docked && caption
+        ? { text: caption.text, tone: caption.mine ? 'mine' : 'interviewer' }
+        : { text: null, tone: 'interviewer' };
 
   return (
     <div className="relative flex h-full flex-col">
       <Header
         role={role}
         stage={screen === 'live' ? stage : null}
+        remainingSeconds={
+          screen === 'live' && voice.state.errorCode !== 'quota'
+            ? remainingSeconds
+            : null
+        }
         onBack={onBack}
       />
 
       <OrbStage
         docked={docked}
+        hidden={Boolean(voiceFailure)}
         phase={orbPhase}
         readLevels={readLevels}
         onToggle={screen === 'live' ? () => setExpanded((v) => !v) : undefined}
       >
         {/*
-          等待、字幕、错误**共用同一个槽**，就在输入框上方。
-          它们本来各占一行流内元素，谁出现谁挤压布局——球会跟着上下跳。
+          等待与字幕共用输入框上方的固定槽位；故障使用独立状态卡片。
         */}
-        {screen !== 'report' && (
-          <CaptionSlot text={slot.text} tone={slot.tone} shimmer={slot.shimmer} />
+        {screen !== 'report' && !voiceFailure && (
+          <CaptionSlot
+            text={slot.text}
+            tone={slot.tone}
+            shimmer={slot.shimmer}
+          />
+        )}
+        {voiceFailure && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center overflow-y-auto px-6 py-4">
+            <div className="border-hairline bg-raised rounded-mr-panel w-full max-w-md border p-6 text-center">
+              <span className="bg-sunk text-secondary mx-auto mb-4 flex size-10 items-center justify-center rounded-full">
+                <Clock size={19} aria-hidden="true" />
+              </span>
+              <p
+                className="text-mr-body text-primary leading-relaxed"
+                role="status"
+              >
+                {voiceFailure}
+              </p>
+              <button
+                type="button"
+                onClick={leave}
+                className="bg-sunk text-mr-caption text-primary hover:bg-desk mt-5 cursor-pointer rounded-full px-5 py-2.5 transition-colors"
+              >
+                {t('aiLab.interview.backToDashboard')}
+              </button>
+            </div>
+          </div>
         )}
         {prepStalled && preparing && (
           <div className="absolute inset-x-0 bottom-[124px] z-10 flex justify-center">
             <button
               type="button"
               onClick={leave}
-              className="cursor-pointer rounded-full bg-sunk px-5 py-2 text-mr-overline text-primary transition-colors hover:bg-raised"
+              className="bg-sunk text-mr-overline text-primary hover:bg-raised cursor-pointer rounded-full px-5 py-2 transition-colors"
             >
               {t('aiLab.interview.backToDashboard')}
             </button>
@@ -488,7 +773,7 @@ export default function InterviewRoom({
 
         {screen === 'unavailable' && (
           <Centered>
-            <p className="max-w-sm text-center text-sm leading-relaxed text-secondary">
+            <p className="text-secondary max-w-sm text-center text-sm leading-relaxed">
               {error ??
                 t(
                   launch
@@ -499,7 +784,7 @@ export default function InterviewRoom({
             <button
               type="button"
               onClick={leave}
-              className="cursor-pointer rounded-full bg-sunk px-5 py-2.5 text-mr-caption text-primary transition-colors hover:bg-raised"
+              className="bg-sunk text-mr-caption text-primary hover:bg-raised cursor-pointer rounded-full px-5 py-2.5 transition-colors"
             >
               {t('aiLab.interview.backToDashboard')}
             </button>
@@ -508,7 +793,7 @@ export default function InterviewRoom({
 
         {screen === 'live' && (
           <AnimatePresence>
-            {docked && (
+            {docked && !voiceFailure && (
               <Transcript
                 key="transcript"
                 turns={allTurns}
@@ -521,16 +806,66 @@ export default function InterviewRoom({
         )}
 
         {screen === 'report' && (
-          <div className="absolute inset-0 overflow-y-auto px-5 pb-8 pt-2">
+          <div className="absolute inset-0 overflow-y-auto px-5 pb-32 pt-2">
             {report ? (
-              <InterviewReportView report={report} />
-            ) : (
-              <div className="flex items-center justify-center gap-2 pt-16 text-mr-caption text-secondary">
+              <InterviewReportView
+                report={report}
+                answered={countSubstantiveAnswers(allTurns)}
+                onRestart={relaunchRef.current ? restart : undefined}
+                onEditResume={leave}
+              />
+            ) : archivedWithoutReport ? (
+              <div className="mx-auto flex max-w-2xl flex-col gap-6 pt-12">
+                <h2 className="text-mr-heading text-primary text-center">
+                  {t('aiLab.interview.report.archivedWithoutReportTitle')}
+                </h2>
+                <p className="text-mr-body-tight text-secondary text-center">
+                  {t('aiLab.interview.report.archivedWithoutReportBody')}
+                </p>
+                <ReportTranscript turns={allTurns} />
+                <button
+                  type="button"
+                  onClick={leave}
+                  className="bg-sunk text-primary mx-auto cursor-pointer rounded-full px-5 py-2.5"
+                >
+                  {t('common.back')}
+                </button>
+              </div>
+            ) : reportSkipped ? (
+              <div className="mx-auto flex max-w-2xl flex-col gap-6 pt-12">
+                <h2 className="text-mr-heading text-primary text-center">
+                  {t('aiLab.interview.report.skippedTitle')}
+                </h2>
+                <p className="text-mr-body-tight text-secondary text-center">
+                  {t('aiLab.interview.report.skippedBody')}
+                </p>
+                <ReportTranscript turns={allTurns} />
+                <button
+                  type="button"
+                  onClick={leave}
+                  className="bg-sunk text-primary mx-auto cursor-pointer rounded-full px-5 py-2.5"
+                >
+                  {t('common.back')}
+                </button>
+              </div>
+            ) : !error ? (
+              <div className="text-mr-caption text-secondary flex items-center justify-center gap-2 pt-16">
                 <Loader2 size={14} className="animate-spin" />
                 {t('aiLab.interview.report.generating')}
               </div>
+            ) : null}
+            {error && (
+              <p className="text-mr-overline text-rev-del mt-4">{error}</p>
             )}
-            {error && <p className="mt-4 text-mr-overline text-rev-del">{error}</p>}
+            {!report && !reportSkipped && error && (
+              <button
+                type="button"
+                onClick={() => void loadReport()}
+                className="bg-sunk text-mr-caption text-primary mt-3 cursor-pointer rounded-full px-4 py-2"
+              >
+                {t('aiLab.interview.report.retry')}
+              </button>
+            )}
           </div>
         )}
       </OrbStage>
@@ -545,6 +880,8 @@ export default function InterviewRoom({
           busy={busy}
           muted={voice.state.muted}
           micDenied={voice.state.micDenied}
+          expired={remainingSeconds === 0}
+          error={error}
         />
       )}
 
@@ -560,10 +897,12 @@ export default function InterviewRoom({
 function Header({
   role,
   stage,
+  remainingSeconds,
   onBack,
 }: {
   role?: string;
   stage: InterviewStage | null;
+  remainingSeconds: number | null;
   onBack: () => void;
 }) {
   const { t } = useTranslation();
@@ -579,7 +918,7 @@ function Header({
         type="button"
         onClick={onBack}
         aria-label={t('common.back')}
-        className="cursor-pointer text-secondary transition-colors hover:text-primary"
+        className="text-secondary hover:text-primary cursor-pointer transition-colors"
       >
         <ChevronLeft size={20} />
       </button>
@@ -587,13 +926,29 @@ function Header({
        * 标题、岗位、阶段是一组信息，必须挨在一起。用 `ml-auto` 把阶段顶到右边缘，
        * 在全屏页上它离标题两千像素远，读起来像个孤立的悬浮控件。
        */}
-      <span className="text-sm font-medium text-primary">
+      <span className="text-primary text-sm font-medium">
         {t('aiLab.interview.title')}
       </span>
-      {role && <span className="text-mr-overline text-secondary">{role}</span>}
+      {role && (
+        <span className="text-mr-overline text-secondary min-w-0 truncate">
+          {role}
+        </span>
+      )}
       {stage && (
-        <span className="rounded-full bg-sunk px-2.5 py-1 text-mr-label text-secondary">
+        <span className="bg-sunk text-mr-label text-secondary rounded-full px-2.5 py-1">
           {t(`aiLab.interview.stage.${stage}`)}
+        </span>
+      )}
+      {remainingSeconds !== null && (
+        <span
+          role="timer"
+          aria-label={t('aiLab.interview.timeRemaining', {
+            time: formatRemaining(remainingSeconds),
+          })}
+          className={`text-mr-label ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 font-medium tabular-nums ${remainingSeconds <= 120 ? 'bg-rev-del/10 text-rev-del' : 'bg-sunk text-primary'}`}
+        >
+          <Clock size={14} aria-hidden="true" />
+          {formatRemaining(remainingSeconds)}
         </span>
       )}
     </motion.div>
@@ -613,12 +968,14 @@ function Header({
  */
 function OrbStage({
   docked,
+  hidden,
   phase,
   readLevels,
   onToggle,
   children,
 }: {
   docked: boolean;
+  hidden: boolean;
   phase: OrbPhase;
   readLevels: () => { input: number; output: number };
   onToggle?: () => void;
@@ -645,28 +1002,30 @@ function OrbStage({
   return (
     <div ref={stageRef} className="relative min-h-0 flex-1">
       {children}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.35, opacity: 0 }}
-          animate={{ scale, opacity: 1, y }}
-          transition={{ duration: 0.6, ease: EASE_ENTER }}
-          style={{ width: 'min(38vh, 300px)', height: 'min(38vh, 300px)' }}
-          className={onToggle ? 'pointer-events-auto cursor-pointer' : ''}
-          onClick={onToggle}
-          role={onToggle ? 'button' : undefined}
-          aria-label={
-            onToggle
-              ? t(
-                  docked
-                    ? 'aiLab.interview.hideTranscript'
-                    : 'aiLab.interview.showTranscript',
-                )
-              : undefined
-          }
-        >
-          <VoiceOrb phase={phase} readLevels={readLevels} />
-        </motion.div>
-      </div>
+      {!hidden && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.35, opacity: 0 }}
+            animate={{ scale, opacity: 1, y }}
+            transition={{ duration: 0.6, ease: EASE_ENTER }}
+            style={{ width: 'min(38vh, 300px)', height: 'min(38vh, 300px)' }}
+            className={onToggle ? 'pointer-events-auto cursor-pointer' : ''}
+            onClick={onToggle}
+            role={onToggle ? 'button' : undefined}
+            aria-label={
+              onToggle
+                ? t(
+                    docked
+                      ? 'aiLab.interview.hideTranscript'
+                      : 'aiLab.interview.showTranscript',
+                  )
+                : undefined
+            }
+          >
+            <VoiceOrb phase={phase} readLevels={readLevels} />
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -676,5 +1035,31 @@ function Centered({ children }: { children: React.ReactNode }) {
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-8">
       {children}
     </div>
+  );
+}
+
+function ReportTranscript({ turns }: { turns: VoiceTurn[] }) {
+  const { t } = useTranslation();
+  if (turns.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-4 border-t border-white/10 pt-6">
+      <h3 className="text-mr-caption text-primary font-medium">
+        {t('aiLab.interview.report.transcriptTitle')}
+      </h3>
+      {turns.map((turn, index) => (
+        <div key={index} className="flex flex-col gap-1">
+          <span className="text-mr-label text-muted">
+            {t(
+              turn.role === 'interviewer'
+                ? 'aiLab.interview.interviewer'
+                : 'aiLab.interview.you',
+            )}
+          </span>
+          <p className="text-mr-caption text-primary leading-relaxed">
+            {turn.text}
+          </p>
+        </div>
+      ))}
+    </section>
   );
 }

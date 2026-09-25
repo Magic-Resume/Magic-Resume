@@ -21,16 +21,23 @@ export interface LevelMeter {
 }
 
 /**
- * 给一条 `MediaStreamTrack` 挂一个只读的音量计。
+ * 挂一个只读的音量计。
  *
- * **analyser 不接 `destination`。** 接了会让这条音轨被播放第二遍——远端音轨已经由
- * `track.attach()` 挂在 `<audio>` 元素上出声了，这里只是旁路取数。
+ * **analyser 不接 `destination`。** 接了会让这条音轨被播放第二遍——远端音轨已经挂在
+ * `<audio>` 元素上出声了，这里只是旁路取数。
+ *
+ * **远端音轨要传流，不要传轨。** Chrome 只在一条远端流确实被播放时才往 WebAudio 里
+ * 推数据，而这个关联认的是 `MediaStream` 实例：把 track 另包一个新流交给
+ * `createMediaStreamSource`，读到的是一串 0——表现就是面试官说话时球完全不动。
+ * 本地麦克风没有这个限制，传轨传流都行。
  */
 export function createLevelMeter(
   context: AudioContext,
-  track: MediaStreamTrack,
+  input: MediaStreamTrack | MediaStream,
 ): LevelMeter {
-  const source = context.createMediaStreamSource(new MediaStream([track]));
+  const stream =
+    input instanceof MediaStream ? input : new MediaStream([input]);
+  const source = context.createMediaStreamSource(stream);
   const analyser = context.createAnalyser();
   // 平滑交给球那边做（它有自己的 attack/release），这里给原始值。
   analyser.fftSize = 1024;

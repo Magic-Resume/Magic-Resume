@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "dev": "turbo dev",
+    "dev:commercial": "MAGIC_RESUME_COMMERCIAL=1 turbo dev",
     "build": "turbo build",
     "lint": "turbo lint && pnpm check:tailwind && pnpm check:turbo",
     "check:ui": "node scripts/check-ui-architecture.mjs",
