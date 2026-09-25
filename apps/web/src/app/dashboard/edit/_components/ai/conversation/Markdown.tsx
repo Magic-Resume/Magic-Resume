@@ -15,6 +15,7 @@ import {
 } from './citationSources';
 import CitationChip from './CitationChip';
 import SiteFavicon from './SiteFavicon';
+import styles from './MarkdownTable.module.css';
 
 /**
  * Markdown renderer for assistant chat bubbles. The agent replies in markdown
@@ -258,24 +259,20 @@ const COMPONENTS: Components = {
   // 只画横向分隔线，不画网格。逐格描边在深色底上会变成一张亮线网，正文表格通常只有
   // 三五行，撑不起那么重的结构——投递面板定稿时也是这个结论。
   table: ({ children }) => (
-    <div className="shadow-mr-control my-3.5 overflow-x-auto rounded-mr-card">
-      <table className="w-full border-collapse text-mr-body leading-normal">
+    <div className={styles.scroll} tabIndex={0}>
+      <table className={styles.table}>
         {children}
       </table>
     </div>
   ),
-  thead: ({ children }) => (
-    <thead className="bg-mr-sunk/60 text-mr-ink-secondary text-left text-mr-caption">
-      {children}
-    </thead>
-  ),
-  th: ({ children }) => (
-    <th className="border-mr-line border-b px-3 py-2 font-medium">
+  thead: ({ children }) => <thead>{children}</thead>,
+  th: ({ children, style }) => (
+    <th scope="col" style={style}>
       <Words>{children}</Words>
     </th>
   ),
-  td: ({ children }) => (
-    <td className="border-mr-line/60 border-b px-3 py-2 align-top leading-relaxed">
+  td: ({ children, style }) => (
+    <td style={style}>
       <Words>{children}</Words>
     </td>
   ),
