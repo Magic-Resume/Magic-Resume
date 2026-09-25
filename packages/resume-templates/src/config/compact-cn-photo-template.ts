@@ -152,7 +152,8 @@ export const compactCnPhotoTemplate: MagicTemplateDSL = {
       props: {
         title: 'Education',
         titleZh: '教育经历',
-        columnRatio: [1.65, 1.15, 0.55],
+        columnRatio: [1.65, 0.85, 1.15],
+        shiftCenterToRightWhenRightEmpty: true,
       },
       fieldMap: {
         leftTitle: ['school'],
