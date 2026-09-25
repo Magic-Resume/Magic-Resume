@@ -15,6 +15,11 @@ import {
   type LevelMeter,
   type VoiceLevels,
 } from './audioLevels';
+import {
+  classifyVoiceFailure,
+  phaseAfterDisconnect,
+  type VoiceErrorCode,
+} from './voiceOutcome';
 
 /**
  * agents 监听用户文本输入的 topic（`@livekit/agents` 的 `TOPIC_CHAT`）。
@@ -51,11 +56,11 @@ export interface VoiceInterviewState {
   stage: InterviewStage;
   error: string | null;
   /**
-   * `quota` 与另外两个分开：额度用完**不是故障**，用户能升级或等下周重置，
+   * `quota` 与另外几个分开：额度用完**不是故障**，用户能升级或等下周重置，
    * 和「语音断了」共用一句提示等于什么都没说（后端把它投影成一级码
-   * `quota_exceeded`，见 ADR-0018）。
+   * `quota_exceeded`，见 ADR-0018）。`connection_limit` 是这一场的重连次数用完了。
    */
-  errorCode: 'connection' | 'mic_denied' | 'quota' | null;
+  errorCode: VoiceErrorCode | null;
   /**
    * 拿不到麦克风。**这不是错误状态**——房间照常连着，面试官照常出声，
    * 只是这一场你得用打字回答。输入框本来就常驻，所以它只是少了一种输入方式。
@@ -1060,11 +1065,11 @@ export function useVoiceInterview(sessionId: string | null) {
       }
     });
 
-    room.on(RoomEvent.Disconnected, () =>
+    room.on(RoomEvent.Disconnected, (reason) =>
       setState((s) =>
         s.phase === 'finished' || s.phase === 'error'
           ? s
-          : { ...s, phase: 'idle' },
+          : { ...s, phase: phaseAfterDisconnect(reason) },
       ),
     );
     // 断线重连由 SDK 做——这正是手写那版完全没有的能力。
@@ -1095,9 +1100,21 @@ export function useVoiceInterview(sessionId: string | null) {
         return;
       }
 
-      const { url, token } = creds;
+      const { url, token, remaining_seconds } = creds;
       if (!url || !token) {
         throw new Error('voice credentials missing url/token');
+      }
+      // 服务端批准的窗口剩余。周余额不够一整场时它早于页面预设时长，到点服务端会删房。
+      if (
+        typeof remaining_seconds === 'number' &&
+        Number.isFinite(remaining_seconds)
+      ) {
+        const grantedDeadline =
+          Date.now() + Math.max(0, remaining_seconds) * 1000;
+        setState((current) => ({
+          ...current,
+          budgetDeadline: grantedDeadline,
+        }));
       }
 
       // connect() 由用户点击触发，所以这里建 AudioContext 一定在手势里；
@@ -1149,27 +1166,21 @@ export function useVoiceInterview(sessionId: string | null) {
       if (superseded()) return;
       const message = error instanceof Error ? error.message : String(error);
       /*
-       * 后端把「本周面试时长用完」投影成一级码 `quota_exceeded` + 402——一级码就是
-       * 给 UI 判定用的，所以这里必须读它。曾经只按 message 正则分派，于是一个
-       * 额度和登录都分得清的用户，看到的却是「语音断了，可以改用打字继续」。
+       * 按后端的一级码与二级码分派，不按 message 正则猜：额度用完、重连次数用完、
+       * 本场时间已到是三种不同的结局，最后一种根本不是故障，要走正常收尾进复盘。
        */
-      const appError = (
-        error as { appError?: { errorCode?: string; httpStatus?: number } }
-      )?.appError;
+      const outcome = classifyVoiceFailure(error);
       teardown();
-      setState((s) => ({
-        ...s,
-        phase: 'error',
-        error: message,
-        // 麦克风权限是唯一一个用户自己能修的，值得单独一句提示。
-        errorCode:
-          appError?.errorCode === 'quota_exceeded' ||
-          appError?.httpStatus === 402
-            ? 'quota'
-            : /notallowed|permission|denied/i.test(message)
-              ? 'mic_denied'
-              : 'connection',
-      }));
+      setState((s) =>
+        outcome.kind === 'finished'
+          ? { ...s, phase: 'finished', error: null, errorCode: null }
+          : {
+              ...s,
+              phase: 'error',
+              error: message,
+              errorCode: outcome.errorCode,
+            },
+      );
     }
   }, [connectUpstreamVoice, sessionId, teardown]);
 

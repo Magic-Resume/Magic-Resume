@@ -210,6 +210,10 @@ export interface VoiceCredentials {
   chain: InterviewVoiceChannel[];
   url?: string;
   token?: string;
+  /** atlas 才有：这一场的时长预算（秒）。到点服务端会删房，客户端据此倒计时。 */
+  session_budget_seconds?: number | null;
+  /** atlas 才有：窗口还剩多久，重进时小于 `session_budget_seconds`。 */
+  remaining_seconds?: number | null;
 }
 
 /** 开一场面试要带的东西。`start` 与 `startStream` 共用，两者只是取回方式不同。 */
