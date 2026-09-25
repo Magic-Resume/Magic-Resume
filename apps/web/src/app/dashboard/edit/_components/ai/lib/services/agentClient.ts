@@ -167,6 +167,7 @@ export interface ChatStreamParams {
     | 'general';
   /** 一次对话 = 一个 sessionId，"新对话"才换新的。服务端据此跨轮次续上下文。 */
   sessionId?: string;
+  turnId?: string;
   /**
    * id of the resume this session is scoped to. The client sends an id instead of
    * pushing a full resume snapshot into every chat turn.
@@ -211,6 +212,38 @@ export async function endSessionThread(sessionId: string): Promise<void> {
   }
 }
 
+export async function getSessionState(sessionId: string): Promise<{
+  state: 'active' | 'awaiting_input' | 'checkpoint_missing' | 'not_found';
+  checkpointId?: string;
+  pendingApproval?: {
+    requestId: string;
+    interruptId: string;
+    operationId: string;
+    expectedCheckpointId: string;
+    actions: Array<{ name: string; args: Record<string, unknown> }>;
+  };
+}> {
+  const response = await fetch(
+    `${WEB_AGENT_ROUTES.chatSession}?sessionId=${encodeURIComponent(sessionId)}`,
+  );
+  if (!response.ok) throw await readError(response);
+  return response.json();
+}
+
+export async function forkSessionForRegeneration(input: {
+  sourceSessionId: string;
+  sourceTurnId: string;
+  expectedCheckpointId: string;
+  newSessionId: string;
+}): Promise<void> {
+  const response = await fetch(WEB_AGENT_ROUTES.chatSession, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw await readError(response);
+}
+
 /** A human's decision on a paused tool call (native HITL). */
 export interface HitlDecision {
   /** approve/reject gate a sensitive tool; `edit` re-runs the tool with new args —
@@ -225,6 +258,9 @@ export interface HitlDecision {
 export interface ApproveToolParams {
   /** the paused conversation session to resume */
   sessionId: string;
+  interruptId: string;
+  operationId: string;
+  expectedCheckpointId: string;
   /** one decision per pending action request (read_resume → a single decision) */
   decisions: HitlDecision[];
   /** re-sent so the resumed session keeps the same scope and model settings */
