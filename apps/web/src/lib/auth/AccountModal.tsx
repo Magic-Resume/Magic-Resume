@@ -19,10 +19,9 @@ import { isCloudMode } from '@/lib/config/app';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { useAccountUiStore, type AccountTab } from '@/store/useAccountUiStore';
 import { useResumeDocumentStore } from '@/store/resume/document';
-import { useEntitlement } from '@/lib/extensions/billing-client';
-import { BillingTab } from '@/components/account/billing/BillingTab';
-import InviteTab from '@/components/account/invite/InviteTab';
-import type { Entitlement } from '@/lib/billing/types';
+import { AccountPlanSummary, billingAccountTab } from '@/lib/extensions/billing-ui';
+import { inviteAccountTab } from '@/lib/extensions/growth';
+import type { AccountTabContribution } from '@/lib/extensions/contracts';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/llm/ProviderMark';
 import PasswordSection from '@/components/account/security/PasswordSection';
@@ -64,17 +63,11 @@ export function AccountModal() {
 
 function CloudAccountModal() {
   const { t, i18n } = useTranslation();
-  const { accountOpen, accountTab, setAccountTab, closeAccount, openPricing } =
+  const { accountOpen, accountTab, setAccountTab, closeAccount } =
     useAccountUiStore();
   const { isLoaded, user } = useUser();
   const resumes = useResumeDocumentStore((s) => s.resumes);
-  const { data: entitlement } = useEntitlement(accountOpen);
   const [copied, setCopied] = useState<string | null>(null);
-
-  const goUpgrade = () => {
-    closeAccount();
-    openPricing();
-  };
 
   const locale = i18n.language.startsWith('en') ? 'en-US' : 'zh-CN';
   const fmtDate = (d?: Date | number | string | null) =>
@@ -171,13 +164,21 @@ function CloudAccountModal() {
 
   const initial = (view?.displayName?.[0] || 'U').toUpperCase();
 
+  // Billing and invites are contributed by slots: a build without them has a
+  // shorter rail, not a tab that renders nothing.
+  const contributed = [billingAccountTab, inviteAccountTab].filter(
+    (tab): tab is AccountTabContribution => tab !== null,
+  );
   const tabs: { key: AccountTab; label: string }[] = [
     { key: 'profile', label: t('account.profile.tabs.profile') },
     { key: 'security', label: t('account.profile.tabs.security') },
     { key: 'activity', label: t('account.profile.tabs.activity') },
-    { key: 'billing', label: t('account.profile.tabs.billing') },
-    { key: 'invite', label: t('account.profile.tabs.invite') },
+    ...contributed.map((tab) => ({ key: tab.key, label: t(tab.labelKey) })),
   ];
+  // A deep link can ask for a tab this build does not have (`/dashboard/billing`
+  // opens 'billing'); land on the profile rather than on an empty panel.
+  const activeTab = tabs.some((tb) => tb.key === accountTab) ? accountTab : 'profile';
+  const ContributedPanel = contributed.find((tab) => tab.key === activeTab)?.Panel;
 
   return (
     <ModalShell
@@ -231,16 +232,8 @@ function CloudAccountModal() {
                 </p>
               </div>
 
-              {/* subscription-usage cluster — the single place subscription info lives;
-                  clicking it opens the pricing modal */}
-              {entitlement && (
-                <UsageCluster
-                  entitlement={entitlement}
-                  onClick={goUpgrade}
-                  fmtDateTime={fmtDateTime}
-                  t={t}
-                />
-              )}
+              {/* plan-and-usage card, from the billing slot; nothing in a build without billing */}
+              <AccountPlanSummary />
             </div>
 
             {/* tabs */}
@@ -252,35 +245,30 @@ function CloudAccountModal() {
                   onClick={() => setAccountTab(tb.key)}
                   className={cn(
                     'relative pb-3 text-mr-caption transition-colors',
-                    accountTab === tb.key
+                    activeTab === tb.key
                       ? 'text-neutral-100'
                       : 'text-neutral-500 hover:text-neutral-200',
                   )}
                 >
                   {tb.label}
-                  {accountTab === tb.key && (
+                  {activeTab === tb.key && (
                     <span className="absolute -bottom-px left-0 right-0 h-px bg-sky-400" />
                   )}
                 </button>
               ))}
             </div>
 
-            {accountTab === 'invite' ? (
-              // 与 billing 同理走整宽：右侧那张海报预览挤在 240px 边栏里没法看。
+            {ContributedPanel ? (
+              // Contributed tabs render full width: a payments table or a poster
+              // preview squeezed beside the 240px side rail is unreadable.
               <div className="mt-5">
-                <InviteTab />
-              </div>
-            ) : accountTab === 'billing' ? (
-              // Full width, no side rail: a payments table squeezed beside the
-              // 240px id/date column wraps into something nobody can read.
-              <div className="mt-5 space-y-4">
-                <BillingTab entitlement={entitlement ?? null} />
+                <ContributedPanel />
               </div>
             ) : (
               <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
                 {/* main column */}
                 <div className="min-w-0 space-y-4">
-                  {accountTab === 'profile' && (
+                  {activeTab === 'profile' && (
                     <>
                       <Section title={t('account.profile.personalInfo')}>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -401,7 +389,7 @@ function CloudAccountModal() {
                     </>
                   )}
 
-                  {accountTab === 'security' && (
+                  {activeTab === 'security' && (
                     <Section title={t('account.profile.security')}>
                       {/* 四张只读徽章换成两块可操作的：密码与两步验证。原来的 TOTP 与
                         备用码不再单列——它们不是并列的第三、第四项开关，而是开启两步
@@ -413,7 +401,7 @@ function CloudAccountModal() {
                     </Section>
                   )}
 
-                  {accountTab === 'activity' && (
+                  {activeTab === 'activity' && (
                     <>
                       <ActivityHeatmap data={heatmap} />
                       <div className="grid grid-cols-3 gap-3">
@@ -603,93 +591,6 @@ function SideCopy({
         )}
       </button>
     </div>
-  );
-}
-
-/* ---- subscription usage ---- */
-
-type TFn = (k: string, o?: Record<string, unknown>) => string;
-
-function MiniBar({
-  percent,
-  unlimited,
-}: {
-  percent: number;
-  unlimited?: boolean;
-}) {
-  const pct = Math.max(0, Math.min(100, percent));
-  return (
-    <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-mr-surface-soft">
-      <div
-        className={cn(
-          'h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400',
-          unlimited && 'opacity-60',
-        )}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
-function UsageCluster({
-  entitlement,
-  onClick,
-  fmtDateTime,
-  t,
-}: {
-  entitlement: Entitlement;
-  onClick: () => void;
-  fmtDateTime: (d?: Date | number | string | null) => string;
-  t: TFn;
-}) {
-  const { remainingPercent, resetAt, currentPlan } = entitlement;
-  const unlimited = remainingPercent === null;
-  // Horizontal, header-height layout — the card must stay roughly as tall as the
-  // avatar block or the whole header inflates and the left side looks stranded.
-  // Credits are internal, so we show only the monthly allowance remaining (%).
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={t('account.menu.upgrade')}
-      className="group hidden shrink-0 items-center gap-3.5 rounded-xl border border-mr-line bg-gradient-to-br from-sky-500/[0.08] via-white/[0.02] to-white/[0.02] p-3 text-left transition-colors duration-150 hover:border-sky-400/40 sm:flex"
-    >
-      <div className="flex flex-col items-start gap-1">
-        <span className="whitespace-nowrap text-mr-label text-neutral-500">
-          {t('account.subscription.currentPlan')}
-        </span>
-        <span className="inline-flex h-5 items-center rounded-md border border-sky-400/25 bg-sky-400/10 px-1.5 text-mr-label font-semibold text-sky-300">
-          {currentPlan?.name ?? '—'}
-        </span>
-      </div>
-      <div className="w-px self-stretch bg-mr-line" />
-      {/* Stacked to mirror the plan column: label ("本月额度") on the top row —
-          level with "当前计划" — and the bar + % on the second row, level with
-          the plan badge. */}
-      <div
-        className="flex w-48 flex-col gap-1"
-        title={
-          resetAt
-            ? t('account.subscription.resetAt', { time: fmtDateTime(resetAt) })
-            : undefined
-        }
-      >
-        <span className="whitespace-nowrap text-mr-label text-neutral-500">
-          {t('account.subscription.monthly')}
-        </span>
-        <div className="flex h-5 items-center gap-2 text-mr-label">
-          <MiniBar
-            percent={unlimited ? 100 : (remainingPercent ?? 0)}
-            unlimited={unlimited}
-          />
-          <span className="shrink-0 tabular-nums text-neutral-300">
-            {unlimited
-              ? t('account.subscription.unlimited')
-              : `${remainingPercent}%`}
-          </span>
-        </div>
-      </div>
-    </button>
   );
 }
 

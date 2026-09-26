@@ -3,6 +3,8 @@ import { initReactI18next } from "react-i18next";
 
 import en from "./locales/en/translation.json";
 import zh from "./locales/zh/translation.json";
+import merge from "lodash/merge";
+import { extensionResources } from "@/lib/extensions/locales";
 
 /** 语言偏好持久化 key（与 i18next-browser-languagedetector 默认一致）。 */
 export const LANGUAGE_STORAGE_KEY = "i18nextLng";
@@ -22,12 +24,16 @@ i18n
     lng: "zh",
     fallbackLng: "zh",
     debug: false,
+    // Deep-merged with the `locales` slot: the copy for whatever the other slots
+    // render (empty in this build). Merged here, before init, so the server
+    // render and hydration see the same resources. A key has one owner — the
+    // overlay's tests refuse a key that also exists in `locales/*`.
     resources: {
       en: {
-        translation: en,
+        translation: merge({}, en, extensionResources.en),
       },
       zh: {
-        translation: zh,
+        translation: merge({}, zh, extensionResources.zh),
       },
     },
     interpolation: {

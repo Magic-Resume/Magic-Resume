@@ -8,7 +8,8 @@ export const DEFAULT_AFTER_AUTH_URL = '/dashboard';
  * protected route with a query string is simply lost. That is survivable for
  * `/dashboard` and not for `/billing/return?orderId=…`, where the order id is
  * the only handle the page has: no id, no polling, and no sync — which is the
- * only thing that captures a PayPal payment from the browser.
+ * only thing that captures a payment from the browser when the channel's
+ * notification is late.
  *
  * Same-origin paths only, decided by resolving the value the way a browser
  * will rather than by matching prefixes. Prefix checks are not enough: the URL

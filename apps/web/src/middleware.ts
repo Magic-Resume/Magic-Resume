@@ -37,8 +37,8 @@ const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
  * survivable while `/billing` was unprotected — the page rendered, its API
  * calls 401'd — but protecting it turned a lapsed session into a lost order:
  * `?orderId=` never came back, so the return page could not poll, and could not
- * run the sync that is the only thing capturing a PayPal payment from the
- * browser.
+ * run the sync that is the only thing capturing a payment from the browser
+ * when the channel's notification is late.
  *
  * Same-origin only, and rebuilt from the request rather than echoed, so this
  * cannot be turned into an open redirect.

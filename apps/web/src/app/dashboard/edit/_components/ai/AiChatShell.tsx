@@ -19,8 +19,8 @@ import {
   Check,
   ChevronLeft,
   KeyRound,
-  Gauge,
 } from "@magic-resume/icons";
+import { AiQuotaIndicator } from "@/lib/extensions/billing-ui";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
@@ -141,8 +141,6 @@ import {
 import { ModelConfigFields } from "@/components/llm/ModelConfigFields";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import i18nInstance from "@/i18n";
-import { useEntitlement } from "@/lib/extensions/billing-client";
-import { isCloudMode } from "@/lib/config/app";
 import {
   buildWorkspacePreparedChanges,
   workspaceApi,
@@ -2967,7 +2965,7 @@ export default function AiChatShell({
               {/* 自带触发器的组件，包一层薄壳只为让共享面量得到它的盒子
                   （`display:contents` 不行——那样量出来是 0）。 */}
               <span className="inline-flex" {...headerSurface.bind('quota')}>
-                <HeaderQuota />
+                <AiQuotaIndicator />
               </span>
               <button
                 type="button"
@@ -3271,120 +3269,5 @@ export default function AiChatShell({
         </div>
       </div>
     </GenUIProvider>
-  );
-}
-
-/** 顶部额度状态：点开显示内置额度余量。仅云端——BYOK 用的是用户自己的 key，没有内置额度可显示。 */
-function HeaderQuota() {
-  const { t, i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-  // 懒加载：面板打开才请求 /ai-entitlement（客户端有缓存）。
-  const { data, loading, error } = useEntitlement(open);
-  if (!isCloudMode) return null;
-
-  const locale = i18n.language.startsWith("en") ? "en-US" : "zh-CN";
-  const fmtReset = (d?: string | null) =>
-    d
-      ? new Intl.DateTimeFormat(locale, {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }).format(new Date(d))
-      : "";
-  // 月度余量只以百分比下发（积分是内部计费单位，客户端拿不到原始余额）。null = 无限。
-  const credit = data
-    ? { percent: data.remainingPercent, resetAt: data.resetAt ?? null }
-    : null;
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={t("aiLab.header.quotaTitle")}
-        title={t("aiLab.header.quotaTitle")}
-        className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer",
-          open
-            ? "bg-sky-500/12 text-sky-300"
-            : "text-neutral-400 hover:bg-mr-surface-soft hover:text-white",
-        )}
-      >
-        <Gauge size={13} />
-        {t("aiLab.header.quota")}
-      </button>
-      <AnimatePresence>
-        {open && (
-          <React.Fragment key="quota-popover">
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: -4, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute right-0 top-full z-50 mt-2 w-60 rounded-xl border border-white/10 bg-neutral-900 p-3.5 shadow-2xl"
-            >
-              {!data && loading ? (
-                <div className="space-y-2">
-                  <div className="h-4 animate-pulse rounded bg-mr-surface-soft" />
-                  <div className="h-4 animate-pulse rounded bg-mr-surface-soft" />
-                </div>
-              ) : !data ? (
-                <p className="text-xs text-neutral-500">
-                  {error || t("aiLab.header.quotaUnavailable")}
-                </p>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-mr-label text-neutral-500">
-                      {t("account.subscription.currentPlan")}
-                    </span>
-                    <span className="inline-flex h-5 items-center rounded-md border border-sky-400/25 bg-sky-400/10 px-1.5 text-mr-label font-semibold text-sky-300">
-                      {data.currentPlan?.name ?? "—"}
-                    </span>
-                  </div>
-                  {credit && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between gap-3 text-mr-label">
-                        <span className="text-neutral-400">
-                          {t("account.subscription.monthly")}
-                        </span>
-                        <span className="tabular-nums text-neutral-300">
-                          {credit.percent === null
-                            ? t("account.subscription.unlimited")
-                            : `${credit.percent}%`}
-                        </span>
-                      </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-mr-surface-soft">
-                        <div
-                          className={cn(
-                            "h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400",
-                            credit.percent === null && "opacity-60",
-                          )}
-                          style={{
-                            width: `${credit.percent === null ? 100 : Math.max(0, Math.min(100, credit.percent))}%`,
-                          }}
-                        />
-                      </div>
-                      {credit.resetAt && (
-                        <div className="mt-1 text-mr-micro text-neutral-600">
-                          {t("account.subscription.resetAt", {
-                            time: fmtReset(credit.resetAt),
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </motion.div>
-          </React.Fragment>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }

@@ -476,28 +476,6 @@
   animation: ai-narrate-in var(--narrate-duration) var(--narrate-ease) both;
 }
 
-/* ---- 输入框下方 Pro 升级条的辉光 ----
-   设计稿这团光是绿色的，这里换成品牌 sky：绿在本项目已经是简历修订的「新增内容」
-   语义色（--rev-add），右侧画布刚看过绿字=AI 新增，回头又看到绿光=付费广告，会撞。
-   渐变数学留在 CSS 里而不是内联 style，才好在浅色态整体降透明——纸上的光要落地，
-   不能像深色下那样发散（见 docs/specs/light-theme/）。 */
-.composer-pro-glow {
-  background: radial-gradient(
-    ellipse 48% 118% at 88% 46%,
-    color-mix(in oklab, var(--glow-sky) 30%, transparent),
-    transparent 72%
-  );
-  pointer-events: none;
-}
-
-.light .composer-pro-glow {
-  background: radial-gradient(
-    ellipse 48% 118% at 88% 46%,
-    color-mix(in oklab, var(--glow-sky) 11%, transparent),
-    transparent 70%
-  );
-}
-
 /* ---- LivingCanvas 就地编辑（挂载点见 EditableCanvas.tsx）----
    简历纸面恒定近白，深浅主题共用一套。 */
 
