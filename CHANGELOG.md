@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.6.1](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.0...v2.6.1) (2026-09-26)
+
+## 🐛 Bug Fixes
+- [`8ab7068`](https://github.com/Magic-Resume/Magic-Resume/commit/8ab7068)  fix(web): 解析模型改由服务端决定，并修正错误文案措辞 (#226) (Issues: [`#226`](https://github.com/Magic-Resume/Magic-Resume/issues/226))
+
 # [v2.6.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.5.2...v2.6.0) (2026-09-11)
 
 ## ✨ New Features
