@@ -1375,11 +1375,12 @@
       "fileReadAborted": "文件读取已中止",
       "fileReadFailed": "文件读取失败",
       "invalidFormat": "无效的简历格式",
-      "parseFailed": "解析文件失败",
+      "parseFailed": "这份文件没能解析出来，换一份再试",
       "unsupportedFormat": "请上传 PDF 或 JSON 文件",
-      "noApiKey": "使用 PDF 导入需要先完成大模型配置（API Key、Base URL、模型、Max Tokens），请前往",
+      "noApiKey": "用 AI 解析文件需要先配好模型，去",
       "noApiKeyLink": "设置",
       "noApiKeySuffix": "完成配置后再试",
+      "entitlementUnavailable": "没拿到可用额度。充值，或在设置里配一个自己的模型",
       "modelNoVision": "当前模型「{{model}}」不支持读取图片。请在设置里换一个支持视觉的模型，或改上传 PDF / Word 版简历"
     },
     "success": "简历导入成功！",
@@ -1414,9 +1415,9 @@
     }
   },
   "agentErrors": {
-    "agent_run_failed": "解析没能完成，请稍后重试；如果反复失败，换一份 PDF 或检查大模型配置",
-    "insufficient_quota": "账户额度不足，请先充值或完善自定义大模型配置后再试",
-    "model_unavailable": "当前配置的模型不可用，请到设置里检查模型名称与 Base URL"
+    "agent_run_failed": "这次没能完成，再试一次；反复失败就检查模型配置",
+    "insufficient_quota": "额度用完了。充值，或在设置里配一个自己的模型",
+    "model_unavailable": "配置的模型不可用，去设置里核对模型名和 Base URL"
   },
   "dynamicForm": {
     "fields": {

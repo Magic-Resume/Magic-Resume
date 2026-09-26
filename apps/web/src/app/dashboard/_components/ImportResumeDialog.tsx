@@ -145,20 +145,23 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
 
   // ─── PDF 文件处理（流式解析 + 逐板块点亮）───
   const handlePdfFile = useCallback(async (file: File) => {
-    const access = await resolveAiAccessConfig();
+    // 解析不接前端的模型选择：面板里没有选择入口，读到的只是用户上次在 AI Lab 里
+    // 留下的全局偏好。选型归服务端（`llm.defaultModel` → relay 按套餐档落位）。
+    const access = await resolveAiAccessConfig({ ignoreModelSelection: true });
     if (!access.ok) {
       if (access.reason === 'custom_config_required') {
         setLlmConfigMissing(true);
-        throw new Error(t('importDialog.errors.noApiKey', { defaultValue: 'Please add credits/subscription or complete your custom AI model settings before importing PDF files.' }));
+        throw new Error(t('importDialog.errors.noApiKey'));
       }
-      throw new Error(access.message || '账户额度检查失败，请稍后重试');
+      throw new Error(t('importDialog.errors.entitlementUnavailable'));
     }
     // 图片只能交给看得见的模型。文本模型不会因为收到图片而报错——它会**默默忽略**
     // 然后凭空编一份简历，用户拿到的是一份看着像模像样、但和上传内容毫无关系的
     // 数据。挡在上传前而不是等结果，因为那个结果无法被自动识别为错误。
     //
     // 判定放在前端：MODEL_IMAGE_SUPPORT_MAP 就在这一侧，后端再维护一份必然漂移。
-    // modelName 缺省时不拦——那是走内部额度、由服务端选型的情况，我们无从判断。
+    // 只有 BYOK 那条路能在这里拦：内部额度路径不带 modelName，模型由服务端挑，
+    // 前端无从判断它看不看得见图。
     if (file.type.startsWith('image/')) {
       const model = access.config.modelName;
       if (model && MODEL_IMAGE_SUPPORT_MAP[model] === false) {
@@ -404,7 +407,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                     <div className="flex items-start gap-2 text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
                       <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                       <span>
-                        {t('importDialog.errors.noApiKey', { defaultValue: '使用 PDF 导入需要先完成大模型配置（API Key、Base URL、模型、Max Tokens），请前往' })}{' '}
+                        {t('importDialog.errors.noApiKey')}{' '}
                         <button
                           type="button"
                           onClick={() => {
@@ -413,9 +416,9 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                           }}
                           className="underline underline-offset-2 hover:text-amber-300 font-medium"
                         >
-                          {t('importDialog.errors.noApiKeyLink', { defaultValue: '设置' })}
+                          {t('importDialog.errors.noApiKeyLink')}
                         </button>
-                        {' '}{t('importDialog.errors.noApiKeySuffix', { defaultValue: '完成配置后再试' })}
+                        {' '}{t('importDialog.errors.noApiKeySuffix')}
                       </span>
                     </div>
                   </motion.div>
