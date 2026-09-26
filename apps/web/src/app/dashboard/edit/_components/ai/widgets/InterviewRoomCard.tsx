@@ -25,16 +25,14 @@ import {
  * `interaction: 'client'`：点「进入」直接跳面试页，不回传 agent。绕一圈只会多一次停顿
  * 和一次计费，而这个决定用户已经做完了（同 `TemplateGalleryCard` 换模板）。
  *
- * **卡片不含 session**：会话由面试页在用户选定语音/打字之后才创建——`mode` 是 `start`
- * 的入参，提前建会话就等于替用户把这个选择做了。
+ * 卡片自带发卡时分配的 roomId；首次进入才初始化会话和计时。同一张卡再次进入
+ * 始终使用这个 ID，避免重开并重复占用额度。
  */
 export default function InterviewRoomCard({ instance }: WidgetProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const setLaunch = useInterviewUiStore((s) => s.setLaunch);
-  const activeResume = useResumeDocumentStore((s) => s.activeResume);
-
   const props = instance.props as {
+    roomId?: string;
     role: string;
     jobDescription?: string;
     durationMinutes: number;
@@ -42,6 +40,12 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
     language?: InterviewLanguage;
     difficulty?: InterviewDifficulty;
   };
+  const setLaunch = useInterviewUiStore((s) => s.setLaunch);
+  const setReturnTo = useInterviewUiStore((s) => s.setReturnTo);
+  const existingSession = useInterviewUiStore(
+    (s) => (props.roomId ? s.cardSessions[instance.widgetId] : undefined),
+  );
+  const activeResume = useResumeDocumentStore((s) => s.activeResume);
 
   return (
     <WidgetShell density="block">
@@ -81,8 +85,15 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
           disabled={!activeResume}
           onClick={() => {
             if (!activeResume) return;
+            if (existingSession) {
+              setReturnTo(`/dashboard/edit/${activeResume.id}/ai-lab`);
+              router.push(`/dashboard/interview/${existingSession}`);
+              return;
+            }
             setLaunch(
               {
+                roomId: props.roomId,
+                cardId: props.roomId ? instance.widgetId : undefined,
                 brief: {
                   role: props.role,
                   jobDescription: props.jobDescription,
@@ -95,6 +106,7 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
                 },
                 // 简历上下文在**这里**算：面试页在编辑器之外，不知道你在编辑哪一份。
                 resumeContext: buildResumeContext(activeResume),
+                resumeId: activeResume.id,
               },
               // 退出面试回 **AI Lab**——面试就是从这儿点进去的。回编辑器根路径会把
               // 对话关掉，用户得自己再点开一次才能接着聊。
@@ -104,7 +116,11 @@ export default function InterviewRoomCard({ instance }: WidgetProps) {
           }}
           className="w-full cursor-pointer rounded-xl bg-mr-accent-tint px-4 py-2 text-mr-caption font-medium text-mr-accent transition-colors hover:bg-mr-accent-tint/80"
         >
-          {t('aiLab.widgets.interviewRoom.enter')}
+          {t(
+            existingSession
+              ? 'aiLab.widgets.interviewRoom.reenter'
+              : 'aiLab.widgets.interviewRoom.enter',
+          )}
         </button>
       </WidgetItem>
     </WidgetShell>

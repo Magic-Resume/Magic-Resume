@@ -109,6 +109,8 @@ import {
   streamChat,
   approveTool,
   endSessionThread,
+  getSessionState,
+  forkSessionForRegeneration,
   AgentRequestError,
   type HitlDecision,
 } from "./lib/services/agentClient";
@@ -142,6 +144,7 @@ import { ModelConfigFields } from "@/components/llm/ModelConfigFields";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import i18nInstance from "@/i18n";
 import { useEntitlement } from "@/lib/extensions/billing-client";
+import { formatInterviewRemaining } from "@/lib/billing/interview-time";
 import { isCloudMode } from "@/lib/config/app";
 import {
   buildWorkspacePreparedChanges,
@@ -205,6 +208,13 @@ type PendingRun =
       kind: "chat";
       history: { role: "user" | "assistant"; content: string }[];
       mode: "create" | "general";
+      turnId?: string;
+      attachments?: Array<{
+        id: string;
+        name: string;
+        contentType: string;
+        sourceUrl: string;
+      }>;
     };
 
 type StreamingMessageOverlay = StreamingTextSnapshot & { id: string };
@@ -437,8 +447,13 @@ export default function AiChatShell({
   // 暂停中的那次中断。裁决按动作下标归位，全部到齐才续跑——后端要求裁决数与动作数相等。
   const pendingInterruptRef = useRef<{
     requestId: string;
+    interruptId: string;
+    operationId: string;
+    expectedCheckpointId: string;
     decisions: (HitlDecision | null)[];
   } | null>(null);
+  const historyViewOnlyRef = useRef(false);
+  const regenerateInFlightRef = useRef(false);
   // consumeStream 需要在「问答」模式下替用户拒掉读简历的请求，但 answerInterrupt
   // 反过来依赖 consumeStream。用 ref 打破这个环——赋值在 answerInterrupt 定义之后。
   const answerInterruptRef = useRef<
@@ -553,6 +568,61 @@ export default function AiChatShell({
     sessionUsedRef.current = true;
     patchAiSession(resumeId, { sessionUsed: true });
   }, [patchAiSession, resumeId]);
+  const reconcilePendingCards = useCallback((
+    restored: ChatMessage[],
+    state: Awaited<ReturnType<typeof getSessionState>>,
+    restoredMode: AgentMode,
+  ): ChatMessage[] => {
+    const target = state.state === "awaiting_input" ? state.pendingApproval : undefined;
+    if (target && target.actions.length) {
+      const plan = planInterrupt(target.requestId, target.actions, {
+        hasWidget: (kind) => Boolean(WIDGETS[kind]),
+        resolveKind: (toolName, args) =>
+          toolName === "ask_choice" ? askChoiceKind(args)
+            : toolName === "request_form" ? requestFormKind(args) : toolName,
+        allowsResumeRead: AGENT_MODES[restoredMode].allowsResumeRead,
+      });
+      const decisions = openDecisions<HitlDecision>(target.actions.length);
+      for (const slot of plan.autoRejected) {
+        decisions[slot.index] = {
+          type: "reject",
+          message: 'The user is in "Ask" mode, which does not allow reading the resume. Answer without looking at it; if the question genuinely requires the resume, say so and ask them to switch modes.',
+        };
+      }
+      for (const message of restored) {
+        if (message.interruptSlot?.requestId === target.requestId && message.interruptDecision) {
+          decisions[message.interruptSlot.index] = message.interruptDecision;
+        }
+        if (message.approvals?.some((approval) => approval.requestId === target.requestId)) {
+          for (const [index, decision] of Object.entries(message.interruptDecisions ?? {})) {
+            const slot = Number(index);
+            if (Number.isInteger(slot) && slot >= 0 && slot < decisions.length) {
+              decisions[slot] = decision;
+            }
+          }
+        }
+      }
+      pendingInterruptRef.current = { ...target, decisions };
+    } else {
+      pendingInterruptRef.current = null;
+    }
+    return restored.map((message) => {
+      const active = target && (
+        message.interruptSlot?.requestId === target.requestId ||
+        message.approvals?.some((approval) => approval.requestId === target.requestId)
+      );
+      return {
+        ...message,
+        ...(message.widget?.status === "pending" && !active
+          ? { widget: { ...message.widget, status: "expired" as const } } : {}),
+        ...(message.approvals?.some((approval) => approval.status === "pending")
+          ? { approvals: message.approvals.map((approval) =>
+              approval.status === "pending" && approval.requestId !== target?.requestId
+                ? { ...approval, status: "expired" as const } : approval) }
+          : {}),
+      };
+    });
+  }, []);
   /**
    * 本地缓存没有可用条目时回源拉云端。
    *
@@ -580,11 +650,14 @@ export default function AiChatShell({
         if (!active || !latest) return;
         const detail = await conversationApi.get(latest.id);
         if (!active) return;
-        const restored = detail.messages.map((m) => ({
+        const state = await getSessionState(detail.id).catch(() => ({ state: 'checkpoint_missing' as const }));
+        if (!active) return;
+        historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
+        const restored = reconcilePendingCards(detail.messages.map((m) => ({
           ...((m.payload ?? {}) as Record<string, unknown>),
           role: m.role,
           content: m.content ?? undefined,
-        })) as ChatMessage[];
+        })) as ChatMessage[], state, session.agentMode);
         if (!restored.length) return;
         adoptAiSession(resumeId, {
           ...session,
@@ -610,7 +683,7 @@ export default function AiChatShell({
       active = false;
       void flushAiSession(resumeId);
     };
-  }, [adoptAiSession, flushAiSession, loadAiSession, resumeId, t]);
+  }, [adoptAiSession, flushAiSession, loadAiSession, reconcilePendingCards, resumeId, t]);
   // 卸载时中止在飞行的运行并失效回调；不删服务端会话——对话可恢复，"新对话"才显式清理。
   useEffect(
     () => () => {
@@ -667,40 +740,20 @@ export default function AiChatShell({
     [setMessages],
   );
 
-  /**
-   * 会话是从本地记录恢复的：任何还挂着 pending 的卡都属于一次早已结束的运行
-   * （后端线程有 TTL 回收），点它必然失败。恢复后一次性标成过期，让它看起来就
-   * 不可点，而不是等用户点下去才发现。
-   *
-   * 用 ref 而不是 [] 依赖：消息是 IndexedDB 异步水合进来的，挂载那一帧往往还是空的。
-   */
+  /** Hydrated cards follow the server's actual interrupt, not their saved UI status. */
   const staleSweptRef = useRef(false);
   useEffect(() => {
-    if (staleSweptRef.current || messages.length === 0) return;
+    if (staleSweptRef.current || messages.length === 0 || running) return;
     staleSweptRef.current = true;
-    const hasStale = messages.some(
-      (m) =>
-        m.widget?.status === "pending" ||
-        m.approvals?.some((a) => a.status === "pending"),
-    );
-    if (!hasStale) return;
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.widget?.status === "pending") {
-          return { ...m, widget: { ...m.widget, status: "expired" as const } };
-        }
-        if (m.approvals?.some((a) => a.status === "pending")) {
-          return {
-            ...m,
-            approvals: m.approvals.map((a) =>
-              a.status === "pending" ? { ...a, status: "expired" as const } : a,
-            ),
-          };
-        }
-        return m;
-      }),
-    );
-  }, [messages, setMessages]);
+    const sessionId = sessionIdRef.current;
+    void getSessionState(sessionId)
+      .catch(() => ({ state: 'checkpoint_missing' as const }))
+      .then((state) => {
+        if (sessionIdRef.current !== sessionId) return;
+        historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
+        setMessages((prev) => reconcilePendingCards(prev, state, agentModeRef.current));
+      });
+  }, [messages, reconcilePendingCards, running, setMessages]);
 
   const addAssistant = useCallback(
     (content: string) =>
@@ -834,9 +887,14 @@ export default function AiChatShell({
   const isBatchSkill = (id: SkillId) => id === "optimize" || id === "translate";
 
   // 当前暂停的中断：每个动作一个待填裁决槽，填满才续跑。
-  const openInterrupt = useCallback((requestId: string, count: number) => {
+  const openInterrupt = useCallback((target: {
+    requestId: string;
+    interruptId: string;
+    operationId: string;
+    expectedCheckpointId: string;
+  }, count: number) => {
     pendingInterruptRef.current = {
-      requestId,
+      ...target,
       decisions: openDecisions<HitlDecision>(count),
     };
   }, []);
@@ -1037,13 +1095,16 @@ export default function AiChatShell({
             const p = ev.payload as
               | {
                   requestId?: string;
+                  interruptId?: string;
+                  operationId?: string;
+                  expectedCheckpointId?: string;
                   toolName?: string;
                   reason?: string;
                   args?: Record<string, unknown>;
                   actions?: { name?: string; args?: Record<string, unknown> }[];
                 }
               | undefined;
-            if (p?.requestId) {
+            if (p?.requestId && p.interruptId && p.operationId && p.expectedCheckpointId) {
               pausedForApproval = true;
               setActivity("awaiting");
               setAwaitingReply(false); // the card replaces the thinking dots
@@ -1053,7 +1114,12 @@ export default function AiChatShell({
               const actions = p.actions?.length
                 ? p.actions
                 : [{ name: p.toolName, args: p.args }];
-              openInterrupt(requestId, actions.length);
+              openInterrupt({
+                requestId,
+                interruptId: p.interruptId,
+                operationId: p.operationId,
+                expectedCheckpointId: p.expectedCheckpointId,
+              }, actions.length);
               // 「问答」模式承诺了不读简历。弹一张「要不要读简历」的卡等于把已经作过的
               // 承诺又推回给用户,所以这里直接替他拒掉,并把理由带给模型让它换个说法。
               // 判定在 `interruptPlan` 里（纯函数，有用例钉着）；这里只负责画出来。
@@ -1112,6 +1178,10 @@ export default function AiChatShell({
                   );
                 }, 0);
               }
+            } else {
+              pausedForApproval = true;
+              setAwaitingReply(false);
+              addAssistant(t("aiLab.chat.interruptExpired"));
             }
           } else if (ev.type === "resume_verification") {
             // 反捏造闸门（确定性校验）的产出。后端一直在算，前端此前没有分支消费，
@@ -1650,7 +1720,9 @@ export default function AiChatShell({
                     changeNotes,
                   );
                   if (!changed.length) {
-                    warnDropped("这次没有产生可评审的改动", "no_changes");
+                    // 对话结束也可能同步未变化的简历快照（例如问候、面试卡片）。
+                    // 零差异不是丢失改动；写入/同步失败由各自的 SSE 事件报告。
+                    continue;
                   } else if (canvasDismissedForRun.current) {
                     // 本轮用户主动关过画布：尊重它，别再弹回来。
                     logChange(
@@ -1859,6 +1931,7 @@ export default function AiChatShell({
       resumeId,
       sealAiSession,
       addMessage,
+      addAssistant,
       warnDropped,
       logChange,
       setStarted,
@@ -2039,6 +2112,9 @@ export default function AiChatShell({
           (signal) =>
             approveTool({
               sessionId: sessionIdRef.current,
+              interruptId: pending.interruptId,
+              operationId: pending.operationId,
+              expectedCheckpointId: pending.expectedCheckpointId,
               decisions,
               resumeId: scopedResumeId(),
               // 续跑也要带档位，否则批准之后那半程回到无约束状态。
@@ -2069,9 +2145,10 @@ export default function AiChatShell({
         contentType: string;
         sourceUrl: string;
       }>,
+      turnId?: string,
     ) => {
       activeActionTypeRef.current = null;
-      const pending: PendingRun = { kind: "chat", history, mode };
+      const pending: PendingRun = { kind: "chat", history, mode, turnId, attachments };
       const config = await resolveRunConfig(pending);
       if (!config) return;
       skillBatchRunRef.current = null; // not a whole-resume skill batch run
@@ -2084,6 +2161,7 @@ export default function AiChatShell({
             agentMode: agentModeRef.current,
             mode,
             sessionId: sessionIdRef.current,
+            ...(turnId ? { turnId } : {}),
             // 把对话限定到这份简历，又不必每轮推送整份快照。
             resumeId: scopedResumeId(),
             config,
@@ -2102,9 +2180,15 @@ export default function AiChatShell({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === msgId && m.approvals
-            ? {
-                ...m,
-                approvals: m.approvals.map((a, i) =>
+              ? {
+                  ...m,
+                  interruptDecisions: {
+                    ...(m.interruptDecisions ?? {}),
+                    [m.approvals[pageIndex]?.slotIndex ?? pageIndex]: {
+                      type: approved ? "approve" as const : "reject" as const,
+                    },
+                  },
+                  approvals: m.approvals.map((a, i) =>
                   i === pageIndex
                     ? { ...a, status: approved ? "approved" : "denied" }
                     : a,
@@ -2153,6 +2237,7 @@ export default function AiChatShell({
       // 文件气泡与文字属于同一条用户轮次。服务器会在这次 chat run 内把页面图放进模型输入；
       // 绝不先跑一轮“附件解析模型”，再开第二个聊天请求。
       const historyBeforeTurn = toBackendHistory(messagesRef.current);
+      const turnId = nanoid();
       setStarted(true);
       addMessage({
         id: nanoid(),
@@ -2160,6 +2245,14 @@ export default function AiChatShell({
         content: text,
         attachment: true,
         attachmentNames: attachments.map((attachment) => attachment.file.name),
+        serverTurnId: turnId,
+        serverTurnMode: chatMode === "create" ? "create" : "general",
+        attachmentRefs: attachments.map((attachment) => ({
+          id: attachment.id,
+          name: attachment.file.name,
+          contentType: attachment.stored!.contentType,
+          key: attachment.stored!.key,
+        })),
       });
 
       const controller = new AbortController();
@@ -2188,6 +2281,7 @@ export default function AiChatShell({
           ]),
           chatMode === "create" ? "create" : "general",
           inputs,
+          turnId,
         );
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -2205,6 +2299,36 @@ export default function AiChatShell({
 
   const handleSend = useCallback(
     (text: string, attachments?: StagedAttachment[]) => {
+      if (historyViewOnlyRef.current) {
+        toast.error(t("aiLab.history.checkpointMissing"), {
+          action: {
+            label: t("aiLab.history.continueVisible"),
+            onClick: () => {
+              const visible = messagesRef.current;
+              const next = resetAiSession(resumeId);
+              const restored = { ...next, messages: visible, started: true, syncedCount: 0 };
+              adoptAiSession(resumeId, restored);
+              sessionIdRef.current = next.sessionId;
+              sessionUsedRef.current = false;
+              historyViewOnlyRef.current = false;
+              messagesRef.current = visible;
+              const ready = (attachments ?? []).filter((item) => item.status === "ready" && item.stored);
+              if (ready.length) {
+                if (attachmentTurnInFlightRef.current) return;
+                attachmentTurnInFlightRef.current = true;
+                void runAttachmentTurn(text, ready);
+              } else if (text) {
+                const turnId = nanoid();
+                const mode = chatMode === "create" ? "create" : "general";
+                const history = toBackendHistory(visible).concat([{ role: "user" as const, content: text }]);
+                addMessage({ id: nanoid(), role: "user", content: text, serverTurnId: turnId, serverTurnMode: mode });
+                void runChat(history, mode, undefined, turnId);
+              }
+            },
+          },
+        });
+        return;
+      }
       const readyAttachments = (attachments ?? []).filter(
         (attachment) => attachment.status === "ready" && attachment.stored,
       );
@@ -2219,10 +2343,12 @@ export default function AiChatShell({
       const history = toBackendHistory(messagesRef.current).concat([
         { role: "user", content: text },
       ]);
-      addMessage({ id: nanoid(), role: "user", content: text });
-      void runChat(history, chatMode === "create" ? "create" : "general");
+      const turnId = nanoid();
+      const mode = chatMode === "create" ? "create" : "general";
+      addMessage({ id: nanoid(), role: "user", content: text, serverTurnId: turnId, serverTurnMode: mode });
+      void runChat(history, mode, undefined, turnId);
     },
-    [addMessage, chatMode, runAttachmentTurn, runChat, setStarted],
+    [addMessage, adoptAiSession, chatMode, resetAiSession, resumeId, runAttachmentTurn, runChat, setStarted, t],
   );
 
   /**
@@ -2233,6 +2359,7 @@ export default function AiChatShell({
    * 也只认最后一次运行。
    */
   const handleRegenerate = useCallback(() => {
+    if (running || regenerateInFlightRef.current) return;
     const msgs = messagesRef.current;
     let idx = -1;
     for (let i = msgs.length - 1; i >= 0; i -= 1) {
@@ -2242,17 +2369,72 @@ export default function AiChatShell({
       }
     }
     if (idx < 0) return;
-    const text = msgs[idx].content ?? "";
-    if (!text.trim()) return;
-
-    // 连同那条用户消息一起截掉——`handleSend` 会把它重新加回去。
+    const originalTurn = msgs[idx];
+    const text = originalTurn.content ?? "";
+    if (!text.trim() && !originalTurn.attachmentRefs?.length) return;
+    if (!originalTurn.serverTurnId || !originalTurn.serverTurnMode || (originalTurn.attachment && !originalTurn.attachmentRefs?.length)) {
+      toast.error(t("aiLab.history.regenerateUnavailable"));
+      return;
+    }
+    const originalTurnId = originalTurn.serverTurnId;
+    const originalMode = originalTurn.serverTurnMode;
+    const sourceSessionId = sessionIdRef.current;
     const truncated = msgs.slice(0, idx);
-    setMessages(truncated);
-    // `messagesRef` 是在渲染里赋值的，这一拍还是旧值，而 `handleSend` 同步读它拼历史。
-    // 提前对齐；下次渲染会再赋一次同样的值，不会漂移。
-    messagesRef.current = truncated;
-    handleSend(text);
-  }, [handleSend, setMessages]);
+    regenerateInFlightRef.current = true;
+    void (async () => {
+      try {
+        const attachments = await Promise.all((originalTurn.attachmentRefs ?? []).map(async (ref) => ({
+          id: ref.id,
+          name: ref.name,
+          contentType: ref.contentType,
+          sourceUrl: await getAttachmentReadUrl(ref.key),
+        })));
+        const source = await getSessionState(sourceSessionId);
+        if (source.state !== "active" || !source.checkpointId) {
+          throw new Error("Source checkpoint is unavailable");
+        }
+        const newSessionId = nanoid();
+        await forkSessionForRegeneration({
+          sourceSessionId,
+          sourceTurnId: originalTurnId,
+          expectedCheckpointId: source.checkpointId,
+          newSessionId,
+        });
+        sealAiSession(resumeId);
+        const newTurnId = nanoid();
+        const nextMessages: ChatMessage[] = [
+          ...truncated,
+          { ...originalTurn, id: nanoid(), serverTurnId: newTurnId },
+        ];
+        adoptAiSession(resumeId, {
+          ...getCurrentAiSession(),
+          sessionId: newSessionId,
+          sessionUsed: true,
+          started: true,
+          chatMode: originalMode === "create" ? "create" : "idle",
+          messages: nextMessages,
+          syncedCount: 0,
+          updatedAt: Date.now(),
+        });
+        sessionIdRef.current = newSessionId;
+        sessionUsedRef.current = true;
+        historyViewOnlyRef.current = false;
+        messagesRef.current = nextMessages;
+        await runChat(
+          toBackendHistory(truncated).concat([
+            { role: "user", content: text || "请查看我附上的文件。" },
+          ]),
+          originalMode,
+          attachments,
+          newTurnId,
+        );
+      } catch {
+        toast.error(t("aiLab.history.regenerateUnavailable"));
+      } finally {
+        regenerateInFlightRef.current = false;
+      }
+    })();
+  }, [adoptAiSession, getCurrentAiSession, resumeId, runChat, running, sealAiSession, t]);
 
   /**
    * 对话里直接投一份旧简历 PDF。
@@ -2324,6 +2506,11 @@ export default function AiChatShell({
                   message:
                     "The user skipped this step. Continue with the next one.",
                 };
+          setMessages((prev) => prev.map((item) =>
+            item.widget?.widgetId === widgetId
+              ? { ...item, interruptDecision: decision }
+              : item,
+          ));
           answerInterrupt(message?.interruptSlot, decision);
         }
       }
@@ -2556,7 +2743,7 @@ export default function AiChatShell({
       void runContentSkill(pending.skill, pending.message);
     else if (pending.kind === "analysis-fix")
       void runAnalysisFix(pending.issue);
-    else void runChat(pending.history, pending.mode);
+    else void runChat(pending.history, pending.mode, pending.attachments, pending.turnId);
   }, [runAnalysisFix, runAnalyze, runContentSkill, runChat]);
 
   // Gate "保存并继续": persist the key (survives reload) then resume the stashed run.
@@ -2650,6 +2837,7 @@ export default function AiChatShell({
     const nextSession = resetAiSession(resumeId);
     sessionIdRef.current = nextSession.sessionId;
     sessionUsedRef.current = false;
+    historyViewOnlyRef.current = false;
     quoteCountRef.current = 0;
     setAwaitingReply(false);
     setDraftReady(null);
@@ -2694,12 +2882,15 @@ export default function AiChatShell({
       sealAiSession(resumeId);
       try {
         const detail = await conversationApi.get(id);
+        const state = await getSessionState(detail.id).catch(() => ({ state: 'checkpoint_missing' as const }));
+        historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
+        if (historyViewOnlyRef.current) toast.error(t("aiLab.history.checkpointMissing"));
         const snapshot = detail.snapshot as Partial<AiSessionSnapshot> | null;
-        const restored = detail.messages.map((m) => ({
+        const restored = reconcilePendingCards(detail.messages.map((m) => ({
           ...((m.payload ?? {}) as Record<string, unknown>),
           role: m.role,
           content: m.content ?? undefined,
-        })) as ChatMessage[];
+        })) as ChatMessage[], state, snapshot?.agentMode ?? DEFAULT_AGENT_MODE);
         adoptAiSession(resumeId, {
           ...(snapshot ?? {}),
           sessionId: detail.id,
@@ -2729,7 +2920,7 @@ export default function AiChatShell({
       setIsAiJobRunning(false);
       setActivity(null);
     },
-    [adoptAiSession, resumeId, sealAiSession, setIsAiJobRunning, t],
+    [adoptAiSession, reconcilePendingCards, resumeId, sealAiSession, setIsAiJobRunning, t],
   );
 
   const stopRun = useCallback(() => {
@@ -3379,6 +3570,37 @@ function HeaderQuota() {
                       )}
                     </div>
                   )}
+                  <div className="mt-3 border-t border-white/10 pt-3">
+                    <div className="flex items-center justify-between gap-3 text-mr-label">
+                      <span className="text-neutral-400">
+                        {t("account.subscription.interviewRemaining")}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-neutral-200">
+                        {formatInterviewRemaining(
+                          data.interviewQuota?.remainingSeconds,
+                          i18n.language,
+                        ) ?? "—"}
+                      </span>
+                    </div>
+                    {data.interviewQuota?.remainingSeconds !== null &&
+                      data.interviewQuota?.remainingSeconds !== undefined && (
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-mr-surface-soft">
+                          <div
+                            className="h-full rounded-full bg-sky-400/70"
+                            style={{
+                              width: `${data.interviewQuota.weeklySeconds > 0 ? Math.max(0, Math.min(100, (data.interviewQuota.remainingSeconds / data.interviewQuota.weeklySeconds) * 100)) : 0}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+                    {data.interviewQuota?.resetAt && (
+                      <div className="mt-1 text-mr-micro text-neutral-600">
+                        {t("account.subscription.resetAt", {
+                          time: fmtReset(data.interviewQuota.resetAt),
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </motion.div>

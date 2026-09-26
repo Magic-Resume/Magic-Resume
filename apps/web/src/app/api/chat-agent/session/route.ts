@@ -2,6 +2,47 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerUserId } from '@/lib/auth/server';
 import { serverFetchBackend } from '@/lib/auth/serverFetchBackend';
 
+export async function GET(req: NextRequest) {
+  try {
+    if (!await getServerUserId()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const sessionId = req.nextUrl.searchParams.get('sessionId');
+    if (!sessionId) {
+      return NextResponse.json({ errorCode: 'session_invalid' }, { status: 400 });
+    }
+    const backendResponse = await serverFetchBackend(
+      `/api/chat/session?sessionId=${encodeURIComponent(sessionId)}`,
+      { signal: req.signal },
+    );
+    return NextResponse.json(
+      await backendResponse.json().catch(() => ({})),
+      { status: backendResponse.status },
+    );
+  } catch {
+    return NextResponse.json({ errorCode: 'upstream_unavailable' }, { status: 502 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    if (!await getServerUserId()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const backendResponse = await serverFetchBackend('/api/chat/session/fork', {
+      method: 'POST',
+      body: await req.text(),
+      signal: req.signal,
+    });
+    return NextResponse.json(
+      await backendResponse.json().catch(() => ({})),
+      { status: backendResponse.status },
+    );
+  } catch {
+    return NextResponse.json({ errorCode: 'upstream_unavailable' }, { status: 502 });
+  }
+}
+
 /**
  * Reclaim server-side chat session resources on conversation end / explicit new
  * chat. Best-effort: fired by the client (often with `keepalive`) when it drops a

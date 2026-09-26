@@ -56,8 +56,11 @@ export type InterviewStage =
 
 export interface StartInterviewResult {
   session_id: string;
+  resumed?: boolean;
   message: string;
   stage: InterviewStage;
+  started_at?: string;
+  duration_seconds?: number;
   /** 仅语音会话返回；120 秒有效。 */
   voiceTicket?: string;
 }
@@ -70,10 +73,7 @@ export interface InterviewTurnResult {
 }
 
 export type InterviewDimension =
-  | 'expression'
-  | 'depth'
-  | 'jobFit'
-  | 'structure';
+  'expression' | 'depth' | 'jobFit' | 'structure';
 
 /** 档位说的是**准备度**，不是录用结论——一场模拟面试评不出该不该录。 */
 export type InterviewBand = 'ready' | 'nearly' | 'developing' | 'early';
@@ -100,6 +100,11 @@ export interface InterviewReport {
   droppedReviews: number;
 }
 
+export interface InterviewReportSkipped {
+  skipped: true;
+  reason: 'insufficient_content';
+}
+
 export interface ArchivedInterview {
   id: string;
   role: string;
@@ -111,8 +116,10 @@ export interface ArchivedInterview {
   report: { overall: number; band: InterviewBand } | null;
 }
 
-export interface ArchivedInterviewDetail
-  extends Omit<ArchivedInterview, 'report' | 'jobDescription'> {
+export interface ArchivedInterviewDetail extends Omit<
+  ArchivedInterview,
+  'report' | 'jobDescription'
+> {
   jobDescription: string | null;
   transcript: Array<{
     role: 'user' | 'assistant';
@@ -132,6 +139,8 @@ export interface FinishInterviewResult {
 export interface LiveInterview {
   session_id: string;
   stage: InterviewStage;
+  started_at?: string;
+  duration_seconds?: number;
   role?: string;
   config: {
     mode?: string;
@@ -147,19 +156,90 @@ export interface LiveInterview {
   hasReport: boolean;
 }
 
+/**
+ * 一次 SDP 交换的结果。
+ *
+ * `primer` 由调用方在通道开启后灌给上游；`connection_id` 是这条连接的租约凭据——
+ * 之后的续租与归还都认它，不续就会被服务端回收。
+ */
+export interface VoiceSessionResult {
+  connection_id: string;
+  expires_in_seconds: number;
+  heartbeat_interval_seconds: number;
+  answer_sdp: string;
+  /** **最终是谁接的**——链首没有可派账号时这里会是降级后的那一条。 */
+  channel: InterviewVoiceChannel;
+  voice: string;
+  /**
+   * 面试官人格，由调用方在通道开启后灌给上游。
+   *
+   * **只有客户端投递的渠道才有**（lyra）。vega 的人格在建连时就写进了上游
+   * `session.instructions`，这里是空串——再发一遍等于多一条能被改掉的路径。
+   */
+  primer: string;
+  /** 这一场的时长预算（秒）。到点要自己收尾——服务端掐不断已经接通的通话。 */
+  session_budget_seconds: number | null;
+  /** 窗口还剩多久：断线重连时小于 `session_budget_seconds`。 */
+  remaining_seconds: number | null;
+}
+
+/** 续租的回执。`should_stop` 是告知，不是强制——媒体直连上游，服务端掐不断。 */
+export interface VoiceHeartbeatResult {
+  expires_in_seconds: number;
+  remaining_seconds: number | null;
+  should_stop: boolean;
+}
+
+/**
+ * 语音渠道的代号。与后端 `InterviewVoiceChannel` 对齐。
+ *
+ * **名字不带厂商**——换上游不用改这里。对照见
+ * `Magic-Resume-Core/docs/reference/interview-voice-channels.md`。
+ */
+export type InterviewVoiceChannel = 'vega' | 'lyra' | 'atlas';
+
+/**
+ * 建连入口。
+ *
+ * `channel` 是**入口不是结论**：vega / lyra 要到换 SDP 那一刻才知道池子里有没有
+ * 账号，**最终是谁接的以 answer 响应里的 `channel` 为准**。`chain` 是这个订阅
+ * 还能往下落到哪条。`url`/`token` 只有 atlas 才有。
+ */
+export interface VoiceCredentials {
+  channel: InterviewVoiceChannel | null;
+  chain: InterviewVoiceChannel[];
+  url?: string;
+  token?: string;
+  /** atlas 才有：这一场的时长预算（秒）。到点服务端会删房，客户端据此倒计时。 */
+  session_budget_seconds?: number | null;
+  /** atlas 才有：窗口还剩多久，重进时小于 `session_budget_seconds`。 */
+  remaining_seconds?: number | null;
+}
+
 /** 开一场面试要带的东西。`start` 与 `startStream` 共用，两者只是取回方式不同。 */
 export interface StartInterviewInput {
+  /** Fixed when the entry card is issued; retries resume the same room. */
+  room_id?: string;
   resume_context: string;
   role?: string;
   job_description?: string;
   /**
-   * `mode: 'voice'` 才会拿到 `voiceTicket`；缺省是文字面试。
+   * 库里那份简历的 id。服务端据此回源拿结构化简历，转成 Markdown 灌给 上游语音渠道 的
+   * 上游面试官——`resume_context` 是编辑器算好的字符串，够开场但不够当 prompt 素材。
+   */
+  resume_id?: string;
+  /**
+   * `mode: 'voice'` 才会拿到语音凭据；缺省是文字面试。
    * `language`/`difficulty` 由 agent 在入口卡里问定，服务端据此写 prompt。
    */
   config?: {
     mode?: 'voice';
     language?: 'zh' | 'en';
     difficulty?: 'entry' | 'standard' | 'hard';
+    /** 本场预计时长；服务端限制最多 20 分钟。 */
+    duration_minutes?: number;
+    /** 点名语音渠道；缺省按订阅声明的顺序。点名越不过订阅。 */
+    channel?: InterviewVoiceChannel;
   };
 }
 
@@ -259,13 +339,15 @@ export const interviewApi = {
    * 走强模型，第一次可能要十几秒；服务端会把结果缓存在会话里，重复请求不再付第二次钱。
    * 超时放宽到 90 秒——默认 30 秒会在报告还在生成时就断掉。
    */
-  async report(sessionId: string): Promise<InterviewReport> {
+  async report(
+    sessionId: string,
+  ): Promise<InterviewReport | InterviewReportSkipped> {
     return unwrap(
-      await httpClient.agent.post<ApiResponse<InterviewReport>>(
-        AGENT_ROUTES.interview.report(sessionId),
-        undefined,
-        { timeout: 90_000 },
-      ),
+      await httpClient.agent.post<
+        ApiResponse<InterviewReport | InterviewReportSkipped>
+      >(AGENT_ROUTES.interview.report(sessionId), undefined, {
+        timeout: 90_000,
+      }),
     );
   },
 
@@ -283,14 +365,113 @@ export const interviewApi = {
     await httpClient.agent.delete(AGENT_ROUTES.interview.session(sessionId));
   },
 
-  /** LiveKit 房间凭据。房间名 = 会话 id，identity = userId，worker 靠这两样对上。 */
-  async voiceToken(
-    sessionId: string,
-  ): Promise<{ url: string; token: string }> {
+  /**
+   * 建连凭据。响应里的 `transport` 决定走 LiveKit 还是 上游语音渠道——
+   * 后者没有 url/token，客户端拿 offer 去 `voiceSession` 换 answer。
+   */
+  async voiceToken(sessionId: string): Promise<VoiceCredentials> {
     return unwrap(
-      await httpClient.agent.post<ApiResponse<{ url: string; token: string }>>(
+      await httpClient.agent.post<ApiResponse<VoiceCredentials>>(
         AGENT_ROUTES.interview.voiceToken(sessionId),
       ),
+    );
+  },
+
+  /**
+   * GPT Voice 的 SDP 交换：浏览器出 offer，服务端拿去上游换 answer。
+   *
+   * 响应里的 `primer` 是面试官 prompt——上游的 session schema 没有 instructions 字段，
+   * 只能在 DataChannel 开启后当成一条对话消息灌进去，所以随这次往返一起带回来。
+   */
+  async voiceSession(
+    sessionId: string,
+    offerSdp: string,
+    connectionId: string,
+  ): Promise<VoiceSessionResult> {
+    return unwrap(
+      await httpClient.agent.post<ApiResponse<VoiceSessionResult>>(
+        AGENT_ROUTES.interview.voiceSession(sessionId),
+        { offer_sdp: offerSdp, connection_id: connectionId },
+      ),
+    );
+  },
+
+  /**
+   * 续租。断线不续，服务端到期自动回收这条连接。
+   *
+   * 顺带把上游报的账号剩余音频秒数捎回去——服务端自己探不到这个数
+   * （它的额度探针是 Codex 口径），只有通话中的 `usage_update` 里才有。
+   */
+  async voiceHeartbeat(
+    sessionId: string,
+    connectionId: string,
+    audioSecondsRemaining?: number | null,
+  ): Promise<VoiceHeartbeatResult> {
+    return unwrap(
+      await httpClient.agent.post<ApiResponse<VoiceHeartbeatResult>>(
+        AGENT_ROUTES.interview.voiceHeartbeat(sessionId),
+        {
+          connection_id: connectionId,
+          ...(typeof audioSecondsRemaining === 'number'
+            ? {
+                audio_seconds_remaining: Math.max(
+                  0,
+                  Math.round(audioSecondsRemaining),
+                ),
+              }
+            : {}),
+        },
+      ),
+    );
+  },
+
+  /**
+   * 报告「连上了但上游从没 bootstrap」。
+   *
+   * 上游对它不认的 session 字段不报错，只是永远不下发 `session_bootstrap`，
+   * HTTP 照回 201——服务端签发 answer 时看不出来，只有我们等得到这个超时。
+   * 服务端据此标记那个账号；`retryable` 为真就换个 connection_id 重连。
+   */
+  async voiceDegraded(
+    sessionId: string,
+    connectionId: string,
+  ): Promise<{ retryable: boolean }> {
+    return unwrap(
+      await httpClient.agent.post<ApiResponse<{ retryable: boolean }>>(
+        AGENT_ROUTES.interview.voiceDegraded(sessionId),
+        { connection_id: connectionId },
+      ),
+    );
+  },
+
+  /** 主动归还。正常离开时发，省得占着租约等它过期。 */
+  async voiceRelease(sessionId: string, connectionId: string): Promise<void> {
+    await httpClient.agent.post(
+      AGENT_ROUTES.interview.voiceRelease(sessionId),
+      { connection_id: connectionId },
+    );
+  },
+
+  /**
+   * 回传一轮转写。**只发定稿的**：上游是逐字增量推送，发中间态会把半句话灌进会话。
+   */
+  async recordVoiceTranscript(
+    sessionId: string,
+    input: {
+      /**
+       * 幂等键。服务端按它 + 内容哈希判重——断线重连把同一条再推一次会被吸收，
+       * 而候选人**真的**重复说同一句话不会被误吞（那是旧的「和上一条相同」判据的毛病）。
+       */
+      transcript_id: string;
+      role: 'user' | 'assistant';
+      text: string;
+      at?: number;
+    },
+  ): Promise<{ session_id: string; message_count: number }> {
+    return unwrap(
+      await httpClient.agent.post<
+        ApiResponse<{ session_id: string; message_count: number }>
+      >(AGENT_ROUTES.interview.voiceTranscript(sessionId), input),
     );
   },
 

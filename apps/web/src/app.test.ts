@@ -140,6 +140,11 @@ import {
 import type { Resume, Section } from "@/types/frontend/resume";
 import { mergeInterviewTurns } from "@/app/dashboard/interview/_components/mergeTurns";
 import {
+  classifyVoiceFailure,
+  phaseAfterDisconnect,
+} from "@/app/dashboard/interview/_components/voiceOutcome";
+import { DisconnectReason } from "livekit-client";
+import {
   CHARS_PER_SECOND,
   nextShownChars,
   nextStage,
@@ -2614,6 +2619,76 @@ function testStreamingBufferSeal() {
   );
 }
 
+function testVoiceOutcome() {
+  const rejected = (appError: Record<string, unknown>) =>
+    Object.assign(new Error("Request failed with status code 409"), {
+      appError,
+    });
+
+  // 窗口到点后重连被拒：本场时间用完了，走正常收尾进复盘，不是错误卡。
+  assert.deepEqual(
+    classifyVoiceFailure(
+      rejected({
+        errorCode: "conflict",
+        subCode: "interview_window_closed",
+        httpStatus: 409,
+      }),
+    ),
+    { kind: "finished" },
+  );
+  assert.deepEqual(
+    classifyVoiceFailure(
+      rejected({
+        errorCode: "conflict",
+        subCode: "interview_connection_limit",
+        httpStatus: 409,
+      }),
+    ),
+    { kind: "error", errorCode: "connection_limit" },
+  );
+  assert.deepEqual(
+    classifyVoiceFailure(
+      rejected({ errorCode: "quota_exceeded", httpStatus: 402 }),
+    ),
+    { kind: "error", errorCode: "quota" },
+  );
+  assert.deepEqual(
+    classifyVoiceFailure(rejected({ httpStatus: 402 })),
+    { kind: "error", errorCode: "quota" },
+  );
+  assert.deepEqual(
+    classifyVoiceFailure(new Error("NotAllowedError: Permission denied")),
+    { kind: "error", errorCode: "mic_denied" },
+  );
+  assert.deepEqual(
+    classifyVoiceFailure(new Error("could not establish pc connection")),
+    { kind: "error", errorCode: "connection" },
+  );
+  assert.deepEqual(classifyVoiceFailure("boom"), {
+    kind: "error",
+    errorCode: "connection",
+  });
+
+  // 服务端到点删房是这一场结束了；自己断开或网络断开仍回到 idle，由页面决定要不要重连。
+  assert.equal(phaseAfterDisconnect(DisconnectReason.ROOM_DELETED), "finished");
+  assert.equal(
+    phaseAfterDisconnect(DisconnectReason.CLIENT_INITIATED),
+    "idle",
+  );
+  assert.equal(phaseAfterDisconnect(undefined), "idle");
+
+  // 每个会落到错误卡上的码两种语言都要有文案，否则落回通用的「语音断了」。
+  for (const copy of [zhCopy, enCopy]) {
+    const voiceError = copy.aiLab.interview.voiceError as Record<
+      string,
+      string
+    >;
+    for (const code of ["connection", "quota", "connection_limit"]) {
+      assert.ok(voiceError[code], `missing voiceError.${code}`);
+    }
+  }
+}
+
 function testInterviewTurnMerge() {
   const opening = "欢迎来到字节跳动前端开发工程师（校招）岗位的模拟面试。";
 
@@ -2951,6 +3026,7 @@ async function main() {
   testStreamingTextBuffer();
   testStreamingBufferSeal();
   testInterviewTurnMerge();
+  testVoiceOutcome();
   testCaptionPacing();
   testWidgetPlacement();
   testPackedTrajectoryRanges();

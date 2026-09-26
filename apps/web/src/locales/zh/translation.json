@@ -103,6 +103,7 @@
     "subscription": {
       "currentPlan": "当前计划",
       "monthly": "本月额度",
+      "interviewRemaining": "本周面试剩余",
       "today": "今日",
       "week": "本周",
       "usage": "本期用量",
@@ -2173,6 +2174,7 @@
       "interviewRoom": {
         "title": "面试间已就绪",
         "enter": "进入面试",
+        "reenter": "返回这场面试",
         "duration": "约 {{count}} 分钟",
         "style": {
           "standard": "常规面",
@@ -2228,10 +2230,13 @@
       }
     },
     "interview": {
-      "title": "模拟面试 · 前端专家",
+      "title": "模拟面试",
       "prompt": "“能聊聊你在项目里最有挑战的一次性能优化吗？”",
       "microphone": "麦克风",
       "end": "结束面试",
+      "timeRemaining": "剩余 {{time}}",
+      "timeUp": "时间已到，正在结束面试…",
+      "timeUpRetry": "自动结束未完成，请点击“结束面试”重试",
       "comingSoonBadge": "还没上线",
       "comingSoon": "语音模拟面试还在打磨中。它会用你的简历和目标岗位出题、边听边追问，做完给你一份可复盘的纪要——现在还差最后一段路，先不上假的给你",
       "starting": "正在准备面试…",
@@ -2260,6 +2265,11 @@
       "report": {
         "title": "面试复盘",
         "generating": "正在生成复盘报告…",
+        "skippedTitle": "本场未生成复盘报告",
+        "skippedBody": "系统依据已保存的面试记录，暂未形成足以支持具体评价的依据。本结果仅针对这场记录，不代表对个人能力的判断。",
+        "transcriptTitle": "本场面试记录",
+        "archivedWithoutReportTitle": "这场面试已结束",
+        "archivedWithoutReportBody": "这场面试没有已保存的复盘报告，仍可查看面试记录。",
         "overall": "综合准备度",
         "retry": "重新生成",
         "strengths": "做得好的地方",
@@ -2288,7 +2298,19 @@
           "early": "这是第一步——下面几条改完，下次会很不一样"
         },
         "emptyHint": "多答几题，这里就会逐题告诉你怎么改",
-        "questionIndex": "第 {{index}} 题"
+        "questionIndex": "第 {{index}} 题",
+        "didNotStart": {
+          "title": "这场没真正开始",
+          "body": "只过了几句寒暄，面试官还没拿到可以点评的内容。这里不出分，是因为没有可打分的东西，不是因为你答得差。",
+          "exampleLabel": "下次可以这样开场",
+          "example": "最近一段前端经历是在一个中后台项目里负责表格和表单，React + TypeScript，把首屏从 3.2 秒压到 1.1 秒——一句话里有项目、有技术栈、有数字。"
+        },
+        "actions": {
+          "again": "再来一场",
+          "editResume": "回去改简历",
+          "copy": "复制",
+          "copied": "已复制"
+        }
       },
       "micDeniedHint": "拿不到麦克风权限，你也可以打字回答",
       "composerPlaceholder": "输入你的回答…",
@@ -2296,9 +2318,13 @@
       "startFailed": "面试没能开始，稍后再试一次",
       "turnFailed": "这一轮没送出去，再说一遍试试",
       "finishFailed": "这场面试还没能结束，再试一次",
+      "transcriptSaveFailed": "面试记录尚未保存完成，请重试结束面试。",
       "reportFailed": "复盘报告没能生成，重试一次",
+      "reportRateLimited": "请求较多，稍等片刻后重试复盘",
       "voiceError": {
-        "connection": "语音断了，可以改用打字继续"
+        "connection": "语音断了，可以改用打字继续",
+        "quota": "本周面试时长已用完，可以改用打字继续，或升级套餐",
+        "connection_limit": "这场面试的重连次数已用完，可以改用打字继续"
       },
       "backToDashboard": "回到工作台",
       "leaveTitle": "现在离开会结束这场面试",
@@ -2423,6 +2449,9 @@
       "delete": "删除",
       "confirmDelete": "删掉这场对话？",
       "loadFailed": "这场对话没能打开，稍后再试",
+      "checkpointMissing": "运行上下文已回收。可用可见文字开启新对话；旧工具状态和附件不会恢复。",
+      "continueVisible": "用可见记录开启新对话",
+      "regenerateUnavailable": "无法从原轮次安全重答：运行记录、附件或会话状态已失效。请开启新对话。",
       "restoreFailed": "历史记录这会儿读不到，先开了一场新对话。记录没有丢，稍后重新打开就能看到。",
       "switchWhileBusy": "这一轮还没回完，切走会中断它。",
       "switchAnyway": "仍然切换",

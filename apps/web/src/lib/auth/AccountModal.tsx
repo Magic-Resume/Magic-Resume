@@ -23,6 +23,7 @@ import { useEntitlement } from '@/lib/extensions/billing-client';
 import { BillingTab } from '@/components/account/billing/BillingTab';
 import InviteTab from '@/components/account/invite/InviteTab';
 import type { Entitlement } from '@/lib/billing/types';
+import { formatInterviewRemaining } from '@/lib/billing/interview-time';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/llm/ProviderMark';
 import PasswordSection from '@/components/account/security/PasswordSection';
@@ -238,6 +239,7 @@ function CloudAccountModal() {
                   entitlement={entitlement}
                   onClick={goUpgrade}
                   fmtDateTime={fmtDateTime}
+                  language={i18n.language}
                   t={t}
                 />
               )}
@@ -635,18 +637,23 @@ function UsageCluster({
   entitlement,
   onClick,
   fmtDateTime,
+  language,
   t,
 }: {
   entitlement: Entitlement;
   onClick: () => void;
   fmtDateTime: (d?: Date | number | string | null) => string;
+  language: string;
   t: TFn;
 }) {
-  const { remainingPercent, resetAt, currentPlan } = entitlement;
+  const { remainingPercent, resetAt, currentPlan, interviewQuota } = entitlement;
   const unlimited = remainingPercent === null;
-  // Horizontal, header-height layout — the card must stay roughly as tall as the
-  // avatar block or the whole header inflates and the left side looks stranded.
-  // Credits are internal, so we show only the monthly allowance remaining (%).
+  const interviewRemaining = formatInterviewRemaining(
+    interviewQuota?.remainingSeconds,
+    language,
+  );
+  // Credits are internal, so the monthly allowance stays a percentage.
+  // Interview time comes from its separate weekly reservation ledger.
   return (
     <button
       type="button"
@@ -686,6 +693,14 @@ function UsageCluster({
             {unlimited
               ? t('account.subscription.unlimited')
               : `${remainingPercent}%`}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center justify-between gap-2 border-t border-mr-line-soft pt-1.5 text-mr-label">
+          <span className="whitespace-nowrap text-neutral-500">
+            {t('account.subscription.interviewRemaining')}
+          </span>
+          <span className="shrink-0 tabular-nums text-neutral-200">
+            {interviewRemaining ?? '—'}
           </span>
         </div>
       </div>

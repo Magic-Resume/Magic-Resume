@@ -30,8 +30,14 @@ export function Layout({ children, layout, designTokens, style }: Props) {
   const innerStyle: React.CSSProperties = {
     padding: layout.padding,
     gap: layout.gap,
+    boxSizing: 'border-box',
+    maxWidth: '100%',
+    minWidth: 0,
+    width: '100%',
     lineHeight: 'var(--line-height)',
     letterSpacing: 'var(--letter-spacing)',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
   };
 
   return (
@@ -45,4 +51,4 @@ export function Layout({ children, layout, designTokens, style }: Props) {
       </div>
     </div>
   );
-} 
+}

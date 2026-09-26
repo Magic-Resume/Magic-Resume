@@ -107,6 +107,12 @@ export interface Entitlement {
   /** 月度额度还剩百分之多少 (0-100)；null = 无限。 */
   remainingPercent: number | null;
   resetAt?: string | null;
+  /** Weekly interview time uses a separate reservation ledger; null remaining means it could not be read. */
+  interviewQuota?: {
+    weeklySeconds: number;
+    remainingSeconds: number | null;
+    resetAt: string | null;
+  } | null;
   availableModels?: string[];
   /** 为真表示这份列表没能与 relay 的可路由集对齐，可能含调不通的模型。 */
   catalogDegraded?: boolean;
