@@ -18,12 +18,41 @@ export type AiAccessResult =
       message?: string;
     };
 
+export interface AiAccessOptions {
+  forceRefresh?: boolean;
+  /**
+   * 解析类调用不接受前端的模型选择：internal 路径不带 `modelName`，选型交给服务端
+   * `llm.defaultModel`（再经 relay 按套餐档落位）。
+   *
+   * 导入解析读的是用户上次在 AI Lab composer 里留下的全局偏好，而那个偏好与这次解析
+   * 无关——面板里既没有地方选择它，也没有地方显示它。BYOK 不受影响：那条路的 baseUrl
+   * 和 apiKey 都来自客户端，缺了模型名只会打到对方的端点上并失败。
+   */
+  ignoreModelSelection?: boolean;
+}
+
 export async function resolveAiAccessConfig(
-  options: { forceRefresh?: boolean } = {},
+  options: AiAccessOptions = {},
 ): Promise<AiAccessResult> {
   const settings = useSettingStore.getState();
   const hasByok = settings.hasLlmConfig();
   const pref = settings.preferredSource;
+
+  /**
+   * 用户点了名就送他点的；**没点名就什么都不送**，让服务端填 `llm.defaultModel`。
+   *
+   * 这里曾经退到 `availableModels[0]`，而那个数组是按模型名字母序排的（`model: 'asc'`）——
+   * 等于让「自动」默认跑在字母序第一的模型上，与它的价格无关。更糟的是它**静默废掉了
+   * relay 的按档降级**：`resolveEffectiveModel` 以「送来的正是全局默认」为「调用方没选」
+   * 的判定信号，送一个别的模型名就会让它提前返回，`Plan.defaultModel` 永远不生效——
+   * 免费档因此按目录里最贵的那个模型计费，正是那段逻辑当初要修的问题。
+   *
+   * 省略 modelName 还顺带让两条路径收敛：entitlement 查不到时走的
+   * `unverifiedInternalConfig` 本来就不带模型名。
+   */
+  const internalModel = options.ignoreModelSelection
+    ? undefined
+    : settings.selectedModel || undefined;
 
   /**
    * Internal AI without a confirmed entitlement, for when the check could not
@@ -34,7 +63,7 @@ export async function resolveAiAccessConfig(
     ok: true,
     config: {
       source: "internal",
-      ...(settings.selectedModel ? { modelName: settings.selectedModel } : {}),
+      ...(internalModel ? { modelName: internalModel } : {}),
       effort: settings.strength,
     },
   });
@@ -79,19 +108,6 @@ export async function resolveAiAccessConfig(
 
   const canInternal = Boolean(entitlement.canUseInternal);
 
-  /**
-   * 用户点了名就送他点的；**没点名就什么都不送**，让服务端填 `llm.defaultModel`。
-   *
-   * 这里曾经退到 `availableModels[0]`，而那个数组是按模型名字母序排的（`model: 'asc'`）——
-   * 等于让「自动」默认跑在字母序第一的模型上，与它的价格无关。更糟的是它**静默废掉了
-   * relay 的按档降级**：`resolveEffectiveModel` 以「送来的正是全局默认」为「调用方没选」
-   * 的判定信号，送一个别的模型名就会让它提前返回，`Plan.defaultModel` 永远不生效——
-   * 免费档因此按目录里最贵的那个模型计费，正是那段逻辑当初要修的问题。
-   *
-   * 省略 modelName 还顺带让两条路径收敛：entitlement 查不到时走的
-   * `unverifiedInternalConfig` 本来就不带模型名。
-   */
-  const internalModel = settings.selectedModel || undefined;
   const internalConfig = (): AiAccessResult => ({
     ok: true,
     config: {

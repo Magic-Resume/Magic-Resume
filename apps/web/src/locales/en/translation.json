@@ -1375,11 +1375,12 @@
       "fileReadAborted": "File reading was aborted.",
       "fileReadFailed": "File reading has failed.",
       "invalidFormat": "Invalid resume format.",
-      "parseFailed": "Failed to parse file.",
+      "parseFailed": "Couldn't read this file. Try another one.",
       "unsupportedFormat": "Please upload a PDF or JSON file.",
-      "noApiKey": "PDF import requires AI model configuration (API Key, Base URL, model, and Max Tokens). Go to",
+      "noApiKey": "Parsing with AI needs a configured model first. Go to",
       "noApiKeyLink": "Settings",
       "noApiKeySuffix": "and try again after saving.",
+      "entitlementUnavailable": "Couldn't confirm your credits. Top up, or configure your own model in settings.",
       "modelNoVision": "The selected model \"{{model}}\" cannot read images. Switch to a vision-capable model in settings, or upload a PDF / Word resume instead."
     },
     "success": "Resume imported successfully!",
@@ -1414,8 +1415,8 @@
     }
   },
   "agentErrors": {
-    "agent_run_failed": "The parse did not finish. Try again; if it keeps failing, try another PDF or check your model settings.",
-    "insufficient_quota": "Your account is out of credits. Top up or finish your custom model settings, then try again.",
+    "agent_run_failed": "That run didn't finish. Try again; if it keeps failing, check your model settings.",
+    "insufficient_quota": "You're out of credits. Top up, or configure your own model in settings.",
     "model_unavailable": "The configured model is unavailable. Check the model name and base URL in settings."
   },
   "dynamicForm": {
