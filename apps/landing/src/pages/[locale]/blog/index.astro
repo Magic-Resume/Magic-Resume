@@ -15,7 +15,7 @@ const locale = localeParam as Locale;
 const entries = await getArticles(locale);
 const title = locale === 'zh' ? '求职与 AI 简历文章 | Magic Resume' : 'Resume and job-search guides | Magic Resume';
 const description = locale === 'zh'
-  ? '围绕 AI 简历、ATS、岗位 JD 匹配和 Resume MCP 的实操文章。'
+  ? '围绕 AI 简历、ATS、岗位 JD 匹配和 Resume MCP 的实操文章'
   : 'Practical guides about AI resumes, ATS checks, job-description matching, and Resume MCP.';
 const base = new URL(Astro.url.pathname.replace(/\/+$/, ''), Astro.site).href;
 const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', href: new URL(`/${loc}/blog`, Astro.site).href }));

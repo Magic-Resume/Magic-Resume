@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         }
         
         const title = resumeName ? `${resumeName}'s Resume` : 'Magic Resume';
-        const description = `查看 ${resumeName || ''} 开发的高质量简历。`;
+        const description = resumeName ? `查看 ${resumeName} 的在线简历` : '查看在线简历';
         const image = { url: '/magic-resume-preview.png', width: 1200, height: 630 };
         return {
             title,

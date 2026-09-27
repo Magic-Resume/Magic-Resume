@@ -370,7 +370,7 @@
     },
     "cloudSync": {
       "title": "Cloud Sync",
-      "description": "Sync your resume data across devices. Your data will be stored securely in the cloud.",
+      "description": "Pick up where you left off on another device. Data is securely synced to cloud and can be downloaded anytime.",
       "toggleLabel": "Enable Cloud Sync",
       "enabled": "On",
       "disabled": "Off",
@@ -379,7 +379,7 @@
       "disclaimer": {
         "title": "Cloud Sync Disclaimer",
         "description": "Please read and agree to the following terms before enabling cloud sync:",
-        "content": "By enabling cloud sync, your resume data (including personal info, experience, etc.) will be uploaded to our secure servers. This allows you to access your resumes from any device. We use industry-standard encryption to protect your data. However, please be aware that this means your data is no longer stored solely on your local device.",
+        "content": "Once enabled, your resumes sync to the cloud so you can edit from any device. Data is encrypted in transit and at rest. Resumes will no longer be stored solely on this device.",
         "agree": "I understand and agree",
         "cancel": "Cancel"
       }
@@ -439,7 +439,7 @@
     },
     "notifications": {
       "unsavedChanges": "Unsaved changes",
-      "settingsSaved": "Settings saved!",
+      "settingsSaved": "Settings saved",
       "changesReset": "Changes have been reset."
     },
     "buttons": {
@@ -512,16 +512,16 @@
         "interview": "Mock Interview"
       },
       "title": "Polaris",
-      "subtitle": "Analyze and optimize your resume to match target job requirements, or get professional advice through Lighthouse-style reports.",
-      "description": "Analyze and optimize your resume to match target job requirements, or get a professional Lighthouse-style analysis report.",
+      "subtitle": "Tailor your resume to match the role or get a multidimensional review",
+      "description": "Tailor your resume to match the role or get a multidimensional review",
       "optimizeTab": {
         "jdLabel": "Target Job Description (JD)",
-        "jdPlaceholder": "Paste the Job Description (JD) here to help AI better tailor your resume...",
+        "jdPlaceholder": "Paste the Job Description (JD) here to help AI better tailor your resume…",
         "optimizedCount": "Optimized {{count}} sections",
         "resultsReady": "Optimization results are ready",
         "applyHint": "Click Apply to update your resume",
         "optimizeButton": "Start Optimization",
-        "optimizingButton": "Optimizing...",
+        "optimizingButton": "Optimizing…",
         "previewButton": "Preview",
         "rawJsonButton": "Raw JSON",
         "applyChangesButton": "Apply Changes",
@@ -535,7 +535,7 @@
           "agent_status": "Agent Status",
           "idle": "Idle",
           "execution_log": "Execution Log",
-          "no_logs": "No logs yet...",
+          "no_logs": "No logs yet…",
           "payload_data": "Payload Data",
           "realtime_link": "Realtime Link",
           "active": "Active",
@@ -561,12 +561,12 @@
             "activeChannels": "Active Channels"
           },
           "console": {
-            "initiating": "> Deconstructing task logic...",
-            "analyzing": "> Agent {{id}} is analyzing data...",
+            "initiating": "> Deconstructing task logic…",
+            "analyzing": "> Agent {{id}} is analyzing data…",
             "system": "System:",
-            "validating": "Running semantic validation...",
-            "success": "> Operation succeeded. Data buffered.",
-            "waiting": "> Waiting for trigger signal...",
+            "validating": "Running semantic validation…",
+            "success": "> Changes ready to apply",
+            "waiting": "> Waiting for trigger signal…",
             "standby": "Standby",
             "process_locus": "Process::Core",
             "execution_time": "Execution Time",
@@ -578,7 +578,7 @@
             "agent_status": "Agent Status",
             "idle": "Idle",
             "execution_log": "Execution Log",
-            "no_logs": "No logs yet...",
+            "no_logs": "No logs yet…",
             "payload_data": "Payload Data",
             "realtime_link": "Realtime Link",
             "active": "Active",
@@ -589,206 +589,206 @@
           "preparer": {
             "title": "Preparing Inputs",
             "personality": "Input Preprocessor",
-            "in_progress": "Preparing your resume and job description...",
+            "in_progress": "Preparing your resume and job description…",
             "completed": "Input data is ready."
           },
           "parallel_analyzer": {
             "title": "Parallel Analysis",
-            "in_progress": "Analyzing your resume from multiple dimensions...",
-            "completed": "All analyses complete!"
+            "in_progress": "Analyzing your resume from multiple dimensions…",
+            "completed": "All analyses complete"
           },
           "analysis_parent": {
-            "in_progress": "Analyzing your resume from multiple dimensions...",
-            "completed": "All analyses complete!"
+            "in_progress": "Analyzing your resume from multiple dimensions…",
+            "completed": "All analyses complete"
           },
           "combiner": {
             "title": "Combine Analysis Report",
             "personality": "Report Combiner",
-            "in_progress": "Generating a comprehensive analysis report...",
+            "in_progress": "Generating a comprehensive analysis report…",
             "completed": "Analysis report generated."
           },
           "jd_analyzer": {
             "title": "Analyzing Job Description",
             "personality": "JD Feature Extractor",
-            "in_progress": "Analyzing the job description...",
+            "in_progress": "Analyzing the job description…",
             "completed": "Job description analysis complete."
           },
           "prepare_research": {
             "title": "Preparing Research",
             "personality": "Research Planner",
-            "in_progress": "Preparing for web research based on JD...",
+            "in_progress": "Preparing for web research based on JD…",
             "completed": "Research plan is ready."
           },
           "query_writer": {
             "title": "Generating Search Queries",
             "personality": "Query Writer",
-            "in_progress": "Generating intelligent search queries...",
+            "in_progress": "Generating intelligent search queries…",
             "completed": "Search queries generated."
           },
           "web_searcher": {
             "title": "Performing Web Research",
             "personality": "Deep Searcher",
-            "in_progress": "Searching the web for key information...",
+            "in_progress": "Searching the web for key information…",
             "completed": "Web research complete."
           },
           "reflection": {
             "title": "Reflecting on Search Results",
             "personality": "Critic and Refiner",
-            "in_progress": "Analyzing search results and identifying gaps...",
+            "in_progress": "Analyzing search results and identifying gaps…",
             "completed": "Reflection complete, planning next steps."
           },
           "final_answer": {
             "title": "Synthesizing Research Findings",
             "personality": "Final Synthesizer",
-            "in_progress": "Synthesizing research findings into a summary...",
+            "in_progress": "Synthesizing research findings into a summary…",
             "completed": "Research summary complete."
           },
           "rewriter": {
             "title": "Resume Rewrite & Enhancement",
-            "in_progress": "Rewriting the resume based on the analysis report...",
-            "completed": "Resume successfully optimized!"
+            "in_progress": "Rewriting the resume based on the analysis report…",
+            "completed": "Resume successfully optimized"
           },
           "prepare_rewriter": {
             "title": "Preparing Rewrite Tasks",
             "personality": "Strategy Planner",
-            "in_progress": "Preparing for section-by-section rewriting...",
+            "in_progress": "Preparing for section-by-section rewriting…",
             "completed": "Switched to step-by-step optimization mode."
           },
           "rewrite_section": {
             "title": "Step-by-Step Optimization",
             "personality": "Section Rewriter",
-            "in_progress": "Optimizing in progress...",
-            "completed": "All sections have been optimized!"
+            "in_progress": "Optimizing in progress…",
+            "completed": "All sections have been optimized"
           },
           "rewriting_section": {
-            "in_progress": "Optimizing {{section}}...",
+            "in_progress": "Optimizing {{section}}…",
             "completed": "{{section}} optimized."
           },
           "analyzing_category": {
-            "in_progress": "Analyzing {{category}}...",
+            "in_progress": "Analyzing {{category}}…",
             "completed": "{{category}} analysis complete."
           },
           "company_analysis": {
             "title": "Company Deep-Dive",
             "personality": "Company Knowledge Graph",
-            "in_progress": "Analyzing company culture and tech stack...",
+            "in_progress": "Analyzing company culture and tech stack…",
             "completed": "Company analysis complete."
           },
           "adversarial_critique": {
             "title": "Recruiter Critique",
             "personality": "Adversarial Evaluator",
-            "in_progress": "Recruiter AI is evaluating your resume...",
+            "in_progress": "Recruiter AI is evaluating your resume…",
             "completed": "Evaluation complete."
           },
           "resume_analyzer": {
             "title": "Resume Feature Extractor",
             "personality": "Resume Feature Extractor",
-            "in_progress": "Evaluating resume strengths and weaknesses...",
+            "in_progress": "Evaluating resume strengths and weaknesses…",
             "completed": "Resume evaluation complete."
           },
           "resume_web_search": {
             "title": "Resume Market Research",
             "personality": "Resume Market Researcher",
-            "in_progress": "Researching similar candidates in the market...",
+            "in_progress": "Researching similar candidates in the market…",
             "completed": "Market research complete."
           },
           "jd_web_search": {
             "title": "Job Market Research",
             "personality": "Job Market Researcher",
-            "in_progress": "Analyzing hiring trends for this position...",
+            "in_progress": "Analyzing hiring trends for this position…",
             "completed": "Trend analysis complete."
           },
           "company_interview_search": {
             "title": "Interview Intel Collector",
             "personality": "Interview Intel Collector",
-            "in_progress": "Collecting company interview questions and intel...",
+            "in_progress": "Collecting company interview questions and intel…",
             "completed": "Intel collection complete."
           },
           "research_combiner": {
             "title": "Multi-Source Aggregator",
             "personality": "Multi-Source Aggregator",
-            "in_progress": "Synthesizing all research intelligence...",
+            "in_progress": "Synthesizing all research intelligence…",
             "completed": "Strategy formulation complete."
           },
           "rewrite_sections_parent": {
             "title": "Optimization Orchestrator",
             "personality": "Smart Orchestrator",
-            "in_progress": "Orchestrating parallel section optimization...",
+            "in_progress": "Orchestrating parallel section optimization…",
             "completed": "All sections optimized in parallel."
           },
           "route_next_rewrite": {
             "title": "Rewrite Planner",
             "personality": "Task Router",
-            "in_progress": "Planning the next section to optimize...",
+            "in_progress": "Planning the next section to optimize…",
             "completed": "Planning complete."
           },
           "combine_sections": {
             "title": "Content Assembler",
             "personality": "Content Assembler",
-            "in_progress": "Reassembling optimized sections...",
+            "in_progress": "Reassembling optimized sections…",
             "completed": "Resume assembly complete."
           },
           "strategic_analyzer": {
             "title": "Strategy Engine",
             "personality": "Optimization Strategy Engine",
-            "in_progress": "Analyzing strategic gaps between resume and job...",
+            "in_progress": "Analyzing strategic gaps between resume and job…",
             "completed": "Gap analysis complete."
           },
           "microEvents": {
-            "thinking": "Designing optimization strategy...",
-            "searching": "Running deep search: {{tool}}...",
-            "tool_complete": "Search complete. Organizing data..."
+            "thinking": "Designing optimization strategy…",
+            "searching": "Running deep search: {{tool}}…",
+            "tool_complete": "Search complete. Organizing data…"
           }
         },
         "optimizationProgress": {
-          "analyzingJD": "Analyzing Job Description...",
-          "optimizing": "Optimizing your resume, please wait...",
-          "preparing": "Preparing to optimize {{count}} items...",
-          "optimizingItem": "Optimized {{sectionKey}} item {{completed}} of {{total}}...",
-          "done": "Done!"
+          "analyzingJD": "Analyzing Job Description…",
+          "optimizing": "Optimizing your resume, please wait…",
+          "preparing": "Preparing to optimize {{count}} items…",
+          "optimizingItem": "Optimized {{sectionKey}} item {{completed}} of {{total}}…",
+          "done": "Done"
         }
       },
       "analysisTab": {
         "title": "Resume Health Analysis",
         "analyzeButton": "Analyze Resume",
-        "analyzingButton": "Analyzing...",
+        "analyzingButton": "Analyzing…",
         "viewReportButton": "View Report",
         "reAnalyzeButton": "Re-analyze",
         "analysisProgress": {
-          "start": "Starting analysis engine...",
-          "impact": "Assessing resume 'Impact & Action'...",
-          "quantification": "Checking use of 'Quantifiable Achievements'...",
-          "clarity": "Analyzing 'Clarity & Readability'...",
-          "completeness": "Reviewing 'Completeness & Structure'...",
-          "summary": "Evaluating 'Professional Summary' quality...",
-          "finalizing": "Compiling score and generating report...",
-          "done": "Analysis complete!"
+          "start": "Starting analysis engine…",
+          "impact": "Assessing resume 'Impact & Action'…",
+          "quantification": "Checking use of 'Quantifiable Achievements'…",
+          "clarity": "Analyzing 'Clarity & Readability'…",
+          "completeness": "Reviewing 'Completeness & Structure'…",
+          "summary": "Evaluating 'Professional Summary' quality…",
+          "finalizing": "Compiling score and generating report…",
+          "done": "Analysis complete"
         },
         "multiSteps": {
-          "peer": "Peer Developer is checking code quality...",
-          "lead": "Tech Lead is evaluating architectural impact...",
-          "hrbp": "HRBP is assessing soft skills and consistency...",
-          "finalizing": "Finalizing comprehensive interview panel report..."
+          "peer": "Peer Developer is checking code quality…",
+          "lead": "Tech Lead is evaluating architectural impact…",
+          "hrbp": "HRBP is assessing soft skills and consistency…",
+          "finalizing": "Finalizing comprehensive interview panel report…"
         },
         "placeholder": {
           "title": "Get Professional Analysis",
-          "description": "Our AI will perform a detailed analysis of your resume, providing scores and actionable feedback on impact, clarity, and keyword optimization."
+          "description": "Get actionable recommendations across role fit, clarity, and quantified impact."
         }
       },
       "createTab": {
         "chatTitle": "AI Assistant",
         "previewTitle": "Live Resume Preview",
-        "inputPlaceholder": "Describe your skills or experience...",
+        "inputPlaceholder": "Describe your background or skills…",
         "initialMessage": "Hello! I'm ResuMate, your personal resume crafting assistant. To start, what kind of job or industry are you targeting?",
         "applyButton": "Apply and Save Resume",
         "defaultReply": "Sorry, I'm having a little trouble right now. Could you please rephrase that?",
         "errorReply": "I seem to have encountered an issue. Please try sending your message again.",
-        "retryNotification": "Request failed, retrying...",
+        "retryNotification": "Request failed, retrying…",
         "retryFailed": "Request failed after multiple retries. Please try again later."
       },
       "translateTab": {
         "inputTitle": "Source Text",
-        "inputDescription": "Please choose target language, custom prompt is optional.",
+        "inputDescription": "Choose a target language (custom prompt optional)",
         "resumeSourceHint": "Current resume content will be translated directly.",
         "targetLanguage": {
           "label": "Target Language",
@@ -810,13 +810,13 @@
         },
         "customPrompt": {
           "label": "Custom Prompt (Optional)",
-          "placeholder": "e.g. Keep technical terms, make tone concise..."
+          "placeholder": "e.g. Keep technical terms, make tone concise…"
         },
-        "translateButton": "One-click Translate",
-        "translateButtonLoading": "Translating...",
+        "translateButton": "Translate",
+        "translateButtonLoading": "Translating…",
         "outputTitle": "Translation Result",
         "outputDescription": "Generated resume JSON is shown on the right with preview rendering.",
-        "translatedTextPlaceholder": "Translated text will appear here...",
+        "translatedTextPlaceholder": "Translated text will appear here…",
         "emptyJsonState": "Generated JSON will appear here after translation.",
         "invalidPreviewData": "Current JSON structure cannot be rendered as a resume preview.",
         "viewModes": {
@@ -825,8 +825,8 @@
         },
         "applyButton": "Apply Translated Resume",
         "loading": {
-          "translating": "Streaming translation in progress...",
-          "generatingJson": "Translation complete, generating resume JSON..."
+          "translating": "Streaming translation in progress…",
+          "generatingJson": "Translation complete, generating resume JSON…"
         },
         "copyButton": "Copy",
         "notifications": {
@@ -840,16 +840,16 @@
       "notifications": {
         "apiKeyMissing": "API key not found. Please set it up in the settings page.",
         "jdMissing": "Please provide a job description.",
-        "optimizationComplete": "AI optimization complete!",
+        "optimizationComplete": "AI optimization complete",
         "optimizationFailed": "Optimization failed: {{error}}",
-        "analysisComplete": "Analysis report has been generated!",
+        "analysisComplete": "Analysis report has been generated",
         "analysisFailed": "Analysis failed: {{error}}",
         "unknownError": "An unknown error has occurred.",
         "creationFailed": "Resume creation failed: {{error}}"
       },
       "optimizePlaceholder": {
-        "title": "Ready to elevate your resume?",
-        "description": "Paste a job description and click \"Start Optimization\" to let the AI tailor your resume for your dream job."
+        "title": "Tailor your resume to the role",
+        "description": "Paste a job description and let AI tailor your resume section by section."
       },
       "interviewTab": {
         "back": "Back",
@@ -875,14 +875,14 @@
           "startInterview": "Start Interview"
         },
         "status": {
-          "connecting": "Connecting to Interviewer...",
-          "readingResume": "Reading your resume context...",
-          "waitingConnection": "Waiting for connection...",
-          "thinking": "AI is thinking...",
-          "preAnswer": "Preparing Answer...",
+          "connecting": "Connecting to Interviewer…",
+          "readingResume": "Reading your resume context…",
+          "waitingConnection": "Waiting for connection…",
+          "thinking": "AI is thinking…",
+          "preAnswer": "Preparing Answer…",
           "answerHint": "Think before you speak",
-          "isListening": "Interviewer is listening...",
-          "isSpeaking": "AI is answering..."
+          "isListening": "Interviewer is listening…",
+          "isSpeaking": "AI is answering…"
         },
         "controls": {
           "console": "Console",
@@ -913,28 +913,28 @@
             "description": "Focuses on End-to-end Delivery, System Integration, and Business Understanding"
           },
           "hr": {
-            "name": "HRBP",
+            "name": "HR Business Partner",
             "description": "Focuses on Soft Skills, Career Planning, and Culture Fit"
           }
         }
       },
-      "progressText": "AI is working hard on analysis and creation..."
+      "progressText": "Rewriting resume against target role…"
     },
     "share": {
       "title": "Share to Web",
       "publicAccess": "Public Access",
       "publicAccessDesc": "Anyone with the link can view",
       "privateAccessDesc": "Only you can access",
-      "syncing": "Syncing to cloud...",
+      "syncing": "Syncing to cloud…",
       "readOnly": "Read Only",
       "allowComments": "Allow Comments",
-      "copySuccess": "Link copied to clipboard!",
-      "pleaseLogin": "Please login first"
+      "copySuccess": "Link copied to clipboard",
+      "pleaseLogin": "Please sign in first"
     },
     "versionHistory": {
       "title": "Version History",
       "restore": "Restore",
-      "loading": "Loading...",
+      "loading": "Loading…",
       "viewRender": "Preview",
       "viewJson": "JSON",
       "empty": "No versions yet"
@@ -990,28 +990,28 @@
       "anonymous": "Anonymous",
       "owner": "Owner",
       "justNow": "Just now",
-      "replyPlaceholder": "Reply...",
-      "writeCommentPlaceholder": "Write a comment...",
+      "replyPlaceholder": "Reply…",
+      "writeCommentPlaceholder": "Write a comment…",
       "cancel": "Cancel",
       "post": "Post"
     },
     "error": {
-      "resumeNotFound": "Resume not found or access denied",
+      "resumeNotFound": "This resume doesn't exist, or public access is turned off",
       "redirectingPre": "Redirecting to home in ",
-      "redirectingPost": " seconds...",
+      "redirectingPost": " seconds…",
       "returnNow": "Return Now",
-      "failedToLoad": "Failed to load resume. Please check your network or link."
+      "failedToLoad": "Couldn't load resume. Check your link or network connection"
     },
     "notifications": {
       "resumeNotFound": "This resume doesn't exist or is not public.",
-      "syncing": "Resume is still syncing to cloud. Please wait a moment.",
-      "loginToComment": "Please login to comment",
+      "syncing": "Syncing to cloud, please wait a moment",
+      "loginToComment": "Sign in to leave a comment",
       "commentAdded": "Comment added",
       "commentSaveFailed": "Failed to save comment",
-      "loginToReply": "Please login to reply",
+      "loginToReply": "Sign in to reply",
       "replyAdded": "Reply added",
       "replySaveFailed": "Failed to save reply",
-      "loginToDelete": "Please login to delete",
+      "loginToDelete": "Sign in to delete",
       "commentDeleted": "Comment deleted",
       "commentDeleteFailed": "Failed to delete comment"
     }
@@ -1025,9 +1025,9 @@
     "share": "Share",
     "feedback": "Feedback",
     "exportPDF": "Export PDF",
-    "exportingPDF": "Generating PDF locally...",
-    "exportPDFSuccess": "PDF exported successfully.",
-    "exportPDFError": "PDF export failed. Please try again.",
+    "exportingPDF": "Generating PDF locally…",
+    "exportPDFSuccess": "PDF exported successfully",
+    "exportPDFError": "PDF export didn't succeed. Try again or switch browsers",
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",
     "resetZoom": "Reset Zoom",
@@ -1038,18 +1038,18 @@
   "feedback": {
     "title": "Feedback",
     "description": "Help us improve Magic Resume. Share your thoughts or report issues.",
-    "thankYou": "Thank you!",
+    "thankYou": "Thank you",
     "received": "We have received your feedback.",
     "label": "Your feedback",
-    "placeholder": "Tell us what you like or what could be better...",
+    "placeholder": "Tell us what you like or what could be better…",
     "submit": "Submit Feedback",
     "close": "Close",
     "characters": "characters",
     "readyToSubmit": "Ready to submit",
-    "typeFeedback": "Type your feedback",
+    "typeFeedback": "Tell us what could be better",
     "error": {
       "tooManyRequests": "Too many requests. Please try again later.",
-      "generic": "Failed to submit feedback. Please try again."
+      "generic": "Couldn't submit feedback. Check your network and try again"
     }
   },
   "sections": {
@@ -1078,7 +1078,7 @@
     },
     "notifications": {
       "requiredFields": "Please fill in the following required fields: {{fields}}",
-      "sectionUpdated": "{{label}} section updated successfully.",
+      "sectionUpdated": "{{label}} updated",
       "sectionAdded": "{{label}} section added successfully.",
       "itemRemoved": "Item removed successfully.",
       "itemCopied": "Item copied successfully.",
@@ -1121,7 +1121,7 @@
     "version": "Version Management",
     "versionHistory": "Version History",
     "synced": "Synced",
-    "syncing": "Syncing...",
+    "syncing": "Syncing…",
     "pendingSync": "Pending",
     "backToDashboard": "Back to dashboard",
     "localOnly": "Local Only",
@@ -1140,10 +1140,10 @@
       "basics": "Basics"
     },
     "notifications": {
-      "jsonDownloadStarted": "JSON file download started!"
+      "jsonDownloadStarted": "JSON file download started"
     },
     "ai": {
-      "generatingSuggestion": "Generating personalized optimization suggestions for you...",
+      "generatingSuggestion": "Generating personalized optimization suggestions for you…",
       "narrate": {
         "reading": "Flipping through your resume…",
         "thinking": "Hmm, thinking it over…",
@@ -1152,7 +1152,7 @@
         "still": "Tricky one — still chewing on it…",
         "drafting": "Drafting…",
         "writingSection": "Writing “{{label}}”…",
-        "draftDone": "Draft ready!"
+        "draftDone": "Draft ready"
       }
     },
     "errors": {
@@ -1365,34 +1365,34 @@
     "title": "Import Resume",
     "description": "Select or drop a JSON or PDF file below to create a new resume.",
     "typeLabel": "File type",
-    "typePlaceholder": "Select a file type...",
+    "typePlaceholder": "Select a file type…",
     "dropzone": {
-      "active": "Drop the file here...",
+      "active": "Drop the file here…",
       "default": "Drag 'n' drop a file here, or click to select",
       "jsonOnly": "(.json file only)"
     },
     "errors": {
-      "fileReadAborted": "File reading was aborted.",
-      "fileReadFailed": "File reading has failed.",
-      "invalidFormat": "Invalid resume format.",
+      "fileReadAborted": "File upload was cancelled.",
+      "fileReadFailed": "Couldn't read this file. Try another one.",
+      "invalidFormat": "Invalid resume format",
       "parseFailed": "Couldn't read this file. Try another one.",
-      "unsupportedFormat": "Please upload a PDF or JSON file.",
+      "unsupportedFormat": "Upload a PDF, DOCX, Markdown, or JSON resume",
       "noApiKey": "Parsing with AI needs a configured model first. Go to",
       "noApiKeyLink": "Settings",
       "noApiKeySuffix": "and try again after saving.",
       "entitlementUnavailable": "Couldn't confirm your credits. Top up, or configure your own model in settings.",
       "modelNoVision": "The selected model \"{{model}}\" cannot read images. Switch to a vision-capable model in settings, or upload a PDF / Word resume instead."
     },
-    "success": "Resume imported successfully!",
+    "success": "Resume imported successfully",
     "cancel": "Cancel",
-    "importing": "Importing and syncing...",
+    "importing": "Importing and syncing…",
     "defaultName": "Imported Resume",
     "pdf": {
       "extracting": "Reading PDF",
       "analyzing": "Parsing",
       "done": "Parsed",
       "charUnit": "chars",
-      "success": "PDF resume imported successfully!",
+      "success": "PDF resume imported successfully",
       "hint": "PDF files will be parsed with AI",
       "sections": {
         "info": "Basics",
@@ -1582,13 +1582,13 @@
   },
   "export": {
     "notifications": {
-      "success": "Resume exported successfully!",
+      "success": "Resume exported",
       "error": "Failed to export resume.",
       "imageError": "Failed to load images for export.",
       "elementNotFound": "Resume element not found",
-      "generating": "Generating PDF...",
-      "unknownError": "Unknown error",
-      "pdfGenerationFailed": "PDF generation failed"
+      "generating": "Generating PDF…",
+      "unknownError": "Export didn't finish. Try again; if it keeps failing, try another format",
+      "pdfGenerationFailed": "PDF generation failed. Try again"
     }
   },
   "store": {
@@ -1597,7 +1597,7 @@
       "resumeNotFound": "Resume not found for duplication.",
       "resumeDuplicated": "Resume \"{{name}}\" duplicated.",
       "resumeDeleted": "Resume \"{{name}}\" deleted.",
-      "resumeSaved": "Resume saved!",
+      "resumeSaved": "Resume saved",
       "createCloudFailed": "Failed to create in cloud. Creating locally instead.",
       "importCloudFailed": "Failed to import resume to cloud. Importing locally.",
       "resumeDuplicatedLocally": "Resume \"{{name}}\" duplicated locally.",
@@ -1606,18 +1606,18 @@
       "deleteCloudFailed": "Failed to delete from cloud, but removing locally.",
       "versionDeleted": "Version deleted",
       "versionDeleteFailed": "Failed to delete version",
-      "resumeSavedCloud": "Resume saved to cloud!",
-      "resumeSavedLocally": "Resume saved locally!",
+      "resumeSavedCloud": "Resume saved to cloud",
+      "resumeSavedLocally": "Resume saved locally",
       "versionNotFound": "Version not found",
-      "versionRestored": "Version restored!",
-      "loginToShare": "Please login to share resume",
-      "resumePublished": "Resume published!",
+      "versionRestored": "Version restored",
+      "loginToShare": "Sign in to share your resume",
+      "resumePublished": "Resume published",
       "resumeUnpublished": "Resume unpublished",
       "sharingUpdateFailed": "Failed to update sharing settings",
       "cloudSyncFailed": "Cloud sync failed. Please check your connection.",
       "resumeUpToDate": "Already up to date in the cloud",
       "syncConflictResolved": "Changes from another device detected: backed up as a version; your current content now wins",
-      "duplicatingInCloud": "Duplicating in cloud...",
+      "duplicatingInCloud": "Duplicating in cloud…",
       "duplicateCloudSuccess": "Resume duplicated in cloud",
       "duplicateCloudError": "Failed to duplicate in cloud"
     },
@@ -1630,7 +1630,7 @@
     "regenerating": "Regenerating preview"
   },
   "common": {
-    "loading": "Loading...",
+    "loading": "Loading…",
     "logoAlt": "Magic Resume Logo",
     "userAvatarAlt": "User Avatar",
     "manualSave": "Manual Save",
@@ -1646,11 +1646,11 @@
       "copySuccess": "JSON data copied to clipboard",
       "copyFailed": "Copy failed, please try again",
       "draftGenerated": "Resume draft generated! You can now click the preview button in the top right to view.",
-      "dataApplied": "Resume data has been applied to preview!",
-      "resumeApplied": "Resume applied!",
-      "generatingDraft": "Alright, I'll generate a resume draft based on our conversation...",
+      "dataApplied": "Resume data has been applied to preview",
+      "resumeApplied": "Resume applied",
+      "generatingDraft": "Alright, I'll generate a resume draft based on our conversation…",
       "generationError": "Sorry, encountered an issue while generating the resume. Please try again later.",
-      "generatingResume": "Generating resume..."
+      "generatingResume": "Generating resume…"
     },
     "ui": {
       "hide": "Hide",
@@ -1898,7 +1898,7 @@
     },
     "chat": {
       "done": "Done",
-      "running": "Running...",
+      "running": "Running…",
       "collapse": "Collapse",
       "view": "View",
       "subagent": "Subagent",
@@ -1912,7 +1912,7 @@
         "deny": "Deny",
         "denied": "Denied",
         "read": "Resume read",
-        "reading": "Reading resume...",
+        "reading": "Reading resume…",
         "allowed": "Read allowed",
         "previous": "Previous",
         "next": "Next",
@@ -1935,7 +1935,7 @@
       "navigationItem": "Go to {{actor}} message {{index}} of {{count}}",
       "readingResume": "Reading your resume…",
       "writeFailed": "This turn didn't change the resume — the canvas is unchanged. Try saying it again.",
-      "syncFailed": "The edit preview arrived, but final resume reconciliation failed. This run was not marked successful; please retry."
+      "syncFailed": "Preview loaded, but couldn't apply changes to the resume. Please try again."
     },
     "sources": {
       "count": "{{count}} sources",
@@ -1960,8 +1960,8 @@
       "switch": "Switch",
       "select": "Select",
       "exit": "Exit",
-      "placeholderQuoted": "Tell AI how to change the selected text...",
-      "placeholderSkill": "Add optional context, then press Enter to run \"{{skill}}\"...",
+      "placeholderQuoted": "Tell AI how to change the selected text…",
+      "placeholderSkill": "Add optional context, then press Enter to run \"{{skill}}\"…",
       "attachPdf": "Attach an existing resume (PDF)",
       "attachFile": "Add files",
       "send": "Send",
@@ -2324,8 +2324,7 @@
       "reportRateLimited": "Too many requests. Wait a moment, then retry the debrief.",
       "voiceError": {
         "connection": "Voice dropped — you can keep going by typing",
-        "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan",
-        "connection_limit": "This interview has used all its reconnects — keep going by typing"
+        "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan"
       },
       "backToDashboard": "Back to dashboard",
       "leaveTitle": "Leaving now ends this interview",
@@ -2601,29 +2600,29 @@
     }
   },
   "loading": {
-    "common": "Loading...",
-    "aiThinking": "AI Thinking...",
+    "common": "Loading…",
+    "aiThinking": "AI Thinking…",
     "aiLab": {
-      "start": "Starting Polaris...",
-      "preparing": "Preparing smart interviewer and analysis tools..."
+      "start": "Starting Polaris…",
+      "preparing": "Preparing smart interviewer and analysis tools…"
     },
     "history": {
-      "title": "Loading history...",
-      "description": "Fetching your resume modification records..."
+      "title": "Loading history…",
+      "description": "Fetching your resume modification records…"
     },
     "json": {
-      "title": "Generating JSON...",
-      "description": "Preparing a structured preview of your resume..."
+      "title": "Generating JSON…",
+      "description": "Preparing a structured preview of your resume…"
     },
     "share": {
-      "title": "Preparing share configuration...",
-      "description": "Loading permissions and link options..."
+      "title": "Preparing share configuration…",
+      "description": "Loading permissions and link options…"
     }
   },
   "dashboardPage": {
     "cloudSyncBanner": {
-      "title": "Cloud Sync is Now Live!",
-      "description": "Enable to sync multi-device and auto-backup all versions. Your data is safe and secure. You are currently in local storage mode.",
+      "title": "Cloud Sync is Now Available",
+      "description": "Sync across devices and back up every revision. You are currently in local storage mode.",
       "button": "Go to Settings"
     }
   },

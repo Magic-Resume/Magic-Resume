@@ -430,7 +430,7 @@ export default function AiChatShell({
         !document.sections ||
         !Array.isArray(document.sectionOrder)
       ) {
-        throw new Error("Workspace 返回的简历内容不完整");
+        throw new Error("Incomplete resume payload received from workspace");
       }
       onApplyWorkspaceResolution(
         {
@@ -1720,9 +1720,7 @@ export default function AiChatShell({
                     changeNotes,
                   );
                   if (!changed.length) {
-                    // 对话结束也可能同步未变化的简历快照（例如问候、面试卡片）。
-                    // 零差异不是丢失改动；写入/同步失败由各自的 SSE 事件报告。
-                    continue;
+                    warnDropped("这次没有产生可评审的改动", "no_changes");
                   } else if (canvasDismissedForRun.current) {
                     // 本轮用户主动关过画布：尊重它，别再弹回来。
                     logChange(

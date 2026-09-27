@@ -13,7 +13,7 @@ const locale = localeParam as Locale;
 const tools = getTools(locale);
 const title = locale === 'zh' ? 'AI 简历工具 | Magic Resume' : 'AI resume tools | Magic Resume';
 const description = locale === 'zh'
-  ? '使用 JD 匹配、ATS 模板和 Resume MCP，把求职准备变成可验证的工作流。'
+  ? '使用 JD 匹配、ATS 模板和 Resume MCP，把求职准备变成可验证的工作流'
   : 'Use JD matching, ATS-ready templates, and Resume MCP to make job preparation a verifiable workflow.';
 const canonical = new URL(`/${locale}/tools`, Astro.site).href;
 const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', href: new URL(`/${loc}/tools`, Astro.site).href }));

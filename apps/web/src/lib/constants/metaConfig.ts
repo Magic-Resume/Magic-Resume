@@ -67,7 +67,7 @@ const metaConfig: { [key: string]: Metadata } = {
   // 取长度，不要手写。
   'Dashboard': {
     title: "我的简历 - 简历管理中心 | Magic Resume",
-    description: "管理您的所有简历，查看简历数据分析，使用AI优化工具提升简历质量。",
+    description: "管理你的所有简历，查看简历数据分析，使用 AI 工具针对目标岗位打磨内容",
     robots: {
       index: false,
       follow: false,
@@ -75,7 +75,7 @@ const metaConfig: { [key: string]: Metadata } = {
   },
   'Edit': {
     title: "编辑简历 - 在线简历编辑器 | Magic Resume",
-    description: "使用Magic Resume强大的在线编辑器，实时预览简历效果，AI智能优化内容。",
+    description: "在线编辑与排版简历，实时双屏预览，就地审阅并采纳修改建议",
     robots: {
       index: false,
       follow: false,

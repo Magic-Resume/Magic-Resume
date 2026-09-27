@@ -96,7 +96,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
   // >0 when the PDF had no readable text and is being read as page images.
   const [pdfVisionPages, setPdfVisionPages] = useState(0);
   const pdfAbortRef = useRef<AbortController | null>(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const resetPdfProgress = useCallback(() => {
     setPdfPhase(null);
     setPdfCharCount(0);
@@ -258,7 +258,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       delete rest.parse_warnings;
 
       const resumeName = result.info?.fullName
-        ? `${result.info.fullName}'s Resume`
+        ? (i18n.language.startsWith('zh') ? `${result.info.fullName}的简历` : `${result.info.fullName}'s Resume`)
         : (rest.name as string) || t('importDialog.defaultName');
 
       const newResume: Resume = {
@@ -281,7 +281,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
 
       toast.success(
         fileType !== 'json'
-          ? t('importDialog.pdf.success', { defaultValue: 'PDF resume imported successfully!' })
+          ? t('importDialog.pdf.success')
           : t('importDialog.success')
       );
       // 解析器自己说不确定的地方,用户有权知道——不设自动消失,不然等于没说。
@@ -302,7 +302,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       setImportStatus('');
       pdfAbortRef.current = null;
     }
-  }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, cloudSync]);
+  }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, cloudSync, i18n.language]);
 
   const dropzoneAccept: Record<string, string[]> = ACCEPT_BY_TYPE[fileType ?? 'json'] ?? {};
 
