@@ -96,7 +96,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
   // >0 when the PDF had no readable text and is being read as page images.
   const [pdfVisionPages, setPdfVisionPages] = useState(0);
   const pdfAbortRef = useRef<AbortController | null>(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const resetPdfProgress = useCallback(() => {
     setPdfPhase(null);
     setPdfCharCount(0);
@@ -258,7 +258,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       delete rest.parse_warnings;
 
       const resumeName = result.info?.fullName
-        ? `${result.info.fullName}'s Resume`
+        ? (i18n.language.startsWith('zh') ? `${result.info.fullName}的简历` : `${result.info.fullName}'s Resume`)
         : (rest.name as string) || t('importDialog.defaultName');
 
       const newResume: Resume = {
@@ -281,7 +281,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
 
       toast.success(
         fileType !== 'json'
-          ? t('importDialog.pdf.success', { defaultValue: 'PDF resume imported successfully!' })
+          ? t('importDialog.pdf.success')
           : t('importDialog.success')
       );
       // 解析器自己说不确定的地方,用户有权知道——不设自动消失,不然等于没说。
@@ -302,7 +302,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       setImportStatus('');
       pdfAbortRef.current = null;
     }
-  }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, cloudSync]);
+  }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, cloudSync, i18n.language]);
 
   const dropzoneAccept: Record<string, string[]> = ACCEPT_BY_TYPE[fileType ?? 'json'] ?? {};
 
@@ -352,7 +352,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
               {/* 类型选择 */}
               <div className="mb-5">
                 <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  {t('importDialog.typeLabel', { defaultValue: '类型' })}
+                  {t('importDialog.typeLabel', { defaultValue: '文件类型' })}
                 </label>
                 <Select
                   value={fileType ?? ''}
@@ -360,7 +360,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                   disabled={isImporting}
                 >
                   <SelectTrigger className="w-full bg-neutral-900 border-neutral-700 text-neutral-200 hover:border-neutral-600 focus:border-sky-500 focus:ring-sky-500/20 h-10 rounded-xl">
-                    <SelectValue placeholder={t('importDialog.typePlaceholder', { defaultValue: '选择文件类型...' })} />
+                    <SelectValue placeholder={t('importDialog.typePlaceholder', { defaultValue: '选择文件类型…' })} />
                   </SelectTrigger>
                   <SelectContent className="bg-neutral-900 border-neutral-700 rounded-xl z-200">
                     <SelectItem

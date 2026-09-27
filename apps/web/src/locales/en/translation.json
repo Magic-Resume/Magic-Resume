@@ -1,24 +1,24 @@
 {
   "auth": {
     "signIn": {
-      "title": "Log in to Magic Resume",
-      "switchPrompt": "Don't have an account?",
+      "title": "Sign in to Magic Resume",
+      "switchPrompt": "No account yet?",
       "switchLink": "Sign up",
-      "submit": "Log in"
+      "submit": "Sign in"
     },
     "signUp": {
       "title": "Create your account",
       "switchPrompt": "Already have an account?",
-      "switchLink": "Log in",
+      "switchLink": "Sign in",
       "submit": "Create account",
-      "verify": "Verify & continue"
+      "verify": "Verify and continue"
     },
     "continueWith": {
       "google": "Continue with Google",
       "github": "Continue with GitHub",
       "email": "Continue with email"
     },
-    "lastUsed": "You used this last time",
+    "lastUsed": "Last used",
     "continue": "Continue",
     "back": "Back",
     "emailPlaceholder": "you@example.com",
@@ -29,24 +29,24 @@
     },
     "forgotPassword": "Forgot password?",
     "useCodeInstead": "Use a code instead",
-    "codeSentTo": "We sent a code to {{email}}",
+    "codeSentTo": "A verification code has been sent to {{email}}",
     "resend": "Resend code",
     "passwordHint": "At least 8 characters",
     "forgot": {
-      "hint": "Enter your email and we'll send a reset code.",
+      "hint": "Enter your email address to receive a reset code.",
       "send": "Send reset code",
-      "reset": "Reset & log in"
+      "reset": "Reset and sign in"
     },
     "errors": {
-      "passwordIncorrect": "Email or password is wrong. Try again.",
-      "identifierNotFound": "No account for this email. Sign up?",
-      "identifierExists": "This email is already registered. Log in?",
-      "codeIncorrect": "That code isn't right. Try again.",
-      "codeExpired": "That code expired. Send a new one.",
-      "passwordWeak": "Password is too weak. Pick a stronger one.",
-      "emailInvalid": "That email doesn't look right.",
-      "rateLimited": "Too many attempts. Try again shortly.",
-      "generic": "Something went wrong. Try again."
+      "passwordIncorrect": "Incorrect email or password. Please try again.",
+      "identifierNotFound": "No account exists for this email. Sign up instead?",
+      "identifierExists": "This email is already registered. Sign in instead?",
+      "codeIncorrect": "Incorrect verification code. Please try again.",
+      "codeExpired": "The verification code has expired. Request a new one.",
+      "passwordWeak": "The password is too weak. Choose a stronger password.",
+      "emailInvalid": "Invalid email address",
+      "rateLimited": "Too many attempts. Please try again later.",
+      "generic": "Sign-in failed. Try again, and check your network connection if the problem persists."
     },
     "legalConsent": "By signing up you agree to our",
     "legalTerms": "Terms of Service",
@@ -54,27 +54,27 @@
     "legalPrivacy": "Privacy Policy",
     "terms": {
       "agree": "I have read and agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
-      "confirmTitle": "Confirm Terms and Privacy Policy",
+      "confirmTitle": "Confirm terms and privacy policy",
       "agreeAndContinue": "Agree and continue",
       "docTerms": "Terms of Service",
       "docPrivacy": "Privacy Policy",
       "openInNewTab": "Open in new tab",
       "close": "Close",
       "checkboxLabel": "I have read and agree to the Terms of Service and Privacy Policy",
-      "updatedTitle": "Terms have been updated",
-      "updatedHint": "We have updated our Terms of Service and Privacy Policy. Please confirm again to continue."
+      "updatedTitle": "Terms updated",
+      "updatedHint": "Our Terms of Service and Privacy Policy have been updated. Please review and confirm to continue."
     },
     "language": "Language"
   },
   "comingSoon": {
-    "title": "Something great is on the way",
-    "subtitle": "Magic Resume is in private beta. We're putting the finishing touches on your AI resume workspace — the public launch is close.",
-    "launched": "We're live",
+    "title": "Coming soon",
+    "subtitle": "Magic Resume is in private beta. The AI resume workspace will launch publicly soon.",
+    "launched": "Now live",
     "countdownLabel": "Until public launch",
     "enterCta": "Enter Magic Resume",
     "reserveCta": "Reserve early access",
-    "reserveNote": "Beta seats are limited — reserve now and we'll ping you the moment it opens.",
-    "noDate": "The public launch is one step away. Stay tuned.",
+    "reserveNote": "Beta seats are limited. Reserve now to be notified as soon as it opens.",
+    "noDate": "The public launch is coming soon. Stay tuned.",
     "signOut": "Sign out",
     "days": "Days",
     "hours": "Hours",
@@ -85,7 +85,7 @@
     "menu": {
       "title": "Account",
       "upgrade": "Upgrade to Pro",
-      "upgradeHint": "Unlock every AI capability",
+      "upgradeHint": "Unlock all AI features",
       "upgradeSoon": "Coming soon",
       "profile": "Profile",
       "settings": "Settings",
@@ -95,15 +95,15 @@
       "helpCenter": "Help center",
       "terms": "Terms of Service",
       "privacy": "Privacy Policy",
-      "reportBug": "Report a bug"
+      "reportBug": "Send feedback"
     },
     "modal": {
       "title": "Account"
     },
     "subscription": {
       "currentPlan": "Current plan",
-      "monthly": "This month",
-      "interviewRemaining": "Interview left",
+      "monthly": "Monthly credits",
+      "interviewRemaining": "Interviews left",
       "today": "Today",
       "week": "This week",
       "usage": "Usage this period",
@@ -140,7 +140,7 @@
       "disabled": "Off",
       "stats": {
         "resumes": "Resumes",
-        "social": "Social",
+        "social": "Social accounts",
         "days": "Member days"
       },
       "recentResumes": "Recent resumes",
@@ -149,8 +149,8 @@
       "side": {
         "userId": "User ID",
         "primaryEmail": "Primary email",
-        "joinedAt": "User since",
-        "updatedAt": "Profile updated",
+        "joinedAt": "Joined",
+        "updatedAt": "Last updated",
         "lastSignIn": "Last sign-in"
       },
       "never": "Never",
@@ -165,28 +165,28 @@
         "more": "More",
         "edits": "edits"
       },
-      "loadFailed": "Could not load account info"
+      "loadFailed": "Account information could not be loaded. Refresh the page and try again."
     },
     "settings": {
       "title": "Settings",
       "nav": {
         "general": "General",
         "model": "Model",
-        "cloudSync": "Cloud Sync",
+        "cloudSync": "Cloud sync",
         "mcp": "MCP",
         "memory": "Memory",
         "notifications": "Notifications"
       },
       "general": {
-        "description": "Preferences stay quiet and focused on choices that affect everyday editing.",
+        "description": "General preferences such as appearance and language.",
         "appearance": "Appearance",
-        "appearanceDescription": "Follows your system appearance by default. Pin it to dark (easier on the eyes for long editing sessions) or light.",
+        "appearanceDescription": "Follows the system setting by default. You can also set it to dark or light.",
         "appearanceDark": "Dark",
         "appearanceLight": "Light",
         "appearanceSystem": "System",
         "comingSoon": "Coming soon",
         "language": "Language",
-        "languageDescription": "Change the interface language without changing resume content.",
+        "languageDescription": "Changes the interface language. Resume content is not affected.",
         "languageEnglish": "English",
         "languageChinese": "中文"
       }
@@ -195,21 +195,21 @@
       "planTitle": "Subscription",
       "freePlan": "Free",
       "renewsOn": "Renews on {{date}}",
-      "endsOn": "Cancelled — ends {{date}}",
-      "paymentFailed": "A charge failed. Update your payment method before the grace period ends.",
+      "endsOn": "Cancelled; ends on {{date}}",
+      "paymentFailed": "A payment failed. Update your payment method before the grace period ends, or the subscription will be terminated.",
       "manageCta": "Manage plan",
       "upgradeCta": "Upgrade",
       "ordersTitle": "Payments",
-      "noOrders": "No payments yet.",
+      "noOrders": "No payments yet",
       "unknownItem": "—",
       "colDate": "Date",
       "colItem": "Item",
       "colAmount": "Amount",
       "colChannel": "Method",
       "colStatus": "Status",
-      "loadFailed": "Could not load your billing information.",
+      "loadFailed": "Billing information could not be loaded.",
       "retry": "Retry",
-      "refundHint": "Need a refund? See the",
+      "refundHint": "For refunds, see the",
       "refundPolicy": "refund policy",
       "status": {
         "paid": "Paid",
@@ -232,16 +232,16 @@
       "copied": "Copied",
       "savePoster": "Save invite poster",
       "posterAlt": "Magic Resume invite poster",
-      "posterError": "Could not build the poster. Please try again.",
-      "rule": "Rewards land automatically once your friend finishes their first AI chat, for both of you. Paying on signup alone invites bulk fake accounts, so we wait for one real use.",
+      "posterError": "Poster generation failed. Please try again.",
+      "rule": "Rewards are credited to both accounts automatically after your friend completes their first AI chat. To prevent bulk sign-ups, rewards require one actual use.",
       "stats": {
         "invited": "Invited",
         "rewarded": "Rewarded",
         "pending": "Pending"
       },
       "headerAction": "Invite friends",
-      "emptyHint": "Send the poster or link to a friend who's job hunting — you both get extra AI allowance, and they get a head start.",
-      "remaining": "{{count}} more rewards available"
+      "emptyHint": "Share the poster or link with a friend who is job hunting. You both receive extra AI credits.",
+      "remaining": "{{count}} more rewards available this month"
     },
     "security": {
       "on": "On",
@@ -257,32 +257,32 @@
         "new": "New password",
         "confirm": "Confirm new password",
         "mismatch": "The two new passwords do not match.",
-        "signOutNotice": "Changing it signs you out on your other devices."
+        "signOutNotice": "Changing your password signs you out on other devices."
       },
       "totp": {
         "label": "Two-step verification",
         "enable": "Enable",
         "disable": "Disable",
-        "scanHint": "Scan the QR code with an authenticator app (Google Authenticator, 1Password…), or enter the key below manually.",
+        "scanHint": "Scan the QR code with an authenticator app such as Google Authenticator or 1Password, or enter the key below manually.",
         "manualKey": "Manual entry key",
         "enterCode": "Enter the 6-digit code",
         "verify": "Verify and enable",
-        "codesWarning": "Save these backup codes now. They are shown only once — if you lose your phone, this is your only way back in.",
+        "codesWarning": "Save these backup codes now. They are shown only once and are the only way to sign in if you lose your phone.",
         "copyAll": "Copy all",
         "copied": "Copied",
         "download": "Download as file",
         "confirmSaved": "I have saved these backup codes",
-        "disableWarning": "Once disabled, signing in needs only your password. Existing backup codes stop working.",
+        "disableWarning": "Once disabled, only a password is required to sign in, which reduces account security. Existing backup codes will also stop working.",
         "confirmDisable": "Confirm disable"
       },
       "errors": {
-        "passwordIncorrect": "That current password is not correct.",
-        "passwordPwned": "This password has appeared in a data breach. Please choose another.",
-        "passwordTooShort": "That password is too short.",
-        "passwordWeak": "That password is too weak — mix upper and lower case, numbers and symbols.",
-        "codeIncorrect": "That code is not correct. Check the number currently shown in your authenticator.",
-        "codeExpired": "That code has expired. Enter the current one from your authenticator.",
-        "unknown": "Something went wrong. Please try again."
+        "passwordIncorrect": "The current password is incorrect.",
+        "passwordPwned": "This password has appeared in a known data breach. Choose a different password.",
+        "passwordTooShort": "The password is too short. Use at least 8 characters.",
+        "passwordWeak": "The password is too weak. Use a mix of upper and lower case letters, numbers, and symbols.",
+        "codeIncorrect": "Incorrect code. Enter the number currently shown in your authenticator.",
+        "codeExpired": "The code has expired. Enter the latest code from your authenticator.",
+        "unknown": "Save failed. Check your network and try again."
       }
     }
   },
@@ -312,40 +312,40 @@
       "description": "In-app notification details",
       "sender": "From",
       "relatedResume": "Related resume",
-      "noBody": "There is no additional content for this notification.",
-      "openAction": "Open action",
+      "noBody": "This notification has no additional content.",
+      "openAction": "Go to action",
       "close": "Close",
       "loading": "Loading announcement",
-      "loadFailed": "Couldn't load the announcement. Please try again.",
+      "loadFailed": "The announcement could not be loaded. Refresh and try again.",
       "retry": "Try again"
     },
-    "notificationUpdateFailed": "Failed to update notification",
+    "notificationUpdateFailed": "Notification status update failed",
     "someone": "Someone",
-    "markAllRead": "Mark all read",
+    "markAllRead": "Mark all as read",
     "loadMore": "Load more"
   },
   "settings": {
     "title": "Settings",
     "llm": {
-      "title": "Model Configuration",
-      "description": "Pick a provider and paste your own API key to enable AI. Your key is stored only in this browser and never uploaded.",
-      "providerLabel": "API Provider",
+      "title": "Model configuration",
+      "description": "Select a provider and enter your API key to enable AI. The key is stored only in this browser and is never uploaded.",
+      "providerLabel": "API provider",
       "region": {
         "global": "Global",
         "china": "China",
         "custom": "Other"
       },
-      "baseUrlNeedsEdit": "Replace {WorkspaceId} in the URL with your own workspace ID before it will connect.",
+      "baseUrlNeedsEdit": "Replace {WorkspaceId} in the URL with your workspace ID to connect.",
       "providerPlaceholder": "Select a provider",
-      "apiKeyLabel": "API Key",
+      "apiKeyLabel": "API key",
       "getKeyLink": "Get an API key",
       "modelLabel": "Model",
       "modelPlaceholder": "Select a model",
       "modelCustomPlaceholder": "Enter a model name, e.g. llama3",
       "selectProviderFirst": "Select a provider first",
       "baseUrlLabel": "Base URL",
-      "maxTokensLabel": "Max Tokens",
-      "advanced": "Advanced",
+      "maxTokensLabel": "Max tokens",
+      "advanced": "Advanced settings",
       "statusReady": "AI ready",
       "statusNotConfigured": "Not configured",
       "testConnection": "Test connection",
@@ -357,148 +357,148 @@
       "imageBadge": "Image",
       "textOnlyBadge": "Text only",
       "testErrors": {
-        "upstream": "The provider's upstream service is temporarily unavailable. Try again later or check the service status.",
-        "auth": "Invalid API key or insufficient permission. Check your key.",
-        "quota": "Insufficient account quota. Check your balance or limits.",
+        "upstream": "The provider is temporarily unavailable. Try again later or check the service status.",
+        "auth": "The API key is invalid or lacks permission. Check the key.",
+        "quota": "The provider account has insufficient quota. Check your balance or limits.",
         "rateLimit": "Too many requests. Please try again later.",
-        "notFound": "Endpoint or model not found. Check the Base URL and model name.",
+        "notFound": "Endpoint or model not found. Check the base URL and model name.",
         "server": "The provider returned a server error. Please try again later.",
-        "timeout": "Connection timed out. Check your network or try again later."
+        "timeout": "The connection timed out. Check your network or try again later."
       },
       "showKey": "Show key",
       "hideKey": "Hide key"
     },
     "cloudSync": {
-      "title": "Cloud Sync",
-      "description": "Sync your resume data across devices. Your data will be stored securely in the cloud.",
-      "toggleLabel": "Enable Cloud Sync",
+      "title": "Cloud sync",
+      "description": "Sync resumes across devices. Data is stored in the cloud and can be downloaded at any time.",
+      "toggleLabel": "Enable cloud sync",
       "enabled": "On",
       "disabled": "Off",
-      "statusOn": "Resume changes from this device will sync to the cloud so you can continue across devices.",
-      "statusOff": "Resume data stays in this browser. You will review the upload notice before enabling sync.",
+      "statusOn": "Resume changes on this device sync to the cloud, so you can continue editing on other devices.",
+      "statusOff": "Resume data is stored only in this browser. You will review the upload notice before enabling sync.",
       "disclaimer": {
-        "title": "Cloud Sync Disclaimer",
-        "description": "Please read and agree to the following terms before enabling cloud sync:",
-        "content": "By enabling cloud sync, your resume data (including personal info, experience, etc.) will be uploaded to our secure servers. This allows you to access your resumes from any device. We use industry-standard encryption to protect your data. However, please be aware that this means your data is no longer stored solely on your local device.",
+        "title": "Cloud sync notice",
+        "description": "Read and agree to the following before enabling cloud sync:",
+        "content": "Once enabled, resumes sync to the cloud and can be edited on any device after signing in. Data is encrypted in transit and at rest. Resumes will no longer be stored only on this device.",
         "agree": "I understand and agree",
         "cancel": "Cancel"
       }
     },
     "notificationPreferences": {
       "description": "Manage optional email reminders. In-app notifications are always delivered.",
-      "loadFailed": "Couldn't load notification settings. Please try again.",
-      "saveFailed": "Couldn't save notification settings. Please try again.",
-      "requiredNote": "Billing and account-security emails can't be disabled; they and all in-app notifications will still be delivered.",
+      "loadFailed": "Notification settings could not be loaded. Refresh the page and try again.",
+      "saveFailed": "Notification settings could not be saved. Check your network and try again.",
+      "requiredNote": "Billing and account security emails cannot be turned off. These emails and all in-app notifications are always delivered.",
       "COLLABORATION": {
         "label": "Collaboration comments",
         "description": "Send an email when someone comments on or replies to your resume."
       },
       "SUPPORT": {
         "label": "Feedback replies",
-        "description": "Send an email when an administrator resolves your feedback."
+        "description": "Send an email when your feedback has been resolved."
       },
       "TIMELINE": {
         "label": "Timeline reminders",
-        "description": "Applies only when your timeline subscription uses email."
+        "description": "Applies only when your timeline subscription uses email reminders."
       },
       "ANNOUNCEMENT": {
         "label": "Product announcements",
-        "description": "Send an email for important product and feature announcements."
+        "description": "Send an email for important feature updates and product announcements."
       }
     },
     "mcp": {
-      "title": "MCP Access",
+      "title": "MCP access",
       "accessTitle": "AI coding access",
-      "description": "Create a personal access token and connect Magic Resume to Claude Code, Codex, or any MCP-compatible AI tool. The token is shown only once.",
+      "description": "Create a personal access token to connect Magic Resume to Claude Code, Codex, or any MCP-compatible AI tool. The full token is shown only once.",
       "refresh": "Refresh",
       "tokenNamePlaceholder": "Token name",
       "defaultResumePlaceholder": "Default resume",
       "enable": "Enable MCP",
       "tokenCreatedTitle": "Personal access token created",
-      "tokenCreatedDescription": "Copy this token now. For your safety, Magic Resume will not show the full token again.",
+      "tokenCreatedDescription": "Copy this token now. For security reasons, the full token will not be shown again.",
       "copyToken": "Copy token",
       "commandTitle": "MCP setup command",
       "copyCommand": "Copy command",
       "commandEmpty": "Create a token to generate the Claude Code / Codex setup command.",
       "activeTokens": "Personal access tokens",
-      "emptyTokens": "No MCP tokens yet.",
+      "emptyTokens": "No MCP tokens yet",
       "active": "Active",
       "revoked": "Revoked",
       "neverUsed": "Never used",
       "lastUsed": "Last used {{date}}",
       "revoke": "Revoke token",
       "notifications": {
-        "loadFailed": "Failed to load MCP access.",
-        "created": "MCP access enabled.",
-        "createFailed": "Failed to create MCP token.",
-        "revoked": "MCP token revoked.",
-        "revokeFailed": "Failed to revoke MCP token.",
-        "copied": "Copied.",
-        "signInRequired": "Please sign in before enabling MCP access."
+        "loadFailed": "MCP access information could not be loaded",
+        "created": "MCP access enabled",
+        "createFailed": "MCP token creation failed",
+        "revoked": "MCP token revoked",
+        "revokeFailed": "MCP token revocation failed",
+        "copied": "Copied",
+        "signInRequired": "Sign in to enable MCP access."
       }
     },
     "notifications": {
       "unsavedChanges": "Unsaved changes",
-      "settingsSaved": "Settings saved!",
-      "changesReset": "Changes have been reset."
+      "settingsSaved": "Settings saved",
+      "changesReset": "Changes reset"
     },
     "buttons": {
       "reset": "Reset",
       "save": "Save"
     },
-    "goToApp": "Go to App",
+    "goToApp": "Go to app",
     "starOnGithub": "Star on GitHub",
     "memory": {
-      "description": "What the AI remembers about you. Delete anything it got wrong.",
-      "enabled": "Let the AI remember me",
-      "enabledDescription": "Remembers your background and preferences so you do not repeat yourself. Turning this off keeps what is already here — it just stops adding more.",
-      "loadFailed": "Could not load your memories",
-      "empty": "Nothing remembered yet. Chat a few times or run a mock interview and it will fill up.",
-      "disabledNotice": "Memory is off. These are kept, and you can still delete them.",
-      "forgetAll": "Forget everything",
-      "confirmForgetAll": "Forget all {{count}} of these?",
+      "description": "Background and preferences recorded by AI. Delete incorrect entries at any time.",
+      "enabled": "Enable AI memory",
+      "enabledDescription": "Records your background and preferences so you do not need to repeat them. When turned off, existing memories are kept but no new ones are added.",
+      "loadFailed": "Memories could not be loaded",
+      "empty": "No memories yet. They are recorded automatically as you use AI chat and mock interviews.",
+      "disabledNotice": "Memory is turned off. The entries below are kept and can be deleted at any time.",
+      "forgetAll": "Clear all memories",
+      "confirmForgetAll": "Clear all {{count}} memories?",
       "delete": "Delete",
       "confirmDelete": "Delete this memory?",
       "faded": "Faded",
-      "fadedHint": "Not used in a while — it will influence answers less over time",
-      "sourceInterview": "From your mock interview on {{date}}",
-      "sourceCanvas": "From your choices on the canvas",
+      "fadedHint": "Unused for a long time. Its influence on responses will gradually decrease.",
+      "sourceInterview": "Source: mock interview on {{date}}",
+      "sourceCanvas": "Source: actions on the canvas",
       "group": {
-        "profile": "About you",
-        "pref": "Your preferences",
-        "signal": "Picked up from your chats"
+        "profile": "Background",
+        "pref": "Preferences",
+        "signal": "Identified from conversations"
       }
     },
     "jobProfile": {
       "title": "Job profile",
       "enabled": "Use job profile",
-      "enabledDescription": "Carries what you told us into every conversation, so the AI stops asking again. Turning it off only stops that — the content stays.",
-      "empty": "No profile yet.",
-      "startOnboarding": "Fill one in",
+      "enabledDescription": "Uses your job profile in every conversation to avoid repeated questions. When turned off, it is no longer used, but the content is kept.",
+      "empty": "No job profile yet",
+      "startOnboarding": "Create job profile",
       "manage": "Manage",
-      "loadFailed": "Couldn't load your profile.",
-      "disabledNotice": "Turned off: the content is kept, it just no longer goes into conversations.",
+      "loadFailed": "The job profile could not be loaded. Refresh the page and try again.",
+      "disabledNotice": "Turned off: the content is kept but no longer used in conversations.",
       "more": "More",
       "regenerate": "Regenerate",
-      "delete": "Delete profile",
+      "delete": "Delete job profile",
       "revise": "Revise",
-      "revisePlaceholder": "Say what to change, e.g. \"I'm no longer looking in Hangzhou\"",
+      "revisePlaceholder": "Describe the change in one sentence, e.g. \"Change target city to Shanghai\"",
       "apply": "Apply",
       "discard": "Discard",
-      "failed": "That didn't go through. Try again.",
+      "failed": "The operation failed. Please try again.",
       "updatedJustNow": "Updated just now",
       "updated": "Updated {{when}}",
-      "pending": "Your answers are saved, but the profile hasn't been written yet.",
+      "pending": "Your answers are saved, but the job profile has not been generated yet.",
       "retry": "Retry",
-      "redoOnboarding": "Redo questionnaire",
-      "deleteConfirmTitle": "Delete your job profile?",
-      "deleteConfirmBody": "Afterwards the AI falls back to generic advice — it will no longer know your target role or what you're stuck on. Your answers are not kept; you would have to redo the questionnaire."
+      "redoOnboarding": "Redo onboarding",
+      "deleteConfirmTitle": "Delete job profile?",
+      "deleteConfirmBody": "After deletion, AI will give only general suggestions and will no longer consider your target role or job search blockers. Your answers will not be kept, and you will need to complete onboarding again."
     }
   },
   "modals": {
     "dynamicForm": {
-      "editTitle": "Edit Item",
-      "addTitle": "Add New Item",
+      "editTitle": "Edit item",
+      "addTitle": "Add item",
       "descriptionLabel": "Description",
       "cancelButton": "Cancel",
       "saveButton": "Save"
@@ -512,16 +512,16 @@
         "interview": "Mock Interview"
       },
       "title": "Polaris",
-      "subtitle": "Analyze and optimize your resume to match target job requirements, or get professional advice through Lighthouse-style reports.",
-      "description": "Analyze and optimize your resume to match target job requirements, or get a professional Lighthouse-style analysis report.",
+      "subtitle": "Tailor your resume to match the role or get a multidimensional review",
+      "description": "Tailor your resume to match the role or get a multidimensional review",
       "optimizeTab": {
         "jdLabel": "Target Job Description (JD)",
-        "jdPlaceholder": "Paste the Job Description (JD) here to help AI better tailor your resume...",
+        "jdPlaceholder": "Paste the Job Description (JD) here to help AI better tailor your resume…",
         "optimizedCount": "Optimized {{count}} sections",
         "resultsReady": "Optimization results are ready",
         "applyHint": "Click Apply to update your resume",
         "optimizeButton": "Start Optimization",
-        "optimizingButton": "Optimizing...",
+        "optimizingButton": "Optimizing…",
         "previewButton": "Preview",
         "rawJsonButton": "Raw JSON",
         "applyChangesButton": "Apply Changes",
@@ -535,7 +535,7 @@
           "agent_status": "Agent Status",
           "idle": "Idle",
           "execution_log": "Execution Log",
-          "no_logs": "No logs yet...",
+          "no_logs": "No logs yet…",
           "payload_data": "Payload Data",
           "realtime_link": "Realtime Link",
           "active": "Active",
@@ -561,12 +561,12 @@
             "activeChannels": "Active Channels"
           },
           "console": {
-            "initiating": "> Deconstructing task logic...",
-            "analyzing": "> Agent {{id}} is analyzing data...",
+            "initiating": "> Deconstructing task logic…",
+            "analyzing": "> Agent {{id}} is analyzing data…",
             "system": "System:",
-            "validating": "Running semantic validation...",
-            "success": "> Operation succeeded. Data buffered.",
-            "waiting": "> Waiting for trigger signal...",
+            "validating": "Running semantic validation…",
+            "success": "> Changes ready to apply",
+            "waiting": "> Waiting for trigger signal…",
             "standby": "Standby",
             "process_locus": "Process::Core",
             "execution_time": "Execution Time",
@@ -578,7 +578,7 @@
             "agent_status": "Agent Status",
             "idle": "Idle",
             "execution_log": "Execution Log",
-            "no_logs": "No logs yet...",
+            "no_logs": "No logs yet…",
             "payload_data": "Payload Data",
             "realtime_link": "Realtime Link",
             "active": "Active",
@@ -589,206 +589,206 @@
           "preparer": {
             "title": "Preparing Inputs",
             "personality": "Input Preprocessor",
-            "in_progress": "Preparing your resume and job description...",
+            "in_progress": "Preparing your resume and job description…",
             "completed": "Input data is ready."
           },
           "parallel_analyzer": {
             "title": "Parallel Analysis",
-            "in_progress": "Analyzing your resume from multiple dimensions...",
-            "completed": "All analyses complete!"
+            "in_progress": "Analyzing your resume from multiple dimensions…",
+            "completed": "All analyses complete"
           },
           "analysis_parent": {
-            "in_progress": "Analyzing your resume from multiple dimensions...",
-            "completed": "All analyses complete!"
+            "in_progress": "Analyzing your resume from multiple dimensions…",
+            "completed": "All analyses complete"
           },
           "combiner": {
             "title": "Combine Analysis Report",
             "personality": "Report Combiner",
-            "in_progress": "Generating a comprehensive analysis report...",
+            "in_progress": "Generating a comprehensive analysis report…",
             "completed": "Analysis report generated."
           },
           "jd_analyzer": {
             "title": "Analyzing Job Description",
             "personality": "JD Feature Extractor",
-            "in_progress": "Analyzing the job description...",
+            "in_progress": "Analyzing the job description…",
             "completed": "Job description analysis complete."
           },
           "prepare_research": {
             "title": "Preparing Research",
             "personality": "Research Planner",
-            "in_progress": "Preparing for web research based on JD...",
+            "in_progress": "Preparing for web research based on JD…",
             "completed": "Research plan is ready."
           },
           "query_writer": {
             "title": "Generating Search Queries",
             "personality": "Query Writer",
-            "in_progress": "Generating intelligent search queries...",
+            "in_progress": "Generating intelligent search queries…",
             "completed": "Search queries generated."
           },
           "web_searcher": {
             "title": "Performing Web Research",
             "personality": "Deep Searcher",
-            "in_progress": "Searching the web for key information...",
+            "in_progress": "Searching the web for key information…",
             "completed": "Web research complete."
           },
           "reflection": {
             "title": "Reflecting on Search Results",
             "personality": "Critic and Refiner",
-            "in_progress": "Analyzing search results and identifying gaps...",
+            "in_progress": "Analyzing search results and identifying gaps…",
             "completed": "Reflection complete, planning next steps."
           },
           "final_answer": {
             "title": "Synthesizing Research Findings",
             "personality": "Final Synthesizer",
-            "in_progress": "Synthesizing research findings into a summary...",
+            "in_progress": "Synthesizing research findings into a summary…",
             "completed": "Research summary complete."
           },
           "rewriter": {
             "title": "Resume Rewrite & Enhancement",
-            "in_progress": "Rewriting the resume based on the analysis report...",
-            "completed": "Resume successfully optimized!"
+            "in_progress": "Rewriting the resume based on the analysis report…",
+            "completed": "Resume successfully optimized"
           },
           "prepare_rewriter": {
             "title": "Preparing Rewrite Tasks",
             "personality": "Strategy Planner",
-            "in_progress": "Preparing for section-by-section rewriting...",
+            "in_progress": "Preparing for section-by-section rewriting…",
             "completed": "Switched to step-by-step optimization mode."
           },
           "rewrite_section": {
             "title": "Step-by-Step Optimization",
             "personality": "Section Rewriter",
-            "in_progress": "Optimizing in progress...",
-            "completed": "All sections have been optimized!"
+            "in_progress": "Optimizing in progress…",
+            "completed": "All sections have been optimized"
           },
           "rewriting_section": {
-            "in_progress": "Optimizing {{section}}...",
+            "in_progress": "Optimizing {{section}}…",
             "completed": "{{section}} optimized."
           },
           "analyzing_category": {
-            "in_progress": "Analyzing {{category}}...",
+            "in_progress": "Analyzing {{category}}…",
             "completed": "{{category}} analysis complete."
           },
           "company_analysis": {
             "title": "Company Deep-Dive",
             "personality": "Company Knowledge Graph",
-            "in_progress": "Analyzing company culture and tech stack...",
+            "in_progress": "Analyzing company culture and tech stack…",
             "completed": "Company analysis complete."
           },
           "adversarial_critique": {
             "title": "Recruiter Critique",
             "personality": "Adversarial Evaluator",
-            "in_progress": "Recruiter AI is evaluating your resume...",
+            "in_progress": "Recruiter AI is evaluating your resume…",
             "completed": "Evaluation complete."
           },
           "resume_analyzer": {
             "title": "Resume Feature Extractor",
             "personality": "Resume Feature Extractor",
-            "in_progress": "Evaluating resume strengths and weaknesses...",
+            "in_progress": "Evaluating resume strengths and weaknesses…",
             "completed": "Resume evaluation complete."
           },
           "resume_web_search": {
             "title": "Resume Market Research",
             "personality": "Resume Market Researcher",
-            "in_progress": "Researching similar candidates in the market...",
+            "in_progress": "Researching similar candidates in the market…",
             "completed": "Market research complete."
           },
           "jd_web_search": {
             "title": "Job Market Research",
             "personality": "Job Market Researcher",
-            "in_progress": "Analyzing hiring trends for this position...",
+            "in_progress": "Analyzing hiring trends for this position…",
             "completed": "Trend analysis complete."
           },
           "company_interview_search": {
             "title": "Interview Intel Collector",
             "personality": "Interview Intel Collector",
-            "in_progress": "Collecting company interview questions and intel...",
+            "in_progress": "Collecting company interview questions and intel…",
             "completed": "Intel collection complete."
           },
           "research_combiner": {
             "title": "Multi-Source Aggregator",
             "personality": "Multi-Source Aggregator",
-            "in_progress": "Synthesizing all research intelligence...",
+            "in_progress": "Synthesizing all research intelligence…",
             "completed": "Strategy formulation complete."
           },
           "rewrite_sections_parent": {
             "title": "Optimization Orchestrator",
             "personality": "Smart Orchestrator",
-            "in_progress": "Orchestrating parallel section optimization...",
+            "in_progress": "Orchestrating parallel section optimization…",
             "completed": "All sections optimized in parallel."
           },
           "route_next_rewrite": {
             "title": "Rewrite Planner",
             "personality": "Task Router",
-            "in_progress": "Planning the next section to optimize...",
+            "in_progress": "Planning the next section to optimize…",
             "completed": "Planning complete."
           },
           "combine_sections": {
             "title": "Content Assembler",
             "personality": "Content Assembler",
-            "in_progress": "Reassembling optimized sections...",
+            "in_progress": "Reassembling optimized sections…",
             "completed": "Resume assembly complete."
           },
           "strategic_analyzer": {
             "title": "Strategy Engine",
             "personality": "Optimization Strategy Engine",
-            "in_progress": "Analyzing strategic gaps between resume and job...",
+            "in_progress": "Analyzing strategic gaps between resume and job…",
             "completed": "Gap analysis complete."
           },
           "microEvents": {
-            "thinking": "Designing optimization strategy...",
-            "searching": "Running deep search: {{tool}}...",
-            "tool_complete": "Search complete. Organizing data..."
+            "thinking": "Designing optimization strategy…",
+            "searching": "Running deep search: {{tool}}…",
+            "tool_complete": "Search complete. Organizing data…"
           }
         },
         "optimizationProgress": {
-          "analyzingJD": "Analyzing Job Description...",
-          "optimizing": "Optimizing your resume, please wait...",
-          "preparing": "Preparing to optimize {{count}} items...",
-          "optimizingItem": "Optimized {{sectionKey}} item {{completed}} of {{total}}...",
-          "done": "Done!"
+          "analyzingJD": "Analyzing Job Description…",
+          "optimizing": "Optimizing your resume, please wait…",
+          "preparing": "Preparing to optimize {{count}} items…",
+          "optimizingItem": "Optimized {{sectionKey}} item {{completed}} of {{total}}…",
+          "done": "Done"
         }
       },
       "analysisTab": {
         "title": "Resume Health Analysis",
         "analyzeButton": "Analyze Resume",
-        "analyzingButton": "Analyzing...",
+        "analyzingButton": "Analyzing…",
         "viewReportButton": "View Report",
         "reAnalyzeButton": "Re-analyze",
         "analysisProgress": {
-          "start": "Starting analysis engine...",
-          "impact": "Assessing resume 'Impact & Action'...",
-          "quantification": "Checking use of 'Quantifiable Achievements'...",
-          "clarity": "Analyzing 'Clarity & Readability'...",
-          "completeness": "Reviewing 'Completeness & Structure'...",
-          "summary": "Evaluating 'Professional Summary' quality...",
-          "finalizing": "Compiling score and generating report...",
-          "done": "Analysis complete!"
+          "start": "Starting analysis engine…",
+          "impact": "Assessing resume 'Impact & Action'…",
+          "quantification": "Checking use of 'Quantifiable Achievements'…",
+          "clarity": "Analyzing 'Clarity & Readability'…",
+          "completeness": "Reviewing 'Completeness & Structure'…",
+          "summary": "Evaluating 'Professional Summary' quality…",
+          "finalizing": "Compiling score and generating report…",
+          "done": "Analysis complete"
         },
         "multiSteps": {
-          "peer": "Peer Developer is checking code quality...",
-          "lead": "Tech Lead is evaluating architectural impact...",
-          "hrbp": "HRBP is assessing soft skills and consistency...",
-          "finalizing": "Finalizing comprehensive interview panel report..."
+          "peer": "Peer Developer is checking code quality…",
+          "lead": "Tech Lead is evaluating architectural impact…",
+          "hrbp": "HRBP is assessing soft skills and consistency…",
+          "finalizing": "Finalizing comprehensive interview panel report…"
         },
         "placeholder": {
           "title": "Get Professional Analysis",
-          "description": "Our AI will perform a detailed analysis of your resume, providing scores and actionable feedback on impact, clarity, and keyword optimization."
+          "description": "Get actionable recommendations across role fit, clarity, and quantified impact."
         }
       },
       "createTab": {
         "chatTitle": "AI Assistant",
         "previewTitle": "Live Resume Preview",
-        "inputPlaceholder": "Describe your skills or experience...",
+        "inputPlaceholder": "Describe your background or skills…",
         "initialMessage": "Hello! I'm ResuMate, your personal resume crafting assistant. To start, what kind of job or industry are you targeting?",
         "applyButton": "Apply and Save Resume",
         "defaultReply": "Sorry, I'm having a little trouble right now. Could you please rephrase that?",
         "errorReply": "I seem to have encountered an issue. Please try sending your message again.",
-        "retryNotification": "Request failed, retrying...",
+        "retryNotification": "Request failed, retrying…",
         "retryFailed": "Request failed after multiple retries. Please try again later."
       },
       "translateTab": {
         "inputTitle": "Source Text",
-        "inputDescription": "Please choose target language, custom prompt is optional.",
+        "inputDescription": "Choose a target language (custom prompt optional)",
         "resumeSourceHint": "Current resume content will be translated directly.",
         "targetLanguage": {
           "label": "Target Language",
@@ -810,13 +810,13 @@
         },
         "customPrompt": {
           "label": "Custom Prompt (Optional)",
-          "placeholder": "e.g. Keep technical terms, make tone concise..."
+          "placeholder": "e.g. Keep technical terms, make tone concise…"
         },
-        "translateButton": "One-click Translate",
-        "translateButtonLoading": "Translating...",
+        "translateButton": "Translate",
+        "translateButtonLoading": "Translating…",
         "outputTitle": "Translation Result",
         "outputDescription": "Generated resume JSON is shown on the right with preview rendering.",
-        "translatedTextPlaceholder": "Translated text will appear here...",
+        "translatedTextPlaceholder": "Translated text will appear here…",
         "emptyJsonState": "Generated JSON will appear here after translation.",
         "invalidPreviewData": "Current JSON structure cannot be rendered as a resume preview.",
         "viewModes": {
@@ -825,8 +825,8 @@
         },
         "applyButton": "Apply Translated Resume",
         "loading": {
-          "translating": "Streaming translation in progress...",
-          "generatingJson": "Translation complete, generating resume JSON..."
+          "translating": "Streaming translation in progress…",
+          "generatingJson": "Translation complete, generating resume JSON…"
         },
         "copyButton": "Copy",
         "notifications": {
@@ -840,16 +840,16 @@
       "notifications": {
         "apiKeyMissing": "API key not found. Please set it up in the settings page.",
         "jdMissing": "Please provide a job description.",
-        "optimizationComplete": "AI optimization complete!",
+        "optimizationComplete": "AI optimization complete",
         "optimizationFailed": "Optimization failed: {{error}}",
-        "analysisComplete": "Analysis report has been generated!",
+        "analysisComplete": "Analysis report has been generated",
         "analysisFailed": "Analysis failed: {{error}}",
         "unknownError": "An unknown error has occurred.",
         "creationFailed": "Resume creation failed: {{error}}"
       },
       "optimizePlaceholder": {
-        "title": "Ready to elevate your resume?",
-        "description": "Paste a job description and click \"Start Optimization\" to let the AI tailor your resume for your dream job."
+        "title": "Tailor your resume to the role",
+        "description": "Paste a job description and let AI tailor your resume section by section."
       },
       "interviewTab": {
         "back": "Back",
@@ -875,14 +875,14 @@
           "startInterview": "Start Interview"
         },
         "status": {
-          "connecting": "Connecting to Interviewer...",
-          "readingResume": "Reading your resume context...",
-          "waitingConnection": "Waiting for connection...",
-          "thinking": "AI is thinking...",
-          "preAnswer": "Preparing Answer...",
+          "connecting": "Connecting to Interviewer…",
+          "readingResume": "Reading your resume context…",
+          "waitingConnection": "Waiting for connection…",
+          "thinking": "AI is thinking…",
+          "preAnswer": "Preparing Answer…",
           "answerHint": "Think before you speak",
-          "isListening": "Interviewer is listening...",
-          "isSpeaking": "AI is answering..."
+          "isListening": "Interviewer is listening…",
+          "isSpeaking": "AI is answering…"
         },
         "controls": {
           "console": "Console",
@@ -913,28 +913,28 @@
             "description": "Focuses on End-to-end Delivery, System Integration, and Business Understanding"
           },
           "hr": {
-            "name": "HRBP",
+            "name": "HR Business Partner",
             "description": "Focuses on Soft Skills, Career Planning, and Culture Fit"
           }
         }
       },
-      "progressText": "AI is working hard on analysis and creation..."
+      "progressText": "Rewriting resume against target role…"
     },
     "share": {
-      "title": "Share to Web",
-      "publicAccess": "Public Access",
+      "title": "Publish online resume",
+      "publicAccess": "Public access",
       "publicAccessDesc": "Anyone with the link can view",
-      "privateAccessDesc": "Only you can access",
-      "syncing": "Syncing to cloud...",
-      "readOnly": "Read Only",
-      "allowComments": "Allow Comments",
-      "copySuccess": "Link copied to clipboard!",
-      "pleaseLogin": "Please login first"
+      "privateAccessDesc": "Only you can view",
+      "syncing": "Syncing to cloud…",
+      "readOnly": "Read only",
+      "allowComments": "Allow comments",
+      "copySuccess": "Link copied to clipboard",
+      "pleaseLogin": "Sign in first"
     },
     "versionHistory": {
-      "title": "Version History",
+      "title": "Version history",
       "restore": "Restore",
-      "loading": "Loading...",
+      "loading": "Loading…",
       "viewRender": "Preview",
       "viewJson": "JSON",
       "empty": "No versions yet"
@@ -946,110 +946,110 @@
       "formats": {
         "pdf": {
           "name": "PDF",
-          "hint": "Vector, selectable text — best for applying and ATS"
+          "hint": "Vector format with selectable text. Best for applications and ATS parsing."
         },
         "png": {
           "name": "Image (PNG)",
-          "hint": "One tall image of the whole resume — good for chats and social"
+          "hint": "Exports the whole resume as one long image. Suitable for sharing in chats and on social platforms."
         },
         "json": {
           "name": "JSON",
-          "hint": "Raw data for backup, migration, and re-import"
+          "hint": "Raw data for backup, migration, and re-import."
         }
       },
-      "imaging": "Rendering image…",
-      "imageSuccess": "Image exported.",
+      "imaging": "Generating image…",
+      "imageSuccess": "Image exported",
       "imageError": "Image export failed. Please try again.",
-      "jsonSuccess": "JSON exported."
+      "jsonSuccess": "JSON exported"
     }
   },
   "sharedPage": {
     "header": {
-      "createResume": "Create My Resume",
+      "createResume": "Create my resume",
       "create": "Create"
     },
     "titleSuffix": "'s Resume",
     "toolbar": {
-      "zoomOut": "Zoom Out",
-      "resetZoom": "Reset Zoom",
-      "zoomIn": "Zoom In",
-      "feedbackList": "Feedback List",
-      "returnToView": "Return to View",
-      "commentMode": "Comment Mode"
+      "zoomOut": "Zoom out",
+      "resetZoom": "Reset zoom",
+      "zoomIn": "Zoom in",
+      "feedbackList": "Comment list",
+      "returnToView": "Back to preview",
+      "commentMode": "Comment mode"
     },
     "templates": {
       "title": "Templates",
-      "error": "Error loading templates",
+      "error": "Templates could not be loaded",
       "retry": "Retry",
       "none": "No templates available"
     },
     "comments": {
       "title": "Comments",
-      "noComments": "No comments yet.",
-      "markersHint": "Markers will appear here.",
+      "noComments": "No comments yet",
+      "markersHint": "Click anywhere on the canvas to add a comment.",
       "anonymous": "Anonymous",
       "owner": "Owner",
       "justNow": "Just now",
-      "replyPlaceholder": "Reply...",
-      "writeCommentPlaceholder": "Write a comment...",
+      "replyPlaceholder": "Reply…",
+      "writeCommentPlaceholder": "Write a comment…",
       "cancel": "Cancel",
       "post": "Post"
     },
     "error": {
-      "resumeNotFound": "Resume not found or access denied",
+      "resumeNotFound": "This resume does not exist, or public access is turned off.",
       "redirectingPre": "Redirecting to home in ",
-      "redirectingPost": " seconds...",
-      "returnNow": "Return Now",
-      "failedToLoad": "Failed to load resume. Please check your network or link."
+      "redirectingPost": " seconds…",
+      "returnNow": "Return now",
+      "failedToLoad": "The resume could not be loaded. Check the link or your network connection."
     },
     "notifications": {
-      "resumeNotFound": "This resume doesn't exist or is not public.",
-      "syncing": "Resume is still syncing to cloud. Please wait a moment.",
-      "loginToComment": "Please login to comment",
+      "resumeNotFound": "This resume does not exist or is not public.",
+      "syncing": "The resume is syncing to the cloud. Please wait.",
+      "loginToComment": "Sign in to leave a comment",
       "commentAdded": "Comment added",
-      "commentSaveFailed": "Failed to save comment",
-      "loginToReply": "Please login to reply",
+      "commentSaveFailed": "Comment could not be saved. Please try again.",
+      "loginToReply": "Sign in to reply",
       "replyAdded": "Reply added",
-      "replySaveFailed": "Failed to save reply",
-      "loginToDelete": "Please login to delete",
+      "replySaveFailed": "Reply could not be saved. Please try again.",
+      "loginToDelete": "Sign in to delete",
       "commentDeleted": "Comment deleted",
-      "commentDeleteFailed": "Failed to delete comment"
+      "commentDeleteFailed": "Comment could not be deleted. Please try again."
     }
   },
   "resumePreview": {
-    "yourName": "Your Name"
+    "yourName": "Your name"
   },
   "tools": {
-    "aiAssistant": "AI Assistant",
+    "aiAssistant": "AI assistant",
     "polaris": "Polaris",
     "share": "Share",
     "feedback": "Feedback",
     "exportPDF": "Export PDF",
-    "exportingPDF": "Generating PDF locally...",
-    "exportPDFSuccess": "PDF exported successfully.",
-    "exportPDFError": "PDF export failed. Please try again.",
-    "zoomIn": "Zoom In",
-    "zoomOut": "Zoom Out",
-    "resetZoom": "Reset Zoom",
-    "bugReport": "Bug Report",
+    "exportingPDF": "Generating PDF locally…",
+    "exportPDFSuccess": "PDF exported",
+    "exportPDFError": "PDF export failed. Try again or use a different browser.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetZoom": "Reset zoom",
+    "bugReport": "Send feedback",
     "collapse": "Collapse",
     "expand": "Expand"
   },
   "feedback": {
     "title": "Feedback",
-    "description": "Help us improve Magic Resume. Share your thoughts or report issues.",
-    "thankYou": "Thank you!",
+    "description": "Share suggestions or report issues to help us improve Magic Resume.",
+    "thankYou": "Thank you for your feedback",
     "received": "We have received your feedback.",
     "label": "Your feedback",
-    "placeholder": "Tell us what you like or what could be better...",
-    "submit": "Submit Feedback",
+    "placeholder": "Describe your suggestion or the issue you encountered…",
+    "submit": "Submit feedback",
     "close": "Close",
     "characters": "characters",
     "readyToSubmit": "Ready to submit",
-    "typeFeedback": "Type your feedback",
+    "typeFeedback": "Enter your feedback",
     "error": {
       "tooManyRequests": "Too many requests. Please try again later.",
-      "generic": "Failed to submit feedback. Please try again."
+      "generic": "Feedback could not be submitted. Check your network and try again."
     }
   },
   "sections": {
@@ -1069,26 +1069,26 @@
       "edit": "Edit",
       "copy": "Copy",
       "remove": "Remove",
-      "addItem": "Add Item",
+      "addItem": "Add item",
       "openMenu": "Open menu",
       "editTitle": "Edit {{label}}",
-      "addTitle": "Add New {{label}}",
+      "addTitle": "Add {{label}}",
       "shown": "Shown",
       "hidden": "Hidden"
     },
     "notifications": {
-      "requiredFields": "Please fill in the following required fields: {{fields}}",
-      "sectionUpdated": "{{label}} section updated successfully.",
-      "sectionAdded": "{{label}} section added successfully.",
-      "itemRemoved": "Item removed successfully.",
-      "itemCopied": "Item copied successfully.",
-      "visibilityToggled": "Item visibility {{status}}."
+      "requiredFields": "Fill in the required fields: {{fields}}",
+      "sectionUpdated": "\"{{label}}\" updated",
+      "sectionAdded": "\"{{label}}\" added",
+      "itemRemoved": "Item removed",
+      "itemCopied": "Item duplicated",
+      "visibilityToggled": "Item visibility: {{status}}"
     }
   },
   "basicForm": {
     "fields": {
       "avatar": "Avatar",
-      "fullName": "Full Name",
+      "fullName": "Full name",
       "headline": "Headline",
       "email": "Email",
       "website": "Website",
@@ -1097,12 +1097,12 @@
       "link": "Link"
     },
     "customFields": {
-      "title": "Custom Fields",
-      "namePlaceholder": "Field Name (e.g., LinkedIn)",
-      "valuePlaceholder": "Value (e.g., your-linkedin-url)",
-      "addButton": "Add Custom Field",
+      "title": "Custom fields",
+      "namePlaceholder": "Field name, e.g. LinkedIn",
+      "valuePlaceholder": "Value, e.g. your LinkedIn URL",
+      "addButton": "Add custom field",
       "iconButton": "Choose an icon",
-      "iconLabel": "Pick an icon"
+      "iconLabel": "Choose an icon"
     },
     "avatarAlt": "Avatar",
     "avatarUpload": {
@@ -1110,29 +1110,29 @@
       "clear": "Remove photo",
       "success": "Photo updated",
       "errors": {
-        "UNSUPPORTED_TYPE": "Unsupported image type (PNG / JPG / WebP / GIF only)",
-        "TOO_LARGE": "Image is too large, pick a smaller one",
-        "PROCESS_FAILED": "Couldn't process the image, try another",
-        "UPLOAD_FAILED": "Upload failed, please retry"
+        "UNSUPPORTED_TYPE": "Unsupported image format. Upload a PNG, JPG, WebP, or GIF file.",
+        "TOO_LARGE": "The image is too large. Upload a smaller file.",
+        "PROCESS_FAILED": "The image could not be processed. Try a different image.",
+        "UPLOAD_FAILED": "Upload failed. Please try again."
       }
     }
   },
   "header": {
-    "version": "Version Management",
-    "versionHistory": "Version History",
+    "version": "Version management",
+    "versionHistory": "Version history",
     "synced": "Synced",
-    "syncing": "Syncing...",
+    "syncing": "Syncing…",
     "pendingSync": "Pending",
     "backToDashboard": "Back to dashboard",
-    "localOnly": "Local Only",
-    "syncError": "Sync Error",
-    "lastUpdated": "Last Update",
+    "localOnly": "Local storage",
+    "syncError": "Sync error",
+    "lastUpdated": "Last updated",
     "noHistory": "No version history",
     "switchResume": "Switch resume",
-    "untitled": "Untitled Resume"
+    "untitled": "Untitled resume"
   },
   "mobileEdit": {
-    "jsonData": "Resume JSON Data",
+    "jsonData": "Resume JSON data",
     "copyJson": "Copy JSON to clipboard"
   },
   "editPage": {
@@ -1140,39 +1140,39 @@
       "basics": "Basics"
     },
     "notifications": {
-      "jsonDownloadStarted": "JSON file download started!"
+      "jsonDownloadStarted": "JSON file download started"
     },
     "ai": {
-      "generatingSuggestion": "Generating personalized optimization suggestions for you...",
+      "generatingSuggestion": "Generating optimization suggestions…",
       "narrate": {
-        "reading": "Flipping through your resume…",
-        "thinking": "Hmm, thinking it over…",
+        "reading": "Reading resume…",
+        "thinking": "Analyzing changes…",
         "writing": "Writing…",
-        "polishing": "Buffing the wording…",
-        "still": "Tricky one — still chewing on it…",
+        "polishing": "Refining wording…",
+        "still": "Still processing…",
         "drafting": "Drafting…",
-        "writingSection": "Writing “{{label}}”…",
-        "draftDone": "Draft ready!"
+        "writingSection": "Writing \"{{label}}\"…",
+        "draftDone": "Draft generated"
       }
     },
     "errors": {
-      "resumeNotFound": "Resume Not Found",
-      "resumeNotFoundDescription": "The resume with ID {{id}} does not exist. It may have been deleted or the ID is incorrect.",
-      "goBack": "Go Back"
+      "resumeNotFound": "Resume not found",
+      "resumeNotFoundDescription": "No resume with ID {{id}} was found. It may have been deleted, or the link may be incorrect.",
+      "goBack": "Go back"
     }
   },
   "outline": {
     "title": "Content"
   },
   "templatePanel": {
-    "title": "Template",
+    "title": "Choose template",
     "customizeTitle": "Customize",
     "change": "Change template",
     "placeholder": "Template {{index}}",
-    "layoutTwoColumn": "Two Column",
-    "layoutSingleColumn": "Single Column",
-    "customize": "Customize Template",
-    "error": "Failed to load templates",
+    "layoutTwoColumn": "Two columns",
+    "layoutSingleColumn": "Single column",
+    "customize": "Customize template",
+    "error": "Templates could not be loaded",
     "retry": "Retry",
     "none": "No templates found",
     "font": {
@@ -1182,12 +1182,12 @@
   },
   "templateStore": {
     "title": "Template store",
-    "subtitle": "Pick a starting point — your content carries over.",
+    "subtitle": "Choose a template. Your content is kept automatically.",
     "search": "Search templates",
     "empty": "No matching templates"
   },
   "templateCustomizer": {
-    "title": "Custom Template",
+    "title": "Customize template",
     "sections": {
       "template": "Template",
       "layout": "Layout",
@@ -1200,66 +1200,66 @@
       "layout": "Layout"
     },
     "colors": {
-      "quickThemes": "Quick Themes",
-      "customColors": "Custom Colors",
-      "primary": "Primary Color",
-      "secondary": "Secondary Color",
-      "text": "Text Color",
-      "textSecondary": "Secondary Text Color",
-      "background": "Background Color",
-      "sidebar": "Sidebar Color",
-      "border": "Border Color",
-      "advanced": "More Colors"
+      "quickThemes": "Quick themes",
+      "customColors": "Custom colors",
+      "primary": "Primary color",
+      "secondary": "Secondary color",
+      "text": "Text color",
+      "textSecondary": "Secondary text color",
+      "background": "Background color",
+      "sidebar": "Sidebar color",
+      "border": "Border color",
+      "advanced": "More colors"
     },
     "header": {
-      "title": "Avatar & Header",
-      "avatarShape": "Avatar Shape",
+      "title": "Avatar and header",
+      "avatarShape": "Avatar shape",
       "shapeRound": "Round",
       "shapeSquare": "Square",
-      "avatarPosition": "Avatar Position",
+      "avatarPosition": "Avatar position",
       "positionLeft": "Left",
       "positionRight": "Right",
-      "avatarSize": "Avatar Size",
-      "contactStyle": "Contact Style",
+      "avatarSize": "Avatar size",
+      "contactStyle": "Contact style",
       "contactIcon": "Icon",
       "contactLabel": "Label"
     },
     "typography": {
-      "fontSettings": "Font Settings",
-      "primaryFont": "Primary Font",
-      "secondaryFont": "Secondary Font",
-      "fontSize": "Font Size",
-      "titleSize": "Section Title",
-      "bodySize": "Body Text"
+      "fontSettings": "Font settings",
+      "primaryFont": "Primary font",
+      "secondaryFont": "Secondary font",
+      "fontSize": "Font size",
+      "titleSize": "Section title",
+      "bodySize": "Body text"
     },
     "layout": {
-      "layoutSettings": "Layout Settings",
-      "containerSettings": "Container Settings",
-      "pageSize": "Page Size",
-      "containerWidth": "Container Width",
+      "layoutSettings": "Layout settings",
+      "containerSettings": "Container settings",
+      "pageSize": "Page size",
+      "containerWidth": "Container width",
       "padding": "Padding",
       "gap": "Gap",
-      "borderRadius": "Corner Radius",
-      "sidebarWidth": "Sidebar Width",
-      "columnGap": "Column Gap",
+      "borderRadius": "Corner radius",
+      "sidebarWidth": "Sidebar width",
+      "columnGap": "Column gap",
       "density": "Density",
       "densityCompact": "Compact",
       "densityNormal": "Default",
       "densityRelaxed": "Relaxed",
-      "textSettings": "Text Settings",
-      "lineHeight": "Line Height",
-      "letterSpacing": "Letter Spacing",
-      "spacingSettings": "Spacing Settings",
-      "paragraphSpacing": "Paragraph Spacing",
-      "sectionSpacing": "Section Spacing",
-      "titleDivider": "Title Divider",
-      "titleDividerDesc": "Show a line below section titles",
-      "titleIcon": "Title Icon",
-      "titleIconDesc": "Show icon before section titles"
+      "textSettings": "Text settings",
+      "lineHeight": "Line height",
+      "letterSpacing": "Letter spacing",
+      "spacingSettings": "Spacing settings",
+      "paragraphSpacing": "Paragraph spacing",
+      "sectionSpacing": "Section spacing",
+      "titleDivider": "Title divider",
+      "titleDividerDesc": "Show a divider below section titles",
+      "titleIcon": "Title icon",
+      "titleIconDesc": "Show an icon before section titles"
     },
     "buttons": {
-      "backToTemplates": "Back to Templates",
-      "reset": "Reset to template"
+      "backToTemplates": "Back to templates",
+      "reset": "Reset to defaults"
     }
   },
   "resumeContent": {
@@ -1267,15 +1267,15 @@
     "save": "Save"
   },
   "renameDialog": {
-    "title": "Rename Resume",
-    "placeholder": "Enter new resume name",
+    "title": "Rename resume",
+    "placeholder": "Enter a new resume name",
     "cancel": "Cancel",
     "rename": "Rename"
   },
   "newResumeDialog": {
-    "title": "Create New Resume",
-    "description": "Please enter a name for your new resume.",
-    "placeholder": "Resume Name",
+    "title": "Create new resume",
+    "description": "Enter a name for the new resume.",
+    "placeholder": "Resume name",
     "cancel": "Cancel",
     "create": "Create"
   },
@@ -1283,11 +1283,11 @@
     "title": "Resumes",
     "newResumeCard": {
       "title": "Create a new resume",
-      "description": "Start building from scratch"
+      "description": "Create a professional resume quickly from a template"
     },
     "importResumeCard": {
       "title": "Import an existing resume",
-      "description": "Supports JSON files and PDF resumes"
+      "description": "Supports PDF, Word, Markdown, image, and JSON files"
     },
     "resumeCard": {
       "lastUpdated": "Last updated {{time}}",
@@ -1302,7 +1302,7 @@
       "count_one": "{{count}} resume",
       "count_other": "{{count}} resumes",
       "storageCloud": "Cloud sync",
-      "storageLocal": "Local only",
+      "storageLocal": "Local storage",
       "enableSync": "Enable sync"
     },
     "create": {
@@ -1317,18 +1317,18 @@
     }
   },
   "sidebar": {
-    "resumes": "My Resumes",
+    "resumes": "Resumes",
     "notifications": "Notifications",
-    "knowledge": "Recruiting Timeline",
+    "knowledge": "Campus recruiting timeline",
     "settings": "Settings",
     "open": "Open sidebar",
     "close": "Close sidebar",
     "assets": "Assets"
   },
   "knowledge": {
-    "title": "Recruiting Timeline",
+    "title": "Campus recruiting timeline",
     "common": {
-      "error": "Couldn't load the content — please try again in a moment",
+      "error": "The content could not be loaded. Please try again later.",
       "retry": "Retry",
       "prev": "Previous",
       "next": "Next",
@@ -1346,7 +1346,7 @@
         "past": "Closed",
         "today": "Closes today",
         "days": "Closes in {{count}} days",
-        "soon": "in {{count}}d",
+        "soon": "In {{count}}d",
         "on": "Closes {{date}}"
       },
       "ongoing": "Ongoing",
@@ -1356,44 +1356,44 @@
         "past": "Closed"
       },
       "empty": {
-        "title": "Nothing here yet",
-        "hint": "Try different filters, or check back in a few days"
+        "title": "No matching items",
+        "hint": "Adjust the filters or check again later."
       }
     }
   },
   "importDialog": {
-    "title": "Import Resume",
-    "description": "Select or drop a JSON or PDF file below to create a new resume.",
+    "title": "Import resume",
+    "description": "Select or drop a file below to create a new resume.",
     "typeLabel": "File type",
-    "typePlaceholder": "Select a file type...",
+    "typePlaceholder": "Select a file type…",
     "dropzone": {
-      "active": "Drop the file here...",
-      "default": "Drag 'n' drop a file here, or click to select",
+      "active": "Drop the file here…",
+      "default": "Drag and drop a file here, or click to select",
       "jsonOnly": "(.json file only)"
     },
     "errors": {
-      "fileReadAborted": "File reading was aborted.",
-      "fileReadFailed": "File reading has failed.",
-      "invalidFormat": "Invalid resume format.",
-      "parseFailed": "Couldn't read this file. Try another one.",
-      "unsupportedFormat": "Please upload a PDF or JSON file.",
-      "noApiKey": "Parsing with AI needs a configured model first. Go to",
+      "fileReadAborted": "File reading was cancelled.",
+      "fileReadFailed": "The file could not be read. Try a different file.",
+      "invalidFormat": "The file is not in a valid resume format",
+      "parseFailed": "The file could not be parsed. Try a different file.",
+      "unsupportedFormat": "Upload a PDF, DOCX, Markdown, or JSON resume file.",
+      "noApiKey": "To parse files with AI, configure a model in",
       "noApiKeyLink": "Settings",
-      "noApiKeySuffix": "and try again after saving.",
-      "entitlementUnavailable": "Couldn't confirm your credits. Top up, or configure your own model in settings.",
-      "modelNoVision": "The selected model \"{{model}}\" cannot read images. Switch to a vision-capable model in settings, or upload a PDF / Word resume instead."
+      "noApiKeySuffix": "first.",
+      "entitlementUnavailable": "Available credits could not be confirmed. Top up or configure a custom model in Settings.",
+      "modelNoVision": "The selected model \"{{model}}\" does not support image input. Switch to a vision-capable model in Settings, or upload a PDF or Word resume."
     },
-    "success": "Resume imported successfully!",
+    "success": "Resume imported",
     "cancel": "Cancel",
-    "importing": "Importing and syncing...",
-    "defaultName": "Imported Resume",
+    "importing": "Importing and syncing…",
+    "defaultName": "Imported resume",
     "pdf": {
       "extracting": "Reading PDF",
       "analyzing": "Parsing",
       "done": "Parsed",
       "charUnit": "chars",
-      "success": "PDF resume imported successfully!",
-      "hint": "PDF files will be parsed with AI",
+      "success": "PDF resume imported",
+      "hint": "PDF files are parsed into structured content by AI",
       "sections": {
         "info": "Basics",
         "experience": "Experience",
@@ -1403,9 +1403,9 @@
         "languages": "Languages",
         "certificates": "Certificates"
       },
-      "analyzingScan": "This PDF has no selectable text — reading it page by page",
+      "analyzingScan": "This PDF has no selectable text. Recognizing it page by page",
       "pageUnit": "{{count}} page(s)",
-      "warningsTitle": "A few things I wasn't sure about"
+      "warningsTitle": "Some content could not be recognized with confidence"
     },
     "types": {
       "pdf": "PDF",
@@ -1415,16 +1415,16 @@
     }
   },
   "agentErrors": {
-    "agent_run_failed": "That run didn't finish. Try again; if it keeps failing, check your model settings.",
-    "insufficient_quota": "You're out of credits. Top up, or configure your own model in settings.",
-    "model_unavailable": "The configured model is unavailable. Check the model name and base URL in settings."
+    "agent_run_failed": "The task failed. Try again, and check your model configuration if the problem persists.",
+    "insufficient_quota": "Insufficient credits. Top up or configure a custom model in Settings.",
+    "model_unavailable": "The configured model is unavailable. Check the model name and base URL in Settings."
   },
   "dynamicForm": {
     "fields": {
       "education": {
         "school": {
           "label": "School",
-          "placeholder": "School Name"
+          "placeholder": "School name"
         },
         "degree": {
           "label": "Degree",
@@ -1435,7 +1435,7 @@
           "placeholder": "Major"
         },
         "date": {
-          "label": "Date or Date Range",
+          "label": "Date or date range",
           "placeholder": "2019-2023"
         },
         "location": {
@@ -1446,14 +1446,14 @@
       "experience": {
         "company": {
           "label": "Company",
-          "placeholder": "Company Name"
+          "placeholder": "Company name"
         },
         "position": {
           "label": "Position",
           "placeholder": "Position"
         },
         "date": {
-          "label": "Date or Date Range",
+          "label": "Date or date range",
           "placeholder": "March 2023 - Present"
         },
         "location": {
@@ -1468,7 +1468,7 @@
       "profiles": {
         "platform": {
           "label": "Platform",
-          "placeholder": "e.g., LinkedIn, GitHub"
+          "placeholder": "e.g. LinkedIn, GitHub"
         },
         "url": {
           "label": "URL",
@@ -1477,30 +1477,30 @@
       },
       "skills": {
         "name": {
-          "label": "Skill Name",
-          "placeholder": "Skill Name"
+          "label": "Skill name",
+          "placeholder": "Skill name"
         },
         "level": {
           "label": "Level",
-          "placeholder": "e.g., Expert, Intermediate, Beginner"
+          "placeholder": "e.g. Expert, Intermediate, Beginner"
         }
       },
       "projects": {
         "name": {
-          "label": "Project Name",
-          "placeholder": "Project Name"
+          "label": "Project name",
+          "placeholder": "Project name"
         },
         "role": {
           "label": "Role",
-          "placeholder": "Your Role"
+          "placeholder": "Your role"
         },
         "date": {
-          "label": "Date or Date Range",
+          "label": "Date or date range",
           "placeholder": "Jan 2022 - Dec 2022"
         },
         "link": {
           "label": "Link",
-          "placeholder": "Project Link"
+          "placeholder": "Project link"
         }
       },
       "languages": {
@@ -1510,21 +1510,21 @@
         },
         "level": {
           "label": "Level",
-          "placeholder": "e.g., Native, Fluent, Intermediate"
+          "placeholder": "e.g. Native, Fluent, Intermediate"
         }
       },
       "certificates": {
         "name": {
-          "label": "Certificate Name",
-          "placeholder": "Certificate Name"
+          "label": "Certificate name",
+          "placeholder": "Certificate name"
         },
         "issuer": {
           "label": "Issuer",
-          "placeholder": "Issuing Organization"
+          "placeholder": "Issuing organization"
         },
         "date": {
           "label": "Date",
-          "placeholder": "Date Received"
+          "placeholder": "Date received"
         }
       },
       "custom": {
@@ -1566,106 +1566,106 @@
       "remove": "Remove link"
     },
     "notifications": {
-      "polishingInProgress": "AI is already polishing. Please wait for it to finish.",
-      "polishFailed": "Failed to polish text: {{message}}",
+      "polishingInProgress": "AI is polishing the text. Please wait for it to finish.",
+      "polishFailed": "Text polishing failed: {{message}}",
       "translationInProgress": "Translation is in progress. Please wait.",
       "translateSuccess": "Translation completed",
-      "translateFailed": "Failed to translate text: {{message}}",
+      "translateFailed": "Translation failed: {{message}}",
       "changesAccepted": "AI optimization applied",
-      "changesReverted": "Reverted to original text"
+      "changesReverted": "Original text restored"
     },
-    "translate": "One-click translate",
-    "acceptChanges": "Accept Changes",
+    "translate": "Translate",
+    "acceptChanges": "Accept changes",
     "accept": "Accept",
-    "rejectChanges": "Reject Changes",
-    "reject": "Reject"
+    "rejectChanges": "Discard changes",
+    "reject": "Discard"
   },
   "export": {
     "notifications": {
-      "success": "Resume exported successfully!",
-      "error": "Failed to export resume.",
-      "imageError": "Failed to load images for export.",
-      "elementNotFound": "Resume element not found",
-      "generating": "Generating PDF...",
-      "unknownError": "Unknown error",
-      "pdfGenerationFailed": "PDF generation failed"
+      "success": "Resume exported",
+      "error": "Resume export failed. Please try again.",
+      "imageError": "Images for export could not be loaded. Please try again.",
+      "elementNotFound": "Resume content not found",
+      "generating": "Generating PDF…",
+      "unknownError": "Export failed. Try again, or use a different format if the problem persists.",
+      "pdfGenerationFailed": "PDF generation failed. Please try again."
     }
   },
   "store": {
     "notifications": {
-      "resumeCreated": "Resume \"{{name}}\" created.",
-      "resumeNotFound": "Resume not found for duplication.",
-      "resumeDuplicated": "Resume \"{{name}}\" duplicated.",
-      "resumeDeleted": "Resume \"{{name}}\" deleted.",
-      "resumeSaved": "Resume saved!",
-      "createCloudFailed": "Failed to create in cloud. Creating locally instead.",
-      "importCloudFailed": "Failed to import resume to cloud. Importing locally.",
-      "resumeDuplicatedLocally": "Resume \"{{name}}\" duplicated locally.",
-      "renameSuccess": "Renamed successfully",
-      "renameCloudFailed": "Renamed locally, but failed to sync to cloud",
-      "deleteCloudFailed": "Failed to delete from cloud, but removing locally.",
+      "resumeCreated": "Resume \"{{name}}\" created",
+      "resumeNotFound": "The resume to duplicate was not found",
+      "resumeDuplicated": "Resume \"{{name}}\" duplicated",
+      "resumeDeleted": "Resume \"{{name}}\" deleted",
+      "resumeSaved": "Resume saved",
+      "createCloudFailed": "Cloud creation failed. The resume was created on this device instead.",
+      "importCloudFailed": "Cloud import failed. The resume was imported on this device instead.",
+      "resumeDuplicatedLocally": "Resume \"{{name}}\" duplicated on this device",
+      "renameSuccess": "Renamed",
+      "renameCloudFailed": "Renamed on this device, but syncing to the cloud failed",
+      "deleteCloudFailed": "Cloud deletion failed. The resume was removed from this device.",
       "versionDeleted": "Version deleted",
-      "versionDeleteFailed": "Failed to delete version",
-      "resumeSavedCloud": "Resume saved to cloud!",
-      "resumeSavedLocally": "Resume saved locally!",
+      "versionDeleteFailed": "Version deletion failed",
+      "resumeSavedCloud": "Resume saved to cloud",
+      "resumeSavedLocally": "Resume saved locally",
       "versionNotFound": "Version not found",
-      "versionRestored": "Version restored!",
-      "loginToShare": "Please login to share resume",
-      "resumePublished": "Resume published!",
+      "versionRestored": "Version restored",
+      "loginToShare": "Sign in to share your resume",
+      "resumePublished": "Resume published",
       "resumeUnpublished": "Resume unpublished",
-      "sharingUpdateFailed": "Failed to update sharing settings",
-      "cloudSyncFailed": "Cloud sync failed. Please check your connection.",
-      "resumeUpToDate": "Already up to date in the cloud",
-      "syncConflictResolved": "Changes from another device detected: backed up as a version; your current content now wins",
-      "duplicatingInCloud": "Duplicating in cloud...",
-      "duplicateCloudSuccess": "Resume duplicated in cloud",
-      "duplicateCloudError": "Failed to duplicate in cloud"
+      "sharingUpdateFailed": "Sharing settings update failed",
+      "cloudSyncFailed": "Cloud sync failed. Check your network connection.",
+      "resumeUpToDate": "The cloud version is already up to date",
+      "syncConflictResolved": "Changes from another device were detected and saved as a version. Your current content has been synced to the cloud.",
+      "duplicatingInCloud": "Duplicating to the cloud…",
+      "duplicateCloudSuccess": "Resume duplicated to the cloud",
+      "duplicateCloudError": "Cloud duplication failed"
     },
     "sync": {
-      "conflictBackupChangelog": "Conflict backup (edits from another device)"
+      "conflictBackupChangelog": "Conflict backup (changes from another device)"
     }
   },
   "pdfPreview": {
-    "generateFailed": "Failed to generate the PDF preview. Please retry; the export button shows the specific error.",
+    "generateFailed": "The PDF preview could not be generated. Please try again later. Exporting will show the specific error.",
     "regenerating": "Regenerating preview"
   },
   "common": {
-    "loading": "Loading...",
-    "logoAlt": "Magic Resume Logo",
-    "userAvatarAlt": "User Avatar",
-    "manualSave": "Manual Save",
+    "loading": "Loading…",
+    "logoAlt": "Magic Resume logo",
+    "userAvatarAlt": "User avatar",
+    "manualSave": "Manual save",
     "info": {
-      "title": "Basic Information",
+      "title": "Basic information",
       "contact": "Contact"
     },
-    "autoSave": "Auto Save",
+    "autoSave": "Auto save",
     "expand": "Expand",
     "collapse": "Collapse",
     "close": "Close",
     "notifications": {
       "copySuccess": "JSON data copied to clipboard",
-      "copyFailed": "Copy failed, please try again",
-      "draftGenerated": "Resume draft generated! You can now click the preview button in the top right to view.",
-      "dataApplied": "Resume data has been applied to preview!",
-      "resumeApplied": "Resume applied!",
-      "generatingDraft": "Alright, I'll generate a resume draft based on our conversation...",
-      "generationError": "Sorry, encountered an issue while generating the resume. Please try again later.",
-      "generatingResume": "Generating resume..."
+      "copyFailed": "Copy failed. Please try again.",
+      "draftGenerated": "Resume draft generated. Click Preview in the top right to view it.",
+      "dataApplied": "Resume data applied to the preview",
+      "resumeApplied": "Resume applied",
+      "generatingDraft": "Generating a resume draft from the conversation…",
+      "generationError": "Resume draft generation failed. Please try again.",
+      "generatingResume": "Generating resume…"
     },
     "ui": {
       "hide": "Hide",
       "view": "View",
-      "parseResumeData": "Parsed Resume Data",
+      "parseResumeData": "Parsed resume data",
       "closePreview": "Close",
       "previewResume": "Preview",
       "json": "JSON",
       "downloadJson": "Download JSON"
     },
-    "confirmDeleteVersion": "Are you sure you want to delete this history record?",
-    "confirmDeleteResume": "Are you sure you want to delete this resume?",
-    "deleteDescription": "This action cannot be undone. This will permanently delete the content from the cloud and all local devices.",
-    "deleteDescriptionCloud": "This action cannot be undone. This will permanently delete the content from the cloud and all local devices.",
-    "deleteDescriptionLocal": "This action cannot be undone. This will permanently delete the content from this device.",
+    "confirmDeleteVersion": "Delete this version?",
+    "confirmDeleteResume": "Delete this resume?",
+    "deleteDescription": "This action cannot be undone. The content will be permanently deleted from the cloud and all devices.",
+    "deleteDescriptionCloud": "This action cannot be undone. The content will be permanently deleted from the cloud and all devices.",
+    "deleteDescriptionLocal": "This action cannot be undone. The content will be permanently deleted from this device.",
     "delete": "Delete",
     "done": "Done",
     "cancel": "Cancel",
@@ -1677,8 +1677,8 @@
     "buyPack": "Buy credit pack",
     "title": "Upgrade plan",
     "popular": "Popular",
-    "qrcodeUnsupported": "Scan-to-pay is not available in this version yet; please use another payment method",
-    "current": "Your current plan",
+    "qrcodeUnsupported": "Scan-to-pay is not available in this version. Choose another payment method.",
+    "current": "Current plan",
     "upgradeTo": "Upgrade to {{name}}",
     "included": "Included",
     "free": "Free",
@@ -1688,30 +1688,30 @@
     "regionInternational": "Rest of world",
     "regionPrompt": "Choose region",
     "created": "Subscription created",
-    "error": "Something went wrong, please try again",
-    "loadFailed": "Could not load plans",
+    "error": "The operation failed. Please try again.",
+    "loadFailed": "Plans could not be loaded",
     "channelPrompt": "Choose a region first",
-    "channelUnavailable": "Not sold in this region",
-    "manualRenewal": "One month at a time — we email you before it ends, no auto-debit"
+    "channelUnavailable": "This plan is not available in this region",
+    "manualRenewal": "Billed one month at a time. An email reminder is sent before expiry, with no automatic charges."
   },
   "billing": {
     "return": {
       "waitingTitle": "Confirming your payment",
-      "waitingDetail": "The payment result is on its way back. This usually takes a few seconds — please keep this page open.",
+      "waitingDetail": "Retrieving the payment result. This usually takes a few seconds. Keep this page open.",
       "paidTitle": "Payment received",
-      "paidDetail": "You are all set — head back to the dashboard to carry on.",
-      "alreadyPaidTitle": "This order is already paid",
-      "alreadyPaidDetail": "It was settled earlier. Nothing was charged or credited again.",
-      "failedTitle": "Payment did not go through",
-      "failedDetail": "The payment channel marked this order as failed and you were not charged. You can go back and order again.",
+      "paidDetail": "Your benefits are active. Return to the dashboard to continue.",
+      "alreadyPaidTitle": "This order has already been paid",
+      "alreadyPaidDetail": "This order was paid earlier. No additional charge or credit was applied.",
+      "failedTitle": "Payment failed",
+      "failedDetail": "The payment channel marked this order as failed, and no charge was made. You can go back and place a new order.",
       "refundedTitle": "Order refunded",
-      "refundedDetail": "This order has been refunded. The money returns by the payment channel’s own schedule.",
+      "refundedDetail": "This order has been refunded. The amount will be returned to the original payment method according to the payment channel's processing time.",
       "partially_refundedTitle": "Order partially refunded",
-      "partially_refundedDetail": "Part of this order has been refunded. The money returns by the payment channel’s own schedule.",
-      "timeoutTitle": "No confirmation yet",
-      "timeoutDetail": "If you completed the payment, nothing is lost — the payment provider retries its notification for several hours. Check your balance from the dashboard shortly.",
-      "errorTitle": "Could not confirm this order",
-      "missingOrder": "The link carries no order id, so the payment result cannot be looked up.",
+      "partially_refundedDetail": "This order has been partially refunded. The amount will be returned to the original payment method according to the payment channel's processing time.",
+      "timeoutTitle": "Payment not yet confirmed",
+      "timeoutDetail": "If you have completed the payment, it will not be lost. The payment channel will resend its notification within a few hours. Check your balance on the dashboard later.",
+      "errorTitle": "Order could not be confirmed",
+      "missingOrder": "The link does not include an order ID, so the payment result cannot be retrieved.",
       "backToDashboard": "Back to dashboard"
     },
     "checkout": {
@@ -1725,35 +1725,35 @@
       "accountRow": "Account",
       "methodHeading": "Choose a payment method",
       "payNow": "Pay now",
-      "paying": "Taking you to payment…",
+      "paying": "Redirecting to payment…",
       "back": "Back",
-      "agree": "By continuing you confirm you have read and agree to our",
+      "agree": "By clicking Pay now, you confirm that you have read and agree to our",
       "and": "and",
       "termsLabel": "Terms of Service",
       "privacyLabel": "Privacy Policy",
-      "secure": "Payment happens on the channel’s own page — we never see your payment details",
-      "loading": "Loading your order",
-      "missingPlan": "The link carries no plan, so there is nothing to check out.",
-      "planNotFound": "We could not find that plan — it may have been withdrawn.",
-      "noMethod": "No payment method is available in this region yet.",
-      "notSoldHere": "This plan is not sold in this region.",
-      "notBuyable": "This plan cannot be purchased right now.",
-      "loadFailed": "Could not load the plan. Please try again."
+      "secure": "Payment is completed on the payment channel's page. We do not access your payment details.",
+      "loading": "Loading order",
+      "missingPlan": "The link does not include a plan, so checkout cannot continue.",
+      "planNotFound": "This plan does not exist or has been withdrawn.",
+      "noMethod": "No payment method is available in this region.",
+      "notSoldHere": "This plan is not available in this region.",
+      "notBuyable": "This plan is not available for purchase at this time.",
+      "loadFailed": "The plan could not be loaded. Please try again later."
     }
   },
   "aiLab": {
     "configGate": {
-      "title": "Account credits are unavailable",
-      "description": "AI is paused. Add credits or subscribe to use the internal model, or configure a custom provider to continue. Your key is stored only in this browser.",
+      "title": "Insufficient account credits",
+      "description": "AI is paused. Top up or subscribe to restore credits, or configure a custom model to continue. The key is stored only in this browser.",
       "later": "Later",
       "saveAndContinue": "Save and continue"
     },
     "draft": {
       "ready": "A resume draft has been generated from the conversation",
       "apply": "Apply to resume",
-      "discard": "Not this one",
-      "applied": "Draft applied to your resume.",
-      "discarded": "Parked for now. What felt off? Tell me and I'll take another pass."
+      "discard": "Discard draft",
+      "applied": "Draft applied to your resume",
+      "discarded": "Draft discarded. Describe what to adjust to generate a new one."
     },
     "run": {
       "stop": "Stop generation"
@@ -1763,14 +1763,14 @@
       "liveCanvas": "Live canvas",
       "liveCanvasTitle": "Edit directly on the resume with AI",
       "newChat": "New chat",
-      "quota": "Quota",
-      "quotaTitle": "View remaining quota",
-      "quotaUnavailable": "Quota is unavailable right now",
+      "quota": "Credits",
+      "quotaTitle": "View remaining credits",
+      "quotaUnavailable": "Credit balance is temporarily unavailable",
       "untitledResume": "Untitled resume"
     },
     "closeConfirm": {
       "title": "Close the AI panel?",
-      "description": "The run in progress will stop. Whatever it already produced stays in the transcript, and the conversation resumes next time you open it.",
+      "description": "The current generation will stop. Generated content stays in the conversation, and you can continue next time.",
       "confirm": "Stop and close"
     },
     "reset": {
@@ -1780,35 +1780,35 @@
       "confirm": "Start new chat"
     },
     "reasoning": {
-      "done": "See the reasoning",
+      "done": "View reasoning",
       "thought": "Thought for {{duration}}"
     },
     "activity": {
       "thinking": "Thinking",
-      "reading": "Reading your resume…",
+      "reading": "Reading resume…",
       "analyzing": "Evaluating…",
-      "working": "Working…",
-      "subagent": "Subagent working…",
+      "working": "Processing…",
+      "subagent": "Subagent processing…",
       "writing": "Writing…",
-      "awaiting": "Waiting on you"
+      "awaiting": "Awaiting your reply"
     },
     "greeting": {
-      "title": "Hi! What shall we polish today?"
+      "title": "What would you like to improve in your resume today?"
     },
     "intent": {
-      "create": "I want to build a resume from scratch — walk me through it",
+      "create": "I want to build a resume from scratch. Please guide me through it.",
       "optimize": "Optimize my resume for my target job.",
       "translate": "Translate my resume into the target language.",
-      "analyze": "Analyze how competitive this resume is",
+      "analyze": "Analyze how competitive this resume is.",
       "interview": "Mock interview",
-      "fit": "Score my resume against this job"
+      "fit": "Assess how well my resume matches this job."
     },
     "error": {
-      "serviceUnavailable": "Oops, I hit a snag — give it a beat and try again."
+      "serviceUnavailable": "The AI service is temporarily unavailable. Please try again later."
     },
     "artifact": {
-      "emptyAnalysis": "Nothing here yet — ask me for a checkup and I'm on it.",
-      "summary": "Combined assessment from three virtual interviewers (peer / hiring manager / HRBP).",
+      "emptyAnalysis": "No analysis yet. Run a resume analysis to see results.",
+      "summary": "Combined assessment from three virtual interviewers (peer / hiring manager / HRBP)",
       "strengths": "Strengths",
       "improvements": "Improvements",
       "exportReport": "Export report",
@@ -1825,11 +1825,11 @@
         "outstanding": "Outstanding overall competitiveness",
         "strong": "Strong overall competitiveness",
         "solid": "Solid overall competitiveness",
-        "rough": "Needs another rewrite",
-        "draft": "Still a draft"
+        "rough": "Needs further revision",
+        "draft": "Draft stage"
       },
       "match": {
-        "empty": "No fit report yet. Paste the target JD and I'll size up how close this resume is.",
+        "empty": "No match report yet. Paste a target job description to see how well this resume matches.",
         "dims": {
           "technical": "Technical",
           "experience": "Experience",
@@ -1843,32 +1843,32 @@
           "weak": "Weak fit for the role",
           "poor": "Poor fit for the role"
         },
-        "locationPass": "Location OK",
+        "locationPass": "Location matches",
         "locationFail": "Location mismatch",
         "matched": "Covered keywords",
         "missing": "Missing keywords",
-        "gaps": "Suggested fixes",
-        "useKeyword": "Work \"{{keyword}}\" in",
-        "useKeywordPrompt": "I do have experience with \"{{keyword}}\" — work it into the resume naturally. If you can't find a basis for it, say so instead of inventing one.",
-        "closeGaps": "Optimize against these gaps",
-        "closeGapsPrompt": "Using the gaps and suggestions from that fit report, optimize my resume. Stick to facts I've given you and ask me about anything missing."
+        "gaps": "Suggested improvements",
+        "useKeyword": "Add \"{{keyword}}\" to resume",
+        "useKeywordPrompt": "I have experience related to \"{{keyword}}\". Please add it to my resume. If there is no basis for it, say so directly rather than inventing details.",
+        "closeGaps": "Optimize for these gaps",
+        "closeGapsPrompt": "Optimize my resume based on the gaps and suggestions in the match report above. Use only the facts I have provided, and ask me about anything missing."
       },
       "close": "Close",
-      "categories": "By category",
+      "categories": "Scores by category",
       "suggestions": "Suggestions",
-      "fixWeaknessPrompt": "Help me fix this: {{weakness}}",
+      "fixWeaknessPrompt": "Help me improve this: {{weakness}}",
       "category": {
-        "ImpactAndActionability": "Impact & actionability",
+        "ImpactAndActionability": "Impact and actionability",
         "QuantifiableAchievements": "Quantified results",
-        "ClarityAndReadability": "Clarity & readability",
+        "ClarityAndReadability": "Clarity and readability",
         "AiCollaboration": "AI collaboration",
-        "CredibilityAndSpecificity": "Credibility & specificity"
+        "CredibilityAndSpecificity": "Credibility and specificity"
       },
       "categoryShort": {
         "ImpactAndActionability": "Impact",
         "QuantifiableAchievements": "Quantified",
         "ClarityAndReadability": "Clarity",
-        "AiCollaboration": "AI fluency",
+        "AiCollaboration": "AI collaboration",
         "CredibilityAndSpecificity": "Credibility"
       },
       "scoreBandShort": {
@@ -1879,45 +1879,45 @@
         "draft": "Draft"
       },
       "radarLabel": "Five-dimension competitiveness radar",
-      "axisBreakdown": "{{axis}}: how each interviewer scored it",
+      "axisBreakdown": "{{axis}}: scores from each interviewer",
       "personaPending": "Reviewing",
       "personaFailed": "No result this round",
-      "improvementsHint": "Pick any one and I'll rewrite it",
+      "improvementsHint": "Click any item to have AI revise it.",
       "verdictFallback": {
-        "outstanding_0": "This one barely needs me. Send it.",
-        "outstanding_1": "Rare completeness — hard to say what to fix first.",
-        "strong_0": "The foundation is steady; now make the good story shorter.",
-        "strong_1": "Ready to send. One more pass on the numbers would sharpen it.",
-        "solid_0": "Everything's there — it just needs a few numbers that hold up.",
-        "solid_1": "It reads well, but it isn't memorable yet.",
-        "rough_0": "The experience is real; it just isn't written as evidence yet. Start with verifiable detail on the most recent role.",
-        "rough_1": "No shortage of content — what's missing is a choice. Lead with your strongest role.",
-        "draft_0": "This reads like an outline. Write one role out in full, then match the rest to it.",
-        "draft_1": "The starting point is here. Pick the role you know best and fill in the process and the result."
+        "outstanding_0": "This resume is highly complete and ready to send.",
+        "outstanding_1": "This resume is highly complete, with no obvious priority for revision.",
+        "strong_0": "A solid foundation. Consider making the experience descriptions more concise.",
+        "strong_1": "Ready to send. Further quantifying results would make it more persuasive.",
+        "solid_0": "The content is complete but lacks verifiable quantified results.",
+        "solid_1": "Well written, but not yet distinctive.",
+        "rough_0": "The experience is genuine but lacks verifiable detail. Start by adding detail to the most recent role.",
+        "rough_1": "There is enough content, but the focus is unclear. Lead with your most competitive role.",
+        "draft_0": "This reads like an outline. Write one role out in full, then use it as a reference for the rest.",
+        "draft_1": "Start with the role you know best and fill in the process and results."
       }
     },
     "chat": {
       "done": "Done",
-      "running": "Running...",
+      "running": "Running…",
       "collapse": "Collapse",
       "view": "View",
       "subagent": "Subagent",
       "taskList": "Task list",
       "working": "Working",
-      "backToChange": "Back to this change",
-      "interruptExpired": "This card belongs to a conversation that has ended, so I can't pick it up. Tell me again and we'll carry on from here.",
+      "backToChange": "Go to this change",
+      "interruptExpired": "This card belongs to a conversation that has ended. Send your request again.",
       "approval": {
-        "defaultMessage": "I would like to read your resume to make suggestions",
+        "defaultMessage": "Requests access to your resume to provide suggestions",
         "allow": "Allow",
         "deny": "Deny",
         "denied": "Denied",
         "read": "Resume read",
-        "reading": "Reading resume...",
+        "reading": "Reading resume…",
         "allowed": "Read allowed",
         "previous": "Previous",
         "next": "Next",
         "send": "Confirm",
-        "goTo": "Question {{n}}"
+        "goTo": "Item {{n}}"
       },
       "tasks": "Tasks",
       "completed": "Completed",
@@ -1929,20 +1929,20 @@
       },
       "copy": "Copy",
       "copied": "Copied",
-      "regenerate": "Retry",
+      "regenerate": "Regenerate",
       "navigation": "Message navigation",
       "navigationUser": "You",
       "navigationItem": "Go to {{actor}} message {{index}} of {{count}}",
-      "readingResume": "Reading your resume…",
-      "writeFailed": "This turn didn't change the resume — the canvas is unchanged. Try saying it again.",
-      "syncFailed": "The edit preview arrived, but final resume reconciliation failed. This run was not marked successful; please retry."
+      "readingResume": "Reading resume…",
+      "writeFailed": "The resume was not changed in this turn, and the canvas is unchanged. Please try again.",
+      "syncFailed": "The preview was generated, but the changes could not be applied to the resume. Please try again."
     },
     "sources": {
       "count": "{{count}} sources",
       "toggle": "Show or hide {{count}} external sources",
       "missing": "Source {{id}} is not available yet",
       "unavailable": "Source unavailable",
-      "open": "Open",
+      "open": "Open source",
       "prev": "Previous source",
       "next": "Next source",
       "position": "{{index}}/{{total}}",
@@ -1950,9 +1950,9 @@
         "title": "Sources",
         "web": "Web · {{count}}",
         "memory": "Memory · {{count}}",
-        "memoryHint": "From Magic's own interview and resume libraries — no public link.",
+        "memoryHint": "From Magic Resume's internal interview and resume libraries. No public link is available.",
         "close": "Close sources",
-        "toggle": "See the sources behind this answer"
+        "toggle": "View the sources cited in this answer"
       }
     },
     "composer": {
@@ -1960,21 +1960,21 @@
       "switch": "Switch",
       "select": "Select",
       "exit": "Exit",
-      "placeholderQuoted": "Tell AI how to change the selected text...",
-      "placeholderSkill": "Add optional context, then press Enter to run \"{{skill}}\"...",
+      "placeholderQuoted": "Describe how to change the selected text…",
+      "placeholderSkill": "Add optional context, then press Enter to run \"{{skill}}\"…",
       "attachPdf": "Attach an existing resume (PDF)",
       "attachFile": "Add files",
       "send": "Send",
       "clearQuote": "Remove quote",
-      "quoteAdded": "Quoted “{{label}}”. Tell Polaris what to change.",
+      "quoteAdded": "Quoted \"{{label}}\". Enter your instructions.",
       "quoteRemoved": "Quote removed",
       "clearMode": "Leave {{skill}} mode",
       "voice": {
         "start": "Voice input",
         "stop": "Stop recording",
         "listening": "Listening…",
-        "denied": "Microphone permission denied. Enable it in your browser and try again.",
-        "failed": "Speech recognition failed to start. Try again shortly."
+        "denied": "Microphone access was denied. Enable it in your browser and try again.",
+        "failed": "Speech recognition could not start. Please try again later."
       }
     },
     "mode": {
@@ -1982,27 +1982,27 @@
         "name": "Cowork",
         "ready": "Cowork mode ready",
         "loading": "Entering cowork mode",
-        "hint": "Can edit your resume; every change is proposed for review",
-        "placeholder": "Tell me what to change, or type / for skills"
+        "hint": "Can edit your resume. Every change requires your confirmation.",
+        "placeholder": "Describe what to change, or type / to use a skill"
       },
       "plan": {
         "name": "Plan",
         "ready": "Plan mode ready",
         "loading": "Entering plan mode",
-        "hint": "Advice and options only — your resume stays untouched",
-        "placeholder": "Want to think it through first? Describe your goal"
+        "hint": "Provides plans and suggestions only. Your resume is not changed.",
+        "placeholder": "Describe your goal to plan an approach"
       },
       "ask": {
         "name": "Ask",
         "ready": "Ask mode ready",
         "loading": "Entering ask mode",
-        "hint": "Questions only — your resume is never read or changed",
-        "placeholder": "Ask anything — I won't touch your resume"
+        "hint": "Answers questions only. Your resume is not read or changed.",
+        "placeholder": "Ask a question. Your resume will not be read or changed."
       }
     },
     "pro": {
       "regionLabel": "Upgrade notice",
-      "title": "Upgrade to Pro.",
+      "title": "Upgrade to Pro",
       "benefits": "See Pro benefits",
       "cta": "Upgrade",
       "dismiss": "Dismiss upgrade notice"
@@ -2010,25 +2010,25 @@
     "picker": {
       "model": "Model",
       "auto": "Auto",
-      "autoHint": "Internal when you have credits, otherwise your model",
+      "autoHint": "Uses internal models when credits are available, otherwise your custom model",
       "internalGroup": "Internal credits",
       "customGroup": "Custom model",
       "needCredits": "Needs credits",
       "loadingModels": "Loading internal models…",
-      "addCustom": "Add a custom model in settings",
-      "noModel": "Configure a model in settings first",
-      "strengthLabel": "Reasoning",
+      "addCustom": "Add a custom model in Settings",
+      "noModel": "Configure a model in Settings first",
+      "strengthLabel": "Reasoning effort",
       "strength": {
         "low": "Low",
         "medium": "Medium",
         "high": "High"
       },
-      "catalogStale": "This list may be out of date — some models might be unavailable right now."
+      "catalogStale": "This list may be out of date. Some models may be unavailable."
     },
     "widgets": {
       "unsupported": "(Unable to render card: {{kind}})",
       "form": {
-        "defaultTitle": "Please provide more information",
+        "defaultTitle": "Provide more information",
         "submitted": "Submitted",
         "cancelled": "Cancelled",
         "submit": "Submit",
@@ -2038,32 +2038,32 @@
       "field": {
         "other": "Other",
         "present": "Present",
-        "noMatch": "No match — just type it in",
+        "noMatch": "No matches. You can type a value directly.",
         "skip": "Skip this step",
-        "optional": "optional",
+        "optional": "Optional",
         "year": "Year",
-        "month": "Mo"
+        "month": "Month"
       },
       "gallery": {
-        "template": "Pick a layout — one tap applies it"
+        "template": "Select a layout. Click to apply it."
       },
       "verification": {
-        "title": "Couldn't source these",
-        "body": "These names are new in the rewrite — they weren't in your resume or anywhere in this conversation. Not necessarily wrong, but worth a look before you send it.",
+        "title": "Sources not found for the following",
+        "body": "The following names were introduced in this edit and do not appear in your original resume or this conversation. Verify them before sending.",
         "degradedTitle": "This edit was not fact-checked",
-        "degradedBody": "No usable original-resume baseline was available. Read or reopen the resume before asking AI to edit it again."
+        "degradedBody": "No usable original resume was available, so the edit could not be fact-checked. Load or reopen the resume before asking AI to edit it, to avoid adding unverified information."
       },
       "research": {
         "title": "Job research",
-        "sourceBadge": "WEB",
-        "followUp": "{{item}} — walk me through this one. What should I do?",
+        "sourceBadge": "Web",
+        "followUp": "Explain \"{{item}}\" in more detail and tell me how to prepare.",
         "groups": {
-          "must_have_skills": "Must-haves",
-          "selling_points": "Your selling points",
-          "mismatch_risks": "Risks",
-          "evidence_to_add": "Evidence to add (tap one)",
-          "recruiter_questions": "Ask the recruiter (tap one)",
-          "preparation_plan": "Prep plan"
+          "must_have_skills": "Must-have skills",
+          "selling_points": "Selling points",
+          "mismatch_risks": "Mismatch risks",
+          "evidence_to_add": "Evidence to add (click to expand)",
+          "recruiter_questions": "Questions for the recruiter (click to expand)",
+          "preparation_plan": "Preparation plan"
         }
       },
       "companyResearch": {
@@ -2074,23 +2074,23 @@
           "role_implications": "Role implications",
           "compensation_leads": "Compensation leads",
           "risks_unknowns": "Risks and unknowns",
-          "questions_to_verify": "Questions to verify (tap one)"
+          "questions_to_verify": "Questions to verify (click to expand)"
         }
       },
       "interviewResearch": {
         "title": "Interview preparation",
         "groups": {
           "focus_areas": "Focus areas",
-          "likely_questions": "Likely questions (tap to practise)",
+          "likely_questions": "Likely questions (click to practice)",
           "candidate_evidence": "Candidate evidence",
-          "practice_priorities": "Practice priorities (tap one)",
-          "follow_up_questions": "Follow-up questions (tap to practise)"
+          "practice_priorities": "Practice priorities (click to expand)",
+          "follow_up_questions": "Follow-up questions (click to practice)"
         }
       },
       "applicationTracker": {
         "title": "Application tracker",
         "emptyTitle": "No applications yet",
-        "emptyDescription": "Tell me the company and role, and I'll add the first one here.",
+        "emptyDescription": "Provide a company and role to add the first application.",
         "source": "Source",
         "ariaLabel": "Applications filterable by status",
         "filters": {
@@ -2143,7 +2143,7 @@
           "moreSettings": "More settings",
           "behavior": "Behavior",
           "requiredValue": "Required value",
-          "allowEmpty": "Allow empty results",
+          "allowEmpty": "Allow empty values",
           "showConfidence": "Show confidence",
           "types": {
             "Text": "Text",
@@ -2155,25 +2155,25 @@
           "aiComputed": "AI computed"
         },
         "actions": {
-          "addColumn": "Add a {{type}} column to my application board. Ask me what to call it and where the values come from; if you need to look them up, fill every row once you have.",
-          "calculate": "Fill in the \"{{column}}\" column on my application board — one real value per application, and leave it blank if you cannot find one.",
+          "addColumn": "Add a {{type}} column to my application board. First confirm the column name and data source with me; if the values need to be looked up, fill in every row after looking them up.",
+          "calculate": "Fill in the \"{{column}}\" column on my application board with a verified value for each application. Leave it blank if no value can be found.",
           "hideColumn": "Remove the \"{{column}}\" column from my application board."
         }
       },
       "recommendation": {
         "alternatives": "Alternatives",
         "others": "Other options",
-        "accept": "Go with this",
+        "accept": "Use this option",
         "accepted": "Chosen",
         "confidence": {
           "high": "High confidence",
-          "medium": "Needs your call",
-          "low": "Not enough to go on",
-          "none": "No signal"
+          "medium": "Needs confirmation",
+          "low": "Insufficient information",
+          "none": "Not specified"
         }
       },
       "interviewRoom": {
-        "title": "Interview room ready",
+        "title": "Mock interview ready",
         "enter": "Enter interview",
         "reenter": "Return to this interview",
         "duration": "~{{count}} min",
@@ -2196,8 +2196,8 @@
         "title": "Replicated layout preview",
         "apply": "Apply to resume",
         "applied": "Applied",
-        "previewFailed": "This template tree would not render — let me revise it",
-        "diagnostics": "{{count}} things still need adjusting"
+        "previewFailed": "The template preview could not be rendered. Regenerating.",
+        "diagnostics": "{{count}} issues to adjust"
       },
       "companyLogos": {
         "title": "Choose company logos",
@@ -2216,14 +2216,14 @@
         "type": {
           "symbol": "Symbol",
           "icon": "Icon",
-          "logo": "Full",
+          "logo": "Full logo",
           "image": "Image"
         }
       },
       "trackerFields": {
         "question": "What should this application board track?",
-        "freeText": "Something else…",
-        "answered": "Columns chosen",
+        "freeText": "Other…",
+        "answered": "Columns selected",
         "previous": "Previous",
         "next": "Next",
         "send": "Confirm",
@@ -2237,18 +2237,18 @@
       "end": "End interview",
       "timeRemaining": "{{time}} remaining",
       "timeUp": "Time is up. Ending the interview…",
-      "timeUpRetry": "Could not end automatically. Select End interview to retry.",
-      "comingSoonBadge": "Not live yet",
-      "comingSoon": "Voice mock interviews are still being built. They'll draw questions from your resume and target role, follow up as you answer, and leave you a transcript worth reviewing. Not ready yet — and we'd rather not fake it.",
-      "starting": "Getting the interview ready…",
+      "timeUpRetry": "The interview could not end automatically. Select End interview to try again.",
+      "comingSoonBadge": "Coming soon",
+      "comingSoon": "Voice mock interviews are in development. They will ask questions based on your resume and target role, follow up in real time, and produce a review summary.",
+      "starting": "Preparing the interview…",
       "connecting": "Connecting…",
       "listening": "Listening",
       "thinking": "Thinking",
       "speaking": "Interviewer speaking",
-      "micHint": "Just answer out loud, then pause when you are done",
-      "micDenied": "Microphone permission was denied. You can re-enable it from the address bar",
+      "micHint": "Answer by speaking, and pause briefly when you have finished.",
+      "micDenied": "Microphone access was denied. You can grant it again from the browser's address bar.",
       "startVoice": "Start voice interview",
-      "startText": "Type instead",
+      "startText": "Use text instead",
       "finished": "Interview finished",
       "you": "You",
       "interviewer": "Interviewer",
@@ -2256,30 +2256,30 @@
       "send": "Send",
       "stageLabel": "Stage",
       "stage": {
-        "introduction": "Intro",
+        "introduction": "Introduction",
         "experience": "Experience",
         "technical": "Technical",
         "behavioral": "Behavioral",
-        "closing": "Wrap-up",
+        "closing": "Closing",
         "finished": "Finished"
       },
       "report": {
         "title": "Debrief",
-        "generating": "Generating your debrief…",
+        "generating": "Generating debrief…",
         "skippedTitle": "No debrief was generated",
-        "skippedBody": "The saved interview record did not provide enough evidence for specific feedback. This reflects this session's record, not an assessment of your ability.",
+        "skippedBody": "The saved interview record does not provide enough evidence for specific feedback. This result reflects this session only and is not an assessment of your ability.",
         "transcriptTitle": "Interview transcript",
         "archivedWithoutReportTitle": "This interview has ended",
-        "archivedWithoutReportBody": "There is no saved debrief for this interview. You can still review the transcript.",
+        "archivedWithoutReportBody": "This interview has no saved debrief. You can still review the transcript.",
         "overall": "Interview readiness",
         "retry": "Regenerate",
-        "strengths": "What went well",
-        "improvements": "What to work on",
-        "reviews": "Question by question",
-        "yourAnswer": "You said",
-        "better": "A stronger answer",
+        "strengths": "Strengths",
+        "improvements": "Areas to improve",
+        "reviews": "Question-by-question review",
+        "yourAnswer": "Your answer",
+        "better": "Suggested answer",
         "empty": "No answers to review in this session",
-        "dropped": "{{count}} review(s) were dropped because the quoted answer did not match",
+        "dropped": "{{count}} review(s) were removed because the quoted answer did not match the original.",
         "dims": {
           "expression": "Clarity",
           "depth": "Technical depth",
@@ -2290,64 +2290,64 @@
           "ready": "Ready",
           "nearly": "Nearly there",
           "developing": "Developing",
-          "early": "Early"
+          "early": "Early stage"
         },
         "verdict": {
-          "ready": "You're ready for the real thing",
-          "nearly": "Close — a few specific answers are holding you back",
-          "developing": "The basics are there; the answers need practice",
-          "early": "This is step one — fix the points below and the next round will look different"
+          "ready": "Well prepared for a real interview",
+          "nearly": "Nearly ready. A few specific answers still need work.",
+          "developing": "The fundamentals are solid; answering technique needs more practice.",
+          "early": "Early stage. Work through the suggestions below one by one."
         },
-        "emptyHint": "Answer a few more questions and this will tell you what to change, one by one",
+        "emptyHint": "Answer more questions to see feedback for each one here.",
         "questionIndex": "Question {{index}}",
         "didNotStart": {
-          "title": "This round never really started",
-          "body": "Only small talk came through, so there was nothing to review. The blank scores mean there was no material — not that you answered badly.",
-          "exampleLabel": "Try opening like this",
-          "example": "My most recent frontend work was an internal dashboard — tables and forms, React and TypeScript, first paint down from 3.2s to 1.1s. One sentence with a project, a stack and a number."
+          "title": "This interview did not formally start",
+          "body": "The session contained only small talk, so there is nothing to review. No score was given because there were no answers to assess, not because of answer quality.",
+          "exampleLabel": "Example opening",
+          "example": "My most recent frontend role was on an internal dashboard project, where I built tables and forms with React and TypeScript and reduced first paint from 3.2s to 1.1s."
         },
         "actions": {
-          "again": "Run it again",
-          "editResume": "Back to the resume",
+          "again": "New interview",
+          "editResume": "Edit resume",
           "copy": "Copy",
           "copied": "Copied"
         }
       },
-      "micDeniedHint": "No microphone access — you can type your answers instead",
+      "micDeniedHint": "Microphone access is unavailable. You can type your answers instead.",
       "composerPlaceholder": "Type your answer…",
-      "transcriptEmpty": "Your interviewer is about to start — just be ready",
-      "startFailed": "The interview could not start. Try again shortly.",
-      "turnFailed": "That answer did not go through. Say it once more.",
-      "finishFailed": "The interview could not be ended. Try again.",
-      "transcriptSaveFailed": "The interview transcript has not finished saving. Try ending the interview again.",
-      "reportFailed": "The debrief could not be generated. Try again.",
-      "reportRateLimited": "Too many requests. Wait a moment, then retry the debrief.",
+      "transcriptEmpty": "The interview is about to start.",
+      "startFailed": "The interview could not start. Please try again later.",
+      "turnFailed": "Your answer could not be sent. Please answer again.",
+      "finishFailed": "The interview could not be ended. Please try again.",
+      "transcriptSaveFailed": "The interview transcript has not finished saving. End the interview again.",
+      "reportFailed": "The debrief could not be generated. Please try again.",
+      "reportRateLimited": "Too many requests. Wait a moment, then regenerate the debrief.",
       "voiceError": {
-        "connection": "Voice dropped — you can keep going by typing",
-        "quota": "Weekly interview time is used up — keep going by typing, or upgrade your plan",
-        "connection_limit": "This interview has used all its reconnects — keep going by typing"
+        "connection": "The voice connection was lost. You can continue by typing.",
+        "quota": "This week's interview time has been used up. Continue by typing, or upgrade your plan.",
+        "connection_limit": "The voice connection dropped too many times and this session has no reconnect attempts left. You can continue by typing."
       },
       "backToDashboard": "Back to dashboard",
-      "leaveTitle": "Leaving now ends this interview",
-      "leaveHint": "What you have said is kept, but there will be no debrief.",
-      "leaveCancel": "Keep going",
+      "leaveTitle": "Leaving will end this interview",
+      "leaveHint": "Your answers so far are kept, but no debrief will be generated.",
+      "leaveCancel": "Continue interview",
       "leaveConfirm": "End and leave",
       "prep": {
-        "session": "Setting up the room…",
+        "session": "Preparing the mock interview…",
         "knowledge": "Reading your resume and target role…",
-        "opening": "Your interviewer is thinking of an opener…",
+        "opening": "Generating the opening question…",
         "connecting": "Connecting audio…",
-        "stalled": "Taking longer than usual — still preparing"
+        "stalled": "This is taking longer than usual. Please wait."
       },
       "mute": "Mute",
       "unmute": "Unmute",
-      "unavailable": "The interview room could not open. Try again shortly.",
-      "noLaunch": "That interview was not found — start a new one from the dashboard.",
+      "unavailable": "The mock interview could not start. Please try again later.",
+      "noLaunch": "This interview was not found. Return to the dashboard to start a new one.",
       "showTranscript": "Show transcript",
       "hideTranscript": "Hide transcript"
     },
     "living": {
-      "askPolarisDetail": "Ask Polaris · explain how to improve it",
+      "askPolarisDetail": "Ask Polaris · get suggestions",
       "askPolaris": "Ask Polaris",
       "selectionLabel": "Selection · {{section}}",
       "allChanges": "All changes",
@@ -2361,23 +2361,23 @@
       "pendingReviewCount": "{{count}} changes to review",
       "previous": "Previous change",
       "next": "Next change",
-      "addSectionContent": "Add to this section",
+      "addSectionContent": "Add content",
       "reorder": "Reorder",
       "acceptedChangesLog": "Accepted {{count}} changes"
     },
     "attach": {
-      "parsing": "Reading your PDF…",
-      "parsed": "Done — the draft is on the right",
-      "failed": "I couldn't read that PDF",
-      "warningsTitle": "A few things I wasn't sure about",
-      "warningsBody": "These parts of the PDF I read with low confidence — worth a look before you apply the draft.",
+      "parsing": "Parsing PDF…",
+      "parsed": "Parsing complete. The draft is shown on the right.",
+      "failed": "PDF parsing failed",
+      "warningsTitle": "Some content could not be recognized with confidence",
+      "warningsBody": "The following parts of the PDF were recognized with low confidence. Review them before applying the draft.",
       "parsingShort": "Uploading",
       "remove": "Remove {{name}}",
       "reject": {
-        "unsupported": "“{{name}}” is a format I cannot read yet",
-        "too-large": "“{{name}}” is too large — try a smaller one",
-        "too-many": "Up to {{max}} files at a time",
-        "duplicate": "“{{name}}” is already attached"
+        "unsupported": "The file format of \"{{name}}\" is not supported.",
+        "too-large": "\"{{name}}\" is too large. Upload a smaller file.",
+        "too-many": "Up to {{max}} files can be uploaded at a time",
+        "duplicate": "\"{{name}}\" is already attached"
       }
     },
     "tools": {
@@ -2393,7 +2393,7 @@
         "results": "{{count}} results"
       },
       "track": "Track",
-      "fallback": "Working",
+      "fallback": "Process",
       "searchingWeb": "Searching the web",
       "searchingSites": "Searching {{count}} sites",
       "interview": "Interview",
@@ -2412,13 +2412,13 @@
     "canvas": {
       "action": {
         "quantify": "Quantify",
-        "concise": "Tighten",
-        "verb": "Stronger verb",
+        "concise": "Condense",
+        "verb": "Strengthen verbs",
         "evidence": "Add evidence",
         "rewrite": "Rewrite",
         "tone": "Adjust tone",
         "shorten": "Shorten",
-        "polish": "Polish this",
+        "polish": "Polish this section",
         "translate": "Translate"
       }
     },
@@ -2442,19 +2442,19 @@
       },
       "search": "Search trajectory",
       "empty": "No trajectory has been recorded for this conversation",
-      "emptyHint": "Send another message to record model and tool calls in their actual order"
+      "emptyHint": "Send another message to record model and tool calls in their actual order."
     },
     "history": {
       "toggle": "Conversation history",
       "untitled": "Untitled conversation",
       "delete": "Delete",
       "confirmDelete": "Delete this conversation?",
-      "loadFailed": "Could not open that conversation — try again shortly",
-      "checkpointMissing": "The run context has expired. You can start a new chat from visible text; prior tool state and attachments will not be restored.",
-      "continueVisible": "Continue from visible messages",
-      "regenerateUnavailable": "This turn cannot be safely regenerated because its run record, attachments, or session state is unavailable. Start a new chat.",
-      "restoreFailed": "Couldn't load your history just now, so this is a new conversation. Nothing was lost — reopen shortly to see it.",
-      "switchWhileBusy": "This reply is not finished. Switching now will interrupt it.",
+      "loadFailed": "The conversation could not be opened. Please try again later.",
+      "checkpointMissing": "The run context has expired. You can start a new chat from the visible messages; previous tool state and attachments will not be restored.",
+      "continueVisible": "Start a new chat from visible messages",
+      "regenerateUnavailable": "This reply cannot be regenerated because its run record, attachments, or session state is unavailable. Start a new chat.",
+      "restoreFailed": "History could not be loaded, so a new conversation was started. Your history is intact and can be reopened later.",
+      "switchWhileBusy": "This reply is not finished. Switching now will interrupt generation.",
       "switchAnyway": "Switch anyway",
       "group": {
         "today": "Today",
@@ -2479,70 +2479,70 @@
         "INTERVIEW": "Interviews"
       },
       "meta": "{{resume}} · {{time}} · v{{version}}",
-      "expiresIn": "Gone in {{count}} days",
-      "expiresTomorrow": "Gone tomorrow",
+      "expiresIn": "Expires in {{count}} days",
+      "expiresTomorrow": "Expires tomorrow",
       "expiresToday": "Expires today",
       "keep": "Keep",
       "kept": "Kept",
-      "keepFailed": "Couldn't keep it — try again",
-      "use": "Use it on my resume",
+      "keepFailed": "The asset could not be kept. Please try again later.",
+      "use": "Use to improve resume",
       "copy": "Copy",
       "copied": "Copied",
       "archive": "Archive",
-      "archiveConfirm": "Archive this? The content will no longer be kept",
+      "archiveConfirm": "Archive this asset? Its content will no longer be kept.",
       "archived": "Archived",
-      "emptyTitle": "Nothing here yet",
-      "filteredEmpty": "No assets under this filter",
+      "emptyTitle": "No assets yet",
+      "filteredEmpty": "No assets match this filter",
       "clearFilter": "Clear filter",
-      "loadFailed": "Assets couldn't be loaded",
+      "loadFailed": "Assets could not be loaded",
       "retry": "Retry",
-      "previewExpired": "This one has expired",
+      "previewExpired": "This asset has expired",
       "previewArchived": "Archived content is no longer kept",
-      "previewMissing": "This asset is gone",
-      "previewUnsupported": "This kind of content can't be previewed yet",
-      "nearLimit": "Assets are nearly full ({{count}}/500) — archive a few you no longer need",
-      "usePrompt": "Using the asset \"{{title}}\", help me improve this resume.",
+      "previewMissing": "This asset does not exist",
+      "previewUnsupported": "Preview is not available for this type of content",
+      "nearLimit": "Assets are nearing the limit ({{count}}/500). Consider archiving assets you no longer need.",
+      "usePrompt": "Use the asset \"{{title}}\" to improve this resume.",
       "seeAll": "See all {{count}}",
       "count": "{{count}} items",
       "boardTitle": "Application board",
-      "interviewFallback": "A mock interview",
+      "interviewFallback": "Mock interview",
       "interviewScore": "Score {{score}}",
-      "openInterview": "Open the report",
+      "openInterview": "View interview report",
       "collapse": "Show less",
-      "showMore": "{{count}} more",
+      "showMore": "Show {{count}} more",
       "delete": "Delete",
       "deleteConfirmTitle": "Delete this asset?",
-      "deleteConfirmBody": "The whole record disappears and cannot be recovered. If you only want it out of the way, use Archive — the content becomes unreadable but the record stays.",
+      "deleteConfirmBody": "The record will be permanently deleted and cannot be recovered. To hide it instead, use Archive.",
       "deleteInterviewConfirmTitle": "Delete this interview?",
       "deleteInterviewConfirmBody": "The transcript and debrief will both be deleted and cannot be recovered.",
       "discussBoard": "Discuss this board with AI",
       "clearBoard": "Clear board",
       "clearBoardConfirmTitle": "Clear the application board?",
-      "clearBoardConfirmBody": "This deletes {{count}} applications and any custom columns you set up. It cannot be undone. The board itself stays — it will be here next time you log an application."
+      "clearBoardConfirmBody": "This deletes {{count}} applications and any custom columns, and cannot be undone. The board itself is kept for future applications."
     },
     "search": {
-      "empty": "No results found",
-      "unavailable": "Search is unavailable",
-      "quota": "Daily search limit reached",
-      "failed": "That search didn't go through",
+      "empty": "No relevant web pages found",
+      "unavailable": "Search is temporarily unavailable",
+      "quota": "Today's search quota has been used up.",
+      "failed": "Search failed",
       "deepDone": "Researched {{count}} sites",
       "partial": "(partial results)",
       "toggle": "Show or hide this search's sources",
-      "queryQuoted": "“{{query}}”"
+      "queryQuoted": "\"{{query}}\""
     }
   },
   "report": {
-    "title": "Resume Analysis Report",
-    "subtitle": "Powered by AI, Inspired by Lighthouse",
-    "overallScore": "Overall Score",
-    "detailedAnalysis": "Detailed Analysis",
-    "suggestions": "Suggestions for Improvement:",
+    "title": "Resume analysis report",
+    "subtitle": "Powered by AI, inspired by Lighthouse",
+    "overallScore": "Overall score",
+    "detailedAnalysis": "Detailed analysis",
+    "suggestions": "Suggestions for improvement:",
     "categories": {
-      "KeySkillsMatch": "Key Skills Match",
-      "ImpactAndActionability": "Impact and Actionability",
-      "QuantifiableAchievements": "Quantifiable Achievements",
-      "ClarityAndReadability": "Clarity and Readability",
-      "ProfessionalSummary": "Professional Summary",
+      "KeySkillsMatch": "Key skills match",
+      "ImpactAndActionability": "Impact and actionability",
+      "QuantifiableAchievements": "Quantified results",
+      "ClarityAndReadability": "Clarity and readability",
+      "ProfessionalSummary": "Professional summary",
       "impact": "Impact",
       "metrics": "Metrics",
       "clarity": "Clarity",
@@ -2550,87 +2550,87 @@
     },
     "strengths": "Strengths",
     "improvements": "Improvements",
-    "overallRating": "Overall Rating",
-    "attributeMatrix": "Attribute Matrix",
+    "overallRating": "Overall rating",
+    "attributeMatrix": "Attribute matrix",
     "status": {
       "critical": "Critical",
       "normal": "Normal",
       "good": "Good"
     },
-    "optimizationRoadmap": "Optimization Roadmap",
-    "roadmapSubtitle": "High-level insights from the panel"
+    "optimizationRoadmap": "Optimization roadmap",
+    "roadmapSubtitle": "Key insights from the review panel"
   },
   "errorPage": {
     "fault": {
       "section": {
-        "title": "This section didn't load",
-        "promise": "Your resume is saved — this crash didn't touch it."
+        "title": "This section could not be loaded",
+        "promise": "Your resume is saved. This error did not affect its content."
       },
       "app": {
-        "title": "The page didn't load",
-        "promise": "Your resumes are saved and untouched."
+        "title": "The page could not be loaded",
+        "promise": "Your resumes are saved and unaffected."
       }
     },
-    "note": "We've been alerted and we're on it.",
+    "note": "We have been alerted and are investigating.",
     "recovery": {
       "countdown": "Retrying in {{seconds}}s",
       "cancel": "Cancel",
       "retryNow": "Retry now",
       "retry": "Retry",
       "retrying": "Retrying…",
-      "exhausted": "That retry didn't work — a full refresh has a better shot.",
+      "exhausted": "Automatic retry failed. Reload the page.",
       "reload": "Reload page"
     },
     "actions": {
       "backToResumes": "Back to resumes",
-      "backHome": "Back home"
+      "backHome": "Back to home"
     },
     "code": {
       "copy": "Copy error code",
       "copied": "Copied"
     },
-    "support": "Send us this code",
+    "support": "Include this code when contacting support",
     "detail": "Technical details"
   },
   "notFoundPage": {
-    "title": "This page isn't here",
-    "description": "The link may have expired, or the content moved somewhere else.",
+    "title": "Page not found",
+    "description": "The link may have expired, or the content has been moved.",
     "buttons": {
-      "backHome": "Back home",
+      "backHome": "Back to home",
       "goBack": "Go back"
     }
   },
   "loading": {
-    "common": "Loading...",
-    "aiThinking": "AI Thinking...",
+    "common": "Loading…",
+    "aiThinking": "AI thinking…",
     "aiLab": {
-      "start": "Starting Polaris...",
-      "preparing": "Preparing smart interviewer and analysis tools..."
+      "start": "Starting Polaris…",
+      "preparing": "Preparing the interviewer and analysis tools…"
     },
     "history": {
-      "title": "Loading history...",
-      "description": "Fetching your resume modification records..."
+      "title": "Loading history…",
+      "description": "Fetching resume revision history…"
     },
     "json": {
-      "title": "Generating JSON...",
-      "description": "Preparing a structured preview of your resume..."
+      "title": "Generating JSON…",
+      "description": "Preparing a structured preview of your resume…"
     },
     "share": {
-      "title": "Preparing share configuration...",
-      "description": "Loading permissions and link options..."
+      "title": "Preparing share settings…",
+      "description": "Loading permissions and link options…"
     }
   },
   "dashboardPage": {
     "cloudSyncBanner": {
-      "title": "Cloud Sync is Now Live!",
-      "description": "Enable to sync multi-device and auto-backup all versions. Your data is safe and secure. You are currently in local storage mode.",
+      "title": "Cloud sync is now available",
+      "description": "Sync across devices and automatically back up every resume version. Your resumes are currently stored locally.",
       "button": "Go to Settings"
     }
   },
   "hero": {
-    "title": "Build Your Resume with AI",
+    "title": "Build your resume with AI",
     "subtitle": "Professional templates, AI-powered writing, and real-time preview.",
-    "macbookTitle": "This Macbook is built with Tailwindcss. <br /> No kidding."
+    "macbookTitle": "This MacBook is drawn with Tailwind CSS.<br />Built entirely in code."
   },
   "persona": {
     "peer": {
@@ -2678,20 +2678,20 @@
     "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone."
   },
   "errors": {
-    "unauthenticated": "Your session expired. Sign in again to continue.",
-    "forbidden": "This account can't do that.",
-    "plan_required": "Your plan doesn't include this yet — upgrade to continue.",
-    "not_found": "We couldn't find that. It may have been deleted.",
-    "invalid_input": "Something you entered isn't valid. Check it and try again.",
-    "conflict": "Something else changed just now. Refresh and try again.",
-    "session_invalid": "This conversation has expired. Start a new one to continue.",
-    "quota_exceeded": "You've used up this {{period}}'s allowance. It resets {{resetAt}} — or upgrade your plan, or use your own model key.",
+    "unauthenticated": "Your session has expired. Sign in again to continue.",
+    "forbidden": "This account does not have permission to perform this action.",
+    "plan_required": "Your current plan does not include this feature. Upgrade your plan to use it.",
+    "not_found": "This content does not exist or has been deleted.",
+    "invalid_input": "Some of the information entered is invalid. Check it and try again.",
+    "conflict": "This content was changed elsewhere. Refresh and try again.",
+    "session_invalid": "This conversation has expired. Start a new conversation.",
+    "quota_exceeded": "You have used up this {{period}}'s credits. They reset {{resetAt}}. You can also upgrade your plan or use your own model key.",
     "rate_limited": "Too many requests. Try again in {{retryAfter}}.",
-    "content_rejected": "That content didn't pass review. Try rephrasing, or use a different file.",
-    "upstream_unavailable": "The service is temporarily unavailable. Try again shortly.",
-    "misconfigured": "This feature is temporarily unavailable. We've been alerted.",
-    "internal_error": "Something went wrong on our side. We've been alerted.",
-    "unknown": "Something went wrong. Please try again.",
+    "content_rejected": "This content did not pass review. Revise it or use a different file, then try again.",
+    "upstream_unavailable": "The service is temporarily unavailable. Please try again later.",
+    "misconfigured": "This feature is temporarily unavailable. We have been alerted and are looking into it.",
+    "internal_error": "A server error occurred. We have been alerted and are looking into it.",
+    "unknown": "The request failed. Please try again later.",
     "period": {
       "daily": "day",
       "weekly": "week",
@@ -2703,12 +2703,12 @@
     },
     "actions": {
       "retry": "Retry",
-      "upgrade": "Add credits"
+      "upgrade": "Top up"
     }
   },
   "templateError": {
-    "title": "This template could not be rendered",
-    "description": "Your content is safe — pick another template to keep going. We have been alerted."
+    "title": "The template could not be rendered",
+    "description": "Your content is unaffected. Choose another template to continue. We have been alerted."
   },
   "onboarding": {
     "title": "Job profile",
@@ -2717,20 +2717,20 @@
     "previous": "Back",
     "next": "Next",
     "finish": "Done",
-    "addCustom": "Add your own",
+    "addCustom": "Add custom",
     "customPlaceholder": "Type and press Enter",
     "steps": {
       "direction": {
-        "title": "What kind of job are you after?"
+        "title": "What kind of job are you looking for?"
       },
       "stage": {
-        "title": "Where are you in the search?"
+        "title": "What stage of your job search are you in?"
       },
       "skills": {
-        "title": "What do you work with?"
+        "title": "What are your main tools and skills?"
       },
       "blocker": {
-        "title": "What's the hardest part right now?"
+        "title": "What is your biggest challenge right now?"
       }
     },
     "fields": {
@@ -2748,7 +2748,7 @@
           "devops": "DevOps / SRE",
           "security": "Security",
           "embedded": "Embedded",
-          "gamedev": "Game dev",
+          "gamedev": "Game development",
           "product": "Product",
           "design": "Design",
           "operations": "Operations",
@@ -2757,7 +2757,7 @@
           "hr": "People",
           "finance": "Finance",
           "legal": "Legal",
-          "pm": "Project mgmt",
+          "pm": "Project management",
           "research": "Research",
           "content": "Content",
           "customer": "Customer success"
@@ -2787,10 +2787,10 @@
         }
       },
       "careerStage": {
-        "label": "Stage",
+        "label": "Career stage",
         "options": {
-          "campus": "New grad",
-          "experienced": "Experienced",
+          "campus": "New graduate",
+          "experienced": "Experienced hire",
           "switching": "Switching fields",
           "intern": "Internship"
         }
@@ -2837,23 +2837,23 @@
         }
       },
       "blocker": {
-        "label": "Biggest blocker",
+        "label": "Main challenge",
         "options": {
-          "whereToApply": "Not sure where to apply",
-          "thinResume": "Resume feels thin",
-          "noReply": "No replies",
-          "failInterview": "Failing interviews",
+          "whereToApply": "Unsure where to apply",
+          "thinResume": "Resume lacks content",
+          "noReply": "No responses",
+          "failInterview": "Not passing interviews",
           "choosingOffer": "Choosing between offers"
         }
       },
       "note": {
-        "label": "Anything else I should know",
-        "placeholder": "e.g. moving from QA into frontend, but my resume is all testing work"
+        "label": "Additional information",
+        "placeholder": "e.g. I want to move from QA to frontend, but my resume is mostly testing work"
       }
     },
     "done": {
-      "title": "Got it",
-      "subtitle": "I'll write up your profile — go ahead and start"
+      "title": "Saved",
+      "subtitle": "Generating your job profile. It will be ready shortly."
     }
   }
 }

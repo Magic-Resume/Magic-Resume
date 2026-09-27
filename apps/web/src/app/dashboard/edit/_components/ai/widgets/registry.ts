@@ -825,7 +825,7 @@ export const WIDGETS: WidgetRegistry = {
         message:
           typeof props.message === 'string' && props.message.trim()
             ? props.message.trim().slice(0, 160)
-            : '每家公司已预选推荐版本，你可以切换或粘贴自定义链接。',
+            : '每家公司已预选推荐版本，你可以切换或粘贴自定义链接',
         companies,
         skippable: true,
       };

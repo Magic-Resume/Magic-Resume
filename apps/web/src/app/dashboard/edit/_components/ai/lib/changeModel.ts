@@ -334,7 +334,7 @@ export function makeInsertTarget(
     itemId: `new-${nanoid(6)}`,
     fieldKey: isNameField ? "name" : "summary",
     kind: isNameField ? "text" : "html",
-    label: `${title} · 新增一条`,
+    label: `${title} · 新增条目`,
   };
 }
 

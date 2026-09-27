@@ -563,7 +563,7 @@ function LivingCanvas({
           [path]:
             access.reason === "entitlement_unavailable"
               ? access.message || "账户额度检查失败，请稍后重试"
-              : "账户额度不足，请配置自定义 AI 服务后再试",
+              : "额度不足，请充值或在设置中配置自定义模型",
         }));
         return;
       }
@@ -590,7 +590,7 @@ function LivingCanvas({
         if (isQuotaOrCustomConfigError(e)) invalidateAiEntitlement();
         setErrors((prev) => ({
           ...prev,
-          [path]: (e as Error)?.message || "这处没改成，点一下重试",
+          [path]: (e as Error)?.message || "修改失败，请点击重试",
         }));
       } finally {
         if (abortRef.current[path] === ctrl) delete abortRef.current[path];
@@ -806,7 +806,7 @@ function LivingCanvas({
               (conflict) => conflict.changeId === change.workspaceChangeId,
             );
             if (conflicted) {
-              setErrors((prev) => ({ ...prev, [path]: "此处已被其他编辑改动，请刷新后重新选择" }));
+              setErrors((prev) => ({ ...prev, [path]: "此处内容已被修改，请刷新后重新选择" }));
               return;
             }
             onLog(`已应用 · ${change.target.label}`, path);
@@ -838,7 +838,7 @@ function LivingCanvas({
         // 日志写「已改写」、420ms 后移除，而 store 一个字都没变。
         if (!applied) {
           onWarn(
-            `这条改动没能写进简历 · ${change.target.label}`,
+            `修改未能写入简历 · ${change.target.label}`,
             "apply_failed",
             { count: 1, detail: change.target },
           );
@@ -889,7 +889,7 @@ function LivingCanvas({
             dropFromOrder(path);
           })
           .catch((error) => {
-            setErrors((prev) => ({ ...prev, [path]: (error as Error)?.message || "拒绝失败，请重试" }));
+            setErrors((prev) => ({ ...prev, [path]: (error as Error)?.message || "放弃修改失败，请重试" }));
           })
           .finally(() => setProcessing((prev) => prev.filter((item) => item !== path)));
         return;
@@ -925,7 +925,7 @@ function LivingCanvas({
           throw new Error(
             access.reason === "entitlement_unavailable"
               ? access.message || "账户额度检查失败，请稍后重试"
-              : "账户额度不足，请配置自定义 AI 服务后再试",
+              : "额度不足，请充值或在设置中配置自定义模型",
           );
         }
         return requestEdit({
@@ -962,7 +962,7 @@ function LivingCanvas({
         if (isQuotaOrCustomConfigError(e)) invalidateAiEntitlement();
         setErrors((prev) => ({
           ...prev,
-          [path]: (e as Error)?.message || "再来一版没成，点一下重试",
+          [path]: (e as Error)?.message || "重新生成失败，请点击重试",
         }));
       })
       .finally(() => {
@@ -1007,7 +1007,7 @@ function LivingCanvas({
               ...Object.fromEntries(
                 changes
                   .filter((change) => change.workspaceChangeId && conflicts.has(change.workspaceChangeId))
-                  .map((change) => [pathOf(change.target), "此处已被其他编辑改动，请刷新后重新选择"]),
+                  .map((change) => [pathOf(change.target), "此处内容已被修改，请刷新后重新选择"]),
               ),
             }));
           }
@@ -1051,7 +1051,7 @@ function LivingCanvas({
       t("aiLab.living.acceptedChangesLog", { count: changes.length - failed }),
     );
     if (failed > 0) {
-      onWarn(`有 ${failed} 处改动没能写进简历`, "apply_failed", {
+      onWarn(`${failed} 处修改未能写入简历`, "apply_failed", {
         count: failed,
       });
     }
@@ -1078,7 +1078,7 @@ function LivingCanvas({
           setCursor(0);
           setPanelOpen(false);
         })
-        .catch((error) => onWarn((error as Error)?.message || "拒绝改动失败，请重试", "apply_failed"))
+        .catch((error) => onWarn((error as Error)?.message || "放弃修改失败，请重试", "apply_failed"))
         .finally(() => setProcessing((prev) => prev.filter((path) => !order.includes(path))));
       return;
     }
@@ -1168,8 +1168,8 @@ function LivingCanvas({
       if (!changes.length) {
         onWarnRef.current(
           diagnostics.unmatchedItems > 0
-            ? `有 ${diagnostics.unmatchedItems} 处改动对不上现有条目，已跳过`
-            : "这次没有可评审的改动，画布保持原样",
+            ? `${diagnostics.unmatchedItems} 处修改与现有条目不匹配，已跳过`
+            : "本次没有可评审的修改",
           diagnostics.unmatchedItems > 0 ? "unmatched_items" : "no_changes",
           {
             count: diagnostics.unmatchedItems || undefined,
@@ -1221,7 +1221,7 @@ function LivingCanvas({
           );
           if (orphaned.length === 0) return;
           onLogRef.current(
-            `有 ${orphaned.length} 项改动所在字段暂不支持在纸面直接标注，请在右上角「${changes.length} 处改动」中查看并采纳`,
+            `${orphaned.length} 处修改所在字段暂不支持在简历上直接标注，请在右上角「${changes.length} 处改动」中查看并采纳`,
             undefined,
             "info",
           );
@@ -1255,7 +1255,7 @@ function LivingCanvas({
     () => () => {
       if (pendingCountRef.current > 0) {
         onWarn(
-          `关闭画布时还有 ${pendingCountRef.current} 处改动没有评审，已丢弃`,
+          `关闭画布时有 ${pendingCountRef.current} 处修改尚未评审，已放弃`,
           "no_changes",
           { count: pendingCountRef.current },
         );
@@ -1364,7 +1364,7 @@ function LivingCanvas({
       );
       if (!applied) {
         // 与 accept 同样的处理：让用户看见失败，而不是以为改上了。
-        onWarn(`这处修改没能写进简历 · ${target.label}`, "apply_failed", {
+        onWarn(`修改未能写入简历 · ${target.label}`, "apply_failed", {
           count: 1,
           detail: target,
         });
