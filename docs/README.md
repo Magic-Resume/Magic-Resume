@@ -4,7 +4,7 @@ type: reference
 status: Living
 owner: kaihuang
 created: 2026-07-03
-updated: 2026-09-13
+updated: 2026-09-27
 summary: Index for Magic-Resume documentation, grouped by document type.
 scope: [docs]
 repos: [Magic-Resume]
@@ -41,6 +41,7 @@ related: [CONVENTIONS.md]
 | [搜索过程与引用来源](specs/search-and-citations/design-brief.md) | Draft | 2026-09-04 | AI Lab 的搜索过程行、行内引用浮层、消息底部来源栏与右舷来源面板四个面的重设计，外加行内代码 / 引用块的排版校正。 |
 | [GenUI 交互层收敛](specs/genui-ui/design.md) | Draft | 2026-08-12 | Agent 交互组件的数据驱动迁移、设计令牌接入，以及对话、任务、审批和输入交互的统一。 |
 | [引用片段递交动效「递纸条」](specs/ai-quote-handoff/design.md) | Accepted | 2026-09-13 | 「询问 Polaris」时选中片段从画布飞到输入框、小宠接住，以及发送 / 取消 / 替换三种退场与画布淡标记。 |
+| [前端文案规范：专业语气](specs/ui-copy-professional/spec.md) | Implemented | 2026-09-27 | 把 Web、Landing 与组件内硬编码文案从口语化改为专业、克制、可信的书面语气：语气与人称规则、句式模板、术语表、中英文排版与约 70 条样例。 |
 
 ## Reference
 

@@ -1,5 +1,7 @@
 # 前端中文文案审查
 
+> **2026-09-27**：本文的语气建议（口语化改写，如「这次没成，再试一次」）已被 `docs/specs/ui-copy-professional/spec.md` 取代；术语统一、标点、事实错误、硬编码穿帮等结论仍然有效。
+
 日期：2026-09-26
 范围：`apps/web/src/locales/zh/translation.json`、`apps/web/src/app/dashboard/_components/ImportResumeDialog.tsx`、`apps/web/src/app/dashboard/edit/_components/ai/**`、`apps/web/src/components/llm/**`
 基线语气规范：`.impeccable.md`（呆萌外表·靠谱内核；俏皮只出现在开场与氛围处，建议本体永远具体、诚实、专业；UI 微文案简短、动词开头、不复述用户已见内容）
