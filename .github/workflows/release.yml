@@ -111,11 +111,16 @@ jobs:
 
       # Land the CHANGELOG.md change through a PR (respects branch protection).
       # Skipped when no release was cut.
+      #
+      # The enterprise policy forbids GITHUB_TOKEN from opening PRs, and a repo
+      # cannot override it. CHANGELOG_PR_TOKEN (a fine-grained PAT scoped to this
+      # repo) is not subject to that policy. The fallback only works if the policy
+      # is ever lifted.
       - name: Open CHANGELOG pull request
         if: steps.sr.outputs.published == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CHANGELOG_PR_TOKEN || secrets.GITHUB_TOKEN }}
           add-paths: CHANGELOG.md
           base: master
           branch: chore/changelog-v${{ steps.sr.outputs.version }}
