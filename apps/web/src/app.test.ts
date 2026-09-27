@@ -1451,7 +1451,7 @@ function testSearchLine() {
     done: true,
     citationIds: [1],
   });
-  assert.match(done, /搜了 1 个网站/);
+  assert.match(done, /已搜索 1 个网站/);
   assert.doesNotMatch(done, /正在搜索/);
 
   // 一轮两次搜索，各报各的数。
@@ -1461,7 +1461,7 @@ function testSearchLine() {
     done: true,
     citationIds: [1, 2],
   });
-  assert.match(second, /搜了 2 个网站/);
+  assert.match(second, /已搜索 2 个网站/);
 
   // 额度耗尽此前长得和「正在搜索网页」一模一样：静默失败。
   const quota = render({
@@ -1470,21 +1470,21 @@ function testSearchLine() {
     done: true,
     searchStatus: "daily_limit_exhausted",
   });
-  assert.match(quota, /今天的搜索额度用完了/);
+  assert.match(quota, /今日搜索额度已用完/);
   const empty = render({
     toolCallId: "d",
     toolName: "web_search",
     done: true,
     searchStatus: "empty",
   });
-  assert.match(empty, /没搜到相关网页/);
+  assert.match(empty, /未找到相关网页/);
   const failed = render({
     toolCallId: "e",
     toolName: "web_search",
     done: true,
     error: "boom",
   });
-  assert.match(failed, /这次搜索没成功/);
+  assert.match(failed, /搜索失败/);
 
   // 查询词只在展开区里，折叠态不占地方；provider 没被调用时连展开都不给。
   const withQuery = render({
@@ -1842,7 +1842,7 @@ function testErrorCopy() {
     { errorCode: "rate_limited", retryable: true, source: "sse" },
     t,
   );
-  assert.equal(rateLimited.title, "请求太密集了，5 秒后再试");
+  assert.equal(rateLimited.title, "请求过于频繁，请在 5 秒后重试");
   assert.ok(!rateLimited.title.includes("{{"));
 
   // 认不出的码退到通用兜底，而不是把标识符渲染出来。
@@ -2281,7 +2281,7 @@ function testAgentToolVerbCoverage() {
   );
   assert.deepEqual(
     rows.map((row) => row.label),
-    ["记录", "提问", "列计划"],
+    ["记录", "提问", "制定计划"],
   );
 }
 
@@ -2462,7 +2462,7 @@ function testAgentCapabilityWidgets() {
       onAction: () => undefined,
     }),
   );
-  assert.match(emptyTrackerMarkup, /还没有投递记录/);
+  assert.match(emptyTrackerMarkup, /暂无投递记录/);
   assert.doesNotMatch(emptyTrackerMarkup, /无法渲染的卡片/);
 
   const replicaMarkup = renderToStaticMarkup(

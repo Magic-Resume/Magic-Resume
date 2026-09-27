@@ -72,7 +72,7 @@ export async function requestEdit({ signal, ...body }: EditParams): Promise<Edit
   const payload: Partial<EditResult> | null =
     raw && typeof raw === 'object' && raw.data && typeof raw.data === 'object' ? raw.data : raw;
   if (!payload || typeof payload.after !== 'string' || !payload.after.trim()) {
-    throw new Error(isEn ? 'The AI returned nothing — tap to retry' : 'AI 没有返回内容，点一下重试');
+    throw new Error(isEn ? 'AI returned no content. Click to retry.' : 'AI 未返回内容，请点击重试');
   }
   return {
     after: payload.after,

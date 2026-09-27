@@ -193,7 +193,7 @@ export function PdfScanProgress({
     : phase === 'analyzing'
       ? visionPages
         ? t('importDialog.pdf.analyzingScan', {
-            defaultValue: '这份 PDF 没有可复制的文字，正在逐页识别',
+            defaultValue: '此 PDF 不含可复制的文字，正在逐页识别',
           })
         : t('importDialog.pdf.analyzing', { defaultValue: '解析中' })
       : t('importDialog.pdf.extracting', { defaultValue: '读取 PDF' });

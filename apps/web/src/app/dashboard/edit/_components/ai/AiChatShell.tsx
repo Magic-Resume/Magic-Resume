@@ -1159,7 +1159,7 @@ export default function AiChatShell({
                 addMessage({
                   id: approvalId,
                   role: "approval",
-                  content: p.reason || "想读取你的简历来给建议",
+                  content: p.reason || "请求读取简历以提供建议",
                   approvals: gates,
                 });
               }
@@ -1564,7 +1564,7 @@ export default function AiChatShell({
                 prepared.baseResume,
               );
               if (!changes.length) {
-                logChange("这次没有可评审的改动", undefined, "info");
+                logChange("本次没有可评审的修改", undefined, "info");
                 continue;
               }
               batchNonce.current += 1;
@@ -1581,7 +1581,7 @@ export default function AiChatShell({
               });
             } catch (error) {
               warnDropped(
-                (error as Error)?.message || "加载改动提案失败，请重试",
+                (error as Error)?.message || "修改提案加载失败，请重试",
                 "apply_failed",
               );
             }
@@ -1620,7 +1620,7 @@ export default function AiChatShell({
             // 模型偶尔仍会产出一份改写——这里丢掉它，用户的简历不会被碰。
             if (!AGENT_MODES[agentModeRef.current].allowsResumeEdits) {
               warnDropped(
-                "当前是只读模式，这次简历改动已丢弃 · 切换到「共创」再试",
+                "当前为只读模式，本次简历修改未应用；请切换到「共创」模式后重试",
                 "mode_readonly",
                 { detail: `mode=${agentModeRef.current} type=${ev.type}` },
               );
@@ -1649,7 +1649,7 @@ export default function AiChatShell({
                   changeNotes,
                 });
               } else {
-                warnDropped("收到一份读不懂的简历改动，已忽略", "malformed", {
+                warnDropped("收到无法解析的简历修改，已忽略", "malformed", {
                   detail: ev.payload,
                 });
               }
@@ -1720,11 +1720,11 @@ export default function AiChatShell({
                     changeNotes,
                   );
                   if (!changed.length) {
-                    warnDropped("这次没有产生可评审的改动", "no_changes");
+                    warnDropped("本次未产生可评审的修改", "no_changes");
                   } else if (canvasDismissedForRun.current) {
                     // 本轮用户主动关过画布：尊重它，别再弹回来。
                     logChange(
-                      `有 ${changed.length} 处改动待评审 · 打开画布查看`,
+                      `${changed.length} 处修改待评审，请在画布中查看`,
                     );
                   } else {
                     batchNonce.current += 1;
@@ -1740,7 +1740,7 @@ export default function AiChatShell({
                   }
                 }
               } else {
-                warnDropped("收到一份缺少区块结构的简历，已忽略", "malformed", {
+                warnDropped("收到的简历缺少模块结构，已忽略", "malformed", {
                   detail: draft,
                 });
               }
@@ -2274,7 +2274,7 @@ export default function AiChatShell({
           historyBeforeTurn.concat([
             {
               role: "user",
-              content: text || "请查看我附上的文件。",
+              content: text || "请查看我附上的文件",
             },
           ]),
           chatMode === "create" ? "create" : "general",
@@ -2420,7 +2420,7 @@ export default function AiChatShell({
         messagesRef.current = nextMessages;
         await runChat(
           toBackendHistory(truncated).concat([
-            { role: "user", content: text || "请查看我附上的文件。" },
+            { role: "user", content: text || "请查看我附上的文件" },
           ]),
           originalMode,
           attachments,
@@ -2710,12 +2710,12 @@ export default function AiChatShell({
       addMessage({
         id: nanoid(),
         role: "user",
-        content: instr || "优化这一段",
+        content: instr || "优化此段",
         quote: { label: quoted.label, text: quoted.text },
       });
 
       const message = [
-        "请只改写简历中下面这一处选中的片段，其它内容保持不变。",
+        "请只改写简历中下面这一处选中的片段，其他内容保持不变。",
         `位置：${quoted.path}`,
         `选中片段：「${quoted.selectionText ?? quoted.text}」`,
         instr ? `要求：${instr}` : "要求：优化这段表达，使其更专业、更有力。",

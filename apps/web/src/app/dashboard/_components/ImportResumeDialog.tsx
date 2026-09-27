@@ -352,7 +352,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
               {/* 类型选择 */}
               <div className="mb-5">
                 <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  {t('importDialog.typeLabel', { defaultValue: '类型' })}
+                  {t('importDialog.typeLabel', { defaultValue: '文件类型' })}
                 </label>
                 <Select
                   value={fileType ?? ''}
@@ -360,7 +360,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                   disabled={isImporting}
                 >
                   <SelectTrigger className="w-full bg-neutral-900 border-neutral-700 text-neutral-200 hover:border-neutral-600 focus:border-sky-500 focus:ring-sky-500/20 h-10 rounded-xl">
-                    <SelectValue placeholder={t('importDialog.typePlaceholder', { defaultValue: '选择文件类型...' })} />
+                    <SelectValue placeholder={t('importDialog.typePlaceholder', { defaultValue: '选择文件类型…' })} />
                   </SelectTrigger>
                   <SelectContent className="bg-neutral-900 border-neutral-700 rounded-xl z-200">
                     <SelectItem

@@ -68,11 +68,11 @@ export default function GlobalError({
               margin: '24px 0 0',
             }}
           >
-            应用没能启动{/* i18n-ignore：这一档不能依赖 i18n，它可能正是崩掉的那个 */}
+            应用启动失败{/* i18n-ignore：这一档不能依赖 i18n，它可能正是崩掉的那个 */}
           </h1>
 
           <p style={{ fontSize: 16, lineHeight: 1.6, margin: '12px 0 0' }}>
-            你的简历都存好了，没有受影响。{/* i18n-ignore */}
+            简历数据完好，未受影响{/* i18n-ignore */}
           </p>
 
           <p
@@ -83,7 +83,7 @@ export default function GlobalError({
               margin: '8px 0 0',
             }}
           >
-            我们已经收到告警。刷新一下通常就好了。{/* i18n-ignore */}
+            我们已收到告警，刷新页面通常可以恢复{/* i18n-ignore */}
           </p>
 
           <p
