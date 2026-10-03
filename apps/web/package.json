@@ -15,7 +15,7 @@
     "build:standalone": "next build && next export",
     "i18n:check": "tsx scripts/i18n-check.ts",
     "privacy:scan": "node scripts/privacy-scan.mjs",
-    "test:unit": "tsx src/app.test.ts && node --import tsx scripts/test-chat-resume-update.ts && node --import tsx --test src/components/account/billing/OrderHistoryTable.test.tsx",
+    "test:unit": "node --import tsx --require ./scripts/register-test-assets.cjs src/app.test.ts && node --import tsx scripts/test-chat-resume-update.ts && node --import tsx --test src/components/account/billing/OrderHistoryTable.test.tsx",
     "verify:sections": "tsx scripts/verify-custom-sections.tsx",
     "test:api": "tsx scripts/test-api-boundaries.ts",
     "test": "npm run privacy:scan && npm run test:unit && npm run test:api && npm run verify:sections"
