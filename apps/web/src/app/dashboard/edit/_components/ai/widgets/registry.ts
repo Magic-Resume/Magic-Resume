@@ -1,4 +1,5 @@
 import { ChoiceCard, FormCard } from '@magic-resume/genui';
+import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume/resume-schema';
 import TemplateGalleryCard from './TemplateGalleryCard';
 import TemplateReplicaCard from './TemplateReplicaCard';
 import FabricationNotice from './FabricationNotice';
@@ -573,7 +574,7 @@ export const FORM_DEFS: Record<
         id: 'lang',
         label: '翻译成',
         kind: 'select',
-        options: opts('English', '日本語', '한국어', 'Français'),
+        options: opts(...DOCUMENT_LANGUAGE_OPTIONS.map(({ label }) => label)),
       },
     ],
   },

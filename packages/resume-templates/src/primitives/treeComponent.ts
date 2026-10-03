@@ -1,3 +1,4 @@
+import { localizeDocumentTree } from './localizeDocumentTree';
 import type { TemplateDocument } from './ast';
 import { compile } from './compile';
 import type { ResolvedNode } from './ir';
@@ -22,6 +23,7 @@ export function compileTreeComponent(
   tree: unknown,
   resume: Record<string, unknown>,
   componentId: string,
+  locale?: string,
 ): ResolvedNode | undefined {
   const check = validateTemplate(tree);
   if (!check.ok) {
@@ -42,5 +44,5 @@ export function compileTreeComponent(
       console.warn(`[resume-templates] ${componentId}: ${d.message}`);
     }
   }
-  return root ?? undefined;
+  return root ? localizeDocumentTree(root, resume, locale) : undefined;
 }

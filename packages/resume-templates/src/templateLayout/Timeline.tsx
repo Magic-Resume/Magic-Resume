@@ -1,5 +1,6 @@
 import React from 'react';
 import { getFieldValue, getFieldEntry } from './utils';
+import { EditableField } from './EditableField';
 import { WysiwygContent } from './WysiwygContent';
 import { Editable, SectionHandle, SectionInsertSlot } from '../renderer/EditableCanvas';
 
@@ -59,7 +60,6 @@ export const Timeline = React.memo(function Timeline({ title, items, fieldMap = 
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--paragraph-spacing)' }}>
         {items.map((item, idx) => {
-          const company = getFieldValue(item, fieldMap.title || ['company', 'school', 'name']);
           const position = getFieldValue(item, fieldMap.subtitle || ['position', 'degree', 'role']);
           const date = getFieldValue(item, fieldMap.date || 'date');
           const location = getFieldValue(item, ['location']);
@@ -99,23 +99,23 @@ export const Timeline = React.memo(function Timeline({ title, items, fieldMap = 
                 <div className="flex min-w-0 max-w-full flex-col sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-bold" style={{ color: textColor, fontSize: 'var(--font-size-body)' }}>
-                      {company}
+                      <EditableField item={item} field={fieldMap.title || ['company', 'school', 'name']} sectionKey={sectionKey} label={title} />
                     </h3>
                     {position && (
-                      <p className="font-medium" style={{ color: primaryColor, fontSize: 'var(--font-size-body)' }}>
-                        {position}
-                      </p>
+                      <div className="font-medium" style={{ color: primaryColor, fontSize: 'var(--font-size-body)' }}>
+                        <EditableField item={item} field={fieldMap.subtitle || ['position', 'degree', 'role']} sectionKey={sectionKey} label={title} />
+                      </div>
                     )}
                     {location && (
-                      <p style={{ color: secondaryColor, fontSize: 'var(--font-size-body)' }}>
-                        {location}
-                      </p>
+                      <div style={{ color: secondaryColor, fontSize: 'var(--font-size-body)' }}>
+                        <EditableField item={item} field={'location'} sectionKey={sectionKey} label={title} />
+                      </div>
                     )}
                   </div>
                   
                   {date && (
                     <div className="mt-1 shrink-0 font-medium sm:mt-0" style={{ color: secondaryColor, fontSize: 'var(--font-size-body)' }}>
-                      {date}
+                      <EditableField item={item} field={fieldMap.date || 'date'} sectionKey={sectionKey} label={title} />
                     </div>
                   )}
                 </div>

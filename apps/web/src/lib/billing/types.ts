@@ -10,19 +10,23 @@ export type PlanKind = 'credit_pack' | 'subscription';
 /** 选定渠道后要显示的价格——`PlanSummary.priceCents` 只是基准列表价，币种可能对不上买家。 */
 export interface PlanOffer {
   channel: string;
+  method?: string | null;
   priceCents: number;
   currency: string;
 }
 
+export interface PaymentRouteAvailability {
+  route: string;
+  channel: string;
+  method: string | null;
+  available: boolean;
+  recurring: boolean;
+  reason: string | null;
+}
+
 /** 闭集而非自由 Lucide 名：`optimizePackageImports` 在构建期改写 barrel 导入，运行时选名会整包拖入或渲染不出。 */
 export type PlanFeatureIcon =
-  | 'sparkles'
-  | 'zap'
-  | 'calendar'
-  | 'shield'
-  | 'infinity'
-  | 'gauge'
-  | 'check';
+  'sparkles' | 'zap' | 'calendar' | 'shield' | 'infinity' | 'gauge' | 'check';
 
 export interface PlanFeatureRow {
   icon: PlanFeatureIcon;
@@ -58,6 +62,17 @@ export interface PlanSummary {
   offers?: PlanOffer[];
 }
 
+/** 渠道实际结算的账单快照；缺席表示尚未取得明细，不能推算优惠或税额。 */
+export interface OrderBillingDetails {
+  subtotalCents: number;
+  discountCents: number;
+  taxCents: number;
+  shippingCents: number;
+  totalCents: number;
+  currency: string;
+  discountLabel?: string;
+}
+
 export interface OrderSummary {
   id: string;
   status: 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
@@ -66,6 +81,7 @@ export interface OrderSummary {
   channel: string;
   paidAt?: string | null;
   createdAt?: string;
+  billingDetails?: OrderBillingDetails | null;
 }
 
 /** 买家自己的订单历史行：带计划名而非整个计划——收据只需要说明买了什么。 */
@@ -94,6 +110,8 @@ export interface SubscriptionSummary {
   status: string;
   currentPeriodEnd?: string | null;
   cancelAtPeriodEnd: boolean;
+  autoRenew?: boolean;
+  canManageBilling?: boolean;
   plan?: PlanSummary | null;
 }
 
@@ -118,4 +136,5 @@ export interface Entitlement {
   catalogDegraded?: boolean;
   /** 上次成功支付的渠道，仅用作渠道选择器的默认值；`manual`（线下记账）不会出现。 */
   lastPaidChannel?: string | null;
+  lastPaidRoute?: string | null;
 }

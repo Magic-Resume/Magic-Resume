@@ -1,5 +1,6 @@
 import React from 'react';
 import { getFieldValue, getFieldEntry } from './utils';
+import { EditableField } from './EditableField';
 import { WysiwygContent } from './WysiwygContent';
 import { Editable, SectionHandle, SectionInsertSlot } from '../renderer/EditableCanvas';
 
@@ -88,12 +89,12 @@ export const ListSection = React.memo(function ListSection({ title, items, field
           const itemContent = inlineItemFields ? (
             <div style={INLINE_ITEM_ROW_STYLE}>
               {itemName && <div className="font-bold">{renderedItemName}</div>}
-              {itemDetail && <span>{itemDetail}</span>}
+              {itemDetail && <span><EditableField item={item} field={fieldMap.itemDetail} sectionKey={sectionKey} label={title} /></span>}
             </div>
           ) : (
             <>
               {itemName && <div className="font-bold">{renderedItemName}</div>}
-              {itemDetail && <div>{itemDetail}</div>}
+              {itemDetail && <div><EditableField item={item} field={fieldMap.itemDetail} sectionKey={sectionKey} label={title} /></div>}
             </>
           );
           return (
@@ -102,7 +103,7 @@ export const ListSection = React.memo(function ListSection({ title, items, field
                 {/* Item names stay editable in the AI canvas; empty optional
                     fields simply leave no placeholder line behind. */}
                 {itemContent}
-                {itemDate && <div>{itemDate}</div>}
+                {itemDate && <div><EditableField item={item} field={fieldMap.date} sectionKey={sectionKey} label={title} /></div>}
                 {/* Fields the user added by hand. Rendered explicitly, not
                     through the fieldMap: `getFieldValue` drops any key a
                     fieldMap does not declare, so a field somebody typed would

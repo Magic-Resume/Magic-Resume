@@ -1,3 +1,4 @@
+import { normalizeDocumentLanguage, resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import i18next from 'i18next';
@@ -122,7 +123,7 @@ export type ResumeState = {
   applyFullResume: (resume: Resume) => void;
   /** Apply Platform's already-committed Workspace result without re-syncing it. */
   applyWorkspaceResolution: (
-    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder'>,
+    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder' | 'documentLanguage' | 'documentLanguageSource'>,
     revision: number,
   ) => void;
 };
@@ -166,6 +167,8 @@ export const getSanitizedResume = (
     name: (r.name as string) || '',
   };
 
+  if (r.documentLanguage !== undefined) sanitized.documentLanguage = normalizeDocumentLanguage(r.documentLanguage);
+  if (r.documentLanguageSource !== undefined) sanitized.documentLanguageSource = r.documentLanguageSource;
   if (r.isPublic !== undefined) sanitized.isPublic = r.isPublic;
   if (r.shareId !== undefined) sanitized.shareId = r.shareId;
   if (r.shareRole !== undefined) sanitized.shareRole = r.shareRole;
@@ -353,12 +356,15 @@ const useResumeStore = create<ResumeState>()(
     setIsAiGenerating: (isGenerating) => set({ isAiGenerating: isGenerating }),
 
     applyFullResume: (newResume) => {
-      const { updateInfo, updateSections, setSectionOrder } = get();
-      updateInfo(newResume.info);
-      updateSections(newResume.sections);
-      if (newResume.sectionOrder) {
-        setSectionOrder(newResume.sectionOrder);
-      }
+      const active = get().activeResume;
+      if (!active) return;
+      get().updateResume(active.id, {
+        info: newResume.info,
+        sections: newResume.sections,
+        sectionOrder: normalizeResumeSectionOrder(newResume.sectionOrder, newResume.sections),
+        documentLanguage: newResume.documentLanguage ?? active.documentLanguage ?? resolveDocumentLanguage(newResume),
+        documentLanguageSource: newResume.documentLanguageSource ?? active.documentLanguageSource,
+      });
     },
 
     applyWorkspaceResolution: (document, revision) => {
@@ -369,6 +375,8 @@ const useResumeStore = create<ResumeState>()(
         info: document.info,
         sections: document.sections,
         sectionOrder: document.sectionOrder,
+        documentLanguage: document.documentLanguage,
+        documentLanguageSource: document.documentLanguageSource,
         updatedAt: Date.now(),
       };
       set((state) => {
@@ -481,6 +489,8 @@ const useResumeStore = create<ResumeState>()(
       const newId = Date.now().toString();
       const newResume: Resume = {
         ...initialResume,
+        documentLanguage: normalizeDocumentLanguage(i18next.resolvedLanguage || i18next.language) ?? 'zh',
+        documentLanguageSource: 'explicit',
         id: newId,
         name,
         updatedAt: Date.now(),
@@ -915,6 +925,8 @@ const useResumeStore = create<ResumeState>()(
 
       updateResume(activeResume.id, {
         ...restoredData,
+        documentLanguage: restoredData.documentLanguage,
+        documentLanguageSource: restoredData.documentLanguageSource,
         updatedAt: Date.now(),
       });
 
@@ -1064,7 +1076,7 @@ const useResumeStore = create<ResumeState>()(
       const nextIcon = patch.icon?.trim() || undefined;
       const labelUnchanged = (label ?? current.label) === current.label;
       const iconUnchanged = !iconGiven || nextIcon === current.icon;
-      if (labelUnchanged && iconUnchanged) return;
+      if (labelUnchanged && iconUnchanged && !current.title) return;
 
       set((state) => {
         if (!state.activeResume) return;
@@ -1072,7 +1084,7 @@ const useResumeStore = create<ResumeState>()(
           (s) => s.key === key,
         );
         if (!target) return;
-        if (label) target.label = label;
+        if (label) { target.label = label; delete target.title; }
         if (iconGiven) {
           if (nextIcon) target.icon = nextIcon;
           else delete target.icon;

@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeDocumentLanguage } from '@magic-resume/resume-schema';
 import React, {
   startTransition,
   useCallback,
@@ -126,7 +127,8 @@ import { resolveResumePatchBatch } from "./lib/resumePatch";
 import { coerceSectionOrder } from "@/lib/utils/resumeSectionOrder";
 import { useResumeDraftStore } from "@/store/useResumeDraftStore";
 import { useSettingStore } from "@/store/useSettingStore";
-import { diffResumeToChanges } from "./lib/diffResume";
+import { diffDocumentChanges } from "./lib/documentChanges";
+import { diffInfoToChanges, diffResumeToChanges } from "./lib/diffResume";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 import type { AiChangesDroppedPayload } from "@/lib/extensions/app-lifecycle";
 import {
@@ -162,7 +164,7 @@ type AiChatShellProps = {
   onApplyInfo: (info: InfoType) => void;
   onApplyFullResume: (resume: Resume) => void;
   onApplyWorkspaceResolution: (
-    document: Pick<Resume, "info" | "sections" | "sectionOrder">,
+    document: Pick<Resume, "info" | "sections" | "sectionOrder" | "documentLanguage" | "documentLanguageSource">,
     revision: number,
   ) => void;
   setIsAiJobRunning: (running: boolean) => void;
@@ -437,6 +439,8 @@ export default function AiChatShell({
           info: document.info as Resume["info"],
           sections: document.sections as Resume["sections"],
           sectionOrder: coerceSectionOrder(document.sectionOrder),
+          documentLanguage: normalizeDocumentLanguage(document.documentLanguage),
+          documentLanguageSource: document.documentLanguageSource === 'detected' ? 'detected' : 'explicit',
         },
         result.revision,
       );
@@ -1557,7 +1561,9 @@ export default function AiChatShell({
               const prepared = await workspaceApi.prepare(
                 resumeData.id,
                 proposal.id,
-                inventory,
+                skillBatchRunRef.current?.targetedSelection
+                  ? inventory.filter((change) => change.target.scope !== 'document' && change.target.scope !== 'sectionOrder')
+                  : inventory,
               );
               const changes = workspaceChangesToPending(
                 prepared.changes,
@@ -1644,6 +1650,7 @@ export default function AiChatShell({
                   kind: resolved.kind,
                   lang: resolved.lang,
                   proposedSections: resolved.proposedSections,
+                  proposedDocument: resolved.proposedDocument,
                   targetedSelection: resolved.targetedSelection,
                   nonce: batchNonce.current,
                   changeNotes,
@@ -1694,6 +1701,7 @@ export default function AiChatShell({
                     kind: batch.kind,
                     lang: batch.lang,
                     proposedSections: sections,
+                    proposedDocument: draft,
                     targetedSelection: batch.targetedSelection,
                     nonce: batchNonce.current,
                     changeNotes,
@@ -1719,8 +1727,10 @@ export default function AiChatShell({
                     undefined,
                     changeNotes,
                   );
+                  changed.push(...diffDocumentChanges(resumeData, draft, { kind: 'optimize' }), ...diffInfoToChanges(resumeData.info, draft.info, 'optimize'));
                   if (!changed.length) {
-                    warnDropped("本次未产生可评审的修改", "no_changes");
+                    // Ordinary chat snapshots can be unchanged; keep the canvas quiet.
+                    continue;
                   } else if (canvasDismissedForRun.current) {
                     // 本轮用户主动关过画布：尊重它，别再弹回来。
                     logChange(
@@ -1734,6 +1744,7 @@ export default function AiChatShell({
                     setBatchRequest({
                       kind: "optimize",
                       proposedSections: sections,
+                      proposedDocument: draft,
                       nonce: batchNonce.current,
                       changeNotes,
                     });
@@ -3423,6 +3434,7 @@ export default function AiChatShell({
                     templateId={templateId}
                     onApplySections={onApplySections}
                     onApplyInfo={onApplyInfo}
+                    onApplyDocument={onApplyFullResume}
                     onLog={logChange}
                     onWarn={warnDropped}
                     onAskWithTarget={onAskWithTarget}

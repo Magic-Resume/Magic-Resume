@@ -1,4 +1,5 @@
 "use client";
+import { documentSectionTitle, isDefaultSectionLabel, resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Section, SectionItem } from '@/types/frontend/resume';
 import { getSanitizedResume } from '@/store/useResumeStore';
@@ -429,7 +430,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={sectionOrder?.map(s => s.key) || []} strategy={verticalListSortingStrategy}>
-          {(sectionOrder || []).map(({ key, label, icon: iconName }) => {
+          {(sectionOrder || []).map(({ key, label, title: printedTitle, icon: iconName }) => {
             const meta = sectionMeta(key, iconName);
             const Icon = meta.icon;
             // 兜底用存下来的 label 而非裸 key：自定义 section 没有 i18n key，
@@ -442,18 +443,18 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                 sectionId={key}
                 icon={<Icon size={15} />}
                 title={title}
-                actions={custom ? (
+                actions={key !== 'basics' ? (
                   <>
                     <button
                       type="button"
                       aria-label={t('customSection.rename', { defaultValue: '重命名' })}
                       title={t('customSection.rename', { defaultValue: '重命名' })}
-                      onClick={() => setEditingSection({ key, label: label || key, icon: iconName })}
+                      onClick={() => setEditingSection({ key, label: printedTitle || (custom || !isDefaultSectionLabel(key, label) ? label : documentSectionTitle(key, resolveDocumentLanguage(activeResume!))) || label || key, icon: iconName })}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200"
                     >
                       <SquarePen size={13} />
                     </button>
-                    <button
+                    {custom && <button
                       type="button"
                       aria-label={t('common.delete', { defaultValue: '删除' })}
                       title={t('common.delete', { defaultValue: '删除' })}
@@ -461,7 +462,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
                     >
                       <Trash2 size={13} />
-                    </button>
+                    </button>}
                   </>
                 ) : undefined}
                 open={openSections[key] ?? true}
@@ -512,8 +513,11 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
             setCreatingSection(false);
             setEditingSection(null);
           }}
+          onReset={editingSection && !isCustomSection(editingSection.key) ? () => updateSectionOrder((sectionOrder || []).map((entry) => entry.key === editingSection.key ? { ...entry, label: `sections.${entry.key}`, title: undefined } : entry)) : undefined}
           onSubmit={({ label, icon }) => {
-            if (editingSection) {
+            if (editingSection && !isCustomSection(editingSection.key)) {
+              updateSectionOrder((sectionOrder || []).map((entry) => entry.key === editingSection.key ? { ...entry, title: label, icon } : entry));
+            } else if (editingSection) {
               updateCustomSection(editingSection.key, { label, icon });
             } else {
               const key = addCustomSection(label, icon);

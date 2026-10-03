@@ -1,3 +1,4 @@
+import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import type { Resume } from '@/types/frontend/resume';
 import { getDefaultMagicTemplate, getMagicTemplateById } from '@magic-resume/resume-templates/config/magic-templates';
 import type { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
@@ -44,7 +45,7 @@ const downloadBlob = (blob: Blob, filename: string) => {
 let pdfBrowserModulePromise: Promise<PdfBrowserModule> | null = null;
 const templatePromiseCache = new Map<string, Promise<MagicTemplateDSL>>();
 const pdfBlobPromiseCache = new WeakMap<Resume, Map<string, Promise<Blob>>>();
-const PDF_RENDERER_VERSION = 'pdf-canvas-woff2-subset-v16';
+const PDF_RENDERER_VERSION = 'pdf-document-language-v17';
 
 const loadPdfBrowserModule = () => {
   pdfBrowserModulePromise ??= import('@magic-resume/resume-templates/pdf/browser') as Promise<PdfBrowserModule>;
@@ -104,10 +105,10 @@ export const downloadResumeFontPack = async (
   await pdfModule.downloadResumeFontPack?.(fontStack, onProgress);
 };
 
-const getPdfCacheKey = (resume: Resume, locale?: string) => {
+const getPdfCacheKey = (resume: Resume) => {
   return [
     PDF_RENDERER_VERSION,
-    locale ?? '',
+    resolveDocumentLanguage(resume),
     resume.updatedAt,
     resume.template,
     resume.themeColor,
@@ -118,18 +119,18 @@ const getPdfCacheKey = (resume: Resume, locale?: string) => {
   ].join(':');
 };
 
-const getCachedPdfBlobPromise = (resume: Resume, locale?: string): Promise<Blob> | undefined => {
-  return pdfBlobPromiseCache.get(resume)?.get(getPdfCacheKey(resume, locale));
+const getCachedPdfBlobPromise = (resume: Resume): Promise<Blob> | undefined => {
+  return pdfBlobPromiseCache.get(resume)?.get(getPdfCacheKey(resume));
 };
 
-const setCachedPdfBlobPromise = (resume: Resume, locale: string | undefined, promise: Promise<Blob>) => {
+const setCachedPdfBlobPromise = (resume: Resume, promise: Promise<Blob>) => {
   let localeCache = pdfBlobPromiseCache.get(resume);
   if (!localeCache) {
     localeCache = new Map<string, Promise<Blob>>();
     pdfBlobPromiseCache.set(resume, localeCache);
   }
 
-  localeCache.set(getPdfCacheKey(resume, locale), promise);
+  localeCache.set(getPdfCacheKey(resume), promise);
 };
 
 /**
@@ -219,17 +220,18 @@ const renderPdfBlob = async (
 };
 
 export const prepareResumePdfExport = async (resume: Resume, locale?: string): Promise<Blob> => {
-  const cached = getCachedPdfBlobPromise(resume, locale);
+  locale = resolveDocumentLanguage(resume);
+  const cached = getCachedPdfBlobPromise(resume);
   if (cached) return cached;
 
   const template = await loadResumeTemplate(resume);
   const blobPromise = renderPdfBlob(resume, template, locale);
-  setCachedPdfBlobPromise(resume, locale, blobPromise);
+  setCachedPdfBlobPromise(resume, blobPromise);
 
   try {
     return await blobPromise;
   } catch (error) {
-    pdfBlobPromiseCache.get(resume)?.delete(getPdfCacheKey(resume, locale));
+    pdfBlobPromiseCache.get(resume)?.delete(getPdfCacheKey(resume));
     throw error;
   }
 };

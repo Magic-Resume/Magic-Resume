@@ -452,6 +452,7 @@ export default function AssetLibrary({
           {/* ── 预览 ── */}
           {selected && (
             <section
+              key={selected.id}
               className={`min-w-0 flex-1 overflow-y-auto px-6 pb-8 md:block ${mobileReading ? '' : 'hidden'}`}
             >
               <button
@@ -515,12 +516,7 @@ export default function AssetLibrary({
 
               <AssetPreview asset={selected} />
 
-              {/* 动作栏**逐个判断，不整条隐藏**。
-
-                  之前这里写的是 `selected.extra ? 'hidden' : 'flex'`——「拿它优化简历」和
-                  「归档」确实只对某份简历的产物成立，但整条藏掉连带把本该存在的动作也
-                  藏没了（「为什么没有删除按钮」正是这么来的）。
-                  每一类都有自己的主行动，所以这条栏永远不空。 */}
+              {/* 按资产类型保留可用操作；面试报告与对话已在详情区内展示。 */}
               <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line pt-4">
                 {!selected.extra && (
                   <>
@@ -544,19 +540,6 @@ export default function AssetLibrary({
                       {copied ? t('aiLab.assets.copied') : t('aiLab.assets.copy')}
                     </button>
                   </>
-                )}
-
-                {/* 面试记录的主行动是「打开报告」。它原来混在正文里当一条链接——
-                    每一类的主行动都该在同一条基线上，用户才不用每次重新找。 */}
-                {selected.extra === 'INTERVIEW' && (
-                  <a
-                    href={`/dashboard/interview/${
-                      (selected.payload as ArchivedInterview | undefined)?.id ?? ''
-                    }`}
-                    className="rounded-full bg-ink px-3.5 py-2 text-mr-ui font-medium text-canvas transition-opacity hover:opacity-90"
-                  >
-                    {t('aiLab.assets.openInterview')}
-                  </a>
                 )}
 
                 {selected.extra === 'INTERVIEW' && (

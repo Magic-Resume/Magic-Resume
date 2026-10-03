@@ -1,6 +1,7 @@
 import React from 'react';
 import { Editable, SectionHandle, SectionInsertSlot } from '../renderer/EditableCanvas';
-import { getFieldEntry, getFieldValue } from './utils';
+import { getFieldEntry } from './utils';
+import { EditableField } from './EditableField';
 import { WysiwygContent } from './WysiwygContent';
 
 interface Item {
@@ -20,7 +21,7 @@ interface Props {
   shiftCenterToRightWhenRightEmpty?: boolean;
 }
 
-type ColumnValue = string | null;
+type ColumnValue = React.ReactNode;
 
 const shiftCenterToEmptyRight = (
   values: [ColumnValue, ColumnValue, ColumnValue],
@@ -87,17 +88,20 @@ export const ThreeColumnSection = React.memo(function ThreeColumnSection({
         {items.map((item, index) => {
           const itemId = item.id != null ? String(item.id) : null;
           const description = getFieldEntry(item, fieldMap.description);
+          const renderField = (field: string | string[] | undefined) => getFieldEntry(item, field)
+            ? <EditableField item={item} field={field} sectionKey={sectionKey} label={title} />
+            : null;
           const rawTitles: [ColumnValue, ColumnValue, ColumnValue] = [
-            getFieldValue(item, fieldMap.leftTitle),
-            getFieldValue(item, fieldMap.centerTitle),
-            getFieldValue(item, fieldMap.rightTitle),
+            renderField(fieldMap.leftTitle),
+            renderField(fieldMap.centerTitle),
+            renderField(fieldMap.rightTitle),
           ];
           const shouldShiftCenter = shiftCenterToRightWhenRightEmpty && Boolean(rawTitles[1]) && !rawTitles[2];
           const titles = shiftCenterToEmptyRight(rawTitles, shouldShiftCenter);
           const rawSubtitles: [ColumnValue, ColumnValue, ColumnValue] = [
-            getFieldValue(item, fieldMap.leftSubtitle),
-            getFieldValue(item, fieldMap.centerSubtitle),
-            getFieldValue(item, fieldMap.rightSubtitle),
+            renderField(fieldMap.leftSubtitle),
+            renderField(fieldMap.centerSubtitle),
+            renderField(fieldMap.rightSubtitle),
           ];
           const subtitles = shiftCenterToEmptyRight(rawSubtitles, shouldShiftCenter);
           const hasSubtitles = subtitles.some(Boolean);

@@ -1613,6 +1613,17 @@ button {
   100% { transform: translate3d(4%, -2%, 0) scale(1.04); }
 }
 
+/* Composer 状态文字：深色沿用模式色，浅色混入暖墨以保持可读。 */
+@layer components {
+  .composer-mode-label {
+    color: var(--composer-mode-accent);
+  }
+
+  .light .composer-mode-label {
+    color: color-mix(in oklab, var(--composer-mode-accent) 38%, var(--mr-ink));
+  }
+}
+
 /* ── GenUI 的组件级类（specs/genui-ui）────────────────────
    这些不是颜色令牌，是承载**内边距与表格结构**的类。第一次接入时把它们当噪音
    过滤掉了，结果是卡片没有内边距——CodeBlock 的标题文字直接贴在容器边上。 */

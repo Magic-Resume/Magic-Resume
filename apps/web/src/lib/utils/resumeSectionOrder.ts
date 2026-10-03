@@ -85,6 +85,7 @@ export function normalizeResumeSectionOrder(
     };
     // Rebuilding as a bare {key,label} dropped this, and every drag / write /
     // dirty check runs through here — so a chosen icon never survived.
+    if (typeof item.title === 'string' && item.title.trim()) entry.title = item.title.trim();
     if (typeof item.icon === 'string' && item.icon.trim()) entry.icon = item.icon;
     normalized.push(entry);
   };
@@ -102,10 +103,8 @@ export function normalizeResumeSectionOrder(
  * A section the app did not define — imported from a resume, or created by the
  * user.
  *
- * The distinction is load-bearing: only these can be renamed or deleted. A
- * built-in section's label is an i18n key (`sections.skills`), so renaming one
- * would replace a translated string with a literal and break every other
- * language; and deleting one would take away a form the editor expects.
+ * Only custom sections can be deleted. Built-in sections keep stable labels
+ * for editor navigation and store an optional printed heading in `title`.
  */
 export function isCustomSection(key: string): boolean {
   return !BUILT_IN_SECTION_KEYS.has(key);

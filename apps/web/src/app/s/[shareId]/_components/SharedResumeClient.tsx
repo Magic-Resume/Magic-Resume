@@ -1,5 +1,6 @@
 'use client';
 
+import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import React, { useMemo, useEffect, useState } from 'react';
 import { Loader2, ZoomIn, ZoomOut, MessageSquare, RotateCcw, Eye, Wand2 } from '@magic-resume/icons';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -15,7 +16,7 @@ import { CommentSidebar } from './CommentSidebar';
 
 export default function SharedResumeClient() {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState(5);
   const {
     resume,
@@ -206,7 +207,7 @@ export default function SharedResumeClient() {
                 handleResumeMouseUp={handleResumeMouseUp}
                 template={template}
                 resume={resume}
-                locale={i18n.resolvedLanguage || i18n.language}
+                locale={resolveDocumentLanguage(resume)}
             >
                 <CommentLayer 
                     comments={comments}

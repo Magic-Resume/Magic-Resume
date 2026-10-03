@@ -3,13 +3,14 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume/resume-schema';
 import { SELECTION_ACTIONS, type SelectionActionId } from '../../lib/changeModel';
 import { PolarisGlyph } from '../../PolarisMark';
 
 const BAR_MAX_WIDTH = 320;
 
 /** 划词翻译的目标语言。与 `target_language` 表单同一组，保持一致。 */
-const TRANSLATE_LANGS = ['English', '日本語', '한국어', 'Français'];
+const TRANSLATE_LANGS = DOCUMENT_LANGUAGE_OPTIONS.map(({ label }) => label);
 
 type SelectionActionBarProps = {
   rect: DOMRect;

@@ -14,6 +14,11 @@ import { notFound } from 'next/navigation';
 
 const ENTRIES: { href: string; name: string; note: string }[] = [
   {
+    href: '/mock/template-colors',
+    name: '简历配色面板',
+    note: '配色方案、取色器和深浅主题的组件预览。只编辑页面内的示例数据。',
+  },
+  {
     href: '/mock/genui',
     name: 'GenUI 组件陈列',
     note: '验证 GenUI 组件和共享设计令牌在深浅主题下的渲染。加 ?skin=light 可直接深链到浅色。',

@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -42,7 +43,7 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
   onJsonClick,
 }) => {
   const { isMobile } = useMobile();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   if (!activeResume) {
     return (
@@ -79,7 +80,7 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
               contentStyle={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', width: '100%', height: '100%', paddingTop: '5rem', paddingBottom: '5rem' }}
             >
               <div className="relative">
-                <PdfCanvasPreview resume={activeResume} locale={i18n.resolvedLanguage || i18n.language} />
+                <PdfCanvasPreview resume={activeResume} locale={resolveDocumentLanguage(activeResume)} />
                 <AiThinkingOverlay
                   isVisible={isAiJobRunning}
                   themeColor={activeResume.themeColor || '#38bdf8'}

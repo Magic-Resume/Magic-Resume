@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { useAccountUiStore } from "@/store/useAccountUiStore";
-import type { SubscriptionSummary } from "@/lib/billing/types";
+import React, { useState } from 'react';
+import { openBillingPortal } from '@/lib/extensions/billing-client';
+import { useTranslation } from 'react-i18next';
+import { useAccountUiStore } from '@/store/useAccountUiStore';
+import type { SubscriptionSummary } from '@/lib/billing/types';
 
 /**
  * What the customer is on, and the one control that changes it.
@@ -20,7 +21,9 @@ function formatPeriodEnd(value: string | null | undefined, locale: string) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return new Intl.DateTimeFormat(locale || 'zh-CN', { dateStyle: 'long' }).format(date);
+  return new Intl.DateTimeFormat(locale || 'zh-CN', {
+    dateStyle: 'long',
+  }).format(date);
 }
 
 export function SubscriptionCard({
@@ -42,12 +45,35 @@ export function SubscriptionCard({
 }) {
   const { t, i18n } = useTranslation();
   const openPricing = useAccountUiStore((s) => s.openPricing);
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canManage = Boolean(
+    subscription?.autoRenew && subscription.canManageBilling,
+  );
+  const manage = async () => {
+    if (!canManage) {
+      openPricing();
+      return;
+    }
+    setOpening(true);
+    setError(null);
+    try {
+      const url = await openBillingPortal();
+      if (!url) throw new Error(t('account.billing.manageFailed'));
+      window.location.assign(url);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : t('account.billing.manageFailed'),
+      );
+      setOpening(false);
+    }
+  };
 
   if (loading) {
     return (
       <div>
-        <div className="h-5 w-40 animate-pulse rounded bg-mr-surface-soft" />
-        <div className="mt-2.5 h-4 w-56 animate-pulse rounded bg-mr-surface-subtle" />
+        <div className="bg-mr-surface-soft h-5 w-40 animate-pulse rounded" />
+        <div className="bg-mr-surface-subtle mt-2.5 h-4 w-56 animate-pulse rounded" />
       </div>
     );
   }
@@ -55,41 +81,59 @@ export function SubscriptionCard({
   // `format` throws RangeError on an Invalid Date, and this sits on the render
   // path with no error boundary — an unparseable date took down the whole tab.
   // The sibling `OrderHistoryTable.formatDate` already guards this way.
-  const periodEnd = formatPeriodEnd(subscription?.currentPeriodEnd, i18n.language);
+  const periodEnd = formatPeriodEnd(
+    subscription?.currentPeriodEnd,
+    i18n.language,
+  );
 
   const dunning =
-    subscription?.status === "past_due" || subscription?.status === "suspended";
+    subscription?.status === 'past_due' || subscription?.status === 'suspended';
 
   return (
     <div className="flex items-start justify-between gap-6">
       <div className="min-w-0">
         <p className="text-mr-subtitle font-medium text-neutral-100">
-          {planName ?? t("account.billing.freePlan")}
+          {planName ?? t('account.billing.freePlan')}
         </p>
 
         {dunning ? (
-          <p className="mt-1.5 text-mr-ui leading-relaxed text-amber-400">
-            {t("account.billing.paymentFailed")}
+          <p className="text-mr-ui mt-1.5 leading-relaxed text-amber-400">
+            {t('account.billing.paymentFailed')}
           </p>
         ) : subscription?.cancelAtPeriodEnd && periodEnd ? (
-          <p className="mt-1.5 text-mr-ui text-neutral-500">
-            {t("account.billing.endsOn", { date: periodEnd })}
+          <p className="text-mr-ui mt-1.5 text-neutral-500">
+            {t('account.billing.endsOn', { date: periodEnd })}
           </p>
         ) : periodEnd ? (
-          <p className="mt-1.5 text-mr-ui text-neutral-500">
-            {t("account.billing.renewsOn", { date: periodEnd })}
+          <p className="text-mr-ui mt-1.5 text-neutral-500">
+            {t(
+              subscription?.autoRenew === false
+                ? 'account.billing.endsOnManual'
+                : 'account.billing.renewsOn',
+              { date: periodEnd },
+            )}
           </p>
         ) : null}
       </div>
 
+      {error && (
+        <p role="alert" className="text-mr-caption text-red-400">
+          {error}
+        </p>
+      )}
       <button
         type="button"
-        onClick={openPricing}
-        className="h-9 shrink-0 rounded-full border border-white/15 px-4 text-mr-caption font-medium text-neutral-100 transition-colors hover:border-white/25 hover:bg-mr-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+        disabled={opening}
+        onClick={() => void manage()}
+        className="text-mr-caption hover:bg-mr-surface-soft h-9 shrink-0 rounded-full border border-white/15 px-4 font-medium text-neutral-100 transition-colors hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
       >
-        {subscription
-          ? t("account.billing.manageCta")
-          : t("account.billing.upgradeCta")}
+        {canManage
+          ? t('account.billing.manageCta')
+          : t(
+              subscription
+                ? 'account.billing.renewCta'
+                : 'account.billing.upgradeCta',
+            )}
       </button>
     </div>
   );

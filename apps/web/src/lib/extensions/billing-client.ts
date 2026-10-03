@@ -7,6 +7,7 @@ import type {
   OrderSummary,
   PlanSummary,
   SubscriptionSummary,
+  PaymentRouteAvailability,
 } from '@/lib/billing/types';
 
 /**
@@ -30,7 +31,7 @@ import type {
  * "entitlement check failed" error it would surface if this threw.
  */
 /** Matches the convention in `app-lifecycle.ts`: consume a parameter the stub has no use for. */
-const ignore = <T,>(value: T) => {
+const ignore = <T>(value: T) => {
   void value;
 };
 
@@ -73,13 +74,27 @@ export async function cancelSubscription(): Promise<void> {
 export async function createOrder(
   planId: string,
   channel: string,
+  paymentMethod?: string,
 ): Promise<OrderCheckout | null> {
   ignore(planId);
   ignore(channel);
+  ignore(paymentMethod);
   return null;
 }
 
-export async function fetchOrder(orderId: string): Promise<OrderSummary | null> {
+export async function fetchPaymentRoutes(): Promise<
+  PaymentRouteAvailability[]
+> {
+  return [];
+}
+
+export async function openBillingPortal(): Promise<string | null> {
+  return null;
+}
+
+export async function fetchOrder(
+  orderId: string,
+): Promise<OrderSummary | null> {
   ignore(orderId);
   return null;
 }

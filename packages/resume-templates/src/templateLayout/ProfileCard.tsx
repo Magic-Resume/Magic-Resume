@@ -1,9 +1,11 @@
+import { documentLabel } from '@magic-resume/resume-schema';
 import React from 'react';
 import { InfoType } from '../types/resume';
 import { Globe, Mail, MapPin, Phone } from '@magic-resume/icons';
 
 interface Props {
   data: InfoType;
+  locale?: string;
   style?: React.CSSProperties;
   position?: {
     area?: 'main' | 'sidebar' | 'header' | 'footer';
@@ -17,7 +19,7 @@ const ContactIcons = {
   website: <Globe className="w-2.5 h-2.5" style={{ color: 'var(--color-primary)' }} />
 };
 
-export const ProfileCard = React.memo(function ProfileCard({ data: info, style, position }: Props) {
+export const ProfileCard = React.memo(function ProfileCard({ data: info, locale, style, position }: Props) {
   const isInSidebar = position?.area === 'sidebar';
 
   const textColor = style?.color || (isInSidebar ? 'var(--color-background)' : 'var(--color-text)');
@@ -56,7 +58,7 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
         
         <div className="space-y-2">
           <h1 className="text-xl font-bold" style={{ color: textColor }}>
-            {info.fullName || 'Your Name'}
+            {info.fullName || documentLabel('yourName', locale)}
           </h1>
           
           {info.headline && (
@@ -98,7 +100,7 @@ export const ProfileCard = React.memo(function ProfileCard({ data: info, style, 
       
       <div className="space-y-3">
         <h1 className="text-2xl font-bold" style={{ color: textColor }}>
-          {info.fullName || 'Your Name'}
+          {info.fullName || documentLabel('yourName', locale)}
         </h1>
         
         {info.headline && (

@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import type { EditableTarget } from "./editableCanvas";
-import type { Section } from "@/types/frontend/resume";
+import type { InfoType, Section } from "@/types/frontend/resume";
 import {
   buildSelectionPreview,
   fieldTitle,
@@ -214,4 +214,19 @@ function diffTargetedSelection(
     seed: 0,
     status: "pending",
   };
+}
+
+/** Include visible basic-information strings in whole-document translation review. */
+export function diffInfoToChanges(current: InfoType, proposed: Partial<InfoType> | undefined, kind: BatchKind, lang?: string): PendingChange[] {
+  if (!proposed) return [];
+  return Object.entries(proposed).flatMap(([fieldKey, after]) => {
+    if (typeof after !== 'string' || !after.trim() || fieldKey === 'avatar') return [];
+    const before = typeof current[fieldKey as keyof InfoType] === 'string' ? current[fieldKey as keyof InfoType] as string : '';
+    if (stripHtml(before) === stripHtml(after)) return [];
+    return [{
+      id: nanoid(), target: { sectionKey: 'info', itemId: '', fieldKey, kind: kindOf(after), label: `基本信息 · ${fieldTitle(fieldKey)}` },
+      before, after, rationale: '', action: kind === 'translate' ? 'translate' as const : 'rewrite' as const,
+      lang, seed: 0, status: 'pending' as const,
+    }];
+  });
 }
