@@ -1,3 +1,4 @@
+import type { DocumentLanguage, SectionOrderItem } from '@magic-resume/resume-schema';
 import { nanoid } from "nanoid";
 import type { EditableTarget } from "./editableCanvas";
 import type { Section } from "@/types/frontend/resume";
@@ -70,7 +71,12 @@ export type ActionKind = QuickActionId | SelectionActionId | "free";
 
 // The reviewable change unit
 
+export type DocumentChange =
+  | { field: 'documentLanguage'; before: DocumentLanguage | undefined; after: DocumentLanguage }
+  | { field: 'sectionOrder'; before: SectionOrderItem[]; after: SectionOrderItem[] };
+
 export interface PendingChange {
+  documentChange?: DocumentChange;
   id: string;
   target: EditableTarget;
   /** 接受改动时写入的完整字段值；富文本字段可能是含多条 bullet 的整段经历描述。 */

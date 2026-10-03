@@ -148,11 +148,27 @@ const readPath = (ctx: Ctx, scope: Scope, path: string): unknown => {
 };
 
 /** `{{path}}` 插值。取不到就留空，**不留下 `undefined` 字样**。 */
-const interpolate = (ctx: Ctx, scope: Scope, text: string): string =>
-  text.replace(/\{\{([^}]+)\}\}/g, (_, path: string) => {
-    const value = readPath(ctx, scope, path.trim());
-    return isPresent(value) ? String(value) : '';
-  });
+const interpolate = (ctx: Ctx, scope: Scope, text: string): string => {
+  const parts: string[] = [];
+  let copiedUntil = 0;
+  let scanFrom = 0;
+  // 单向扫描分隔符，避免大量未闭合 {{ 让正则反复回溯同一段文本。
+  while (scanFrom < text.length) {
+    const start = text.indexOf('{{', scanFrom);
+    if (start === -1) break;
+    const end = text.indexOf('}', start + 2);
+    if (end === -1) break;
+    scanFrom = end + 1;
+    if (end === start + 2 || text[end + 1] !== '}') continue;
+
+    const value = readPath(ctx, scope, text.slice(start + 2, end).trim());
+    parts.push(text.slice(copiedUntil, start), isPresent(value) ? String(value) : '');
+    scanFrom = end + 2;
+    copiedUntil = scanFrom;
+  }
+  parts.push(text.slice(copiedUntil));
+  return parts.join('');
+};
 
 interface Resolved {
   text: string;

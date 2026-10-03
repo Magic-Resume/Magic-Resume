@@ -11,19 +11,20 @@ import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl
 import { TemplateErrorBoundary } from '@/components/shared/TemplateErrorBoundary';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { mergeTemplateConfig } from '@/lib/utils/templateUtils';
-import { useTranslation } from 'react-i18next';
+import { resolveDocumentLanguage, type DocumentLanguage, type SectionOrderItem } from '@magic-resume/resume-schema';
 
 interface Props {
   info: InfoType;
   sections: Section;
-  sectionOrder: string[];
+  sectionOrder: (string | SectionOrderItem)[];
+  documentLanguage?: DocumentLanguage;
+  templateOverride?: unknown;
   customStyle?: React.CSSProperties;
   templateId: string;
   customTemplate?: CustomTemplateConfig; // 新增：自定义模板配置差异
 }
 
-function ResumePreview({ info, sections, sectionOrder, templateId, customTemplate }: Props) {
-  const { i18n } = useTranslation();
+function ResumePreview({ info, sections, sectionOrder, templateId, customTemplate, documentLanguage, templateOverride }: Props) {
   const [template, setTemplate] = useState<MagicTemplateDSL | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,14 +66,13 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
     updatedAt: Date.now(),
     info,
     sections,
-    sectionOrder: sectionOrder.map(section => ({ 
-      key: section, 
-      label: section.charAt(0).toUpperCase() + section.slice(1) 
-    })),
+    documentLanguage,
+    templateOverride,
+    sectionOrder: sectionOrder.map(section => typeof section === 'string' ? { key: section, label: section } : section),
     template: templateId,
     themeColor: '#3b82f6',
     typography: 'Inter'
-  }), [info, sections, sectionOrder, templateId]);
+  }), [info, sections, sectionOrder, templateId, documentLanguage, templateOverride]);
 
   if (loading || !template) {
     return (
@@ -107,7 +107,7 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
   // resetKey 用模板 id：换个模板应当重试，而不是一直卡在错误态。
   return (
     <TemplateErrorBoundary resetKey={template.id}>
-      <MagicResumeRenderer template={template} data={resumeData} locale={i18n.resolvedLanguage || i18n.language} />
+      <MagicResumeRenderer template={template} data={resumeData} locale={resolveDocumentLanguage(resumeData)} />
     </TemplateErrorBoundary>
   );
 }
@@ -117,6 +117,8 @@ function ResumePreview({ info, sections, sectionOrder, templateId, customTemplat
 // 因此按引用比较即可精确判断内容是否变化，避免每次 keystroke 全量序列化整份简历。
 export default React.memo(ResumePreview, (prevProps, nextProps) => {
   return (
+    prevProps.documentLanguage === nextProps.documentLanguage &&
+    prevProps.templateOverride === nextProps.templateOverride &&
     prevProps.templateId === nextProps.templateId &&
     prevProps.info === nextProps.info &&
     prevProps.sections === nextProps.sections &&

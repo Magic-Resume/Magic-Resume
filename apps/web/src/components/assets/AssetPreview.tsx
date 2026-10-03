@@ -6,6 +6,8 @@ import { CodeBlock } from '@magic-resume/genui';
 import Markdown from '@/app/dashboard/edit/_components/ai/conversation/Markdown';
 import ApplicationTrackerCard from '@/app/dashboard/edit/_components/ai/widgets/ApplicationTrackerCard';
 import { readAsset, type LibraryAsset } from '@/lib/api/workspace';
+import type { ArchivedInterview } from '@/lib/api/interviewApi';
+import InterviewAssetPreview from './InterviewAssetPreview';
 
 /**
  * 预览区。正文是**第二个请求**（列表只回元信息），所以它有自己的加载与失败状态。
@@ -21,7 +23,7 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
 
   useEffect(() => {
     let alive = true;
-    // 投递面板与面试记录的正文列表里就带回来了，没有「按 id 再读一次」这条路由。
+    // 投递面板直接使用列表载荷；面试详情由 InterviewAssetPreview 读取归档。
     if (asset.extra) {
       setLoading(false);
       setError(null);
@@ -76,19 +78,8 @@ export default function AssetPreview({ asset }: { asset: LibraryAsset }) {
   }
 
   if (asset.extra === 'INTERVIEW') {
-    const session = asset.payload as
-      { sessionId: string; score?: number | null } | undefined;
-    return (
-      <div className="space-y-3">
-        {typeof session?.score === 'number' && (
-          <p className="text-mr-ink-secondary text-mr-caption">
-            {t('aiLab.assets.interviewScore', { score: session.score })}
-          </p>
-        )}
-        {/* 「打开报告」已经在下方动作栏上——每一类的主行动都在同一条基线，
-            这里再放一条就是同一个动作出现两次。 */}
-      </div>
-    );
+    const session = asset.payload as ArchivedInterview | undefined;
+    return <InterviewAssetPreview key={asset.id} sessionId={session?.id} />;
   }
 
   if (loading) {

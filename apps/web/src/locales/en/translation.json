@@ -198,6 +198,7 @@
       "endsOn": "Cancelled; ends on {{date}}",
       "paymentFailed": "A payment failed. Update your payment method before the grace period ends, or the subscription will be terminated.",
       "manageCta": "Manage plan",
+      "renewCta": "Renew plan",
       "upgradeCta": "Upgrade",
       "ordersTitle": "Payments",
       "noOrders": "No payments yet",
@@ -205,6 +206,11 @@
       "colDate": "Date",
       "colItem": "Item",
       "colAmount": "Amount",
+      "billDetails": "Billing details",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax",
+      "shipping": "Shipping",
       "colChannel": "Method",
       "colStatus": "Status",
       "loadFailed": "Billing information could not be loaded.",
@@ -226,7 +232,9 @@
         "manual": "Manual"
       },
       "colOrderId": "Order ID",
-      "copyOrderId": "Copy full order ID"
+      "copyOrderId": "Copy full order ID",
+      "endsOnManual": "Valid until {{date}}. Renew manually before it ends.",
+      "manageFailed": "Could not open billing settings. Please try again."
     },
     "invite": {
       "copied": "Copied",
@@ -1209,7 +1217,30 @@
       "background": "Background color",
       "sidebar": "Sidebar color",
       "border": "Border color",
-      "advanced": "More colors"
+      "advanced": "More colors",
+      "schemes": "Color schemes",
+      "customScheme": "Custom",
+      "defaultScheme": "Template default",
+      "schemeNames": {
+        "blue": "Blue",
+        "graphite": "Graphite",
+        "forest": "Forest",
+        "ocean": "Ocean",
+        "umber": "Umber",
+        "wine": "Burgundy"
+      },
+      "resetShort": "Reset",
+      "resetColors": "Restore template colors",
+      "openPicker": "Edit {{label}}",
+      "closePicker": "Close color picker",
+      "hexLabel": "{{label}} hex value",
+      "invalidHex": "Enter a valid hex color, like #315B96",
+      "saturationBrightness": "Saturation and brightness",
+      "saturationBrightnessValue": "Saturation {{saturation}}%, brightness {{brightness}}%",
+      "saturationBrightnessHint": "Use arrow keys to adjust saturation and brightness. Hold Shift for larger steps.",
+      "hue": "Hue",
+      "presets": "Recommended colors",
+      "colorPreset": "Choose color {{color}}"
     },
     "header": {
       "title": "Avatar and header",
@@ -1259,7 +1290,14 @@
     },
     "buttons": {
       "backToTemplates": "Back to templates",
-      "reset": "Reset to defaults"
+      "reset": "Reset to defaults",
+      "resetAll": "Reset all styles"
+    },
+    "documentLanguage": {
+      "label": "Resume language",
+      "hint": "Sets headings and labels in this resume. Your editor language stays the same.",
+      "detected": "Detected from content. Please confirm.",
+      "confirm": "Confirm"
     }
   },
   "resumeContent": {
@@ -1712,7 +1750,13 @@
       "timeoutDetail": "If you have completed the payment, it will not be lost. The payment channel will resend its notification within a few hours. Check your balance on the dashboard later.",
       "errorTitle": "Order could not be confirmed",
       "missingOrder": "The link does not include an order ID, so the payment result cannot be retrieved.",
-      "backToDashboard": "Back to dashboard"
+      "backToDashboard": "Back to dashboard",
+      "cancelledTitle": "Checkout cancelled",
+      "cancelledDetail": "Choose a plan and payment method to try again.",
+      "retry": "Choose again",
+      "subscriptionPaidTitle": "Subscription activated",
+      "subscriptionPaidDetail": "Your plan is ready. Return to the dashboard to continue.",
+      "subscriptionWaitingTitle": "Confirming your subscription"
     },
     "checkout": {
       "summaryHeading": "Purchase",
@@ -2363,7 +2407,9 @@
       "next": "Next change",
       "addSectionContent": "Add content",
       "reorder": "Reorder",
-      "acceptedChangesLog": "Accepted {{count}} changes"
+      "acceptedChangesLog": "Accepted {{count}} changes",
+      "documentChanged": "Resume settings have changed. Please generate a new proposal.",
+      "sectionTitles": "Section headings and order"
     },
     "attach": {
       "parsing": "Parsing PDF…",
@@ -2508,6 +2554,11 @@
       "interviewFallback": "Mock interview",
       "interviewScore": "Score {{score}}",
       "openInterview": "View interview report",
+      "interviewContent": "Interview content",
+      "interviewTranscript": "Conversation",
+      "interviewLoading": "Loading interview content",
+      "interviewLoadFailed": "Could not load this interview",
+      "interviewTranscriptEmpty": "No conversation was recorded for this interview",
       "collapse": "Show less",
       "showMore": "Show {{count}} more",
       "delete": "Delete",
@@ -2675,7 +2726,8 @@
     "placeholder": "e.g. Highlights, Awards",
     "iconLabel": "Icon (optional)",
     "deleteTitle": "Delete section",
-    "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone."
+    "deleteHint": "\"{{name}}\" and everything in it will be deleted. This cannot be undone.",
+    "useDefaultTitle": "Use default heading"
   },
   "errors": {
     "unauthenticated": "Your session has expired. Sign in again to continue.",

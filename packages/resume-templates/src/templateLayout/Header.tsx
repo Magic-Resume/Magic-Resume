@@ -1,13 +1,14 @@
 import React from 'react';
 import { InfoType } from '../types/resume';
 import { Globe, Mail, MapPin, Phone } from '@magic-resume/icons';
-import { useTranslation } from 'react-i18next';
+import { documentLabel } from '@magic-resume/resume-schema';
 import { Editable } from '../renderer/EditableCanvas';
 import { safeHref } from './utils';
 import { sectionIconByName } from '../sectionIcons';
 
 interface Props {
   data: InfoType;
+  locale?: string;
   style?: React.CSSProperties;
   className?: string;
   avatarPosition?: 'left' | 'right';
@@ -27,6 +28,7 @@ const ContactIcons = {
 
 export const Header = React.memo(function Header({
   data: info,
+  locale,
   style,
   className,
   avatarPosition = 'left',
@@ -38,7 +40,6 @@ export const Header = React.memo(function Header({
   // 模板仍可显式传 false，给极简版式保留收起的选择。
   showCustomFields = true,
 }: Props) {
-  const { t } = useTranslation();
   const avatarClassName = avatarRounded
     ? 'rounded-full'
     : 'rounded-md';
@@ -51,7 +52,7 @@ export const Header = React.memo(function Header({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={info.avatar}
-      alt={t('basicForm.avatarAlt')}
+      alt={documentLabel('avatar', locale)}
       width={avatarWidth}
       height={avatarHeight}
       className={`${avatarClassName} object-cover border shrink-0`}
@@ -78,7 +79,7 @@ export const Header = React.memo(function Header({
     contactItems.push({
       key: 'phone',
       icon: ContactIcons.phone,
-      label: t('basicForm.fields.phoneNumber'),
+      label: documentLabel('phone', locale),
       content: info.phoneNumber,
       href: `tel:${info.phoneNumber}`,
     });
@@ -87,7 +88,7 @@ export const Header = React.memo(function Header({
     contactItems.push({
       key: 'email',
       icon: ContactIcons.email,
-      label: t('basicForm.fields.email'),
+      label: documentLabel('email', locale),
       content: info.email,
       href: `mailto:${info.email}`,
     });
@@ -96,7 +97,7 @@ export const Header = React.memo(function Header({
     contactItems.push({
       key: 'address',
       icon: ContactIcons.location,
-      label: t('basicForm.fields.address'),
+      label: documentLabel('address', locale),
       content: info.address,
     });
   }
@@ -105,7 +106,7 @@ export const Header = React.memo(function Header({
     contactItems.push({
       key: 'website',
       icon: ContactIcons.website,
-      label: t('basicForm.fields.website'),
+      label: documentLabel('website', locale),
       content: info.website,
       href: websiteHref ?? undefined,
       external: Boolean(websiteHref),
@@ -148,7 +149,7 @@ export const Header = React.memo(function Header({
           className={contactStyle === 'label' ? 'text-xl font-bold' : (isRightAvatarLayout ? 'text-base font-bold' : 'text-sm font-bold')}
           style={{ color: 'var(--color-text)' }}
         >
-          {info.fullName || t('resumePreview.yourName')}
+          {info.fullName || documentLabel('yourName', locale)}
         </div>
         {info.headline && (
           <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>

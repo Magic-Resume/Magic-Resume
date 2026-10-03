@@ -70,6 +70,7 @@ export interface EditableCanvasContextValue {
    * 不能指望调用方记得做。
    */
   onCommit?: (target: EditableTarget, value: string) => void;
+  onEditStart?: () => void;
 }
 
 /** Canonical path string — used both as the map key and the DOM `data-resume-path`. */
@@ -135,7 +136,8 @@ export function Editable(props: EditableProps) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
   const handleRef = useRef<HTMLButtonElement>(null);
-  const fieldRef = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<HTMLElement | null>(null);
+  const initialContent = useRef('');
   /*
    * Esc 取消要靠 ref，不能靠 state。
    *
@@ -216,8 +218,10 @@ export function Editable(props: EditableProps) {
    * 而且在文档类产品里普遍意味着「进入编辑」的手势。
    */
   const startEditing = () => {
-    if (!ctx.onCommit) return;
+    if (!ctx.onCommit || processing) return;
     cancelledRef.current = false;
+    initialContent.current = target.kind === 'html' ? props.html ?? '' : escapeText(props.text ?? '');
+    ctx.onEditStart?.();
     setEditing(true);
   };
 
@@ -240,17 +244,23 @@ export function Editable(props: EditableProps) {
     if (next !== (props.text ?? '')) ctx.onCommit(target, next);
   };
 
+  const Tag = target.kind === 'text' ? 'span' : 'div';
   if (editing) {
     return (
-      <div
-        ref={fieldRef}
+      <Tag
+        key="editing"
+        ref={(node) => { fieldRef.current = node; }}
         data-resume-path={path}
+        data-resume-kind={target.kind}
+        data-resume-editing
         contentEditable
         suppressContentEditableWarning
         role="textbox"
         aria-label={`编辑${target.label}`}
+        aria-multiline={target.kind === 'html'}
         onBlur={commit}
         onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
           if (e.key === 'Escape') {
             e.preventDefault();
             // 先立旗再失焦——顺序反了就等于没取消（见 cancelledRef 上的说明）。
@@ -267,13 +277,17 @@ export function Editable(props: EditableProps) {
         }}
         // 只在挂载时写一次。之后 React 不再碰它，光标才不会跳。
         dangerouslySetInnerHTML={{
-          __html: target.kind === 'html' ? props.html ?? '' : escapeText(props.text ?? ''),
+          __html: initialContent.current,
         }}
         className={target.kind === 'html' ? 'wysiwyg' : undefined}
         style={{
-          outline: `2px solid ${HANDLE_COLOR}`,
-          outlineOffset: 2,
-          borderRadius: 6,
+          outline: 'none',
+          boxShadow: 'none',
+          borderRadius: 2,
+          backgroundColor: 'rgba(2,132,199,0.035)',
+          caretColor: HANDLE_COLOR,
+          display: target.kind === 'text' ? 'inline-block' : 'block',
+          maxWidth: '100%',
           minHeight: '1em',
           minWidth: '2em',
           color: 'inherit',
@@ -283,14 +297,27 @@ export function Editable(props: EditableProps) {
   }
 
   return (
-    <div
+    <Tag
+      key="reading"
       data-resume-path={path}
+      data-resume-kind={target.kind}
+      tabIndex={ctx.onCommit && !processing ? 0 : undefined}
+      title={ctx.onCommit ? '双击编辑' : undefined}
       onMouseEnter={openHover}
       onMouseLeave={closeHoverSoon}
       onDoubleClick={startEditing}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === 'F2')) {
+          event.preventDefault();
+          startEditing();
+        }
+      }}
       style={{
         position: 'relative',
-        borderRadius: 6,
+        display: target.kind === 'text' ? 'inline-block' : 'block',
+        maxWidth: '100%',
+        borderRadius: 2,
+        cursor: ctx.onCommit ? 'text' : undefined,
         transition: 'background-color 140ms ease, box-shadow 140ms ease',
         backgroundColor: hovered || isActive ? 'rgba(2,132,199,0.06)' : 'transparent',
         boxShadow: isActive ? 'inset 0 0 0 1px rgba(2,132,199,0.35)' : 'none',
@@ -315,6 +342,8 @@ export function Editable(props: EditableProps) {
         title="让 AI 改这一处"
         onMouseEnter={openHover}
         onMouseLeave={closeHoverSoon}
+        onFocus={openHover}
+        onBlur={closeHoverSoon}
         onClick={(e) => {
           e.stopPropagation();
           if (handleRef.current) ctx.onHandleClick(target, handleRef.current);
@@ -341,7 +370,7 @@ export function Editable(props: EditableProps) {
       >
         <Sparkles size={12} strokeWidth={2.5} />
       </button>
-    </div>
+    </Tag>
   );
 }
 
@@ -553,7 +582,7 @@ function PendingChangeCard({
   );
 }
 
-/** A hover handle next to a section title (add an item / reorder — design §5B). */
+/** Opens the section's new-entry form. */
 export function SectionHandle({ sectionKey, title }: { sectionKey: string; title: string }) {
   const ctx = useEditableCanvas();
   const ref = useRef<HTMLButtonElement>(null);
@@ -563,8 +592,8 @@ export function SectionHandle({ sectionKey, title }: { sectionKey: string; title
     <button
       ref={ref}
       type="button"
-      aria-label={`对「${title}」这段操作`}
-      title="补充 / 调整这段"
+      aria-label={`添加${title}`}
+      title={`添加${title}`}
       className="lc-section-handle"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

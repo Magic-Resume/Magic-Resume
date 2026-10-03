@@ -499,7 +499,10 @@ function ArtifactCanvas({
                   <ResumePreview
                     info={resumeData.info}
                     sections={resumeData.sections}
-                    sectionOrder={resumeData.sectionOrder.map((s) => s.key)}
+                    sectionOrder={resumeData.sectionOrder || []}
+                    documentLanguage={resumeData.documentLanguage}
+                    customTemplate={resumeData.customTemplate}
+                    templateOverride={resumeData.templateOverride}
                     templateId={templateId}
                   />
                 </div>

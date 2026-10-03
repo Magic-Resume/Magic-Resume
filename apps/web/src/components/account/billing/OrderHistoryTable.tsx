@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Check, Copy } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import type { OrderHistoryRow } from '@/lib/billing/types';
+import type { OrderBillingDetails, OrderHistoryRow } from '@/lib/billing/types';
 
 /**
  * Money is rendered in the currency it was charged in, never converted.
@@ -25,6 +25,57 @@ function formatAmount(amountCents: number, currency: string, locale: string) {
     // whole table.
     return `${(amountCents / 100).toFixed(2)} ${currency}`;
   }
+}
+
+function SettledAmount({
+  details,
+  locale,
+}: {
+  details: OrderBillingDetails;
+  locale: string;
+}) {
+  const { t } = useTranslation();
+  const amount = (cents: number) =>
+    formatAmount(cents, details.currency, locale);
+
+  return (
+    <details>
+      <summary className="focus-visible:ring-ink-sky/50 w-fit cursor-pointer rounded outline-none focus-visible:ring-2">
+        <span className="sr-only">{t('account.billing.billDetails')}: </span>
+        {amount(details.totalCents)}
+      </summary>
+      <dl className="text-mr-overline mt-2 space-y-1 text-neutral-400">
+        <div className="flex justify-between gap-4">
+          <dt>{t('account.billing.subtotal')}</dt>
+          <dd>{amount(details.subtotalCents)}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>
+            {t('account.billing.discount')}
+            {details.discountLabel ? (
+              <span className="mt-1 block max-w-[24ch] whitespace-normal break-words text-neutral-500">
+                {details.discountLabel}
+              </span>
+            ) : null}
+          </dt>
+          <dd>
+            {details.discountCents > 0 ? '−' : ''}
+            {amount(details.discountCents)}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt>{t('account.billing.tax')}</dt>
+          <dd>{amount(details.taxCents)}</dd>
+        </div>
+        {details.shippingCents !== 0 ? (
+          <div className="flex justify-between gap-4">
+            <dt>{t('account.billing.shipping')}</dt>
+            <dd>{amount(details.shippingCents)}</dd>
+          </div>
+        ) : null}
+      </dl>
+    </details>
+  );
 }
 
 /**
@@ -50,15 +101,18 @@ function OrderIdCell({ id }: { id: string }) {
       title={id}
       aria-label={t('account.billing.copyOrderId')}
       className={cn(
-        'group inline-flex items-center gap-1.5 rounded font-mono text-mr-overline transition-colors cursor-pointer',
-        copied ? 'text-emerald-400' : 'text-neutral-400 hover:text-neutral-100'
+        'text-mr-overline group inline-flex cursor-pointer items-center gap-1.5 rounded font-mono transition-colors',
+        copied ? 'text-emerald-400' : 'text-neutral-400 hover:text-neutral-100',
       )}
     >
       {id.slice(-8)}
       {copied ? (
         <Check size={12} className="shrink-0" />
       ) : (
-        <Copy size={12} className="shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+        <Copy
+          size={12}
+          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-60"
+        />
       )}
     </button>
   );
@@ -98,7 +152,7 @@ export function OrderHistoryTable({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-11 animate-pulse rounded-lg bg-mr-surface-subtle"
+            className="bg-mr-surface-subtle h-11 animate-pulse rounded-lg"
           />
         ))}
       </div>
@@ -107,20 +161,26 @@ export function OrderHistoryTable({
 
   if (orders.length === 0) {
     return (
-      <p className="rounded-lg border border-mr-line-soft px-4 py-6 text-center text-mr-caption text-neutral-500">
+      <p className="border-mr-line-soft text-mr-caption rounded-lg border px-4 py-6 text-center text-neutral-500">
         {t('account.billing.noOrders')}
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-mr-line-soft">
-      <table className="w-full min-w-[520px] text-mr-caption">
+    <div className="border-mr-line-soft overflow-x-auto rounded-lg border">
+      <table className="text-mr-caption w-full min-w-[520px]">
         <thead>
-          <tr className="border-b border-mr-line-soft text-left text-mr-label-tight uppercase tracking-wide text-neutral-500">
-            <th className="px-4 py-2.5 font-medium">{t('account.billing.colDate')}</th>
-            <th className="px-4 py-2.5 font-medium">{t('account.billing.colOrderId')}</th>
-            <th className="px-4 py-2.5 font-medium">{t('account.billing.colItem')}</th>
+          <tr className="border-mr-line-soft text-mr-label-tight border-b text-left uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-2.5 font-medium">
+              {t('account.billing.colDate')}
+            </th>
+            <th className="px-4 py-2.5 font-medium">
+              {t('account.billing.colOrderId')}
+            </th>
+            <th className="px-4 py-2.5 font-medium">
+              {t('account.billing.colItem')}
+            </th>
             <th className="px-4 py-2.5 font-medium">
               {t('account.billing.colAmount')}
             </th>
@@ -150,7 +210,14 @@ export function OrderHistoryTable({
                 {order.planName ?? t('account.billing.unknownItem')}
               </td>
               <td className="whitespace-nowrap px-4 py-2.5 text-neutral-200">
-                {formatAmount(order.amountCents, order.currency, locale)}
+                {order.billingDetails ? (
+                  <SettledAmount
+                    details={order.billingDetails}
+                    locale={locale}
+                  />
+                ) : (
+                  formatAmount(order.amountCents, order.currency, locale)
+                )}
               </td>
               <td className="whitespace-nowrap px-4 py-2.5 text-neutral-400">
                 {t(`account.billing.channel.${order.channel}`, {

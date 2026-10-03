@@ -1,6 +1,7 @@
 import React from 'react';
 import { Editable, SectionHandle, SectionInsertSlot } from '../renderer/EditableCanvas';
 import { getFieldEntry, getFieldValue } from './utils';
+import { EditableField } from './EditableField';
 import { WysiwygContent } from './WysiwygContent';
 
 interface Item {
@@ -18,11 +19,6 @@ interface Props {
   sectionKey?: string;
   labelSuffix?: string;
 }
-
-const withSuffix = (value: string | null, suffix: string) => {
-  if (!value) return '';
-  return /[:：]$/.test(value) ? value : `${value}${suffix}`;
-};
 
 export const InlineKeyValueSection = React.memo(function InlineKeyValueSection({
   title,
@@ -81,7 +77,8 @@ export const InlineKeyValueSection = React.memo(function InlineKeyValueSection({
                   className="shrink-0 font-bold"
                   style={{ maxWidth: '40%', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                 >
-                  {withSuffix(label, labelSuffix)}
+                  <EditableField item={item} field={fieldMap.itemName} sectionKey={sectionKey} label={title} />
+                  {/[:：]$/.test(label) ? null : labelSuffix}
                 </div>
               )}
               {detail && (

@@ -12,6 +12,7 @@ type Props = {
   initial?: { label: string; icon?: string };
   onSubmit: (value: { label: string; icon?: string }) => void;
   onOpenChange: (open: boolean) => void;
+  onReset?: () => void;
 };
 
 /**
@@ -31,6 +32,7 @@ export default function CustomSectionDialog({
   initial,
   onSubmit,
   onOpenChange,
+  onReset,
 }: Props) {
   const { t } = useTranslation();
   const [label, setLabel] = useState('');
@@ -68,6 +70,7 @@ export default function CustomSectionDialog({
 
           <input
             autoFocus
+            maxLength={120}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             onKeyDown={(e) => {
@@ -111,6 +114,7 @@ export default function CustomSectionDialog({
             </div>
           </div>
 
+          {onReset && <button type="button" onClick={() => { onReset(); onOpenChange(false); }} className="mt-3 rounded text-mr-overline text-mr-muted hover:text-mr-ink">{t('customSection.useDefaultTitle')}</button>}
           <div className="mt-5 flex justify-end gap-2">
             <DialogPrimitive.Close className="h-8 rounded-lg border border-white/10 px-3 text-mr-caption text-neutral-400 transition-colors hover:text-neutral-100">
               {t('common.cancel', { defaultValue: '取消' })}

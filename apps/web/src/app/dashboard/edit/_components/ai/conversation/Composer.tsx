@@ -479,10 +479,10 @@ function Composer({
             设计稿的绝对值不能照搬——它的页面底是中灰紫 oklch(0.251)，输入井 oklch(0.134)
             比页底更暗；我们的桌面底是 #0A0A0A(0.145)，照搬会让输入井沉进背景里看不见。
             这里保留「逐层向内变暗」的相对关系，整体抬到 desk 之上。 */}
-        <div className="rounded-[30px] border border-mr-line bg-mr-sunk p-1 shadow-[var(--elev-3)] dark:border-mr-line-soft dark:bg-gradient-to-b dark:from-neutral-800/65 dark:to-neutral-800/45 dark:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.7)]">
+        <div className="rounded-[30px] border border-mr-line-soft bg-mr-sunk p-1 shadow-[var(--elev-2)] dark:bg-gradient-to-b dark:from-neutral-800/65 dark:to-neutral-800/45 dark:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.7)]">
           {/* 这一层**不能**加 overflow-hidden：模式 / 模型菜单都是向上展开的，会被裁掉。
               点阵 canvas 的圆角裁剪交给模式条自己（它本来就要 overflow-hidden）。 */}
-          <div className="relative rounded-[26px] bg-mr-surface dark:bg-neutral-900/70">
+          <div className="relative rounded-[26px] bg-mr-sunk dark:bg-neutral-900/70">
             {/* 点阵层。刻意铺得比模式条高（48 > 30）：模式条底边与输入井顶部圆角之间
                 那两个夹角，原先是 overflow-hidden 把 canvas 裁在模式条里够不到的死角。
                 多出来的部分由 cutout 按输入井的形状挖空，井本身的观感一点不受影响。
@@ -497,8 +497,8 @@ function Composer({
             {/* 模式条。pointer-events-none 让指针穿过去交给下面的点阵 canvas——
                 这一条里没有可点的东西，让路不损失任何交互。 */}
             <div
-              className="pointer-events-none relative z-10 flex h-[30px] items-center gap-2.5 px-4"
-              style={{ color: modeAccent }}
+              className="composer-mode-label pointer-events-none relative z-10 flex h-[30px] items-center gap-2.5 px-4"
+              style={{ '--composer-mode-accent': modeAccent } as React.CSSProperties}
               aria-live="polite"
             >
               <span className="relative flex min-w-0 items-center gap-2.5">
@@ -526,7 +526,7 @@ function Composer({
 
             {/* 凹槽输入井。@container 挂在这儿：标签的收放该看输入区自己有多宽，
                 不是看视口——AI 面板宽度是可变的。 */}
-            <div className="@container relative z-10 rounded-[13px_13px_26px_26px] border border-[var(--mr-line-strong)] bg-mr-surface p-2.5 shadow-[inset_0_1px_2px_oklch(0.2_0.02_85_/_0.06)] dark:border-white/[0.05] dark:bg-neutral-950/55 dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.34)]">
+            <div className="@container relative z-10 rounded-[13px_13px_26px_26px] border border-mr-line bg-mr-surface p-2.5 dark:border-white/[0.05] dark:bg-neutral-950/55 dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.34)]">
               {/* 技能 chip 行内摆在文字前面，占位符 / 正文接着它往下写。
                   accent 色回来了：它已经不在控件行里，不再和模式胶囊争「这一行唯一
                   有颜色的东西」，而技能本身有颜色恰恰是最快认出「现在要跑什么」的方式。 */}

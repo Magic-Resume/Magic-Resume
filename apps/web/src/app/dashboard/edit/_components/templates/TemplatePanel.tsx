@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils";
 import { MaskIcon } from "@/components/icons/MaskIcon";
 import ResumeMiniPreview from "../../../_components/ResumeMiniPreview";
 import TemplateStoreModal from "./TemplateStoreModal";
+import ColorSettings from './ColorSettings';
+import { DocumentLanguageField } from './DocumentLanguageField';
+import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { haveSameColors, resetTemplateColors } from './colorSchemes';
 import {
   HoverSurface,
   useHoverSurface,
@@ -29,15 +33,11 @@ import {
 } from '@/components/ui/hover-surface';
 import {
   AccordionSection,
-  ColorField,
-  COLOR_THEMES,
   FontField,
   GroupLabel,
   PANEL_FONTS,
-  PANEL_PRESET_COLORS,
   SegmentedField,
   SliderField,
-  ThemeSwatches,
   ToggleField,
 } from "./controls";
 
@@ -71,18 +71,23 @@ export default function TemplatePanel({
   embedded = false,
 }: TemplatePanelProps) {
   const { t } = useTranslation();
-  const { updateCustomTemplate, activeResume } = useResumeDocumentStore();
+  const { updateCustomTemplate, updateResume, activeResume } = useResumeDocumentStore();
+
+  useEffect(() => {
+    if (activeResume && !activeResume.documentLanguage) {
+      updateResume(activeResume.id, { documentLanguage: resolveDocumentLanguage(activeResume), documentLanguageSource: "detected" });
+    }
+  }, [activeResume, updateResume]);
 
   const [templates, setTemplates] = useState<MagicTemplateDSL[]>([]);
   const [storeOpen, setStoreOpen] = useState(false);
   const [open, setOpen] = useState<Record<SectionId, boolean>>({
-    template: true,
-    layout: false,
+    template: false,
+    layout: true,
     typography: false,
-    colors: true,
+    colors: false,
   });
-  const [active, setActive] = useState<SectionId>("template");
-  const [showAdvancedColors, setShowAdvancedColors] = useState(false);
+  const [active, setActive] = useState<SectionId>("layout");
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -209,6 +214,9 @@ export default function TemplatePanel({
   );
 
   const resetCustomizations = useCallback(() => updateCustomTemplate({}), [updateCustomTemplate]);
+  const resetColors = useCallback(() => {
+    if (baseTemplate && working) applyTemplate(resetTemplateColors(baseTemplate, working));
+  }, [baseTemplate, working, applyTemplate]);
 
   const toggleSection = useCallback((id: SectionId) => {
     setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -239,13 +247,14 @@ export default function TemplatePanel({
     const container = scrollRef.current;
     if (!container) return;
     const containerTop = container.getBoundingClientRect().top;
-    let current: SectionId = "template";
-    (["template", "layout", "typography", "colors"] as SectionId[]).forEach((id) => {
+    const sectionIds: SectionId[] = ["template", "layout", "typography", "colors"];
+    let current = sectionIds.find((id) => open[id]) ?? "layout";
+    sectionIds.forEach((id) => {
       const el = sectionRefs.current[id];
-      if (el && el.getBoundingClientRect().top - containerTop <= 28) current = id;
+      if (open[id] && el && el.getBoundingClientRect().top - containerTop <= 28) current = id;
     });
     setActive(current);
-  }, []);
+  }, [open]);
 
   /* 图标轨高亮：一块共享的面在分区按钮之间滑动。选中项另有右侧那条 sky 竖杠，
      所以面滑走时「现在停在哪一节」不会丢。 */
@@ -314,6 +323,7 @@ export default function TemplatePanel({
         onToggle={() => toggleSection("layout")}
         registerRef={(el) => (sectionRefs.current.layout = el)}
       >
+        {activeResume && <DocumentLanguageField resume={activeResume} onChange={(documentLanguage) => updateResume(activeResume.id, { documentLanguage, documentLanguageSource: 'explicit' })} />}
         <SegmentedField
           label={t("templateCustomizer.layout.pageSize")}
           options={[
@@ -542,80 +552,13 @@ export default function TemplatePanel({
         onToggle={() => toggleSection("colors")}
         registerRef={(el) => (sectionRefs.current.colors = el)}
       >
-        <div className="space-y-2.5">
-          <GroupLabel>{t("templateCustomizer.colors.quickThemes")}</GroupLabel>
-          <ThemeSwatches
-            themes={COLOR_THEMES.map((th) => ({ id: th.id, from: th.from, to: th.to }))}
-            active={COLOR_THEMES.find(
-              (th) => th.colors.primary.toLowerCase() === working.designTokens.colors.primary.toLowerCase(),
-            )?.id}
-            onPick={(id) => {
-              const theme = COLOR_THEMES.find((th) => th.id === id);
-              if (theme) updateColors(theme.colors);
-            }}
-          />
-        </div>
-
-        <div className="space-y-5 pt-1">
-          <GroupLabel>{t("templateCustomizer.colors.customColors")}</GroupLabel>
-          <ColorField
-            label={t("templateCustomizer.colors.primary")}
-            value={working.designTokens.colors.primary}
-            onChange={(c) => updateColors({ primary: c })}
-            presets={PANEL_PRESET_COLORS}
-          />
-          <ColorField
-            label={t("templateCustomizer.colors.text")}
-            value={working.designTokens.colors.text}
-            onChange={(c) => updateColors({ text: c })}
-            presets={PANEL_PRESET_COLORS}
-          />
-          <ColorField
-            label={t("templateCustomizer.colors.textSecondary")}
-            value={working.designTokens.colors.textSecondary}
-            onChange={(c) => updateColors({ textSecondary: c })}
-            presets={PANEL_PRESET_COLORS}
-          />
-          {working.designTokens.colors.sidebar && (
-            <ColorField
-              label={t("templateCustomizer.colors.sidebar")}
-              value={working.designTokens.colors.sidebar}
-              onChange={(c) => updateColors({ sidebar: c })}
-              presets={PANEL_PRESET_COLORS}
-            />
-          )}
-        </div>
-
-        {/* 高级:边框 / 背景色。默认收起,保持核心配色区干净(仅 3 色)。 */}
-        <div className="pt-1">
-          <button
-            type="button"
-            onClick={() => setShowAdvancedColors((v) => !v)}
-            className="flex w-full items-center justify-between text-mr-overline font-medium text-neutral-400 transition-colors duration-150 hover:text-neutral-200"
-          >
-            {t("templateCustomizer.colors.advanced")}
-            <ChevronRight
-              size={13}
-              className={cn("transition-transform duration-150", showAdvancedColors && "rotate-90")}
-            />
-          </button>
-          {showAdvancedColors && (
-            <div className="space-y-5 pt-4">
-              <ColorField
-                label={t("templateCustomizer.colors.border")}
-                value={working.designTokens.colors.border}
-                onChange={(c) => updateColors({ border: c })}
-                presets={PANEL_PRESET_COLORS}
-              />
-              <ColorField
-                label={t("templateCustomizer.colors.background")}
-                value={working.designTokens.colors.background}
-                onChange={(c) => updateColors({ background: c })}
-                presets={PANEL_PRESET_COLORS}
-              />
-            </div>
-          )}
-        </div>
+        <ColorSettings
+          colors={working.designTokens.colors}
+          baseColors={baseTemplate.designTokens.colors}
+          onChange={updateColors}
+          onReset={resetColors}
+          canReset={!haveSameColors(working.designTokens.colors, baseTemplate.designTokens.colors)}
+        />
       </AccordionSection>
     </>
   );
@@ -635,7 +578,7 @@ export default function TemplatePanel({
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] py-2.5 text-mr-ui font-medium text-neutral-400 transition-colors duration-150 hover:border-white/20 hover:text-neutral-200"
         >
           <RotateCcw size={13} />
-          {t("templateCustomizer.buttons.reset")}
+          {t("templateCustomizer.buttons.resetAll")}
         </button>
       )}
     </div>

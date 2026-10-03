@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { documentLabel } from '@magic-resume/resume-schema';
 import type { InfoType } from '../types/resume';
 import { Editable } from '../renderer/EditableCanvas';
 import { safeHref } from './utils';
@@ -7,6 +7,7 @@ import { sectionIconByName } from '../sectionIcons';
 
 interface Props {
   data: InfoType;
+  locale?: string;
   style?: React.CSSProperties;
   className?: string;
   avatarWidth?: number;
@@ -26,6 +27,7 @@ type ContactItem = {
 
 export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
   data: info,
+  locale,
   style,
   className,
   avatarWidth = 86,
@@ -34,7 +36,6 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
   contactSeparator = '|',
   showCustomFields = true,
 }: Props) {
-  const { t } = useTranslation();
   const contacts: ContactItem[] = [];
 
   if (info.phoneNumber) {
@@ -72,7 +73,7 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={info.avatar}
-      alt={t('basicForm.avatarAlt')}
+      alt={documentLabel('avatar', locale)}
       width={avatarWidth}
       height={avatarHeight}
       className={`${avatarRounded ? 'rounded-full' : 'rounded-none'} object-cover`}
@@ -102,7 +103,7 @@ export const CenteredPhotoHeader = React.memo(function CenteredPhotoHeader({
           className="font-bold"
           style={{ color: 'var(--color-text)', fontSize: 'var(--font-size-xxl)' }}
         >
-          {info.fullName || t('resumePreview.yourName')}
+          {info.fullName || documentLabel('yourName', locale)}
         </div>
         {contacts.length > 0 && (
           <div

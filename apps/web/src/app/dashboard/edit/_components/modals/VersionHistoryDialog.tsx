@@ -313,7 +313,9 @@ export default function VersionHistoryDialog({ isOpen, onClose, onRestore, onDel
                                                                 <ResumePreview
                                                                     info={resolvedResume.info}
                                                                     sections={resolvedResume.sections}
-                                                                    sectionOrder={(resolvedResume.sectionOrder || []).map((s) => s.key)}
+                                                                    sectionOrder={resolvedResume.sectionOrder || []}
+                    documentLanguage={resolvedResume.documentLanguage}
+                    templateOverride={resolvedResume.templateOverride}
                                                                     templateId={resolvedResume.template}
                                                                     customTemplate={resolvedResume.customTemplate}
                                                                 />

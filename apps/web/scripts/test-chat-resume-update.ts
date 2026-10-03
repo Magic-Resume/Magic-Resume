@@ -64,6 +64,8 @@ function replay({
     patchHandledWithoutRunId: false,
     coerceSectionOrder: (value: unknown) => value,
     resumeData: { sections },
+    diffDocumentChanges: () => [],
+    diffInfoToChanges: () => [],
     diffResumeToChanges: () => Array.from({ length: changed }, () => ({})),
     canvasDismissedForRun: { current: dismissed },
     batchNonce: { current: 0 },

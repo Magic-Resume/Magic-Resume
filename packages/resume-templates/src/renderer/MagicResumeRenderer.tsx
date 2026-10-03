@@ -1,8 +1,9 @@
+import { normalizeDocumentLanguage, resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import React, { useMemo } from 'react';
 import { MagicTemplateDSL } from '../types/magic-dsl';
 import { Resume } from '../types/resume';
 import get from 'lodash.get';
-import { isBuiltInSection, zhTitleForSection } from '../sectionSemantics';
+import { isBuiltInSection, resolveSectionTitle } from '../sectionSemantics';
 import { compileTreeComponent } from '../primitives/treeComponent';
 import { renderNode as renderTreeNode } from '../primitives/dom/renderNode';
 
@@ -195,9 +196,9 @@ function getLayoutComponent(layoutType: string) {
   }
 }
 
-export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props) => {
+export const MagicResumeRenderer = React.memo(({ template, data, locale: requestedLocale }: Props) => {
+  const locale = normalizeDocumentLanguage(data.documentLanguage) ?? normalizeDocumentLanguage(requestedLocale) ?? resolveDocumentLanguage(data);
   const { layout, designTokens, components } = template;
-  const isChineseLocale = (locale || '').toLowerCase().startsWith('zh');
   
   const cssVariables = useMemo(
     () => generateCSSVariables(designTokens, layout),
@@ -219,9 +220,10 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
             data.templateOverride,
             data as unknown as Record<string, unknown>,
             'templateOverride',
+            locale,
           )
         : undefined,
-    [data],
+    [data, locale],
   );
 
   // `sectionOrder` is where an explicit icon choice lives; the component list
@@ -299,6 +301,7 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
               component.tree,
               data as unknown as Record<string, unknown>,
               component.id,
+              locale,
             );
             return root ? (
               <React.Fragment key={component.id}>{renderTreeNode(root)}</React.Fragment>
@@ -336,14 +339,7 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
             : undefined;
 
           const rawTitle = (component.props?.title as string) || 'Section';
-          const resolvedTitle = (() => {
-            if (!isChineseLocale) return rawTitle;
-            const explicitChineseTitle = component.props?.titleZh;
-            if (typeof explicitChineseTitle === 'string' && explicitChineseTitle.trim()) {
-              return explicitChineseTitle;
-            }
-            return zhTitleForSection(sectionKey, rawTitle);
-          })();
+          const resolvedTitle = resolveSectionTitle(sectionKey, rawTitle, data, locale, component.props?.titleZh);
 
           const props = {
             data: sectionData,
@@ -352,7 +348,8 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale }: Props
             style: component.style,
             position: component.position,
             ...component.props,
-            title: resolvedTitle,
+            title: component.type === "ContactInfo" ? resolveSectionTitle("contact", "Contact", data, locale) : resolvedTitle,
+            locale,
             titleIcon: getSectionIcon(
               sectionKey,
               rawTitle,

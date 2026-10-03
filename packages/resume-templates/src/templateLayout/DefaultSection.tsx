@@ -1,5 +1,6 @@
 import React from 'react';
-import { getFieldValue, getFieldEntry } from './utils';
+import { getFieldEntry } from './utils';
+import { EditableField } from './EditableField';
 import { WysiwygContent } from './WysiwygContent';
 import { Editable, SectionHandle, SectionInsertSlot } from '../renderer/EditableCanvas';
 
@@ -65,14 +66,14 @@ export const DefaultSection = React.memo(function DefaultSection({ title, items,
               <div>
                 <div className="flex items-start">
                   <div className="flex-1 text-left">
-                    <div className="font-bold">{getFieldValue(item, fieldMap.mainTitle)}</div>
-                    <div>{getFieldValue(item, fieldMap.mainSubtitle)}</div>
-                    <div>{getFieldValue(item, fieldMap.secondarySubtitle)}</div>
+                    <div className="font-bold"><EditableField item={item} field={fieldMap.mainTitle} sectionKey={sectionKey} label={title} /></div>
+                    <div><EditableField item={item} field={fieldMap.mainSubtitle} sectionKey={sectionKey} label={title} /></div>
+                    <div><EditableField item={item} field={fieldMap.secondarySubtitle} sectionKey={sectionKey} label={title} /></div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="font-bold">{getFieldValue(item, fieldMap.sideTitle)}</div>
-                    <div>{getFieldValue(item, fieldMap.sideSubtitle)}</div>
-                    <div>{getFieldValue(item, fieldMap.secondarySideSubtitle)}</div>
+                    <div className="font-bold"><EditableField item={item} field={fieldMap.sideTitle} sectionKey={sectionKey} label={title} /></div>
+                    <div><EditableField item={item} field={fieldMap.sideSubtitle} sectionKey={sectionKey} label={title} /></div>
+                    <div><EditableField item={item} field={fieldMap.secondarySideSubtitle} sectionKey={sectionKey} label={title} /></div>
                   </div>
                 </div>
                 {/* Hand-added fields, rendered explicitly rather than via the

@@ -21,6 +21,7 @@ export type ResolvedResumePatchBatch = {
   kind: BatchKind;
   lang?: string;
   proposedSections: Section;
+  proposedDocument: Resume;
   targetedSelection?: TargetedSelectionDiff;
 };
 
@@ -62,6 +63,7 @@ export function resolveResumePatchBatch(
     kind: context?.kind ?? 'optimize',
     lang: context?.lang,
     proposedSections: resolved.resume.sections,
+    proposedDocument: resolved.resume,
     targetedSelection: resolved.targetedSelection ?? context?.targetedSelection,
   };
 }

@@ -1,3 +1,5 @@
+import { documentSectionTitle, isDefaultSectionLabel, normalizeDocumentLanguage, resolveDocumentLanguage, type Resume } from '@magic-resume/resume-schema';
+
 /**
  * 分区的语义：中文标题，与「哪些分区是内建的」。
  *
@@ -80,4 +82,27 @@ export function zhTitleForSection(
 ): string {
   const byKey = sectionKey ? ZH_TITLE_BY_SECTION_KEY[sectionKey] : undefined;
   return byKey ?? ZH_TITLE_BY_ENGLISH[title.trim().toLowerCase()] ?? title;
+}
+
+/** One heading resolver for HTML and PDF. User wording wins over template defaults. */
+export function resolveSectionTitle(
+  sectionKey: string | undefined,
+  rawTitle: string,
+  resume: Pick<Resume, 'sectionOrder' | 'documentLanguage' | 'info' | 'sections'>,
+  locale?: string,
+  titleZh?: unknown,
+): string {
+  const entry = resume.sectionOrder?.find((item) => item.key === sectionKey);
+  if (typeof entry?.title === 'string' && entry.title.trim()) return entry.title.trim();
+  if (typeof entry?.label === 'string' && entry.label.trim() && sectionKey && !isDefaultSectionLabel(sectionKey, entry.label)) return entry.label;
+  const language = normalizeDocumentLanguage(resume.documentLanguage) ?? normalizeDocumentLanguage(locale) ?? resolveDocumentLanguage(resume);
+  if (sectionKey) {
+    const title = documentSectionTitle(sectionKey, language);
+    if (title) return title;
+  }
+  if (language === 'zh') {
+    if (typeof titleZh === 'string' && titleZh.trim()) return titleZh;
+    return zhTitleForSection(sectionKey, rawTitle);
+  }
+  return rawTitle;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -37,10 +38,10 @@ const COPY: Record<ExportFormat, { loading: string; ok: string; fail: string }> 
  * `source` 保留为参数：两个入口的转化率本来就该分开看。
  */
 export function useResumeExport(resume: Resume, source: 'tools' | 'dock') {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [isExporting, setIsExporting] = useState(false);
   // 与预览渲染用同一个 locale，导出才能命中预览已经算好的那份 blob 缓存。
-  const locale = i18n.resolvedLanguage || i18n.language;
+  const locale = resolveDocumentLanguage(resume);
 
   const runExport = async (format: ExportFormat) => {
     if (isExporting) return;
