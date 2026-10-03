@@ -24,8 +24,28 @@ Because it keys off **gitmoji**, our existing emoji-first commit convention
 (`✨ feat(web): …`) works as-is — no change to how commits are written.
 
 > **One-time setting:** the changelog PR is opened via `peter-evans/create-pull-request`
-> with `GITHUB_TOKEN`, which requires **Settings → Actions → General → "Allow GitHub
-> Actions to create and approve pull requests"** to be enabled.
+> with the repository secret **`CHANGELOG_PR_TOKEN`**. `GITHUB_TOKEN` cannot be used:
+> the enterprise policy forbids GitHub Actions from creating pull requests, and
+> the repo-level "Allow GitHub Actions to create and approve pull requests" box is
+> locked because of it. Without the secret the step falls back to `GITHUB_TOKEN`
+> and fails with `GitHub Actions is not permitted to create or approve pull
+> requests`. The tag and GitHub Release are still published; only the changelog
+> PR is missing.
+>
+> Create a **fine-grained PAT** with access to this repository only, granting
+> **Contents: Read and write** and **Pull requests: Read and write**, and save it as
+> the `CHANGELOG_PR_TOKEN` repository secret. Keep in mind:
+>
+> - The changelog PR is authored by the token owner, who cannot approve their own
+>   PR if reviews are required.
+> - Fine-grained PATs expire. When it does, the step falls back and fails as above,
+>   so rotate it before the expiry date.
+> - Unlike a PR opened with `GITHUB_TOKEN`, this PR triggers the repo's PR
+>   workflows normally.
+>
+> To drop the personal token, mint a GitHub App installation token in a preceding
+> `actions/create-github-app-token` step and pass it here instead. Installation
+> tokens expire after an hour, so they cannot be stored as a static secret.
 
 ## Version rules
 
