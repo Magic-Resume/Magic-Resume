@@ -1,3 +1,4 @@
+import { documentLabel, normalizeDocumentLanguage, resolveDocumentLanguage, documentSectionTitle } from '@magic-resume/resume-schema';
 /**
  * 导出的 PDF 是**一整页长页**，不是分页 A4——这是刻意选择，不是 bug。
  *
@@ -9,6 +10,7 @@
  * 跨页孤行，而这里没有分页。保留是因为哪天恢复分页它们就是对的写法，别照着再加。
  */
 import React from 'react';
+import { localizeDocumentTree } from '../primitives/localizeDocumentTree';
 import { compileTreeComponent } from '../primitives/treeComponent';
 import { renderNode as renderTreeNode } from '../primitives/pdf/renderNode';
 import { renderTreeDocument } from '../primitives/pdf/document';
@@ -34,7 +36,7 @@ import { getPdfFontStack, getPdfRichTextFontFamily } from '../font-family';
 import { PdfHugeIcon, type PdfIconNode } from './PdfHugeIcon';
 import { iconNodeByName } from '../primitives/icons';
 import { PdfRichText } from './PdfRichText';
-import { isBuiltInSection, zhTitleForSection } from '../sectionSemantics';
+import { isBuiltInSection, resolveSectionTitle } from '../sectionSemantics';
 import {
   getFieldValue as resolveField,
   safeHref,
@@ -145,19 +147,11 @@ const getSectionItems = (data: Resume, binding: string): SectionItem[] => {
   return (data.sections[key] ?? []).filter(isVisible);
 };
 
-const resolveTitle = (component: ComponentDefinition, locale?: string): string => {
-  const title = String(component.props?.title ?? 'Section');
-  if (!locale?.toLowerCase().startsWith('zh')) return title;
-
-  const explicitChineseTitle = component.props?.titleZh;
-  if (typeof explicitChineseTitle === 'string' && explicitChineseTitle.trim()) {
-    return explicitChineseTitle;
-  }
-
+const resolveTitle = (component: ComponentDefinition, context: RenderContext): string => {
   const sectionKey = component.dataBinding.startsWith('sections.')
     ? component.dataBinding.slice('sections.'.length)
-    : '';
-  return zhTitleForSection(sectionKey, title);
+    : undefined;
+  return resolveSectionTitle(sectionKey, String(component.props?.title ?? 'Section'), context.data, context.locale, component.props?.titleZh);
 };
 
 /** 模板未描述的 section 的字段别名。必须与 HTML 渲染器保持一致，否则屏幕与导出会长得不一样。 */
@@ -257,6 +251,7 @@ const toPdfComponentStyle = (style?: ComponentStyle): Style => {
 };
 
 interface RenderContext {
+  data: Resume;
   colors: MagicTemplateDSL['designTokens']['colors'];
   typography: MagicTemplateDSL['designTokens']['typography'];
   spacing: MagicTemplateDSL['designTokens']['spacing'];
@@ -386,10 +381,10 @@ const HeaderBlock = ({ info, component, context }: {
   const contactLineHeight = 1;
   // href 可缺省：`safeWebsiteUrl` 拒绝不可信 URL 时回 undefined，ContactText 渲染成纯文本。
   const contacts: Array<{ label: string; value: string; href?: string; icon?: PdfIconNode; custom?: boolean }> = [
-    { label: context.locale?.startsWith('zh') ? '电话' : 'Phone', value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '', icon: Phone },
-    { label: context.locale?.startsWith('zh') ? '邮箱' : 'Email', value: info.email, href: info.email ? `mailto:${info.email}` : '', icon: Mail },
-    { label: context.locale?.startsWith('zh') ? '地址' : 'Address', value: info.address, href: '', icon: MapPin },
-    { label: context.locale?.startsWith('zh') ? '网站' : 'Website', value: info.website, href: safeWebsiteUrl(info.website), icon: Globe },
+    { label: documentLabel('phone', context.locale), value: info.phoneNumber, href: info.phoneNumber ? `tel:${info.phoneNumber}` : '', icon: Phone },
+    { label: documentLabel('email', context.locale), value: info.email, href: info.email ? `mailto:${info.email}` : '', icon: Mail },
+    { label: documentLabel('address', context.locale), value: info.address, href: '', icon: MapPin },
+    { label: documentLabel('website', context.locale), value: info.website, href: safeWebsiteUrl(info.website), icon: Globe },
   ].filter((item) => item.value);
 
   if (props.showCustomFields !== false) {
@@ -430,7 +425,7 @@ const HeaderBlock = ({ info, component, context }: {
       {avatarPosition === 'left' ? avatar : null}
       <View style={{ flexGrow: 1, flexShrink: 1, gap: 3 }}>
         <Text style={{ color: context.colors.text, fontSize: labelContacts ? 16 : 13, fontWeight: 700 }}>
-          {info.fullName || (context.locale?.startsWith('zh') ? '你的名字' : 'Your Name')}
+          {info.fullName || (documentLabel('yourName', context.locale))}
         </Text>
         {info.headline ? <Text style={{ color: context.colors.textSecondary, fontSize: 9 }}>{info.headline}</Text> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: labelContacts ? 5 : 7, marginTop: 2 }}>
@@ -523,7 +518,7 @@ const CenteredPhotoHeaderBlock = ({ info, component, context }: {
       <View style={{ width: avatarWidth, flexShrink: 0 }} />
       <View style={{ flexGrow: 1, flexShrink: 1, alignItems: 'center', paddingTop: 3 }}>
         <Text style={{ color: context.colors.text, fontSize: nameFontSize, fontWeight: 700, textAlign: 'center' }}>
-          {info.fullName || (context.locale?.startsWith('zh') ? '你的名字' : 'Your Name')}
+          {info.fullName || (documentLabel('yourName', context.locale))}
         </Text>
         {contacts.length > 0 ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 7 }}>
@@ -593,7 +588,7 @@ const ProfileBlock = ({ info, component, sidebar, context }: {
         <Image src={info.avatar} style={{ width: 72, height: 72, borderRadius: 36, objectFit: 'cover' }} />
       ) : null}
       <Text style={{ color: textColor, fontSize: nameFontSize, fontWeight: 700, textAlign: 'center' }}>
-        {info.fullName || (context.locale?.startsWith('zh') ? '你的名字' : 'Your Name')}
+        {info.fullName || (documentLabel('yourName', context.locale))}
       </Text>
       {info.headline ? (
         <Text style={{ color: textColor, fontSize: headlineFontSize, fontWeight: 500, opacity: 0.8, textAlign: 'center' }}>
@@ -653,7 +648,7 @@ const ContactBlock = ({ info, component, sidebar, context }: {
       ]}
     >
       <SectionTitle
-        title={context.locale?.startsWith('zh') ? '联系方式' : 'Contact'}
+        title={resolveSectionTitle('contact', 'Contact', context.data, context.locale)}
         sidebar={sidebar}
         color={color}
         dividerColor={color}
@@ -748,7 +743,7 @@ const DefaultSectionBlock = ({ component, items, context }: {
   const dateFontFamily = getPdfFontStack(context.typography.fontFamily.primary, context.cjkFallback);
   return (
     <View style={toPdfComponentStyle(component.style)}>
-      <SectionTitle title={resolveTitle(component, context.locale)} icon={getSectionIcon(component)} context={context} />
+      <SectionTitle title={resolveTitle(component, context)} icon={getSectionIcon(component)} context={context} />
       <View style={{ gap: cssSizeToPoints(context.spacing.md, 8) }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
@@ -799,7 +794,7 @@ const ListSectionBlock = ({ component, items, context }: {
   const dateFontFamily = getPdfFontStack(context.typography.fontFamily.primary, context.cjkFallback);
   return (
     <View style={toPdfComponentStyle(component.style)}>
-      <SectionTitle title={resolveTitle(component, context.locale)} icon={getSectionIcon(component)} context={context} />
+      <SectionTitle title={resolveTitle(component, context)} icon={getSectionIcon(component)} context={context} />
       <View style={{ gap: 6 }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
@@ -880,7 +875,7 @@ const ThreeColumnSectionBlock = ({ component, items, context }: {
 
   return (
     <View style={toPdfComponentStyle(component.style)}>
-      <SectionTitle title={resolveTitle(component, context.locale)} icon={getSectionIcon(component)} context={context} />
+      <SectionTitle title={resolveTitle(component, context)} icon={getSectionIcon(component)} context={context} />
       <View style={{ gap: cssSizeToPoints(context.spacing.sm, 4) }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
@@ -945,7 +940,7 @@ const InlineKeyValueSectionBlock = ({ component, items, context }: {
 
   return (
     <View style={toPdfComponentStyle(component.style)}>
-      <SectionTitle title={resolveTitle(component, context.locale)} icon={getSectionIcon(component)} context={context} />
+      <SectionTitle title={resolveTitle(component, context)} icon={getSectionIcon(component)} context={context} />
       <View style={{ gap: cssSizeToPoints(context.spacing.xs, 2) }}>
         {items.map((item, index) => {
           const record = item as Record<string, unknown>;
@@ -998,7 +993,7 @@ const CompactListBlock = ({ component, items, sidebar, context }: {
   return (
     <View style={toPdfComponentStyle(component.style)}>
       <SectionTitle
-        title={resolveTitle(component, context.locale)}
+        title={resolveTitle(component, context)}
         icon={getSectionIcon(component)}
         sidebar={sidebar}
         color={color}
@@ -1040,7 +1035,7 @@ const TimelineBlock = ({ component, items, context }: {
   return (
     <View style={[toPdfComponentStyle(component.style), { flexShrink: 1, maxWidth: '100%', minWidth: 0 }]}>
       <SectionTitle
-        title={resolveTitle(component, context.locale)}
+        title={resolveTitle(component, context)}
         icon={getSectionIcon(component)}
         color={color}
         dividerColor={context.colors.primary}
@@ -1105,6 +1100,7 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
       component.tree,
       data as unknown as Record<string, unknown>,
       component.id,
+      context.locale,
     );
     if (!root) return null;
     return <>{renderTreeNode(root, { fontFamily: context.richTextFontFamily })}</>;
@@ -1128,7 +1124,8 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
   return <DefaultSectionBlock component={component} items={items} context={context} />;
 };
 
-export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = false }: MagicResumePdfDocumentProps) => {
+export const MagicResumePdfDocument = ({ data, template, locale: requestedLocale, cjkFallback = false }: MagicResumePdfDocumentProps) => {
+  const locale = normalizeDocumentLanguage(data.documentLanguage) ?? normalizeDocumentLanguage(requestedLocale) ?? resolveDocumentLanguage(data);
   // 整棵模板树接管：与 HTML 渲染器**同一个判断、同一个编译入口**。
   // 只改一边就是又造一对孪生实现——`summary`/`awards` 那次事故就是这么来的。
   if (data.templateOverride) {
@@ -1139,7 +1136,7 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
     if (process.env.NODE_ENV !== 'production') {
       for (const d of diagnostics) console.warn(`[resume-templates] templateOverride: ${d.message}`);
     }
-    return renderTreeDocument(root, page, {
+    return renderTreeDocument(root ? localizeDocumentTree(root, data, locale) : root, page, {
       fontFamily: getPdfRichTextFontFamily(
         template.designTokens.typography.fontFamily.primary,
         cjkFallback,
@@ -1156,6 +1153,7 @@ export const MagicResumePdfDocument = ({ data, template, locale, cjkFallback = f
   const pageWidth = cssSizeToPoints(template.layout.containerWidth, FREE_FORM_PAGE_SIZE.width);
   const sectionGap = cssSizeToPoints(template.layout.gap, cssSizeToPoints(spacing.lg, 12));
   const context: RenderContext = {
+    data,
     colors,
     typography,
     spacing,

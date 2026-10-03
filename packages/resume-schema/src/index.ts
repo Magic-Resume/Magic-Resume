@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { documentLanguageIds, type DocumentLanguage } from './document-language.js';
+export * from './document-language.js';
 
 export const templateIds = [
   'classic',
@@ -141,6 +143,8 @@ export const sectionItemSchema = z
 export const sectionOrderItemSchema = z.object({
   key: z.string(),
   label: z.string(),
+  /** Explicit printed heading; absent uses the document language. */
+  title: z.string().max(120).optional(),
   /**
    * Icon name from `SECTION_ICONS` in @magic-resume/resume-templates. A name
    * rather than a component because a resume is persisted, synced and exported
@@ -151,6 +155,8 @@ export const sectionOrderItemSchema = z.object({
 });
 
 export const resumeSchema = z.object({
+  documentLanguage: z.enum(documentLanguageIds).optional(),
+  documentLanguageSource: z.enum(['detected', 'explicit']).optional(),
   id: z.string().optional(),
   userId: z.string().optional(),
   name: z.string(),
@@ -312,6 +318,8 @@ export const resumeJsonSchema = {
     'typography',
   ],
   properties: {
+    documentLanguage: { type: 'string', enum: [...documentLanguageIds] },
+    documentLanguageSource: { type: 'string', enum: ['detected', 'explicit'] },
     id: { type: 'string' },
     userId: { type: 'string' },
     name: { type: 'string' },
@@ -372,6 +380,8 @@ export const resumeJsonSchema = {
         properties: {
           key: { type: 'string' },
           label: { type: 'string' },
+          title: { type: 'string', maxLength: 120 },
+          icon: { type: 'string' },
         },
       },
     },
@@ -401,9 +411,12 @@ export type Section = Record<string, SectionItem[]>;
 export type SectionOrderItem = {
   key: string;
   label: string;
+  title?: string;
   icon?: string;
 };
 export type Resume = {
+  documentLanguage?: DocumentLanguage;
+  documentLanguageSource?: 'detected' | 'explicit';
   id?: string;
   userId?: string;
   name: string;

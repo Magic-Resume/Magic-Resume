@@ -10,6 +10,7 @@ export type WorkspaceChangeStatus =
   | "CONFLICTED";
 
 export type WorkspaceChangeTarget =
+  | { scope: "document"; fieldKey: "documentLanguage" }
   | { scope: "info"; fieldKey: string }
   | {
       scope: "sectionItem";
@@ -188,6 +189,10 @@ export async function buildWorkspacePreparedChanges(
     }
   }
 
+  if (typeof candidate.documentLanguage === 'string' && !sameJson(base.documentLanguage, candidate.documentLanguage)) {
+    raw.push({ action: 'REPLACE', target: { scope: 'document', fieldKey: 'documentLanguage' }, before: base.documentLanguage, after: candidate.documentLanguage });
+  }
+
   if (!sameJson(base.sectionOrder, candidate.sectionOrder)) {
     raw.push({
       action: "REORDER",
@@ -323,7 +328,7 @@ export async function listAssets(params: {
 export type LibraryAsset = WorkspaceAsset & {
   /** 缺席 = 普通产物。有值时不显示过期/留住/归档，正文也换一套渲染。 */
   extra?: ExtraAssetKind;
-  /** `extra` 那两类的正文，直接带在行上——它们没有「按 id 再读一次」的路由。 */
+  /** 投递面板带完整正文；面试带 ArchivedInterview 摘要，正文从归档详情读取。 */
   payload?: unknown;
 };
 

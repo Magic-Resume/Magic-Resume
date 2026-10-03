@@ -1,12 +1,12 @@
 import React from 'react';
 import { InfoType } from '../types/resume';
 import { Globe, Mail, MapPin, Phone, type LucideIcon } from '@magic-resume/icons';
-import { useTranslation } from 'react-i18next';
 import { safeHref } from './utils';
 import { sectionIconByName, type SectionIconComponent } from '../sectionIcons';
 
 interface Props {
   data: InfoType;
+  title?: string;
   style?: React.CSSProperties;
   position?: {
     area?: 'main' | 'sidebar' | 'header' | 'footer';
@@ -21,8 +21,7 @@ type ContactItem = {
   href: string | null;
 };
 
-export const ContactInfo = React.memo(function ContactInfo({ data: info, style, position }: Props) {
-  const { t } = useTranslation();
+export const ContactInfo = React.memo(function ContactInfo({ data: info, style, position, title = "Contact" }: Props) {
   const isInSidebar = position?.area === 'sidebar';
   const contactItems: ContactItem[] = [
     { key: 'address', icon: MapPin, value: info.address, href: null },
@@ -72,7 +71,7 @@ export const ContactInfo = React.memo(function ContactInfo({ data: info, style, 
           marginBottom: 'var(--section-title-spacing)',
         }}
       >
-        {t('common.info.contact')}
+        {title}
       </h3>
       
       <div className="space-y-3">

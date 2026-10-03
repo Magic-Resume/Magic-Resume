@@ -1,5 +1,8 @@
 "use client";
 
+import { normalizeDocumentLanguage } from '@magic-resume/resume-schema';
+import { coerceSectionOrder } from '@/lib/utils/resumeSectionOrder';
+import { applyDocumentChange, diffDocumentChanges, documentChangeToPending } from '../../lib/documentChanges';
 import React, {
   useCallback,
   useEffect,
@@ -15,7 +18,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { QuoteRect } from "../../conversation/quoteHandoff";
 import { ListChecks } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
-import { InfoType, Resume, Section } from "@/types/frontend/resume";
+import { InfoType, Resume, Section, SectionItem } from "@/types/frontend/resume";
 import {
   EditableCanvasProvider,
   pathOf,
@@ -29,19 +32,17 @@ import AiThinkingOverlay from "../../../modals/AiThinkingOverlay";
 import ActionPopover from "./ActionPopover";
 import ReviewBar from "./ReviewBar";
 import SelectionActionBar from "./SelectionActionBar";
-import SectionActionPopover from "./SectionActionPopover";
+import SectionItemDialog from "../../../forms/SectionItemDialog";
+import { formFieldsFor } from "@/lib/constants/dynamicFormFields";
 import ChangesPanel from "./ChangesPanel";
 import {
   applyChangeToSections,
   applyInfoChange,
   buildElementChange,
-  buildInsertChange,
   buildSelectionChange,
   finalizeAfter,
   fieldTitle,
-  makeInsertTarget,
   parsePath,
-  reorderSection,
   sectionTitle,
   stripHtml,
   type ActionKind,
@@ -59,6 +60,7 @@ import {
 } from "../../lib/services/aiAccess";
 import {
   diffResumeToChanges,
+  diffInfoToChanges,
   type BatchKind,
   type TargetedSelectionDiff,
 } from "../../lib/diffResume";
@@ -76,6 +78,7 @@ export type BatchRequest = {
   nonce: number;
   /** The agent's proposed resume (from a `resume_update` event) to diff against current. */
   proposedSections?: Section;
+  proposedDocument?: Partial<Resume>;
   /** Present when a chat turn started from a text selection. */
   targetedSelection?: TargetedSelectionDiff;
   /** 模型给的逐字段改动理由，键为 `section/itemId/fieldKey`（`explain_changes`）。 */
@@ -99,6 +102,20 @@ export function workspaceChangesToPending(
     .filter((change) => change.status === "PENDING")
     .map((change) => {
       const target = change.target;
+      if (target.scope === 'document') {
+        const language = normalizeDocumentLanguage(change.after);
+        if (!language) throw new Error('Invalid proposed document language');
+        return {
+          ...documentChangeToPending({ field: 'documentLanguage', before: normalizeDocumentLanguage(baseResume.documentLanguage), after: language }),
+          id: change.id, workspaceChangeId: change.id,
+        };
+      }
+      if (target.scope === 'sectionOrder') {
+        return {
+          ...documentChangeToPending({ field: 'sectionOrder', before: coerceSectionOrder(baseResume.sectionOrder), after: coerceSectionOrder(change.after) }),
+          id: change.id, workspaceChangeId: change.id,
+        };
+      }
       if (target.scope === "info") {
         const before = readWorkspaceValue(baseResume, target);
         return {
@@ -160,23 +177,7 @@ export function workspaceChangesToPending(
           status: "pending",
         } satisfies PendingChange;
       }
-      return {
-        id: change.id,
-        workspaceChangeId: change.id,
-        target: {
-          sectionKey: "info",
-          itemId: "",
-          fieldKey: "sectionOrder",
-          kind: "text",
-          label: "Section order",
-        },
-        before: previewValue(baseResume.sectionOrder),
-        after: previewValue(change.after),
-        rationale: "",
-        action: "rewrite",
-        seed: 0,
-        status: "pending",
-      } satisfies PendingChange;
+      throw new Error('Unsupported workspace change');
     });
 }
 
@@ -184,6 +185,7 @@ function readWorkspaceValue(
   resume: Record<string, unknown>,
   target: WorkspaceProposalChange["target"],
 ): unknown {
+  if (target.scope === 'document') return resume.documentLanguage;
   if (target.scope === "info") {
     const info = resume.info;
     return info && typeof info === "object" && !Array.isArray(info)
@@ -220,6 +222,7 @@ type LivingCanvasProps = {
   templateId: string;
   onApplySections: (sections: Section) => void;
   onApplyInfo: (info: InfoType) => void;
+  onApplyDocument: (resume: Resume) => void;
   onLog: (text: string, resumePath?: string, tone?: "ok" | "info") => void;
   /**
    * 一次改动没能落到画布上时说一句。与 onLog 分开：那条记「做成了」，这条记「没做成」。
@@ -338,7 +341,7 @@ function resolveQuoteRange(
   }
   return next;
 }
-type SectionPopoverState = { sectionKey: string; title: string; rect: DOMRect };
+type SectionEditorState = { sectionKey: string; title: string; item: SectionItem };
 
 // 把原始 client rects 按视觉行合并成一个。含行内元素的选区会多返回重叠的 rect，
 // 两层半透明高亮叠上去会出现更深的斑块；合并后高亮才是一片均匀的颜色。
@@ -379,6 +382,7 @@ function LivingCanvas({
   templateId,
   onApplySections,
   onApplyInfo,
+  onApplyDocument,
   onLog,
   onWarn,
   onAskWithTarget,
@@ -402,8 +406,8 @@ function LivingCanvas({
     rect: DOMRect;
   } | null>(null);
   const [selection, setSelection] = useState<SelectionState | null>(null);
-  const [sectionPopover, setSectionPopover] =
-    useState<SectionPopoverState | null>(null);
+  const [sectionEditor, setSectionEditor] =
+    useState<SectionEditorState | null>(null);
   const [cursor, setCursor] = useState(0);
   const [, setInteracted] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -412,6 +416,8 @@ function LivingCanvas({
   // 用 ref 让异步回调读到最新值而不是过期闭包。
   const pendingRef = useRef(pending);
   pendingRef.current = pending;
+  const resumeRef = useRef(resumeData);
+  resumeRef.current = resumeData;
   const sectionsRef = useRef(resumeData.sections);
   sectionsRef.current = resumeData.sections;
   const infoRef = useRef(resumeData.info);
@@ -470,7 +476,6 @@ function LivingCanvas({
     const onScroll = () => {
       setPopover(null);
       setSelection(null);
-      setSectionPopover(null);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
@@ -604,7 +609,7 @@ function LivingCanvas({
     (target: EditableTarget, anchor: HTMLElement) => {
       setInteracted(true);
       setSelection(null);
-      setSectionPopover(null);
+      setSectionEditor(null);
       setPopover({ target, rect: anchor.getBoundingClientRect() });
     },
     [],
@@ -650,6 +655,7 @@ function LivingCanvas({
 
   // 检测可编辑字段内的文本选区。
   const onResumeMouseUp = useCallback(() => {
+    if (previewResume) return;
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       setSelection(null);
@@ -663,7 +669,7 @@ function LivingCanvas({
       "[data-resume-path]",
     ) as HTMLElement | null;
     const path = anchorEl?.getAttribute("data-resume-path");
-    if (!path || pendingRef.current[path]) {
+    if (!path || anchorEl?.isContentEditable || pendingRef.current[path]) {
       setSelection(null);
       return;
     }
@@ -674,7 +680,7 @@ function LivingCanvas({
     }
     const target: EditableTarget = {
       ...parsed,
-      kind: parsed.sectionKey === "info" ? "text" : "html",
+      kind: anchorEl?.dataset.resumeKind === "text" ? "text" : "html",
       label: t("aiLab.living.selectionLabel", {
         section: sectionTitle(parsed.sectionKey),
       }),
@@ -684,7 +690,7 @@ function LivingCanvas({
     const boundingRect = range.getBoundingClientRect();
     const text = sel.toString();
     setPopover(null);
-    setSectionPopover(null);
+    setSectionEditor(null);
     setInteracted(true);
     setSelection({
       target,
@@ -697,7 +703,7 @@ function LivingCanvas({
     // 鼠标一挪到浮动工具条浏览器就会清掉原生选区，所以不依赖它：现在就清掉，
     // 改用快照自绘持久高亮；动作也走存下来的 text 而非实时选区。
     sel.removeAllRanges();
-  }, [t]);
+  }, [t, previewResume]);
 
   const runSelectionAction = useCallback(
     (action: SelectionActionId | "free", arg?: string) => {
@@ -745,51 +751,41 @@ function LivingCanvas({
     [fieldHtml, runEdit, onAskWithTarget],
   );
 
-  // 模块标题上的手柄 → 新增条目 / 重排。
+  // The plus opens the same real entry form as the sidebar.
   const onSectionHandleClick = useCallback(
-    (sectionKey: string, title: string, anchor: HTMLElement) => {
+    (sectionKey: string, title: string) => {
       setInteracted(true);
       setPopover(null);
       setSelection(null);
-      setSectionPopover({
+      setSectionEditor({
         sectionKey,
         title,
-        rect: anchor.getBoundingClientRect(),
+        item: { id: nanoid(), visible: true, summary: '', ...Object.fromEntries(formFieldsFor(sectionKey).map((field) => [field.key, ''])) },
       });
     },
     [],
   );
 
-  const addItem = useCallback(
-    (sectionKey: string, title: string) => {
-      setSectionPopover(null);
-      const target = makeInsertTarget(sectionKey, title);
-      const path = pathOf(target);
-      void runEdit(
-        path,
-        {
-          action: "insert",
-          resumePath: `sections.${sectionKey}`,
-          before: "",
-          // 给模型看的隐藏指令按约定用英文；生成的内容跟随该模块自身语言。
-          instruction: `Add one new bullet under "${title}" matching the section's existing style and language, quantifiable where honest.`,
-        },
-        (r) => buildInsertChange(target, r),
-      );
-    },
-    [runEdit],
-  );
+  const addItem = useCallback((item: SectionItem) => {
+    if (!sectionEditor) return;
+    const { sectionKey, title } = sectionEditor;
+    const items = sectionsRef.current[sectionKey];
+    if (!Array.isArray(items)) {
+      onWarn(`添加未能写入简历 · ${title}`, 'apply_failed');
+      return;
+    }
+    const next = { ...sectionsRef.current, [sectionKey]: [...items, item] };
+    sectionsRef.current = next;
+    onApplySections(next);
+    setSectionEditor(null);
+    onLog(`已添加 · ${title}`);
+    appLifecycle.editorSectionAdded({ section: sectionKey });
+  }, [sectionEditor, onApplySections, onLog, onWarn]);
 
-  const reorder = useCallback(
-    (sectionKey: string, title: string) => {
-      setSectionPopover(null);
-      const next = reorderSection(sectionsRef.current, sectionKey);
-      if (next === sectionsRef.current) return;
-      onApplySections(next);
-      onLog(`已调整顺序 · ${title}`);
-    },
-    [onApplySections, onLog],
-  );
+  const onEditStart = useCallback(() => {
+    setPopover(null);
+    setSelection(null);
+  }, []);
 
   const accept = useCallback(
     (path: string) => {
@@ -825,7 +821,15 @@ function LivingCanvas({
       }
       // 同步更新 ref 而不只调 setter：同一 tick 内连按两次接受，否则两次都读到接受前的
       // 快照，第二次会把第一次的结果吃掉。
-      if (change.target.sectionKey === "info") {
+      if (change.documentChange) {
+        const next = applyDocumentChange({ ...resumeRef.current, sections: sectionsRef.current, info: infoRef.current }, change.documentChange);
+        if (!next) {
+          setErrors((prev) => ({ ...prev, [path]: t('aiLab.living.documentChanged') }));
+          return;
+        }
+        resumeRef.current = next;
+        onApplyDocument(next);
+      } else if (change.target.sectionKey === "info") {
         const nextInfo = applyInfoChange(infoRef.current, change);
         infoRef.current = nextInfo;
         onApplyInfo(nextInfo);
@@ -868,7 +872,7 @@ function LivingCanvas({
         // 与 globals.css `.lc-flash` 的时长成对：这里先摘掉,绿闪就播不完。
       }, 420);
     },
-    [batchRequest?.workspaceProposalId, onResolveWorkspace, onApplySections, onApplyInfo, onLog, onWarn, dropFromOrder],
+    [batchRequest?.workspaceProposalId, onResolveWorkspace, onApplySections, onApplyInfo, onApplyDocument, onLog, onWarn, dropFromOrder, t],
   );
 
   const discard = useCallback(
@@ -914,7 +918,7 @@ function LivingCanvas({
   // 「再来一版」：同一意图加一句换写法的提示重跑，只替换现有提案的文本，保留 id/target/path。
   const regenerate = useCallback((path: string) => {
     const change = pendingRef.current[path];
-    if (!change) return;
+    if (!change || change.documentChange) return;
     abortRef.current[path]?.abort();
     const ctrl = new AbortController();
     abortRef.current[path] = ctrl;
@@ -1032,9 +1036,16 @@ function LivingCanvas({
     let nextSections = sectionsRef.current;
     let nextInfo = infoRef.current;
     let infoTouched = false;
+    let documentTouched = false;
+    let nextDocument = resumeRef.current;
     let failed = 0;
     for (const c of changes) {
-      if (c.target.sectionKey === "info") {
+      if (c.documentChange) {
+        const result = applyDocumentChange(nextDocument, c.documentChange);
+        if (result) { nextDocument = result; documentTouched = true; }
+        else failed += 1;
+      } else if (c.target.sectionKey === "info") {
+        if ((nextInfo[c.target.fieldKey as keyof typeof nextInfo] ?? '') !== c.before) { failed += 1; continue; }
         nextInfo = applyInfoChange(nextInfo, c);
         infoTouched = true;
       } else {
@@ -1043,8 +1054,20 @@ function LivingCanvas({
         if (!result.applied) failed += 1;
       }
     }
-    onApplySections(nextSections);
-    if (infoTouched) onApplyInfo(nextInfo);
+    if (failed > 0 && changes.some((change) => change.documentChange)) {
+      onWarn(t('aiLab.living.documentChanged'), 'apply_failed', { count: failed });
+      return;
+    }
+    sectionsRef.current = nextSections;
+    infoRef.current = nextInfo;
+    if (documentTouched) {
+      const next = { ...nextDocument, sections: nextSections, info: nextInfo };
+      resumeRef.current = next;
+      onApplyDocument(next);
+    } else {
+      onApplySections(nextSections);
+      if (infoTouched) onApplyInfo(nextInfo);
+    }
     // 报真正落地的条数。一次「全部接受」里混着写不进去的条目时，此前报的是总数——
     // 数字对不上简历，而用户没有任何办法知道差在哪。
     onLog(
@@ -1059,7 +1082,7 @@ function LivingCanvas({
     setOrder([]);
     setCursor(0);
     setPanelOpen(false);
-  }, [order, batchRequest?.workspaceProposalId, onResolveWorkspace, onApplySections, onApplyInfo, onLog, onWarn, t]);
+  }, [order, batchRequest?.workspaceProposalId, onResolveWorkspace, onApplySections, onApplyInfo, onApplyDocument, onLog, onWarn, t]);
 
   const discardAll = useCallback(() => {
     const changes = order
@@ -1100,10 +1123,11 @@ function LivingCanvas({
 
   // Keyboard review shortcuts — only while reviewing and no overlay is open.
   useEffect(() => {
-    if (order.length === 0 || popover || selection || sectionPopover) return;
+    if (order.length === 0 || popover || selection || sectionEditor) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (t && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         acceptAll();
@@ -1127,7 +1151,7 @@ function LivingCanvas({
     cursor,
     popover,
     selection,
-    sectionPopover,
+    sectionEditor,
     acceptAll,
     goTo,
     accept,
@@ -1163,6 +1187,13 @@ function LivingCanvas({
         diagnostics,
         batchRequest.changeNotes,
       );
+      if (!batchRequest.workspaceChanges && batchRequest.proposedDocument) {
+        changes.push(...diffDocumentChanges(resumeRef.current, batchRequest.proposedDocument, batchRequest));
+        if (!batchRequest.targetedSelection) changes.push(...diffInfoToChanges(infoRef.current, batchRequest.proposedDocument.info, batchRequest.kind, batchRequest.lang));
+      }
+      for (const change of changes) {
+        if (change.documentChange) change.target.label = t(change.documentChange.field === 'documentLanguage' ? 'templateCustomizer.documentLanguage.label' : 'aiLab.living.sectionTitles');
+      }
       // 整条链路的终点。此前这里直接 return——画布不动、评审条不出现、一句提示都没有，
       // 而聊天里模型已经说「改好了」。这就是用户报的那个症状最后落地的地方。
       if (!changes.length) {
@@ -1203,6 +1234,7 @@ function LivingCanvas({
           ...paths.filter((p) => !prev.includes(p)),
         ]);
         setCursor(0);
+        if (changes.some((change) => change.documentChange)) setPanelOpen(true);
 
         // ResumePreview 会异步加载模板。等它真正渲染出任意 data-resume-path 后再做锚点
         // 对账；此前在骨架屏阶段检查，所有改动都会被误判为“不能在画布上显示”。
@@ -1216,7 +1248,7 @@ function LivingCanvas({
             anchorTimer = window.setTimeout(auditAnchors, 120);
             return;
           }
-          const { orphaned } = partitionByAnchor(changes, (path) =>
+          const { orphaned } = partitionByAnchor(changes.filter((change) => !change.documentChange), (path) =>
             Boolean(root?.querySelector(`[data-resume-path="${path}"]`)),
           );
           if (orphaned.length === 0) return;
@@ -1244,7 +1276,7 @@ function LivingCanvas({
         );
       }
     };
-  }, [batchRequest]);
+  }, [batchRequest, t]);
 
   // 画布被关掉时，还没评审的提案会跟着组件一起消失（外层 AnimatePresence 是 mode="wait"，
   // 关闭即卸载）。把状态上提能保住它们，但那要动这个组件里最有状态的一块，风险不小；
@@ -1298,6 +1330,7 @@ function LivingCanvas({
       // must not silently discard a valid server-owned change here.
       if (c.workspaceChangeId) return false;
       if (c.status === "accepted" || c.isInsert) return false;
+      if (c.documentChange) return JSON.stringify(resumeRef.current[c.documentChange.field]) !== JSON.stringify(c.documentChange.before);
       return fieldHtml(c.target) !== c.before;
     });
     if (stale.length === 0) return;
@@ -1308,7 +1341,7 @@ function LivingCanvas({
       return next;
     });
     setOrder((prev) => prev.filter((p) => !stalePaths.has(p)));
-  }, [resumeData.sections, resumeData.info, fieldHtml]);
+  }, [resumeData.sections, resumeData.info, resumeData.documentLanguage, resumeData.sectionOrder, fieldHtml]);
 
   const pendingByPath = useMemo<Record<string, PendingChangeView>>(
     () => toPendingView(pending),
@@ -1392,10 +1425,12 @@ function LivingCanvas({
       // 预览态（版本历史、整份改写的对照预览）不给这个能力：
       // 那时画布上显示的不是当前简历，改它会写到错的地方。
       onCommit: editable ? commitManualEdit : undefined,
+      onEditStart,
     }),
     [
       editable,
       commitManualEdit,
+      onEditStart,
       pendingByPath,
       processing,
       errors,
@@ -1494,7 +1529,10 @@ function LivingCanvas({
                   <ResumePreview
                     info={shown.info}
                     sections={shown.sections}
-                    sectionOrder={shown.sectionOrder.map((s) => s.key)}
+                    sectionOrder={shown.sectionOrder || []}
+                    documentLanguage={shown.documentLanguage}
+                    customTemplate={shown.customTemplate}
+                    templateOverride={shown.templateOverride}
                     templateId={templateId}
                   />
                 </div>
@@ -1600,21 +1638,23 @@ function LivingCanvas({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {sectionPopover && (
-          <SectionActionPopover
-            title={sectionPopover.title}
-            anchorRect={sectionPopover.rect}
-            onAdd={() =>
-              addItem(sectionPopover.sectionKey, sectionPopover.title)
-            }
-            onReorder={() =>
-              reorder(sectionPopover.sectionKey, sectionPopover.title)
-            }
-            onClose={() => setSectionPopover(null)}
-          />
-        )}
-      </AnimatePresence>
+      {sectionEditor && (
+        <SectionItemDialog
+          key={sectionEditor.item.id}
+          open
+          initialItem={sectionEditor.item}
+          label={sectionEditor.title}
+          fields={formFieldsFor(sectionEditor.sectionKey).map((field) => ({
+            name: field.key,
+            label: t(field.labelKey),
+            placeholder: field.placeholderKey ? t(field.placeholderKey) : '',
+            required: field.required,
+          }))}
+          themeColor={resumeData.themeColor}
+          onSave={addItem}
+          onClose={() => setSectionEditor(null)}
+        />
+      )}
     </div>
   );
 }

@@ -13,7 +13,7 @@ type AIModalProps = {
   onApplyInfo: (info: InfoType) => void;
   onApplyFullResume: (newResume: Resume) => void;
   onApplyWorkspaceResolution: (
-    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder'>,
+    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder' | 'documentLanguage' | 'documentLanguageSource'>,
     revision: number,
   ) => void;
   templateId: string;

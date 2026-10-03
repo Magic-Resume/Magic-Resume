@@ -1,6 +1,7 @@
 import React from 'react';
 import { getFieldValue, getFieldEntry } from './utils';
-import { Editable } from '../renderer/EditableCanvas';
+import { Editable, SectionHandle } from '../renderer/EditableCanvas';
+import { EditableField } from './EditableField';
 import { skillLevelToFraction } from './skill-level';
 
 interface Item {
@@ -64,6 +65,7 @@ export const CompactList = React.memo(function CompactList({ title, items, field
       >
         {TitleIcon && <TitleIcon style={{ display: 'var(--title-icon-display)', flexShrink: 0, width: '1em', height: '1em' }} />}
         {title}
+        {sectionKey && <SectionHandle sectionKey={sectionKey} title={title} />}
       </h3>
       
       <ul 
@@ -107,7 +109,7 @@ export const CompactList = React.memo(function CompactList({ title, items, field
                 </div>
               ) : level ? (
                 <div className="mt-1" style={{ color: secondaryColor, fontSize: 'var(--font-size-body)' }}>
-                  {level}
+                  <EditableField item={item} field={fieldMap.level || 'level'} sectionKey={sectionKey} label={title} />
                 </div>
               ) : null}
             </li>

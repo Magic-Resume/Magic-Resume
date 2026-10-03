@@ -6,9 +6,11 @@ import { CheckCircle2, Clock, Loader2, XCircle } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import {
   fetchOrder,
+  fetchSubscription,
   invalidateEntitlementCache,
   syncOrder,
 } from '@/lib/extensions/billing-client';
+import { useAccountUiStore } from '@/store/useAccountUiStore';
 import type { OrderSummary } from '@/lib/billing/types';
 
 const POLL_MS = 2_000;
@@ -21,6 +23,7 @@ const FAILURES_BEFORE_ERROR = 3;
 const RECENT_PAYMENT_MS = 15 * 60_000;
 
 type Phase =
+  | 'cancelled'
   | 'waiting'
   | 'paid'
   | 'already_paid'
@@ -35,6 +38,10 @@ function ReturnState() {
   const router = useRouter();
   const params = useSearchParams();
   const orderId = params.get('orderId');
+  const subscriptionId = params.get('subscriptionId');
+  const cancelled = params.get('cancelled') === '1';
+  const portal = params.get('portal') === '1';
+  const openPricing = useAccountUiStore((s) => s.openPricing);
 
   const [phase, setPhase] = useState<Phase>('waiting');
   const [error, setError] = useState<string | null>(null);
@@ -45,38 +52,44 @@ function ReturnState() {
   const tRef = useRef(t);
   tRef.current = t;
 
-  const settle = useCallback(
-    (next: OrderSummary | null) => {
-      if (!next) return false;
+  const settle = useCallback((next: OrderSummary | null) => {
+    if (!next) return false;
 
-      // 终态也要停：只认 'paid' 会让已失败/已退款的订单一路走到超时面板，
-      // 对一笔明确失败的支付说"款项不会丢失，渠道会重试"。
-      if (
-        next.status === 'failed' ||
-        next.status === 'refunded' ||
-        next.status === 'partially_refunded'
-      ) {
-        setPhase(next.status);
-        return true;
-      }
-      if (next.status !== 'paid') return false;
-
-      // 按支付落账时间判定，不按轮询次数：首次轮询就已支付恰恰是最常见的**成功**路径，
-      // 当成"重复访问"会对刚付完钱的买家说"此前已完成付款"。
-      const paidAt = next.paidAt ? Date.parse(next.paidAt) : NaN;
-      const arrivedNow =
-        Number.isNaN(paidAt) || paidAt >= openedAt.current - RECENT_PAYMENT_MS;
-      setPhase(arrivedNow ? 'paid' : 'already_paid');
-
-      // 无条件失效：放进 arrivedNow 分支里会让买家返回工作台时看到买之前的余额和计划。
-      invalidateEntitlementCache();
+    // 终态也要停：只认 'paid' 会让已失败/已退款的订单一路走到超时面板，
+    // 对一笔明确失败的支付说"款项不会丢失，渠道会重试"。
+    if (
+      next.status === 'failed' ||
+      next.status === 'refunded' ||
+      next.status === 'partially_refunded'
+    ) {
+      setPhase(next.status);
       return true;
-    },
-    [],
-  );
+    }
+    if (next.status !== 'paid') return false;
+
+    // 按支付落账时间判定，不按轮询次数：首次轮询就已支付恰恰是最常见的**成功**路径，
+    // 当成"重复访问"会对刚付完钱的买家说"此前已完成付款"。
+    const paidAt = next.paidAt ? Date.parse(next.paidAt) : NaN;
+    const arrivedNow =
+      Number.isNaN(paidAt) || paidAt >= openedAt.current - RECENT_PAYMENT_MS;
+    setPhase(arrivedNow ? 'paid' : 'already_paid');
+
+    // 无条件失效：放进 arrivedNow 分支里会让买家返回工作台时看到买之前的余额和计划。
+    invalidateEntitlementCache();
+    return true;
+  }, []);
 
   useEffect(() => {
-    if (!orderId) {
+    if (portal) {
+      invalidateEntitlementCache();
+      router.replace('/dashboard/billing');
+      return;
+    }
+    if (cancelled) {
+      setPhase('cancelled');
+      return;
+    }
+    if (!orderId && !subscriptionId) {
       setPhase('error');
       setError(tRef.current('billing.return.missingOrder'));
       return;
@@ -84,19 +97,35 @@ function ReturnState() {
 
     let alive = true;
     const startedAt = Date.now();
+    attempts.current = 0;
+    failures.current = 0;
+    setPhase('waiting');
+    setError(null);
 
     const tick = async () => {
       if (!alive) return;
       attempts.current += 1;
 
       try {
-        const order = await fetchOrder(orderId);
-        // 主轮询答复了就清失败计数。这行必须在下面 sync 之前、且不能同处一个 try：
-        // 否则可选调用抛错会既加计数又跳过清零，把健康的轮询判成 error。
-        failures.current = 0;
-        if (!alive) return;
-        if (settle(order)) return;
+        if (subscriptionId && !orderId) {
+          const sub = await fetchSubscription();
+          if (!alive) return;
+          failures.current = 0;
+          if (sub?.id === subscriptionId && sub.status === 'active') {
+            invalidateEntitlementCache();
+            setPhase('paid');
+            return;
+          }
+        } else if (orderId) {
+          const order = await fetchOrder(orderId);
+          // 主轮询答复了就清失败计数。这行必须在下面 sync 之前、且不能同处一个 try：
+          // 否则可选调用抛错会既加计数又跳过清零，把健康的轮询判成 error。
+          failures.current = 0;
+          if (!alive) return;
+          if (settle(order)) return;
+        }
       } catch (e) {
+        if (!alive) return;
         failures.current += 1;
         setError(e instanceof Error ? e.message : String(e));
         if (failures.current >= FAILURES_BEFORE_ERROR) {
@@ -106,7 +135,7 @@ function ReturnState() {
       }
 
       if (!alive) return;
-      if (SYNC_AT_ATTEMPTS.has(attempts.current)) {
+      if (orderId && SYNC_AT_ATTEMPTS.has(attempts.current)) {
         try {
           const synced = await syncOrder(orderId);
           if (!alive) return;
@@ -132,18 +161,46 @@ function ReturnState() {
     };
     // 故意不依赖 `t`：react-i18next 资源加载完会换一个新的 `t`，会重启本 effect、
     // 重置计时并多打一次轮询，悄悄突破文案承诺的 60s 上限。改从 tRef 读。
-  }, [orderId, settle]);
+  }, [orderId, subscriptionId, cancelled, portal, router, settle]);
 
   const backToDashboard = () => router.push('/dashboard');
+
+  if (phase === 'cancelled') {
+    return (
+      <Panel
+        icon={<XCircle className="text-ink-muted h-10 w-10" />}
+        title={t('billing.return.cancelledTitle')}
+        detail={t('billing.return.cancelledDetail')}
+        action={{
+          label: t('billing.return.retry'),
+          onClick: () => {
+            openPricing();
+            router.push('/dashboard');
+          },
+        }}
+      />
+    );
+  }
 
   if (phase === 'paid') {
     return (
       <Panel
         icon={<CheckCircle2 className="h-10 w-10 text-emerald-500" />}
-        title={t('billing.return.paidTitle')}
+        title={t(
+          subscriptionId
+            ? 'billing.return.subscriptionPaidTitle'
+            : 'billing.return.paidTitle',
+        )}
         // 不提数量：积分数不下发到客户端。
-        detail={t('billing.return.paidDetail')}
-        action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
+        detail={t(
+          subscriptionId
+            ? 'billing.return.subscriptionPaidDetail'
+            : 'billing.return.paidDetail',
+        )}
+        action={{
+          label: t('billing.return.backToDashboard'),
+          onClick: backToDashboard,
+        }}
       />
     );
   }
@@ -154,7 +211,10 @@ function ReturnState() {
         icon={<CheckCircle2 className="h-10 w-10 text-emerald-500" />}
         title={t('billing.return.alreadyPaidTitle')}
         detail={t('billing.return.alreadyPaidDetail')}
-        action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
+        action={{
+          label: t('billing.return.backToDashboard'),
+          onClick: backToDashboard,
+        }}
       />
     );
   }
@@ -169,7 +229,10 @@ function ReturnState() {
         icon={<XCircle className="h-10 w-10 text-red-500" />}
         title={t(`billing.return.${phase}Title`)}
         detail={t(`billing.return.${phase}Detail`)}
-        action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
+        action={{
+          label: t('billing.return.backToDashboard'),
+          onClick: backToDashboard,
+        }}
       />
     );
   }
@@ -181,7 +244,10 @@ function ReturnState() {
         title={t('billing.return.timeoutTitle')}
         // 故意不说"支付失败"：钱很可能已经扣了，支付宝的通知会重试数小时，订单还能自己落账。
         detail={t('billing.return.timeoutDetail')}
-        action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
+        action={{
+          label: t('billing.return.backToDashboard'),
+          onClick: backToDashboard,
+        }}
       />
     );
   }
@@ -192,15 +258,22 @@ function ReturnState() {
         icon={<XCircle className="h-10 w-10 text-red-500" />}
         title={t('billing.return.errorTitle')}
         detail={error ?? undefined}
-        action={{ label: t('billing.return.backToDashboard'), onClick: backToDashboard }}
+        action={{
+          label: t('billing.return.backToDashboard'),
+          onClick: backToDashboard,
+        }}
       />
     );
   }
 
   return (
     <Panel
-      icon={<Loader2 className="h-10 w-10 animate-spin text-ink-sky" />}
-      title={t('billing.return.waitingTitle')}
+      icon={<Loader2 className="text-ink-sky h-10 w-10 animate-spin" />}
+      title={t(
+        subscriptionId
+          ? 'billing.return.subscriptionWaitingTitle'
+          : 'billing.return.waitingTitle',
+      )}
       detail={t('billing.return.waitingDetail')}
     />
   );
@@ -218,16 +291,16 @@ function Panel({
   action?: { label: string; onClick: () => void };
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-desk px-6">
+    <main className="bg-desk flex min-h-screen items-center justify-center px-6">
       <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
         {icon}
-        <h1 className="text-lg font-semibold text-ink">{title}</h1>
-        {detail ? <p className="text-sm text-ink-muted">{detail}</p> : null}
+        <h1 className="text-ink text-lg font-semibold">{title}</h1>
+        {detail ? <p className="text-ink-muted text-sm">{detail}</p> : null}
         {action ? (
           <button
             type="button"
             onClick={action.onClick}
-            className="mt-2 rounded-lg bg-ink-sky px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+            className="bg-ink-sky mt-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
           >
             {action.label}
           </button>
@@ -248,8 +321,8 @@ export default function BillingReturnPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-desk">
-          <Loader2 className="h-6 w-6 animate-spin text-ink-sky" />
+        <main className="bg-desk flex min-h-screen items-center justify-center">
+          <Loader2 className="text-ink-sky h-6 w-6 animate-spin" />
         </main>
       }
     >

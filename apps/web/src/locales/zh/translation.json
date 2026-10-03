@@ -198,6 +198,7 @@
       "endsOn": "已取消，{{date}} 到期",
       "paymentFailed": "扣款失败，请在宽限期结束前更新支付方式，否则订阅将终止",
       "manageCta": "管理套餐",
+      "renewCta": "续订套餐",
       "upgradeCta": "升级",
       "ordersTitle": "付款记录",
       "noOrders": "暂无付款记录",
@@ -205,6 +206,11 @@
       "colDate": "时间",
       "colItem": "项目",
       "colAmount": "金额",
+      "billDetails": "账单明细",
+      "subtotal": "小计",
+      "discount": "优惠",
+      "tax": "税费",
+      "shipping": "运费",
       "colChannel": "支付方式",
       "colStatus": "状态",
       "loadFailed": "账单信息加载失败",
@@ -226,7 +232,9 @@
         "manual": "人工"
       },
       "colOrderId": "账单 ID",
-      "copyOrderId": "复制完整账单 ID"
+      "copyOrderId": "复制完整账单 ID",
+      "endsOnManual": "有效期至 {{date}}，到期后需手动续费",
+      "manageFailed": "无法打开订阅管理，请稍后重试"
     },
     "invite": {
       "copied": "已复制",
@@ -1209,7 +1217,30 @@
       "background": "背景颜色",
       "sidebar": "侧边栏颜色",
       "border": "边框颜色",
-      "advanced": "更多颜色"
+      "advanced": "更多颜色",
+      "schemes": "配色方案",
+      "customScheme": "自定义",
+      "defaultScheme": "模板默认",
+      "schemeNames": {
+        "blue": "商务蓝",
+        "graphite": "石墨灰",
+        "forest": "森林绿",
+        "ocean": "海盐青",
+        "umber": "暖棕",
+        "wine": "酒红"
+      },
+      "resetShort": "重置",
+      "resetColors": "恢复模板配色",
+      "openPicker": "调整{{label}}",
+      "closePicker": "关闭取色器",
+      "hexLabel": "{{label}}的色值",
+      "invalidHex": "请输入有效色值，如 #315B96",
+      "saturationBrightness": "饱和度与明度",
+      "saturationBrightnessValue": "饱和度 {{saturation}}%，明度 {{brightness}}%",
+      "saturationBrightnessHint": "方向键调整饱和度和明度，按 Shift 加快调整",
+      "hue": "色相",
+      "presets": "推荐颜色",
+      "colorPreset": "选择颜色 {{color}}"
     },
     "header": {
       "title": "头像与页眉",
@@ -1259,7 +1290,14 @@
     },
     "buttons": {
       "backToTemplates": "返回模板列表",
-      "reset": "恢复默认设置"
+      "reset": "恢复默认设置",
+      "resetAll": "恢复全部样式"
+    },
+    "documentLanguage": {
+      "label": "简历语言",
+      "hint": "控制简历标题和固定标签的语言，不影响编辑器界面。",
+      "detected": "已根据内容识别，请确认语言",
+      "confirm": "确认"
     }
   },
   "resumeContent": {
@@ -1712,7 +1750,13 @@
       "timeoutDetail": "如已完成付款，款项不会丢失；支付渠道将在数小时内重新发送通知，可稍后返回工作台查看余额",
       "errorTitle": "订单确认失败",
       "missingOrder": "链接中缺少订单号，无法查询支付结果",
-      "backToDashboard": "返回工作台"
+      "backToDashboard": "返回工作台",
+      "cancelledTitle": "付款已取消",
+      "cancelledDetail": "你可以重新选择套餐和付款方式。",
+      "retry": "重新选择",
+      "subscriptionPaidTitle": "订阅已开通",
+      "subscriptionPaidDetail": "套餐权益已生效，可以返回工作台继续使用。",
+      "subscriptionWaitingTitle": "正在确认订阅开通"
     },
     "checkout": {
       "summaryHeading": "购买",
@@ -2363,7 +2407,9 @@
       "next": "下一处",
       "addSectionContent": "补充内容",
       "reorder": "调整顺序",
-      "acceptedChangesLog": "已采纳 {{count}} 处修改"
+      "acceptedChangesLog": "已采纳 {{count}} 处修改",
+      "documentChanged": "简历设置已变化，请重新生成提案",
+      "sectionTitles": "章节标题与顺序"
     },
     "attach": {
       "parsing": "正在解析 PDF…",
@@ -2508,6 +2554,11 @@
       "interviewFallback": "模拟面试",
       "interviewScore": "评分 {{score}}",
       "openInterview": "查看面试报告",
+      "interviewContent": "面试内容",
+      "interviewTranscript": "对话记录",
+      "interviewLoading": "正在加载面试内容",
+      "interviewLoadFailed": "面试内容加载失败",
+      "interviewTranscriptEmpty": "这场面试没有留下对话记录",
       "collapse": "收起",
       "showMore": "展开其余 {{count}} 条",
       "delete": "删除",
@@ -2675,7 +2726,8 @@
     "placeholder": "例如：个人优势、获奖经历",
     "iconLabel": "图标（可选）",
     "deleteTitle": "删除模块",
-    "deleteHint": "「{{name}}」及其中的条目将一并删除，此操作无法撤销"
+    "deleteHint": "「{{name}}」及其中的条目将一并删除，此操作无法撤销",
+    "useDefaultTitle": "恢复默认标题"
   },
   "errors": {
     "unauthenticated": "登录已过期，请重新登录",

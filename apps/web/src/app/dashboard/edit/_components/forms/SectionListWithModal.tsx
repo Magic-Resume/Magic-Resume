@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import CustomFieldsEditor from './CustomFieldsEditor';
-import type { CustomInfoField } from '@/types/frontend/resume';
+import SectionItemDialog, { type SectionItemField } from './SectionItemDialog';
 import { Button } from '@/components/ui/button';
 import {
   DndContext,
@@ -21,19 +20,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FaPlus, FaGripVertical } from '@magic-resume/icons';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { DropMenu } from '@/components/ui/drop-menu';
 import { DotsHorizontalIcon, Pencil2Icon, CopyIcon, TrashIcon } from '@magic-resume/icons';
 import { UniqueIdentifier } from '@dnd-kit/core';
-import { EditorComponents } from '@/lib/utils/componentOptimization';
 
-const TiptapEditor = EditorComponents.TiptapEditor;
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from '@magic-resume/icons';
-import { ModalShell } from '@/components/ui/ModalShell';
 
 import { useResumeDocumentStore } from '@/store/resume/document';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
@@ -136,7 +130,7 @@ function SortableItem<T extends BaseItem>({ id, item, index, handleEdit, handleD
   );
 }
 
-type Field = { name: string; label: string; placeholder: string; required?: boolean };
+type Field = SectionItemField;
 
 interface SectionListWithModalProps<T extends BaseItem> {
   /** Stable section kind (`experience`, `education`…), used for analytics. */
@@ -167,7 +161,6 @@ export default function SectionListWithModal<T extends BaseItem>({
   const [isOpen, setIsOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<T | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
-  const [isPolishing, setIsPolishing] = useState(false);
   const { t } = useTranslation();
   const { activeResume } = useResumeDocumentStore();
 
@@ -194,38 +187,19 @@ export default function SectionListWithModal<T extends BaseItem>({
     onModalStateChange?.(false);
   }, [onModalStateChange]);
 
-  const handleSave = useCallback(() => {
-    if (!currentItem) return;
-
-    const requiredFieldNames = fields
-      .filter(f => f.required)
-      .map(f => f.name)
-      .filter(f => f !== richtextKey);
-    const missingFieldNames = requiredFieldNames.filter(fieldName => {
-      const value = currentItem[fieldName];
-      return typeof value !== 'string' || !value.trim();
-    });
-
-    if (missingFieldNames.length > 0) {
-      const missingLabels = missingFieldNames
-        .map(name => fields.find(f => f.name === name)?.label || name)
-        .join(', ');
-      toast.error(t('sections.notifications.requiredFields', { fields: missingLabels }));
-      return;
-    }
-
+  const handleSave = useCallback((savedItem: T) => {
     const newItems = [...items];
     if (currentIndex !== null) {
       // Locate the row by id, not the captured index: an external reorder (AI accept
       // / cloud sync) while the modal was open could otherwise overwrite the wrong item.
-      const targetIndex = items.findIndex((it) => it.id === currentItem.id);
+      const targetIndex = items.findIndex((it) => it.id === savedItem.id);
       if (targetIndex !== -1) {
-        newItems[targetIndex] = currentItem;
+        newItems[targetIndex] = savedItem;
       } else {
-        newItems.push(currentItem);
+        newItems.push(savedItem);
       }
     } else {
-      newItems.push(currentItem);
+      newItems.push(savedItem);
     }
     setItems(newItems as T[]);
     handleCloseModal();
@@ -237,7 +211,7 @@ export default function SectionListWithModal<T extends BaseItem>({
     // Only a genuinely new entry — editing an existing one is not an addition.
     // The section kind travels, never the entry the user typed.
     if (isNew) appLifecycle.editorSectionAdded({ section: sectionKey });
-  }, [currentItem, fields, richtextKey, items, currentIndex, setItems, handleCloseModal, t, translatedLabel, sectionKey]);
+  }, [items, currentIndex, setItems, handleCloseModal, t, translatedLabel, sectionKey]);
 
   const handleDelete = useCallback((index: number) => {
     const newItems = items.filter((_, i) => i !== index);
@@ -273,18 +247,6 @@ export default function SectionListWithModal<T extends BaseItem>({
       }
     }
   }, [items, setItems]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (currentItem) {
-      setCurrentItem({ ...currentItem, [e.target.name]: e.target.value });
-    }
-  }, [currentItem]);
-
-  const handleQuillChange = useCallback((content: string) => {
-    if (currentItem) {
-      setCurrentItem({ ...currentItem, [richtextKey]: content });
-    }
-  }, [currentItem, richtextKey]);
 
   return (
     <div className={cn(className)}>
@@ -331,76 +293,21 @@ export default function SectionListWithModal<T extends BaseItem>({
           {t('sections.shared.addItem')}
         </button>
       )}
-      <ModalShell
-        open={isOpen}
-        onOpenChange={(open) => !open && handleCloseModal()}
-        title={
-          currentIndex !== null
-            ? t('sections.shared.editTitle', { label: translatedLabel })
-            : t('sections.shared.addTitle', { label: translatedLabel })
-        }
-        className="max-h-[88vh] w-[min(680px,92vw)]"
-      >
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto scrollbar-hide px-6 py-6">
-          {fields.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {fields.map((field) => (
-                <div key={field.name} className="space-y-2">
-                  <Label htmlFor={field.name} className="text-mr-caption font-medium text-neutral-300">
-                    {field.label}
-                  </Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    placeholder={field.placeholder}
-                    value={(currentItem?.[field.name] as string) || ''}
-                    onChange={handleInputChange}
-                    className="h-10 rounded-lg border border-white/[0.07] bg-sunk px-3.5 text-neutral-100 placeholder:text-neutral-600 transition-colors focus-visible:border-sky-500/40 focus-visible:ring-1 focus-visible:ring-sky-500/25 focus-visible:ring-offset-0"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-          <CustomFieldsEditor
-            fields={(currentItem?.customFields as unknown as CustomInfoField[]) || []}
-            onChange={(next) =>
-              currentItem && setCurrentItem({ ...currentItem, customFields: next })
-            }
-            title={t('basicForm.customFields.title')}
-          />
-          <div className="space-y-2">
-            <Label className="text-mr-caption font-medium text-neutral-300">
-              {t('modals.dynamicForm.descriptionLabel')}
-            </Label>
-            <div className="overflow-hidden rounded-lg border border-white/[0.07] bg-sunk transition-colors focus-within:border-sky-500/40 focus-within:ring-1 focus-within:ring-sky-500/25">
-              <TiptapEditor
-                content={(currentItem?.[richtextKey] as string) || ''}
-                onChange={handleQuillChange}
-                placeholder={richtextPlaceholder}
-                isPolishing={isPolishing}
-                setIsPolishing={setIsPolishing}
-                themeColor={activeResume?.themeColor}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-mr-line-soft px-6 py-4">
-          <button
-            type="button"
-            onClick={handleCloseModal}
-            className="h-9 rounded-lg px-4 text-mr-caption text-neutral-400 transition-colors hover:bg-mr-surface-soft hover:text-neutral-100"
-          >
-            {t('modals.dynamicForm.cancelButton')}
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="h-9 rounded-lg bg-sky-500 px-5 text-mr-caption font-medium text-[#fff] transition-colors hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
-          >
-            {t('modals.dynamicForm.saveButton')}
-          </button>
-        </div>
-      </ModalShell>
+      {currentItem && (
+        <SectionItemDialog
+          key={currentItem.id}
+          open={isOpen}
+          initialItem={currentItem}
+          isEditing={currentIndex !== null}
+          label={translatedLabel}
+          fields={fields}
+          richtextKey={richtextKey}
+          richtextPlaceholder={richtextPlaceholder}
+          themeColor={activeResume?.themeColor}
+          onSave={handleSave}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }
