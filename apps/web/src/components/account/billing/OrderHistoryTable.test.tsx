@@ -36,30 +36,32 @@ const render = (orders: OrderHistoryRow[]) =>
     ),
   );
 
-test('settled totals use the channel currency, with escaped promotion labels and no zero shipping row', () => {
-  const html = render([
-    {
-      ...order,
-      billingDetails: {
-        subtotalCents: 1000,
-        discountCents: 200,
-        taxCents: 0,
-        shippingCents: 0,
-        totalCents: 800,
-        currency: 'USD',
-        discountLabel: '<script>MAGIC20</script>',
+for (const discountLabel of ['<script>MAGIC20</script>', '<SCRIPT>MAGIC20</SCRIPT>']) {
+  test(`settled totals use the channel currency and escape ${discountLabel}`, () => {
+    const html = render([
+      {
+        ...order,
+        billingDetails: {
+          subtotalCents: 1000,
+          discountCents: 200,
+          taxCents: 0,
+          shippingCents: 0,
+          totalCents: 800,
+          currency: 'USD',
+          discountLabel,
+        },
       },
-    },
-  ]);
-  assert.match(html, /\$8\.00/);
-  assert.match(html, /Subtotal/);
-  assert.match(html, /−\$2\.00/);
-  assert.match(html, /Tax/);
-  assert.match(html, /&lt;script&gt;MAGIC20&lt;\/script&gt;/);
-  assert.doesNotMatch(html, /<script>/);
-  assert.doesNotMatch(html, /Shipping/);
-  assert.doesNotMatch(html, /19\.00/);
-});
+    ]);
+    assert.match(html, /\$8\.00/);
+    assert.match(html, /Subtotal/);
+    assert.match(html, /−\$2\.00/);
+    assert.match(html, /Tax/);
+    assert.match(html, /&lt;script&gt;MAGIC20&lt;\/script&gt;/i);
+    assert.doesNotMatch(html, /<script\b/i);
+    assert.doesNotMatch(html, /Shipping/);
+    assert.doesNotMatch(html, /19\.00/);
+  });
+}
 
 test('nonzero shipping is shown from the settled snapshot', () => {
   const html = render([
