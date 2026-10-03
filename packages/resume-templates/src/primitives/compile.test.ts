@@ -208,6 +208,26 @@ test('catch-all 只展开模板没声明、且非内建的分区', () => {
 
 // ── 安全 ────────────────────────────────────────────────────────────────
 
+test('插值保留缺失字段、空标记与不完整分隔符的既有行为', () => {
+  const cases = [
+    ['你好 {{ info.fullName }} {{info.nope}}！', '你好 张三 ！'],
+    ['{{}} {{info.fullName}', '{{}} {{info.fullName}'],
+    ['{{info.fullName} / {{info.fullName}}', '{{info.fullName} / 张三'],
+    ['{{{{info.fullName}}', ''],
+    ['{{info.fullName}}}}', '张三}}'],
+  ];
+  for (const [value, expected] of cases) {
+    const { root } = compile(doc({ id: 't', type: 'Text', value }), resume);
+    assert.deepEqual(texts(root), expected === '' ? [] : [expected]);
+  }
+});
+
+test('大量未闭合插值标记按字面量保留', () => {
+  const value = '{{{{|'.repeat(50_000);
+  const { root } = compile(doc({ id: 't', type: 'Text', value }), resume);
+  assert.deepEqual(texts(root), [value]);
+});
+
 test('不安全的 href 在编译期就被剥掉', () => {
   const { root } = compile(
     doc({ id: 'a', type: 'Text', value: '点我', href: 'javascript:alert(1)' }),
