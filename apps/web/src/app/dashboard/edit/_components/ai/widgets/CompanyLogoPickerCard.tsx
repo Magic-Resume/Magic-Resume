@@ -88,7 +88,9 @@ export default function CompanyLogoPickerCard({ instance, onAction }: WidgetProp
             {instance.status === 'submitted' ? <Check size={11} /> : <X size={11} />}
             {instance.status === 'submitted'
               ? t('aiLab.widgets.companyLogos.submitted')
-              : t('aiLab.widgets.companyLogos.skipped')}
+              : instance.status === 'expired'
+                ? t('aiLab.widgets.form.expired')
+                : t('aiLab.widgets.companyLogos.skipped')}
           </span>
         ) : null}
       </div>
