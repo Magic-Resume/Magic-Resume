@@ -109,18 +109,26 @@ jobs:
             echo "published=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Land the CHANGELOG.md change through a PR (respects branch protection).
-      # Skipped when no release was cut.
-      #
       # The enterprise policy forbids GITHUB_TOKEN from opening PRs, and a repo
-      # cannot override it. CHANGELOG_PR_TOKEN (a fine-grained PAT scoped to this
-      # repo) is not subject to that policy. The fallback only works if the policy
-      # is ever lifted.
+      # cannot override it. A short-lived token from the release-bot GitHub App
+      # (vars.RELEASE_BOT_APP_ID + secrets.RELEASE_BOT_PRIVATE_KEY, shared with
+      # Magic-SDK) is not subject to that policy, and the PR it opens triggers CI.
+      - name: Release bot token
+        id: bot
+        if: steps.sr.outputs.published == 'true' && vars.RELEASE_BOT_APP_ID != ''
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      # Land the CHANGELOG.md change through a PR (respects branch protection).
+      # Skipped when no release was cut. CHANGELOG_PR_TOKEN (a fine-grained PAT)
+      # still works as a fallback; GITHUB_TOKEN only if the policy is ever lifted.
       - name: Open CHANGELOG pull request
         if: steps.sr.outputs.published == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.CHANGELOG_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot.outputs.token || secrets.CHANGELOG_PR_TOKEN || secrets.GITHUB_TOKEN }}
           add-paths: CHANGELOG.md
           base: master
           branch: chore/changelog-v${{ steps.sr.outputs.version }}
