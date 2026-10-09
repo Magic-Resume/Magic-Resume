@@ -2205,9 +2205,9 @@
         }
       },
       "recommendation": {
-        "alternatives": "其他方案",
+        "alternatives": "其他",
         "others": "其他选项",
-        "accept": "采用此方案",
+        "accept": "采纳",
         "accepted": "已选择",
         "confidence": {
           "high": "高置信度",

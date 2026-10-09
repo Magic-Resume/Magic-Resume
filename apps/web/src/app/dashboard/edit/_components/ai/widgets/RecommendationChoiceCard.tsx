@@ -40,6 +40,13 @@ export default function RecommendationChoiceCard({ instance, onAction }: WidgetP
           instance.status === 'submitted' ? t('aiLab.widgets.form.submitted') : undefined
         }
         disabled={resolved}
+        inactive={
+          instance.status === 'expired'
+            ? t('aiLab.widgets.form.expired')
+            : instance.status === 'cancelled'
+              ? t('aiLab.widgets.form.cancelled')
+              : undefined
+        }
         labels={{
           alternatives: t('aiLab.widgets.recommendation.alternatives'),
           others: t('aiLab.widgets.recommendation.others'),

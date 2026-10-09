@@ -2207,7 +2207,7 @@
       "recommendation": {
         "alternatives": "Alternatives",
         "others": "Other options",
-        "accept": "Use this option",
+        "accept": "Accept",
         "accepted": "Chosen",
         "confidence": {
           "high": "High confidence",
