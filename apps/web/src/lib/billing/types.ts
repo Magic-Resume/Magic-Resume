@@ -134,6 +134,8 @@ export interface Entitlement {
   availableModels?: string[];
   /** 为真表示这份列表没能与 relay 的可路由集对齐，可能含调不通的模型。 */
   catalogDegraded?: boolean;
+  /** 模型 → 它接受的推理强度；缺省表示不知道，前端按用户所选原样发送。 */
+  modelEfforts?: Record<string, string[]>;
   /** 上次成功支付的渠道，仅用作渠道选择器的默认值；`manual`（线下记账）不会出现。 */
   lastPaidChannel?: string | null;
   lastPaidRoute?: string | null;
