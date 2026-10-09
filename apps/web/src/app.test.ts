@@ -14,7 +14,7 @@ import type {
   FilterTableProps,
   RecordsTableProps,
 } from "@magic-resume/genui";
-import { WidgetHost } from "@magic-resume/genui";
+import { RecommendationCard, WidgetHost } from "@magic-resume/genui";
 import zhCopy from "@/locales/zh/translation.json";
 import enCopy from "@/locales/en/translation.json";
 import {
@@ -28,6 +28,8 @@ import {
   settleWidgetInMessages,
   upsertWidgetInMessages,
 } from "@/app/dashboard/edit/_components/ai/lib/widgetPlacement";
+import { readSessionState } from "@/app/dashboard/edit/_components/ai/lib/services/agentClient";
+import { effectiveEffort } from "@/app/dashboard/edit/_components/ai/lib/reasoningEffort";
 import { presentAppError } from "@/lib/errors/present";
 import { APP_ERROR_CODES, opensBillingGate } from "@/lib/errors/types";
 import { projectUpstreamError } from "@/lib/api/errorProjection";
@@ -2785,6 +2787,63 @@ function testCaptionPacing() {
  * 原因是同一个 widgetId 的旧卡已经被「应用」（终态），新版本仍被原地塞进那张卡里——
  * 落在很久以前那一轮、按钮还不可点。
  */
+function testRecommendationCardStates() {
+  const labels = {
+    alternatives: zhCopy.aiLab.widgets.recommendation.alternatives,
+    others: zhCopy.aiLab.widgets.recommendation.others,
+    accept: zhCopy.aiLab.widgets.recommendation.accept,
+    accepted: zhCopy.aiLab.widgets.recommendation.accepted,
+    confidence: zhCopy.aiLab.widgets.recommendation.confidence,
+  };
+  const options = [{ label: "工作经历", confidence: "high" as const }, { label: "项目经历" }];
+  const live = renderToStaticMarkup(
+    createElement(RecommendationCard, { message: "先改哪一段？", options, labels }),
+  );
+  assert.ok(live.includes(">采纳</button>"));
+  assert.ok(live.includes(">其他</button>"));
+
+  // 过期的卡不能再挂一个蓝底「采纳」：看着能点、点了没反应。
+  const expired = renderToStaticMarkup(
+    createElement(RecommendationCard, {
+      message: "先改哪一段？",
+      options,
+      labels,
+      disabled: true,
+      inactive: zhCopy.aiLab.widgets.form.expired,
+    }),
+  );
+  assert.ok(expired.includes(zhCopy.aiLab.widgets.form.expired));
+  assert.ok(!expired.includes(">采纳</button>"));
+  assert.ok(!expired.includes(">其他</button>"));
+}
+
+function testSessionStateEnvelope() {
+  const inner = {
+    state: "awaiting_input",
+    checkpointId: "ckpt-1",
+    pendingApproval: { requestId: "req-1" },
+  };
+  // agent-service 的真实响应带信封；读漏这一层，挂着的卡片会被当成过期锁死。
+  assert.deepEqual(
+    readSessionState({ code: 200, data: inner, message: "success" }),
+    inner,
+  );
+  assert.deepEqual(readSessionState(inner), inner);
+  assert.throws(() => readSessionState({ code: 200, data: {} }));
+  assert.throws(() => readSessionState(null));
+}
+
+function testEffectiveEffort() {
+  const qwen = ["low", "medium", "xhigh"];
+  // 支持的档位原样保留；不支持的先往强处找，再往弱处找，与 relay 的映射一致。
+  assert.equal(effectiveEffort("medium", qwen), "medium");
+  assert.equal(effectiveEffort("high", qwen), "xhigh");
+  assert.equal(effectiveEffort("high", ["low", "medium"]), "medium");
+  // 不知道模型支持什么时不猜，按用户选的发。
+  assert.equal(effectiveEffort("high", undefined), "high");
+  assert.equal(effectiveEffort("high", []), "high");
+}
+
 function testWidgetPlacement() {
   const envelope = (props: Record<string, unknown>) => ({
     kind: "template_replica",
@@ -3029,6 +3088,9 @@ async function main() {
   testVoiceOutcome();
   testCaptionPacing();
   testWidgetPlacement();
+  testRecommendationCardStates();
+  testSessionStateEnvelope();
+  testEffectiveEffort();
   testPackedTrajectoryRanges();
   testFontFaceWeightRanges();
 }

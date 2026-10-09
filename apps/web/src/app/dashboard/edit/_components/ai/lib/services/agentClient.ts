@@ -212,7 +212,7 @@ export async function endSessionThread(sessionId: string): Promise<void> {
   }
 }
 
-export async function getSessionState(sessionId: string): Promise<{
+export interface SessionState {
   state: 'active' | 'awaiting_input' | 'checkpoint_missing' | 'not_found';
   checkpointId?: string;
   pendingApproval?: {
@@ -222,12 +222,34 @@ export async function getSessionState(sessionId: string): Promise<{
     expectedCheckpointId: string;
     actions: Array<{ name: string; args: Record<string, unknown> }>;
   };
-}> {
+}
+
+const SESSION_STATES: ReadonlySet<string> = new Set([
+  'active',
+  'awaiting_input',
+  'checkpoint_missing',
+  'not_found',
+]);
+
+/**
+ * agent-service 的响应都包在 `{ code, data }` 信封里，BFF 原样透传。之前直接读顶层，
+ * `state` 恒为 undefined：挂着的卡片被一律判成过期，「重新生成」也一律失败。
+ */
+export function readSessionState(body: unknown): SessionState {
+  const inner = (body as { data?: unknown } | null)?.data ?? body;
+  const state = (inner as { state?: unknown } | null)?.state;
+  if (typeof state !== 'string' || !SESSION_STATES.has(state)) {
+    throw new Error('Unexpected chat session state response');
+  }
+  return inner as SessionState;
+}
+
+export async function getSessionState(sessionId: string): Promise<SessionState> {
   const response = await fetch(
     `${WEB_AGENT_ROUTES.chatSession}?sessionId=${encodeURIComponent(sessionId)}`,
   );
   if (!response.ok) throw await readError(response);
-  return response.json();
+  return readSessionState(await response.json());
 }
 
 export async function forkSessionForRegeneration(input: {

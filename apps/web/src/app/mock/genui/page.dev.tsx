@@ -365,9 +365,9 @@ const COMPONENTS: [string, () => React.ReactNode, Stage][] = [
           { label: '技能清单', confidence: 'low' },
         ]} /* i18n-ignore：开发陈列页样例 */
         labels={{
-          alternatives: '其他方案',
+          alternatives: '其他',
           others: '别的选择',
-          accept: '就这个',
+          accept: '采纳',
           accepted: '已选择',
           confidence: {
             high: '很有把握',

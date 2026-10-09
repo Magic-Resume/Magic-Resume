@@ -751,9 +751,10 @@ export default function AiChatShell({
     staleSweptRef.current = true;
     const sessionId = sessionIdRef.current;
     void getSessionState(sessionId)
-      .catch(() => ({ state: 'checkpoint_missing' as const }))
+      // 查不到不等于线程没了：一次网络抖动不该把用户正要点的卡片锁死。
+      .catch(() => null)
       .then((state) => {
-        if (sessionIdRef.current !== sessionId) return;
+        if (!state || sessionIdRef.current !== sessionId) return;
         historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
         setMessages((prev) => reconcilePendingCards(prev, state, agentModeRef.current));
       });
