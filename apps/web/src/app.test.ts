@@ -28,6 +28,8 @@ import {
   settleWidgetInMessages,
   upsertWidgetInMessages,
 } from "@/app/dashboard/edit/_components/ai/lib/widgetPlacement";
+import { readSessionState } from "@/app/dashboard/edit/_components/ai/lib/services/agentClient";
+import { effectiveEffort } from "@/app/dashboard/edit/_components/ai/lib/reasoningEffort";
 import { presentAppError } from "@/lib/errors/present";
 import { APP_ERROR_CODES, opensBillingGate } from "@/lib/errors/types";
 import { projectUpstreamError } from "@/lib/api/errorProjection";
@@ -2815,6 +2817,33 @@ function testRecommendationCardStates() {
   assert.ok(!expired.includes(">其他</button>"));
 }
 
+function testSessionStateEnvelope() {
+  const inner = {
+    state: "awaiting_input",
+    checkpointId: "ckpt-1",
+    pendingApproval: { requestId: "req-1" },
+  };
+  // agent-service 的真实响应带信封；读漏这一层，挂着的卡片会被当成过期锁死。
+  assert.deepEqual(
+    readSessionState({ code: 200, data: inner, message: "success" }),
+    inner,
+  );
+  assert.deepEqual(readSessionState(inner), inner);
+  assert.throws(() => readSessionState({ code: 200, data: {} }));
+  assert.throws(() => readSessionState(null));
+}
+
+function testEffectiveEffort() {
+  const qwen = ["low", "medium", "xhigh"];
+  // 支持的档位原样保留；不支持的先往强处找，再往弱处找，与 relay 的映射一致。
+  assert.equal(effectiveEffort("medium", qwen), "medium");
+  assert.equal(effectiveEffort("high", qwen), "xhigh");
+  assert.equal(effectiveEffort("high", ["low", "medium"]), "medium");
+  // 不知道模型支持什么时不猜，按用户选的发。
+  assert.equal(effectiveEffort("high", undefined), "high");
+  assert.equal(effectiveEffort("high", []), "high");
+}
+
 function testWidgetPlacement() {
   const envelope = (props: Record<string, unknown>) => ({
     kind: "template_replica",
@@ -3060,6 +3089,8 @@ async function main() {
   testCaptionPacing();
   testWidgetPlacement();
   testRecommendationCardStates();
+  testSessionStateEnvelope();
+  testEffectiveEffort();
   testPackedTrajectoryRanges();
   testFontFaceWeightRanges();
 }

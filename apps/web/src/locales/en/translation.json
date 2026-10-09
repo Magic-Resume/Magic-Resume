@@ -2062,10 +2062,12 @@
       "addCustom": "Add a custom model in Settings",
       "noModel": "Configure a model in Settings first",
       "strengthLabel": "Reasoning effort",
+      "strengthMapped": "This model doesn't support this level; {{level}} will be used.",
       "strength": {
         "low": "Low",
         "medium": "Medium",
-        "high": "High"
+        "high": "High",
+        "xhigh": "Max"
       },
       "catalogStale": "This list may be out of date. Some models may be unavailable."
     },

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useSettingStore, type Strength } from "@/store/useSettingStore";
 import ModelMark from "./ModelMark";
 import { useEntitlement } from "@/lib/extensions/billing-client";
+import { effectiveEffort } from "../lib/reasoningEffort";
 
 import { EASE_ENTER } from '@magic-resume/utils';
 const STRENGTHS: Strength[] = ["low", "medium", "high"];
@@ -102,6 +103,12 @@ export default function ModelStrengthPicker({
   }, [open]);
 
   const strengthLabel = t(`aiLab.picker.strength.${strength}`);
+  // 只有明确选了某个内置模型才知道它收哪几档；自动 / 自带 key 时不猜。
+  const supportedEfforts =
+    preferredSource === "internal" && selectedModel
+      ? data?.modelEfforts?.[selectedModel]
+      : undefined;
+  const sentEffort = effectiveEffort(strength, supportedEfforts);
   // modelLabel 可能是「自动」这种文案,认厂商要用真正的模型名。
   const resolvedModel =
     preferredSource === "byok"
@@ -196,7 +203,19 @@ export default function ModelStrengthPicker({
                     {strengthLabel}
                   </span>
                 </div>
-                <StrengthSlider value={strength} onChange={setStrength} t={t} />
+                <StrengthSlider
+                  value={strength}
+                  onChange={setStrength}
+                  supported={supportedEfforts}
+                  t={t}
+                />
+                {sentEffort !== strength && (
+                  <p className="px-2 pb-1 text-mr-label text-neutral-500">
+                    {t("aiLab.picker.strengthMapped", {
+                      level: t(`aiLab.picker.strength.${sentEffort}`),
+                    })}
+                  </p>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -343,10 +362,13 @@ function ModelRow({
 function StrengthSlider({
   value,
   onChange,
+  supported,
   t,
 }: {
   value: Strength;
   onChange: (s: Strength) => void;
+  /** 当前模型接受的档位；不在其中的刻度标暗，选了也会被换成就近档。 */
+  supported?: readonly string[];
   t: (k: string) => string;
 }) {
   const index = STRENGTHS.indexOf(value);
@@ -416,6 +438,7 @@ function StrengthSlider({
                   i < index
                     ? "bg-[#fff]/70 dark:bg-white/70"
                     : "bg-[var(--mr-line-strong)] dark:bg-white/25",
+                  effectiveEffort(s, supported) !== s && "opacity-30",
                 )}
                 style={{ left: `${(i / last) * 100}%` }}
               />
