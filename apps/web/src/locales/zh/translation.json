@@ -2062,10 +2062,12 @@
       "addCustom": "在设置中添加自定义模型",
       "noModel": "请先在设置中配置模型",
       "strengthLabel": "推理强度",
+      "strengthMapped": "该模型不支持这个档位，将使用「{{level}}」",
       "strength": {
         "low": "低",
         "medium": "中",
-        "high": "高"
+        "high": "高",
+        "xhigh": "最高"
       },
       "catalogStale": "模型列表可能未及时更新，部分模型可能暂不可用"
     },
