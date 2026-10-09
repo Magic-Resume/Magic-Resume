@@ -2,6 +2,12 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.6.3](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.2...v2.6.3) (2026-10-09)
+
+## 🐛 Bug Fixes
+- [`cf0ed3c`](https://github.com/Magic-Resume/Magic-Resume/commit/cf0ed3c)  fix(web): 强度选择器提示实际生效档位，编辑区禁用页面翻译 
+- [`37886b8`](https://github.com/Magic-Resume/Magic-Resume/commit/37886b8)  fix(web): 会话状态解开响应信封，挂起的选择卡不再被误判过期
+
 # [v2.6.2](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.1...v2.6.2) (2026-09-27)
 
 # [v2.6.1](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.0...v2.6.1) (2026-09-26)
