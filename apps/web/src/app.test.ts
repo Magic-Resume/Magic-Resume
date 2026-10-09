@@ -28,6 +28,7 @@ import {
   settleWidgetInMessages,
   upsertWidgetInMessages,
 } from "@/app/dashboard/edit/_components/ai/lib/widgetPlacement";
+import { effectiveEffort } from "@/app/dashboard/edit/_components/ai/lib/reasoningEffort";
 import { presentAppError } from "@/lib/errors/present";
 import { APP_ERROR_CODES, opensBillingGate } from "@/lib/errors/types";
 import { projectUpstreamError } from "@/lib/api/errorProjection";
@@ -2785,6 +2786,17 @@ function testCaptionPacing() {
  * 原因是同一个 widgetId 的旧卡已经被「应用」（终态），新版本仍被原地塞进那张卡里——
  * 落在很久以前那一轮、按钮还不可点。
  */
+function testEffectiveEffort() {
+  const qwen = ["low", "medium", "xhigh"];
+  // 支持的档位原样保留；不支持的先往强处找，再往弱处找，与 relay 的映射一致。
+  assert.equal(effectiveEffort("medium", qwen), "medium");
+  assert.equal(effectiveEffort("high", qwen), "xhigh");
+  assert.equal(effectiveEffort("high", ["low", "medium"]), "medium");
+  // 不知道模型支持什么时不猜，按用户选的发。
+  assert.equal(effectiveEffort("high", undefined), "high");
+  assert.equal(effectiveEffort("high", []), "high");
+}
+
 function testWidgetPlacement() {
   const envelope = (props: Record<string, unknown>) => ({
     kind: "template_replica",
@@ -3029,6 +3041,7 @@ async function main() {
   testVoiceOutcome();
   testCaptionPacing();
   testWidgetPlacement();
+  testEffectiveEffort();
   testPackedTrajectoryRanges();
   testFontFaceWeightRanges();
 }
