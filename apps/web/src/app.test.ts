@@ -14,7 +14,7 @@ import type {
   FilterTableProps,
   RecordsTableProps,
 } from "@magic-resume/genui";
-import { WidgetHost } from "@magic-resume/genui";
+import { RecommendationCard, WidgetHost } from "@magic-resume/genui";
 import zhCopy from "@/locales/zh/translation.json";
 import enCopy from "@/locales/en/translation.json";
 import {
@@ -2787,6 +2787,36 @@ function testCaptionPacing() {
  * 原因是同一个 widgetId 的旧卡已经被「应用」（终态），新版本仍被原地塞进那张卡里——
  * 落在很久以前那一轮、按钮还不可点。
  */
+function testRecommendationCardStates() {
+  const labels = {
+    alternatives: zhCopy.aiLab.widgets.recommendation.alternatives,
+    others: zhCopy.aiLab.widgets.recommendation.others,
+    accept: zhCopy.aiLab.widgets.recommendation.accept,
+    accepted: zhCopy.aiLab.widgets.recommendation.accepted,
+    confidence: zhCopy.aiLab.widgets.recommendation.confidence,
+  };
+  const options = [{ label: "工作经历", confidence: "high" as const }, { label: "项目经历" }];
+  const live = renderToStaticMarkup(
+    createElement(RecommendationCard, { message: "先改哪一段？", options, labels }),
+  );
+  assert.ok(live.includes(">采纳</button>"));
+  assert.ok(live.includes(">其他</button>"));
+
+  // 过期的卡不能再挂一个蓝底「采纳」：看着能点、点了没反应。
+  const expired = renderToStaticMarkup(
+    createElement(RecommendationCard, {
+      message: "先改哪一段？",
+      options,
+      labels,
+      disabled: true,
+      inactive: zhCopy.aiLab.widgets.form.expired,
+    }),
+  );
+  assert.ok(expired.includes(zhCopy.aiLab.widgets.form.expired));
+  assert.ok(!expired.includes(">采纳</button>"));
+  assert.ok(!expired.includes(">其他</button>"));
+}
+
 function testSessionStateEnvelope() {
   const inner = {
     state: "awaiting_input",
@@ -3058,6 +3088,7 @@ async function main() {
   testVoiceOutcome();
   testCaptionPacing();
   testWidgetPlacement();
+  testRecommendationCardStates();
   testSessionStateEnvelope();
   testEffectiveEffort();
   testPackedTrajectoryRanges();

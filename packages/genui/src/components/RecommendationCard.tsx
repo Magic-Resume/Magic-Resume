@@ -39,6 +39,11 @@ export interface RecommendationCardProps {
   answered?: string;
   /** 会话从记录恢复、后端线程已回收——可读不可点。 */
   disabled?: boolean;
+  /**
+   * 没答成：已过期或被跳过。给出说法，主按钮位换成中性的静态标签——蓝底按钮配
+   * disabled 看着能点、点了没反应，用户只会以为坏了。
+   */
+  inactive?: string;
   onAccept?: (label: string) => void;
 }
 
@@ -80,6 +85,7 @@ export default function RecommendationCard({
   labels,
   answered,
   disabled = false,
+  inactive,
   onAccept,
 }: RecommendationCardProps) {
   const initial = recommended >= 0 && recommended < options.length ? recommended : 0;
@@ -92,7 +98,7 @@ export default function RecommendationCard({
   const others = options.map((o, i) => ({ o, i })).filter(({ i }) => i !== selected);
   const signal = active.confidence ? SIGNAL[active.confidence] : { bars: 0, tone: "var(--mr-muted)" };
   const confidenceLabel = labels.confidence[active.confidence ?? "none"];
-  const locked = disabled || answered !== undefined;
+  const locked = disabled || answered !== undefined || inactive !== undefined;
 
   return (
     <div className="w-full max-w-95 overflow-hidden rounded-mr-card bg-mr-surface shadow-mr-panel">
@@ -170,18 +176,24 @@ export default function RecommendationCard({
               {labels.alternatives}
             </button>
           )}
-          <button
-            type="button"
-            disabled={locked}
-            onClick={() => onAccept?.(active.label)}
-            className={`h-7 rounded-mr-control px-3 text-mr-ui font-medium
-              shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(16,24,40,0.12),0_1px_2px_rgba(16,24,40,0.1)]
-              transition-[background-color,transform] duration-150 enabled:active:scale-[0.96]
-              disabled:cursor-default
-              ${answered !== undefined ? "bg-mr-success text-[#fff]" : "bg-mr-accent text-[#fff]"}`}
-          >
-            {answered !== undefined ? labels.accepted : labels.accept}
-          </button>
+          {inactive !== undefined && answered === undefined ? (
+            <span className="inline-flex h-7 items-center px-1 text-mr-ui font-medium text-mr-muted">
+              {inactive}
+            </span>
+          ) : (
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => onAccept?.(active.label)}
+              className={`h-7 rounded-mr-control px-3 text-mr-ui font-medium
+                shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_0_0_1px_rgba(16,24,40,0.12),0_1px_2px_rgba(16,24,40,0.1)]
+                transition-[background-color,transform] duration-150 enabled:active:scale-[0.96]
+                disabled:cursor-default
+                ${answered !== undefined ? "bg-mr-success text-[#fff]" : "bg-mr-accent text-[#fff]"}`}
+            >
+              {answered !== undefined ? labels.accepted : labels.accept}
+            </button>
+          )}
         </span>
       </div>
     </div>
