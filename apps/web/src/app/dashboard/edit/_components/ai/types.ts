@@ -237,6 +237,8 @@ export interface ApprovalRequest {
 
 export interface ChatMessage {
   id: string;
+  /** Cloud persistence key; legacy incomplete histories need not be gapless. */
+  conversationSeq?: number;
   role: ChatRole;
   content?: string;
   /** present when role === 'exec' */

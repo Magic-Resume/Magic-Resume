@@ -1,5 +1,6 @@
 import { dbClient } from './IndexDBClient';
 import { conversationApi } from './conversationApi';
+import { nanoid } from 'nanoid';
 
 /**
  * 对话的写队列。
@@ -25,12 +26,23 @@ interface QueuedMessage {
   payload?: Record<string, unknown>;
   /** 入队时间，仅用于排障与清理超期项。 */
   at: number;
+  /** Distinguishes an in-flight version from a replacement of the same message. */
+  deliveryId?: string;
 }
 
 /** 超过这个天数还没送出去的，多半是那台设备再也不会联网了，丢掉免得无限堆积。 */
 const MAX_AGE_MS = 7 * 86_400_000;
 
 let flushing: Promise<void> | null = null;
+let queueOperations: Promise<unknown> = Promise.resolve();
+
+// IndexedDB reads and writes are async. Serialize the complete read/modify/write,
+// otherwise sealing several messages at once makes every writer read the same queue.
+function withQueue<T>(operation: () => Promise<T>): Promise<T> {
+  const result = queueOperations.then(operation);
+  queueOperations = result.catch(() => undefined);
+  return result;
+}
 
 async function readQueue(): Promise<QueuedMessage[]> {
   const saved = await dbClient.getItem<QueuedMessage[]>(QUEUE_KEY);
@@ -51,16 +63,18 @@ async function writeQueue(items: QueuedMessage[]): Promise<void> {
 export async function enqueueMessage(
   message: Omit<QueuedMessage, 'at'>,
 ): Promise<void> {
-  const queue = await readQueue();
   // 同一个 (conversationId, seq) 已在队里就**替换掉它**，不是跳过。消息本身会变
   // （审批被批准、todo 打勾），跳过等于让离线期间的旧版本赢过新版本。
-  const at = Date.now();
-  const index = queue.findIndex(
-    (m) => m.conversationId === message.conversationId && m.seq === message.seq,
-  );
-  if (index >= 0) queue[index] = { ...message, at };
-  else queue.push({ ...message, at });
-  await writeQueue(queue);
+  await withQueue(async () => {
+    const queue = await readQueue();
+    const item = { ...message, at: Date.now(), deliveryId: nanoid() };
+    const index = queue.findIndex(
+      (m) => m.conversationId === message.conversationId && m.seq === message.seq,
+    );
+    if (index >= 0) queue[index] = item;
+    else queue.push(item);
+    await writeQueue(queue);
+  });
   void flush();
 }
 
@@ -85,12 +99,11 @@ export async function flush(): Promise<void> {
   if (Date.now() < nextAttemptAt) return;
   flushing = (async () => {
     try {
-      const queue = await readQueue();
-      if (queue.length === 0) return;
       const ensured = new Set<string>();
 
-      for (let i = 0; i < queue.length; i++) {
-        const item = queue[i];
+      while (true) {
+        const item = await withQueue(async () => (await readQueue())[0]);
+        if (!item) break;
         try {
           // 会话可能还没在服务端建出来（离线时开的新对话）。ensure 是 upsert，
           // 每个会话在本轮只做一次。
@@ -103,6 +116,13 @@ export async function flush(): Promise<void> {
           }
           // `replaced` 与 `stored` 一样出队——它是重投的正常结果，不是失败。
           await conversationApi.appendMessage(item.conversationId, item);
+          await withQueue(async () => {
+            const current = await readQueue();
+            await writeQueue(current.filter(m => !(
+              m.conversationId === item.conversationId &&
+              m.seq === item.seq && m.deliveryId === item.deliveryId
+            )));
+          });
         } catch {
           // 这一条连同它后面的全部留在队里，下次再试。**不按错误类型丢弃**——
           // 判断"哪种失败是永久的"判断错了就是静默丢消息，而退避已经解决了泛滥。
@@ -111,13 +131,11 @@ export async function flush(): Promise<void> {
             BACKOFF_MAX_MS,
           );
           nextAttemptAt = Date.now() + backoffMs;
-          await writeQueue(queue.slice(i));
           return;
         }
       }
       backoffMs = 0;
       nextAttemptAt = 0;
-      await writeQueue([]);
     } finally {
       flushing = null;
     }

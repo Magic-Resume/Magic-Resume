@@ -247,10 +247,14 @@ export function createAiSessionStore(
         const session = get().sessions[resumeId];
         if (!session) return;
         const title = conversationTitle(session.messages);
-        // 下标即 seq。时间线只增不删，所以下标在同一条会话里是稳定的；从 syncedCount
-        // 起投是为了少打请求，而不是为了正确性——重投也只会覆盖同一行。
-        for (let seq = session.syncedCount; seq < session.messages.length; seq++) {
-          const message = session.messages[seq];
+        let nextSeq = Math.max(-1, ...session.messages.map((message, index) => message.conversationSeq ?? (index < session.syncedCount ? index : -1))) + 1;
+        const sealedMessages = [...session.messages];
+        // Preserve cloud keys: a partially uploaded history may have gaps, and
+        // recovered messages may display before rows with smaller storage keys.
+        for (let index = session.syncedCount; index < session.messages.length; index++) {
+          const message = session.messages[index];
+          const seq = message.conversationSeq ?? nextSeq++;
+          sealedMessages[index] = { ...message, conversationSeq: seq };
           const { role, content, ...rest } = message;
           sync.push({
             conversationId: session.sessionId,
@@ -268,7 +272,7 @@ export function createAiSessionStore(
         set((state) => ({
           sessions: {
             ...state.sessions,
-            [resumeId]: { ...session, syncedCount: session.messages.length },
+            [resumeId]: { ...session, messages: sealedMessages, syncedCount: session.messages.length },
           },
         }));
         scheduleWrite(resumeId);

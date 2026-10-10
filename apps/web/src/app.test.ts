@@ -140,6 +140,7 @@ import {
   type AiSessionSnapshot,
 } from "@/store/useAiSessionStore";
 import type { Resume, Section } from "@/types/frontend/resume";
+import { restoreConversationMessages } from "@/lib/api/conversationHistory";
 import { mergeInterviewTurns } from "@/app/dashboard/interview/_components/mergeTurns";
 import {
   classifyVoiceFailure,
@@ -475,6 +476,23 @@ async function testAiSessionStore() {
     store.getState().sealSession("resume-a");
     assert.equal(sync.pushed[4].seq, 0);
     assert.equal(sync.pushed[4].conversationId, "seal-session");
+  }
+
+  // Recovering a sparse history must not compress its cloud keys and overwrite a card.
+  {
+    const sync = new RecordingSync();
+    const store = createAiSessionStore({ db: new MemoryDb(), persistDelayMs: 0, sync });
+    const messages = restoreConversationMessages([
+      { seq: 3, role: 'plan', content: 'tasks', payload: { id: 'plan' }, createdAt: '2026-10-10T15:11:55Z' },
+      { seq: 7, role: 'user', content: 'original question', payload: { id: 'recovered-user', historyAt: '2026-10-10T15:10:44Z' }, createdAt: '2026-10-10T15:40:00Z' },
+    ]);
+    assert.deepEqual(messages.map(message => message.role), ['user', 'plan']);
+    store.getState().patchSession('resume-a', baseSession({ messages, syncedCount: messages.length }));
+    store.getState().patchSession('resume-a', { messages: [...messages, { id: 'next', role: 'user', content: 'next question' }] });
+    store.getState().sealSession('resume-a');
+    assert.equal(sync.pushed[0].seq, 8);
+    assert.equal(sync.pushed[0].role, 'user');
+    await store.getState().flushSession('resume-a');
   }
 }
 

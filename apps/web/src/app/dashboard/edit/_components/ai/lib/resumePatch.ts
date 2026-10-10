@@ -1,5 +1,5 @@
 import fastJsonPatch, { type Operation } from 'fast-json-patch';
-import type { Resume, Section, SectionItem } from '@/types/frontend/resume';
+import type { Resume, Section } from '@/types/frontend/resume';
 import { pathOf } from './editableCanvas';
 import type { BatchKind, TargetedSelectionDiff } from './diffResume';
 import { parsePath } from './changeModel';
@@ -31,7 +31,7 @@ type TextPatchTarget = {
   fieldKey: string;
 };
 
-const COMMON_EDITABLE_FIELDS = ['summary', 'description', 'name', 'language', 'headline'] as const;
+const NON_TEXT_TARGET_FIELDS = new Set(['id', 'visible', 'icon', 'customSectionKey']);
 
 export function resolveResumePatchEvent(
   current: Resume,
@@ -90,7 +90,7 @@ function resolveTextPatch(
   if (targetedSelection) {
     const explicitTarget = targetFromSelectionPath(targetedSelection.path);
     if (explicitTarget) {
-      const resolved = replaceTextAtTarget(current, explicitTarget, oldString, newString, targetedSelection.selectionText);
+      const resolved = replaceTextAtTarget(current, explicitTarget, oldString, newString);
       if (resolved) {
         return {
           resume: resolved.resume,
@@ -101,6 +101,8 @@ function resolveTextPatch(
         };
       }
     }
+    // A selection is an explicit boundary. Never move its edit to another item.
+    return null;
   }
 
   const fallbackTarget = findTextTarget(current.sections, oldString);
@@ -123,8 +125,8 @@ function replaceTextAtTarget(
   target: TextPatchTarget,
   oldString: string,
   newString: string,
-  fallbackSelection?: string,
 ): { resume: Resume; selectionText: string } | null {
+  if (NON_TEXT_TARGET_FIELDS.has(target.fieldKey)) return null;
   const items = current.sections[target.sectionKey];
   if (!Array.isArray(items)) return null;
   const index = items.findIndex((item) => String(item.id) === target.itemId);
@@ -133,16 +135,15 @@ function replaceTextAtTarget(
   const value = items[index]?.[target.fieldKey];
   if (typeof value !== 'string') return null;
 
-  const needles = uniqueStrings([oldString, fallbackSelection]);
-  const needle = needles.find((candidate) => value.includes(candidate));
-  if (!needle) return null;
+  const needle = oldString;
+  const matchIndex = value.indexOf(needle);
+  if (matchIndex < 0 || matchIndex !== value.lastIndexOf(needle)) return null;
 
   const resume = cloneResume(current);
   // Replace the first occurrence by index rather than value.replace(needle, …): a
   // plain-string needle only replaces the first match anyway, but String.replace also
   // interprets '$' sequences in newString (e.g. a salary like "$1,000" or "$&") as
   // replacement patterns and mangles the output. Slicing keeps newString literal.
-  const matchIndex = value.indexOf(needle);
   resume.sections[target.sectionKey][index][target.fieldKey] =
     value.slice(0, matchIndex) + newString + value.slice(matchIndex + needle.length);
   return { resume, selectionText: needle };
@@ -159,26 +160,19 @@ function targetFromSelectionPath(path: string): TextPatchTarget | null {
 }
 
 function findTextTarget(sections: Section, needle: string): TextPatchTarget | null {
+  let matched: TextPatchTarget | null = null;
   for (const [sectionKey, items] of Object.entries(sections)) {
     if (!Array.isArray(items)) continue;
     for (const item of items) {
       if (!item?.id) continue;
-      const fieldKey = findStringField(item, needle);
-      if (!fieldKey) continue;
-      return { sectionKey, itemId: String(item.id), fieldKey };
+      for (const [fieldKey, value] of Object.entries(item)) {
+        if (NON_TEXT_TARGET_FIELDS.has(fieldKey) || typeof value !== 'string' || !value.includes(needle)) continue;
+        if (matched || value.indexOf(needle) !== value.lastIndexOf(needle)) return null;
+        matched = { sectionKey, itemId: String(item.id), fieldKey };
+      }
     }
   }
-  return null;
-}
-
-function findStringField(item: SectionItem, needle: string): string | null {
-  for (const key of COMMON_EDITABLE_FIELDS) {
-    if (typeof item[key] === 'string' && (item[key] as string).includes(needle)) return key;
-  }
-  for (const [key, value] of Object.entries(item)) {
-    if (typeof value === 'string' && value.includes(needle)) return key;
-  }
-  return null;
+  return matched;
 }
 
 function targetedSelectionFromJsonPatch(current: Resume, patch: Operation[]): TargetedSelectionDiff | undefined {
@@ -238,10 +232,6 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 function getString(payload: Record<string, unknown>, key: string): string | undefined {
   const value = payload[key];
   return typeof value === 'string' ? value : undefined;
-}
-
-function uniqueStrings(values: Array<string | undefined>): string[] {
-  return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 }
 
 function cloneResume(resume: Resume): Resume {

@@ -138,6 +138,7 @@ import {
 import ConversationHistory from "./conversation/ConversationHistory";
 import ConversationTrajectory from "./conversation/ConversationTrajectory";
 import { conversationApi } from "@/lib/api/conversationApi";
+import { restoreConversationMessages } from "@/lib/api/conversationHistory";
 import {
   getAttachmentReadUrl,
   uploadAttachmentToBackend,
@@ -657,11 +658,7 @@ export default function AiChatShell({
         const state = await getSessionState(detail.id).catch(() => ({ state: 'checkpoint_missing' as const }));
         if (!active) return;
         historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
-        const restored = reconcilePendingCards(detail.messages.map((m) => ({
-          ...((m.payload ?? {}) as Record<string, unknown>),
-          role: m.role,
-          content: m.content ?? undefined,
-        })) as ChatMessage[], state, session.agentMode);
+        const restored = reconcilePendingCards(restoreConversationMessages(detail.messages), state, session.agentMode);
         if (!restored.length) return;
         adoptAiSession(resumeId, {
           ...session,
@@ -2904,11 +2901,7 @@ export default function AiChatShell({
         historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
         if (historyViewOnlyRef.current) toast.error(t("aiLab.history.checkpointMissing"));
         const snapshot = detail.snapshot as Partial<AiSessionSnapshot> | null;
-        const restored = reconcilePendingCards(detail.messages.map((m) => ({
-          ...((m.payload ?? {}) as Record<string, unknown>),
-          role: m.role,
-          content: m.content ?? undefined,
-        })) as ChatMessage[], state, snapshot?.agentMode ?? DEFAULT_AGENT_MODE);
+        const restored = reconcilePendingCards(restoreConversationMessages(detail.messages), state, snapshot?.agentMode ?? DEFAULT_AGENT_MODE);
         adoptAiSession(resumeId, {
           ...(snapshot ?? {}),
           sessionId: detail.id,
