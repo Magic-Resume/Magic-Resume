@@ -1719,17 +1719,25 @@ export default function AiChatShell({
                   //
                   // 先算差异再决定界面：一句「帮我看看」引出的零改动不该把画布弹出来，
                   // 那会让轻量问答变吵。这是防噪的核心闸门。
+                  const diagnostics = { unmatchedItems: 0 };
                   const changed = diffResumeToChanges(
                     resumeData.sections,
                     sections,
                     "optimize",
                     undefined,
                     undefined,
-                    undefined,
+                    diagnostics,
                     changeNotes,
                   );
                   changed.push(...diffDocumentChanges(resumeData, draft, { kind: 'optimize' }), ...diffInfoToChanges(resumeData.info, draft.info, 'optimize'));
                   if (!changed.length) {
+                    if (diagnostics.unmatchedItems > 0) {
+                      warnDropped(
+                        `${diagnostics.unmatchedItems} 处修改与现有条目不匹配，已跳过`,
+                        "unmatched_items",
+                        { count: diagnostics.unmatchedItems },
+                      );
+                    }
                     // Ordinary chat snapshots can be unchanged; keep the canvas quiet.
                     continue;
                   } else if (canvasDismissedForRun.current) {

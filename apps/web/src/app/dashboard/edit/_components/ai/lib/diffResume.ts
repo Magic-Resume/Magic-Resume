@@ -35,6 +35,12 @@ const NON_DIFFABLE_FIELDS = new Set([
   "customSectionKey",
 ]);
 
+/** Formatting is a reviewable edit even when the visible words stay the same. */
+const sameFieldValue = (before: string, after: string): boolean =>
+  /<[a-z][\s\S]*>/i.test(before + after)
+    ? before.trim() === after.trim()
+    : stripHtml(before) === stripHtml(after);
+
 /** 富文本还是纯文本：按值里有没有 HTML 标签判，而不是按字段名猜。 */
 const kindOf = (value: string): EditableTarget["kind"] =>
   /<[a-z][\s\S]*>/i.test(value) ? "html" : "text";
@@ -127,8 +133,8 @@ export function diffResumeToChanges(
           typeof pItem[fieldKey] === "string"
             ? (pItem[fieldKey] as string)
             : "";
-        // Compare text content (ignore pure HTML-formatting churn); skip empties / no-ops.
-        if (!after.trim() || stripHtml(before) === stripHtml(after)) continue;
+        // Keep rich-text formatting changes; skip empty values and actual no-ops.
+        if (!after.trim() || sameFieldValue(before, after)) continue;
         const target: EditableTarget = {
           sectionKey,
           itemId: String(pItem.id),
@@ -186,7 +192,7 @@ function diffTargetedSelection(
     typeof proposedItem[parsed.fieldKey] === "string"
       ? (proposedItem[parsed.fieldKey] as string)
       : "";
-  if (!after.trim() || stripHtml(before) === stripHtml(after)) return null;
+  if (!after.trim() || sameFieldValue(before, after)) return null;
 
   const visibleIndex = proposedItems
     .filter((item) => item.visible !== false)
@@ -222,7 +228,7 @@ export function diffInfoToChanges(current: InfoType, proposed: Partial<InfoType>
   return Object.entries(proposed).flatMap(([fieldKey, after]) => {
     if (typeof after !== 'string' || !after.trim() || fieldKey === 'avatar') return [];
     const before = typeof current[fieldKey as keyof InfoType] === 'string' ? current[fieldKey as keyof InfoType] as string : '';
-    if (stripHtml(before) === stripHtml(after)) return [];
+    if (sameFieldValue(before, after)) return [];
     return [{
       id: nanoid(), target: { sectionKey: 'info', itemId: '', fieldKey, kind: kindOf(after), label: `基本信息 · ${fieldTitle(fieldKey)}` },
       before, after, rationale: '', action: kind === 'translate' ? 'translate' as const : 'rewrite' as const,

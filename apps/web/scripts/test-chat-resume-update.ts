@@ -43,6 +43,7 @@ const code = ts.transpileModule(
 
 function replay({
   changed = 0,
+  unmatched = 0,
   malformed = false,
   dismissed = false,
   batch = false,
@@ -66,7 +67,11 @@ function replay({
     resumeData: { sections },
     diffDocumentChanges: () => [],
     diffInfoToChanges: () => [],
-    diffResumeToChanges: () => Array.from({ length: changed }, () => ({})),
+    diffResumeToChanges: (...args: unknown[]) => {
+      const diagnostics = args[5] as { unmatchedItems: number };
+      diagnostics.unmatchedItems = unmatched;
+      return Array.from({ length: changed }, () => ({}));
+    },
     canvasDismissedForRun: { current: dismissed },
     batchNonce: { current: 0 },
     changeNotes: undefined,
@@ -92,4 +97,5 @@ assert.deepEqual(replay({ changed: 1 }), ["canvas", "open", "skill", "batch"]);
 assert.deepEqual(replay({ changed: 1, dismissed: true }), ["log"]);
 assert.deepEqual(replay({ malformed: true }), ["warn:malformed"]);
 assert.deepEqual(replay({ batch: true }), ["canvas", "open", "skill", "batch"]);
-console.log("Chat resume-update regression checks passed (5 cases).");
+assert.deepEqual(replay({ unmatched: 2 }), ["warn:unmatched_items"]);
+console.log("Chat resume-update regression checks passed (6 cases).");

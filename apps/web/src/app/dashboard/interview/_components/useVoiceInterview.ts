@@ -9,6 +9,7 @@ import {
   type RemoteTrack,
 } from 'livekit-client';
 import { interviewApi, type InterviewStage } from '@/lib/api/interviewApi';
+import { upsertVoiceTurn } from './mergeTurns';
 import { startLocalVad, type LocalVadHandle } from './localVad';
 import {
   createLevelMeter,
@@ -44,6 +45,8 @@ export interface VoiceTurn {
    * 数组下标**，所以补发的定稿会替换那一轮而不是追加一轮。历史消息没有这个字段。
    */
   segmentId?: string;
+  /** First observed speech time, independent of final transcript arrival. */
+  at?: number;
 }
 
 export interface VoiceInterviewState {
@@ -150,8 +153,6 @@ export function useVoiceInterview(sessionId: string | null) {
      * 时服务端会降到下一条，而两条渠道的 DataChannel 说的不是一套话。
      */
     channel: 'vega' | 'lyra';
-    /** 这条连接上面试官是否已经说过话；在那之前的「候选人发言」不是候选人说的。 */
-    interviewerSpoke: boolean;
   } | null>(null);
   /** 上游最近一次报的账号剩余音频秒数，随心跳捎回服务端。 */
   const audioLeftRef = useRef<number | null>(null);
@@ -164,7 +165,12 @@ export function useVoiceInterview(sessionId: string | null) {
     Map<
       string,
       {
-        payload: { transcript_id: string; role: 'user' | 'assistant'; text: string };
+        payload: {
+          transcript_id: string;
+          role: 'user' | 'assistant';
+          text: string;
+          at: number;
+        };
         delivery: Promise<unknown>;
       }
     >
@@ -180,6 +186,8 @@ export function useVoiceInterview(sessionId: string | null) {
         role: 'interviewer' | 'candidate';
         parts: string[];
         settled: boolean;
+        at: number;
+        segmentId: string;
         /**
          * 这条消息的分片到达节奏。用来回答一个只能实测的问题：**上游到底是边说边发
          * 转写，还是说完一次性发**。前者客户端能做流式，后者做不了——我们根本拿不到
@@ -249,21 +257,38 @@ export function useVoiceInterview(sessionId: string | null) {
   /** 候选人开口时把面试官压到这个音量——压成 0 会让人以为断了。 */
   const DUCKED_VOLUME = 0.15;
 
-  /** 去重用的规范化：标点与空白不算内容差异，全角半角同样不算。 */
-  const normalizeTurnText = (text: string) =>
-    text
-      .replace(/[\s，,。.、；;：:！!？?""''（）()【】[\]—\-~·]/g, '')
-      .toLowerCase();
+  const transcriptClockRef = useRef(0);
+  const transcriptTimesRef = useRef(new Map<string, number>());
+  const transcriptAt = useCallback((segmentId?: string) => {
+    const existing = segmentId
+      ? transcriptTimesRef.current.get(segmentId)
+      : undefined;
+    if (existing !== undefined) return existing;
+    const at = Math.max(Date.now(), transcriptClockRef.current + 1);
+    transcriptClockRef.current = at;
+    if (segmentId) transcriptTimesRef.current.set(segmentId, at);
+    return at;
+  }, []);
+  const transcriptQueueRef = useRef<Promise<unknown>>(Promise.resolve());
 
   const lyraTextOf = (m: { parts: string[] }) => m.parts.join('').trim();
 
   const recordTranscript = useCallback(
-    (transcriptId: string, role: 'user' | 'assistant', text: string) => {
+    (
+      transcriptId: string,
+      role: 'user' | 'assistant',
+      text: string,
+      at: number,
+    ) => {
       if (!sessionId) return;
       const key = `${sessionId}:${transcriptId}`;
       if (transcriptWritesRef.current.has(key)) return;
-      const payload = { transcript_id: transcriptId, role, text };
-      const delivery = interviewApi.recordVoiceTranscript(sessionId, payload);
+      const payload = { transcript_id: transcriptId, role, text, at };
+      // Serialize writes: the backend uses a session lock and rejects competing writers.
+      const delivery = transcriptQueueRef.current
+        .catch(() => undefined)
+        .then(() => interviewApi.recordVoiceTranscript(sessionId, payload));
+      transcriptQueueRef.current = delivery;
       transcriptWritesRef.current.set(key, { payload, delivery });
       void delivery.catch((error) => {
         console.warn('[interview voice] transcript report failed', error);
@@ -277,18 +302,22 @@ export function useVoiceInterview(sessionId: string | null) {
     const writes = [...transcriptWritesRef.current.entries()].filter(([key]) =>
       key.startsWith(`${sessionId}:`),
     );
-    const results = await Promise.allSettled(
-      writes.map(async ([key, { payload, delivery }]) => {
+    await transcriptQueueRef.current.catch(() => undefined);
+    let failed = false;
+    for (const [key, { payload, delivery }] of writes) {
+      try {
         try {
           await delivery;
         } catch {
-          // 幂等 transcript_id：首次请求即使已经落库，重试也不会重复记一轮。
+          // Retry sequentially too: parallel retries compete for the same session lock.
           await interviewApi.recordVoiceTranscript(sessionId, payload);
         }
         transcriptWritesRef.current.delete(key);
-      }),
-    );
-    if (results.some((result) => result.status === 'rejected')) {
+      } catch {
+        failed = true;
+      }
+    }
+    if (failed) {
       throw new Error('Interview transcript could not be saved');
     }
   }, [sessionId]);
@@ -305,7 +334,7 @@ export function useVoiceInterview(sessionId: string | null) {
    * 另一条实测：这样发进去的消息**不会触发模型回应**，它只是给对话铺上下文。真正触发
    * 一轮的是候选人的音频；所以 primer 的作用是「让下一轮带着面试官身份」，不是「让它现在开口」。
    */
-  const relayMessage = (text: string) =>
+  const relayMessage = (text: string, id = crypto.randomUUID()) =>
     JSON.stringify({
       type: 'data_message',
       data: JSON.stringify({
@@ -313,7 +342,7 @@ export function useVoiceInterview(sessionId: string | null) {
         payload: {
           type: 'relay_message',
           message: {
-            id: crypto.randomUUID(),
+            id,
             author: { role: 'user' },
             create_time: Date.now() / 1000,
             content: { content_type: 'text', parts: [text] },
@@ -343,31 +372,14 @@ export function useVoiceInterview(sessionId: string | null) {
       const primer = primerRef.current;
       if (primer && text.startsWith(primer.slice(0, 60))) return;
       const role = m.role;
-      /*
-       * 上游处理 primer 时会先生成一条「候选人」应答（实测「好的」「Mm-hmm」，只推静音也有），
-       * 不挡住就进面试记录。代价是候选人抢在开场前说的话也不记——那只会是寒暄。
-       */
-      const connection = voiceRef.current;
-      if (connection && !connection.interviewerSpoke) {
-        if (role === 'candidate') return;
-        connection.interviewerSpoke = true;
-      }
+      const segmentId = m.segmentId;
       setState((s) => {
-        const turns = [...s.turns];
-        /*
-         * 开场白由 HTTP `start` 先落一次，上游再念一遍又送回来——不去重就会重复。
-         *
-         * 比对要**规范化后再比**，而且**不能只看紧邻的上一条**：服务端那句是 LLM 文本
-         * （全角标点），上游那句是 ASR 转写（半角），而两者之间往往还隔着候选人的
-         * 「你好」和一段即兴寒暄。原来「紧邻 + 全等」两个条件都不成立，于是同一句
-         * 开场白在逐字稿里出现了两遍。
-         */
-        const key = normalizeTurnText(text);
-        const at = turns.findIndex(
-          (turn) => turn.role === role && normalizeTurnText(turn.text) === key,
-        );
-        if (at >= 0) turns[at] = { role, text };
-        else turns.push({ role, text });
+        const turns = upsertVoiceTurn(s.turns, {
+          role,
+          text,
+          segmentId,
+          at: m.at,
+        });
         return {
           ...s,
           turns,
@@ -377,9 +389,10 @@ export function useVoiceInterview(sessionId: string | null) {
       });
       // 上游消息序号配连接 id 是全局稳定的幂等键；结束时等这次写入确认。
       recordTranscript(
-        `${voiceRef.current?.connectionId ?? 'unknown'}:${seq}`,
+        segmentId,
         role === 'candidate' ? 'user' : 'assistant',
         text,
+        m.at,
       );
     },
     [recordTranscript],
@@ -405,6 +418,12 @@ export function useVoiceInterview(sessionId: string | null) {
       if (!parsed || typeof parsed !== 'object') return;
       const message = parsed as Record<string, unknown>;
       const type = String(message.type ?? '');
+      const eventTurn = (message.turn ?? {}) as Record<string, unknown>;
+      if (eventTurn.id !== undefined) {
+        transcriptAt(
+          `${voiceRef.current?.connectionId ?? 'unknown'}:${eventTurn.id}`,
+        );
+      }
 
       // 上游真的起来了——解除「接通但不说话」的看门狗。
       if (type === 'session.started') {
@@ -444,16 +463,11 @@ export function useVoiceInterview(sessionId: string | null) {
         const text = String(turn.transcript ?? '').trim();
         if (!text) return;
         const role = turn.role === 'user' ? 'candidate' : 'interviewer';
-        const id = String(turn.id ?? `${Date.now()}`);
+        const id = String(turn.id ?? crypto.randomUUID());
+        const segmentId = `${voiceRef.current?.connectionId ?? 'unknown'}:${id}`;
+        const at = transcriptAt(segmentId);
         setState((s) => {
-          const turns = [...s.turns];
-          const key = normalizeTurnText(text);
-          const at = turns.findIndex(
-            (item) =>
-              item.role === role && normalizeTurnText(item.text) === key,
-          );
-          if (at >= 0) turns[at] = { role, text };
-          else turns.push({ role, text });
+          const turns = upsertVoiceTurn(s.turns, { role, text, segmentId, at });
           return {
             ...s,
             turns,
@@ -467,6 +481,7 @@ export function useVoiceInterview(sessionId: string | null) {
           `${voiceRef.current?.connectionId ?? 'unknown'}:${id}`,
           role === 'candidate' ? 'user' : 'assistant',
           text,
+          at,
         );
         return;
       }
@@ -484,7 +499,7 @@ export function useVoiceInterview(sessionId: string | null) {
         if (typeof audio === 'number') audioLeftRef.current = audio;
       }
     },
-    [recordTranscript],
+    [recordTranscript, transcriptAt],
   );
 
   /**
@@ -601,14 +616,30 @@ export function useVoiceInterview(sessionId: string | null) {
           direction?: string;
           text?: string;
         };
-        const role: 'interviewer' | 'candidate' =
-          head.direction === 'in' ? 'candidate' : 'interviewer';
-        const parts = [String(head.text ?? '')];
+        const author = (msg.author ?? {}) as { role?: string };
+        const role =
+          author.role === 'user'
+            ? 'candidate'
+            : author.role === 'assistant'
+              ? 'interviewer'
+              : head.direction === 'in'
+                ? 'candidate'
+                : head.direction === 'out'
+                  ? 'interviewer'
+                  : undefined;
+        if (!role || lyraMessagesRef.current.has(delta.c)) return;
+        const parts = (content.parts ?? []).map((part) =>
+          String((part as { text?: unknown })?.text ?? ''),
+        );
         const now = performance.now();
         lyraMessagesRef.current.set(delta.c, {
           role,
           parts,
           settled: false,
+          at: transcriptAt(
+            `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
+          ),
+          segmentId: `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
           timing: { first: now, deltas: 0, lastAt: now },
         });
         if (parts[0]) {
@@ -628,9 +659,19 @@ export function useVoiceInterview(sessionId: string | null) {
           ? [delta]
           : [];
       if (ops.length === 0) return;
-      const seq = Math.max(...lyraMessagesRef.current.keys(), -1);
-      const current = seq >= 0 ? lyraMessagesRef.current.get(seq) : undefined;
-      if (!current) return;
+      const pending = [...lyraMessagesRef.current.entries()].filter(
+        ([, value]) => !value.settled,
+      );
+      // An explicit cursor always owns its patches. Legacy cursorless patches are
+      // safe only when exactly one message is in progress.
+      const seq =
+        typeof delta.c === 'number'
+          ? delta.c
+          : pending.length === 1
+            ? pending[0][0]
+            : -1;
+      const current = lyraMessagesRef.current.get(seq);
+      if (!current || current.settled) return;
 
       for (const op of ops) {
         const path = String(op.p ?? '');
@@ -654,7 +695,11 @@ export function useVoiceInterview(sessionId: string | null) {
         current.timing.deltas += 1;
         current.timing.lastAt = performance.now();
         current.parts[index] =
-          (current.parts[index] ?? '') + String(op.v ?? '');
+          op.o === 'append'
+            ? (current.parts[index] ?? '') + String(op.v ?? '')
+            : op.o === 'replace' || op.o === 'add'
+              ? String(op.v ?? '')
+              : (current.parts[index] ?? '');
         const text = lyraTextOf(current);
         setState((s) =>
           current.role === 'candidate'
@@ -663,7 +708,7 @@ export function useVoiceInterview(sessionId: string | null) {
         );
       }
     },
-    [settleLyraTurn],
+    [settleLyraTurn, transcriptAt],
   );
 
   /**
@@ -691,7 +736,6 @@ export function useVoiceInterview(sessionId: string | null) {
         vad: null as LocalVadHandle | null,
         /** 最终接手的渠道，由 answer 响应告知；决定用哪套事件解析。 */
         channel: 'lyra' as 'vega' | 'lyra',
-        interviewerSpoke: false,
       };
       voiceRef.current = session;
 
@@ -996,7 +1040,11 @@ export function useVoiceInterview(sessionId: string | null) {
       // 属性挂在流自己的 info 上，不是 handler 第二个参数（那个只有 identity）。
       const attrs = reader.info.attributes ?? {};
       const isFinal = attrs['lk.transcription_final'] === 'true';
-      const segmentId = attrs['lk.segment_id'];
+      const segmentId =
+        attrs['lk.segment_id'] === undefined
+          ? undefined
+          : `${info.identity}:${attrs['lk.segment_id']}`;
+      const at = transcriptAt(segmentId);
 
       let text = '';
       for await (const chunk of reader) {
@@ -1024,21 +1072,12 @@ export function useVoiceInterview(sessionId: string | null) {
         const role = fromAgent
           ? ('interviewer' as const)
           : ('candidate' as const);
-        const turns = [...s.turns];
-        const last = turns[turns.length - 1];
-
-        // 同一段的定稿可能来第二次（打断后补发），用 segmentId 认领并替换而不是追加。
-        const sameSegment =
-          segmentId !== undefined && last?.segmentId === segmentId;
-        // 开场白由 HTTP `start` 先落进 turns，紧接着 agent 又把它念一遍、
-        // 转写再送回来——不去重就会一模一样出现两次。
-        const duplicate = last?.role === role && last.text === finalText;
-
-        if (sameSegment || duplicate) {
-          turns[turns.length - 1] = { role, text: finalText, segmentId };
-        } else {
-          turns.push({ role, text: finalText, segmentId });
-        }
+        const turns = upsertVoiceTurn(s.turns, {
+          role,
+          text: finalText,
+          segmentId,
+          at,
+        });
 
         return {
           ...s,
@@ -1182,7 +1221,7 @@ export function useVoiceInterview(sessionId: string | null) {
             },
       );
     }
-  }, [connectUpstreamVoice, sessionId, teardown]);
+  }, [connectUpstreamVoice, sessionId, teardown, transcriptAt]);
 
   /**
    * 把打的字当作一次发言送给面试官。
@@ -1193,36 +1232,57 @@ export function useVoiceInterview(sessionId: string | null) {
    *
    * 返回 false = 房间不在，调用方要退回 HTTP 那条（回复只出字，不出声）。
    */
-  const sendText = useCallback(async (text: string): Promise<boolean> => {
-    /*
-     * 上游语音渠道 这条链路没有 LiveKit 的文本流，走的是 DataChannel 的 `relay_message`：
-     * 它以上游眼里的「用户消息」身份进入对话，模型会把它当对话内容来遵循。
-     */
-    const gpt = voiceRef.current;
-    if (gpt) {
-      if (!gpt.dc || gpt.dc.readyState !== 'open') return false;
+  const sendText = useCallback(
+    async (text: string): Promise<boolean> => {
+      /*
+       * 上游语音渠道 这条链路没有 LiveKit 的文本流，走的是 DataChannel 的 `relay_message`：
+       * 它以上游眼里的「用户消息」身份进入对话，模型会把它当对话内容来遵循。
+       */
+      const gpt = voiceRef.current;
+      if (gpt) {
+        if (!gpt.dc || gpt.dc.readyState !== 'open') return false;
+        try {
+          const id = crypto.randomUUID();
+          const segmentId = `${gpt.connectionId}:${id}`;
+          const at = transcriptAt(segmentId);
+          gpt.dc.send(relayMessage(text, id));
+          setState((s) => ({
+            ...s,
+            turns: upsertVoiceTurn(s.turns, {
+              role: 'candidate',
+              text,
+              segmentId,
+              at,
+            }),
+          }));
+          recordTranscript(segmentId, 'user', text, at);
+          return true;
+        } catch (error) {
+          console.warn(
+            '[interview voice] upstream channel sendText failed',
+            error,
+          );
+          return false;
+        }
+      }
+
+      const room = roomRef.current;
+      if (!room || room.state !== ConnectionState.Connected) return false;
       try {
-        gpt.dc.send(relayMessage(text));
+        const at = transcriptAt();
+        await room.localParticipant.sendText(text, { topic: CHAT_TOPIC });
+        setState((s) => ({
+          ...s,
+          turns: [...s.turns, { role: 'candidate', text, at }],
+        }));
         return true;
       } catch (error) {
-        console.warn(
-          '[interview voice] upstream channel sendText failed',
-          error,
-        );
+        console.warn('[interview voice] sendText failed', error);
         return false;
       }
-    }
-
-    const room = roomRef.current;
-    if (!room || room.state !== ConnectionState.Connected) return false;
-    try {
-      await room.localParticipant.sendText(text, { topic: CHAT_TOPIC });
-      return true;
-    } catch (error) {
-      console.warn('[interview voice] sendText failed', error);
-      return false;
-    }
-  }, []);
+    },
+    [recordTranscript, transcriptAt],
+  );
 
   /** 自己静音。拿不到麦克风时（`micDenied`）没有可切的东西。 */
   const toggleMute = useCallback(async () => {

@@ -1,31 +1,57 @@
 import type { VoiceTurn } from './useVoiceInterview';
 
-/**
- * 把两个来源的对话拼成一条时间线。
- *
- * 面试官的话有**两个来源**，而且会重叠：
- *   - HTTP：`start` 的开场白、以及房间连不上时 `chat` 的回复
- *   - LiveKit：agent 把同一句念出来，转写再送回来
- *
- * 开场白必然两边都有——服务端先返回它、worker 再取同一段文本念出来。直接拼接就是
- * 一模一样的两条挨在一起（截图里那样）。
- *
- * 只比对**接缝处**：`seeded` 的尾巴与 `live` 的头。往深了比会误伤——面试官在一场里
- * 重复追问同一句是正常的，那两句之间隔着你的回答，不是重复而是催问。
- */
+const chronological = (turns: VoiceTurn[]): VoiceTurn[] =>
+  [...turns].sort((a, b) => (a.at ?? 0) - (b.at ?? 0));
+
+/** A final update owns its original segment, even after another speaker intervenes. */
+export function upsertVoiceTurn(
+  turns: VoiceTurn[],
+  turn: VoiceTurn,
+): VoiceTurn[] {
+  const index =
+    turn.segmentId === undefined
+      ? -1
+      : turns.findIndex(
+          (item) =>
+            item.segmentId === turn.segmentId && item.role === turn.role,
+        );
+  if (index < 0) return chronological([...turns, turn]);
+  return chronological(
+    turns.map((item, i) =>
+      i === index
+        ? {
+            ...turn,
+            ...(item.at === undefined && turn.at === undefined
+              ? {}
+              : { at: item.at ?? turn.at }),
+          }
+        : item,
+    ),
+  );
+}
+
+/** Merge HTTP history and voice events by speech time, preserving genuine repeats. */
 export function mergeInterviewTurns(
   seeded: VoiceTurn[],
   live: VoiceTurn[],
 ): VoiceTurn[] {
-  if (seeded.length === 0 || live.length === 0) return [...seeded, ...live];
-
   const tail = seeded[seeded.length - 1];
   const head = live[0];
-  const sameUtterance =
-    tail.role === head.role && tail.text.trim() === head.text.trim();
-
-  // 留 live 那一条：它带 segmentId，后续的补发定稿要靠它认领。
-  return sameUtterance
-    ? [...seeded.slice(0, -1), ...live]
-    : [...seeded, ...live];
+  // The HTTP opening can also be spoken by LiveKit. Only this seam is a duplicate.
+  const sameOpening =
+    tail &&
+    head &&
+    tail.role === 'interviewer' &&
+    !tail.segmentId &&
+    tail.role === head.role &&
+    tail.text.trim() === head.text.trim();
+  let result = sameOpening ? seeded.slice(0, -1) : [...seeded];
+  for (const turn of live) {
+    const resolved =
+      sameOpening && turn === head
+        ? { ...turn, ...(tail.at === undefined ? {} : { at: tail.at }) }
+        : turn;
+    result = upsertVoiceTurn(result, resolved);
+  }
+  return chronological(result);
 }
