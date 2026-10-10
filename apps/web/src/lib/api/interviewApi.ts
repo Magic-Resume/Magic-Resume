@@ -125,6 +125,8 @@ export interface ArchivedInterviewDetail extends Omit<
     role: 'user' | 'assistant';
     content: string;
     stage?: InterviewStage;
+    at?: number;
+    transcriptId?: string;
   }>;
   report: InterviewReport | null;
 }
@@ -152,6 +154,8 @@ export interface LiveInterview {
     role: 'user' | 'assistant';
     content: string;
     stage?: InterviewStage;
+    at?: number;
+    transcriptId?: string;
   }>;
   hasReport: boolean;
 }

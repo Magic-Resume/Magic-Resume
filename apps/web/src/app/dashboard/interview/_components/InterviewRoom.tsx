@@ -212,6 +212,8 @@ export default function InterviewRoom({
           live.messages.map((m) => ({
             role: m.role === 'assistant' ? 'interviewer' : 'candidate',
             text: m.content,
+            at: m.at,
+            segmentId: m.transcriptId,
           })),
         );
         // 已经出过报告 = 这场结束了，直接进复盘，不要再连一次语音。
@@ -235,6 +237,8 @@ export default function InterviewRoom({
             archived.transcript.map((message) => ({
               role: message.role === 'assistant' ? 'interviewer' : 'candidate',
               text: message.content,
+              at: message.at,
+              segmentId: message.transcriptId,
             })),
           );
           setReport(archived.report);
@@ -320,7 +324,9 @@ export default function InterviewRoom({
          * 回来。这里塞一条空的面试官发言，逐字稿开头就会出现一个空气泡。
          */
         setTurns(
-          result.message ? [{ role: 'interviewer', text: result.message }] : [],
+          result.message
+            ? [{ role: 'interviewer', text: result.message, at: Date.now() }]
+            : [],
         );
         if (result.stage === 'finished') {
           setFinished(true);
@@ -414,15 +420,17 @@ export default function InterviewRoom({
     try {
       // 房间在就走它——面试官会把回答**说出来**，跟你开口说话完全同一条链路。
       if (await sendText(text)) {
-        setTurns((prev) => [...prev, { role: 'candidate', text }]);
         return;
       }
       // 房间不在（连不上/已断开）才退回 HTTP：这时只出字，不出声。
-      setTurns((prev) => [...prev, { role: 'candidate', text }]);
+      setTurns((prev) => [
+        ...prev,
+        { role: 'candidate', text, at: Date.now() },
+      ]);
       const turn = await interviewApi.chat(sessionId, text);
       setTurns((prev) => [
         ...prev,
-        { role: 'interviewer', text: turn.message },
+        { role: 'interviewer', text: turn.message, at: Date.now() },
       ]);
       setStage(turn.stage);
       if (turn.finished) setFinished(true);
@@ -541,6 +549,8 @@ export default function InterviewRoom({
           live.messages.map((message) => ({
             role: message.role === 'assistant' ? 'interviewer' : 'candidate',
             text: message.content,
+            at: message.at,
+            segmentId: message.transcriptId,
           })),
         );
       } catch {
