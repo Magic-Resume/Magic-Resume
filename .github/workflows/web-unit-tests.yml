@@ -1,0 +1,33 @@
+name: Web unit tests
+
+# PRs to master and release branches had only Vercel previews: the web unit
+# suite (apps/web test:unit, incl. src/app.test.ts) never ran anywhere.
+on:
+  pull_request:
+    branches: ["master", "release-*"]
+  push:
+    branches: ["master"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-unit-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The web tests import workspace packages from their built dist.
+      - run: pnpm turbo run build --filter="./packages/*"
+      - run: pnpm --filter @magic-resume/web run test:unit

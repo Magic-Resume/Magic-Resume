@@ -32,9 +32,14 @@ const REQUIRED_KEYS = ['company', 'role'] as const;
 export default function TrackerFieldsCard({ instance, onAction }: WidgetProps) {
   const { t } = useTranslation();
   const [answered, setAnswered] = useState<string | undefined>(
-    instance.status === 'submitted' || instance.status === 'expired'
+    // 过期不是「已回答」：会话恢复后线程已回收，用户其实什么也没选。
+    instance.status === 'submitted'
       ? t('aiLab.widgets.trackerFields.answered')
-      : undefined,
+      : instance.status === 'expired'
+        ? t('aiLab.widgets.form.expired')
+        : instance.status === 'cancelled'
+          ? t('aiLab.widgets.form.cancelled')
+          : undefined,
   );
 
   const optional = BOARD_FIELD_KEYS.filter(
