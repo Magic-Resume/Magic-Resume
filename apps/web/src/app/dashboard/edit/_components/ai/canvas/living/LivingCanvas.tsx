@@ -1194,19 +1194,20 @@ function LivingCanvas({
       for (const change of changes) {
         if (change.documentChange) change.target.label = t(change.documentChange.field === 'documentLanguage' ? 'templateCustomizer.documentLanguage.label' : 'aiLab.living.sectionTitles');
       }
+      if (diagnostics.unmatchedItems > 0) {
+        onWarnRef.current(
+          `${diagnostics.unmatchedItems} 处修改与现有条目不匹配，已跳过`,
+          "unmatched_items",
+          { count: diagnostics.unmatchedItems, detail: diagnostics },
+        );
+      }
       // 整条链路的终点。此前这里直接 return——画布不动、评审条不出现、一句提示都没有，
       // 而聊天里模型已经说「改好了」。这就是用户报的那个症状最后落地的地方。
       if (!changes.length) {
-        onWarnRef.current(
-          diagnostics.unmatchedItems > 0
-            ? `${diagnostics.unmatchedItems} 处修改与现有条目不匹配，已跳过`
-            : "本次没有可评审的修改",
-          diagnostics.unmatchedItems > 0 ? "unmatched_items" : "no_changes",
-          {
-            count: diagnostics.unmatchedItems || undefined,
-            detail: diagnostics,
-          },
-        );
+        if (diagnostics.unmatchedItems > 0) return;
+        onWarnRef.current("本次没有可评审的修改", "no_changes", {
+          detail: diagnostics,
+        });
         return;
       }
       const entries = changes.map((c) => ({
