@@ -1,6 +1,14 @@
 "use client";
 
-import React, { memo, useEffect, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -119,8 +127,8 @@ function ThinkingIndicator({
   const state = activity ?? "thinking";
   return (
     <motion.div
-      initial={{ opacity: 0, y: reduce ? 0 : 6 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
       // 不淡出，直接撤。
       //
       // 它总是被「插在它上方」的新消息接替，而那条新消息恰好落在它原来的位置上——
@@ -130,7 +138,11 @@ function ThinkingIndicator({
       exit={{ opacity: 0, transition: { duration: 0 } }}
       // 不写 transition 就吃 framer-motion 默认的 spring，跟全局那条 180ms 缓动
       // 对不上——而这正是「思考中 → 开始落笔」的交接点，最不该是另一种手感。
-      transition={{ duration: reduce ? 0 : 0.18, ease: EASE_ENTER }}
+      transition={{
+        duration: reduce ? 0 : 0.18,
+        delay: reduce ? 0 : 0.08,
+        ease: EASE_ENTER,
+      }}
       className="flex items-center gap-2.5 text-neutral-200"
     >
       {/* 形态随真实活动走：读取简历和汇总评分不再长一个样。这层区分要留住——
@@ -884,6 +896,7 @@ type ChatThreadProps = {
 
 type MessageRowProps = {
   message: ChatMessage;
+  animateEntry: boolean;
   reduceMotion: boolean;
   retired: boolean;
   activity?: AgentActivity | null;
@@ -903,98 +916,93 @@ type MessageRowProps = {
  * a memoized leaf prevents that frame from reparsing every completed Markdown
  * response and rebuilding every historical card above it.
  */
-const MessageRow = memo(function MessageRow({
-  message: m,
-  reduceMotion,
-  retired,
-  activity,
-  openCanvasSkillId,
-  regenerable,
-  onToggleCanvas,
-  onLogClick,
-  onApproval,
-  onWidgetAction,
-  onRegenerate,
-  onToggleSources,
-  sourcesOpen,
-}: MessageRowProps) {
-  const takesOverThinking =
-    m.role === "assistant" && !!m.reasoning && !m.content;
-  const isUser = m.role === "user";
-
-  return (
-    <motion.div
-      data-slot="message"
-      data-from={m.role}
-      data-message-id={m.id}
-      initial={
-        takesOverThinking
-          ? false
-          : isUser
-            ? {
-                opacity: 0,
-                y: reduceMotion ? 0 : 10,
-                scale: reduceMotion ? 1 : 0.92,
-              }
-            : {
-                opacity: 0,
-                y: reduceMotion ? 0 : 16,
-                scale: reduceMotion ? 1 : 0.98,
-              }
-      }
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.12 } }}
-      transition={{
-        duration: reduceMotion ? 0 : isUser ? 0.26 : 0.3,
-        ease: EASE_ENTER,
-      }}
-      style={isUser ? { transformOrigin: "100% 100%" } : undefined}
-    >
-      {m.role === "exec" ? (
-        <ExecCard
-          message={m}
-          onToggleCanvas={onToggleCanvas}
-          isCanvasOpen={openCanvasSkillId === m.skillId}
-        />
-      ) : m.role === "log" ? (
-        <LogLine message={m} onLogClick={onLogClick} />
-      ) : m.role === "activity" ? (
-        <ActivityLine message={m} />
-      ) : m.role === "approval" ? (
-        <ApprovalCard message={m} onApproval={onApproval} />
-      ) : m.role === "tools" ? (
-        <ToolTrace message={m} />
-      ) : m.role === "plan" ? (
-        <TasksCard
-          message={m}
-          retired={retired}
-          onToggleCanvas={onToggleCanvas}
-          isCanvasOpen={Boolean(m.skillId && openCanvasSkillId === m.skillId)}
-          activity={activity}
-        />
-      ) : m.role === "widget" ? (
-        m.widget ? (
-          <div className="flex items-start">
-            <WidgetHost
-              registry={WIDGETS}
-              instance={m.widget}
-              context={{ sources: m.sources }}
-              onAction={onWidgetAction ?? (() => {})}
-            />
-          </div>
-        ) : null
-      ) : (
-        <Bubble
-          message={m}
-          onRegenerate={regenerable ? onRegenerate : undefined}
-          onWidgetAction={onWidgetAction}
-          onToggleSources={onToggleSources}
-          sourcesOpen={sourcesOpen}
-        />
-      )}
-    </motion.div>
-  );
-});
+const MessageRow = memo(
+  forwardRef<HTMLDivElement, MessageRowProps>(function MessageRow({
+    message: m,
+    animateEntry,
+    reduceMotion,
+    retired,
+    activity,
+    openCanvasSkillId,
+    regenerable,
+    onToggleCanvas,
+    onLogClick,
+    onApproval,
+    onWidgetAction,
+    onRegenerate,
+    onToggleSources,
+    sourcesOpen,
+  }, ref) {
+    const takesOverThinking =
+      m.role === "assistant" && !!m.reasoning && !m.content;
+    return (
+      <motion.div
+        ref={ref}
+        data-slot="message"
+        data-from={m.role}
+        data-message-id={m.id}
+        initial={
+          takesOverThinking || reduceMotion || !animateEntry
+            ? false
+            : { opacity: 0 }
+        }
+        animate={{ opacity: 1 }}
+        exit={{
+          opacity: 0,
+          pointerEvents: "none",
+          transition: { duration: reduceMotion ? 0 : 0.12 },
+        }}
+        transition={{
+          duration: reduceMotion ? 0 : 0.14,
+          ease: EASE_ENTER,
+        }}
+      >
+        {m.role === "exec" ? (
+          <ExecCard
+            message={m}
+            onToggleCanvas={onToggleCanvas}
+            isCanvasOpen={openCanvasSkillId === m.skillId}
+          />
+        ) : m.role === "log" ? (
+          <LogLine message={m} onLogClick={onLogClick} />
+        ) : m.role === "activity" ? (
+          <ActivityLine message={m} />
+        ) : m.role === "approval" ? (
+          <ApprovalCard message={m} onApproval={onApproval} />
+        ) : m.role === "tools" ? (
+          <ToolTrace message={m} />
+        ) : m.role === "plan" ? (
+          <TasksCard
+            message={m}
+            retired={retired}
+            onToggleCanvas={onToggleCanvas}
+            isCanvasOpen={Boolean(m.skillId && openCanvasSkillId === m.skillId)}
+            activity={activity}
+          />
+        ) : m.role === "widget" ? (
+          m.widget ? (
+            <div className="flex items-start">
+              <WidgetHost
+                registry={WIDGETS}
+                instance={m.widget}
+                context={{ sources: m.sources }}
+                onAction={onWidgetAction ?? (() => {})}
+              />
+            </div>
+          ) : null
+        ) : (
+          <Bubble
+            message={m}
+            onRegenerate={regenerable ? onRegenerate : undefined}
+            onWidgetAction={onWidgetAction}
+            onToggleSources={onToggleSources}
+            sourcesOpen={sourcesOpen}
+          />
+        )}
+      </motion.div>
+    );
+  }),
+);
 
 export { isPlanFulfilled, isRetirablePlan };
 
@@ -1036,25 +1044,68 @@ export default function ChatThread({
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
   const followOutputRef = useRef(true);
-  const previousLastIdRef = useRef<string | null>(null);
+  const previousMessagesRef = useRef<ChatMessage[]>([]);
+  const [initialMessageIds] = useState(() => new Set(messages.map((m) => m.id)));
   const reduceMotion = useReducedMotion() ?? false;
+  const lastUserId = messages.findLast((message) => message.role === "user")?.id;
+  const [regenerationSpace, setRegenerationSpace] = useState<{
+    userId: string;
+    height: number;
+  } | null>(null);
+  const prepareRegeneration = useCallback(() => {
+    const viewport = scrollRef.current;
+    const content = contentRef.current;
+    const userRow = Array.from(content?.children ?? []).find(
+      (row) => row.getAttribute("data-message-id") === lastUserId,
+    );
+    if (viewport && userRow && lastUserId) {
+      const style = getComputedStyle(viewport);
+      const paddingTop = parseFloat(style.paddingTop);
+      const paddingBottom = parseFloat(style.paddingBottom);
+      const rowTop =
+        userRow.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+      // Keep a visible question in place. If it is above the viewport, bring it
+      // to the top; reserve only the visible answer area, not the old long reply.
+      const scrollTop = Math.max(
+        0,
+        viewport.scrollTop + rowTop - Math.max(paddingTop, rowTop),
+      );
+      setRegenerationSpace({
+        userId: lastUserId,
+        height: scrollTop + viewport.clientHeight - paddingTop - paddingBottom,
+      });
+      followOutputRef.current = true;
+    }
+    onRegenerate?.();
+  }, [lastUserId, onRegenerate]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scrollRef.current;
-    const lastId = messages[messages.length - 1]?.id ?? null;
-    const addedMessage = previousLastIdRef.current !== lastId;
-    previousLastIdRef.current = lastId;
+    const previous = previousMessagesRef.current;
+    const samePrefix = previous.length <= messages.length &&
+      previous.every((message, index) => message.id === messages[index].id);
+    const appended =
+      previous.length > 0 &&
+      messages.length > previous.length &&
+      samePrefix;
+    previousMessagesRef.current = messages;
     if (!el || !followOutputRef.current) return;
     if (scrollFrameRef.current !== null)
       cancelAnimationFrame(scrollFrameRef.current);
-    scrollFrameRef.current = requestAnimationFrame(() => {
-      scrollFrameRef.current = null;
-      el.scrollTo({
-        top: el.scrollHeight,
-        // 平滑只属于“新增一条消息”。流式增长若每帧都开 smooth，会堆叠动画并不断强制布局。
-        behavior: addedMessage && !reduceMotion ? "smooth" : "auto",
+    if (previous.length === 0 || !samePrefix) {
+      // Settle restored/replaced content before paint. A removed answer is not
+      // a new message and must not trigger a smooth scroll through the history.
+      el.scrollTo({ top: el.scrollHeight, behavior: "instant" });
+    } else {
+      scrollFrameRef.current = requestAnimationFrame(() => {
+        scrollFrameRef.current = null;
+        // Coalesce streaming updates into one layout read per frame.
+        el.scrollTo({
+          top: el.scrollHeight,
+          behavior: appended && !reduceMotion ? "smooth" : "instant",
+        });
       });
-    });
+    }
     return () => {
       if (scrollFrameRef.current !== null) {
         cancelAnimationFrame(scrollFrameRef.current);
@@ -1107,7 +1158,17 @@ export default function ChatThread({
   }, [messages, retired]);
 
   return (
-    <div className="relative min-h-0 flex-1">
+    <motion.div
+      className="relative min-h-0 flex-1"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{
+        opacity: 0,
+        pointerEvents: "none",
+        transition: { duration: reduceMotion ? 0 : 0.1 },
+      }}
+      transition={{ duration: reduceMotion ? 0 : 0.18, ease: EASE_ENTER }}
+    >
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -1117,16 +1178,27 @@ export default function ChatThread({
         onTouchMove={pauseFollowing}
         className="h-full overflow-y-auto scrollbar-hide px-4 py-6"
       >
-        <div ref={contentRef} className="max-w-3xl mx-auto flex flex-col gap-5">
-          {/* New messages rise + fade in (Claude-desktop style 由下到上); keyed by id
-              so only freshly-mounted turns animate, never re-renders of existing ones.
-              外层 AnimatePresence 是 exit 能播的前提——没有它,流式过程中一条消息被
-              替换（activity → assistant 之类）就是硬切,写了 exit 也等于没写。 */}
-          <AnimatePresence initial={false}>
+        <div
+          ref={contentRef}
+          className="relative max-w-3xl mx-auto flex flex-col gap-5"
+          style={{
+            // A popped long answer must not extend the scroll range while fading.
+            overflow:
+              regenerationSpace?.userId === lastUserId ? "clip" : undefined,
+            minHeight:
+              regenerationSpace?.userId === lastUserId
+                ? regenerationSpace?.height
+                : undefined,
+          }}
+        >
+          {/* Outgoing answers fade outside document flow, so they cannot stretch
+              the viewport or move the question while the new answer arrives. */}
+          <AnimatePresence initial={false} mode="popLayout">
             {messages.map((m) => (
               <MessageRow
                 key={m.id}
                 message={m}
+                animateEntry={!initialMessageIds.has(m.id)}
                 reduceMotion={reduceMotion}
                 retired={retired.has(m.id)}
                 activity={m.role === "plan" ? activity : undefined}
@@ -1136,7 +1208,7 @@ export default function ChatThread({
                 onLogClick={onLogClick}
                 onApproval={onApproval}
                 onWidgetAction={onWidgetAction}
-                onRegenerate={onRegenerate}
+                onRegenerate={onRegenerate ? prepareRegeneration : undefined}
                 onToggleSources={onToggleSources}
                 sourcesOpen={openSourcesMessageId === m.id}
               />
@@ -1161,6 +1233,6 @@ export default function ChatThread({
           followOutputRef.current = atLiveEdge;
         }}
       />
-    </div>
+    </motion.div>
   );
 }

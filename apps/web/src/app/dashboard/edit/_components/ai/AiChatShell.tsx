@@ -373,6 +373,8 @@ export default function AiChatShell({
   const [conversationView, setConversationView] = useState<
     "conversation" | "trajectory"
   >("conversation");
+  // History replacement gets a fresh viewport; regeneration keeps the current one.
+  const [threadViewKey, setThreadViewKey] = useState(0);
   /**
    * Agent 此刻在干什么。由 SSE 事件推导，不是猜的——见 conversation/agentActivity.ts。
    * 此前这些事件里除了 read_resume 之外全被丢弃，界面上所有等待都长一个样。
@@ -660,6 +662,7 @@ export default function AiChatShell({
         historyViewOnlyRef.current = state.state === 'checkpoint_missing' || state.state === 'not_found';
         const restored = reconcilePendingCards(restoreConversationMessages(detail.messages), state, session.agentMode);
         if (!restored.length) return;
+        setThreadViewKey((key) => key + 1);
         adoptAiSession(resumeId, {
           ...session,
           sessionId: detail.id,
@@ -2419,7 +2422,7 @@ export default function AiChatShell({
         const newTurnId = nanoid();
         const nextMessages: ChatMessage[] = [
           ...truncated,
-          { ...originalTurn, id: nanoid(), serverTurnId: newTurnId },
+          { ...originalTurn, serverTurnId: newTurnId },
         ];
         adoptAiSession(resumeId, {
           ...getCurrentAiSession(),
@@ -2902,6 +2905,7 @@ export default function AiChatShell({
         if (historyViewOnlyRef.current) toast.error(t("aiLab.history.checkpointMissing"));
         const snapshot = detail.snapshot as Partial<AiSessionSnapshot> | null;
         const restored = reconcilePendingCards(restoreConversationMessages(detail.messages), state, snapshot?.agentMode ?? DEFAULT_AGENT_MODE);
+        setThreadViewKey((key) => key + 1);
         adoptAiSession(resumeId, {
           ...(snapshot ?? {}),
           sessionId: detail.id,
@@ -3332,30 +3336,31 @@ export default function AiChatShell({
                 <motion.div
                   key="thread"
                   className="flex-1 min-h-0 flex"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.12 }}
+                  initial={false}
                 >
-                  <ChatThread
-                    messages={displayMessages}
-                    navigationVisible={stageOccupant.kind === "none"}
-                    onToggleCanvas={toggleCanvas}
-                    onLogClick={focusOnCanvas}
-                    onApproval={handleApproval}
-                    onWidgetAction={handleWidgetAction}
-                    thinking={awaitingReply}
-                    activity={activity}
-                    onRegenerate={handleRegenerate}
-                    onToggleSources={toggleSources}
-                    openSourcesMessageId={sourcesMessageId}
-                    openCanvasSkillId={
-                      canvas.open
-                        ? canvas.skillId
-                        : livingOpen
-                          ? livingSkillId
-                          : null
-                    }
-                  />
+                  <AnimatePresence initial={false} mode="wait">
+                    <ChatThread
+                      key={threadViewKey}
+                      messages={displayMessages}
+                      navigationVisible={stageOccupant.kind === "none"}
+                      onToggleCanvas={toggleCanvas}
+                      onLogClick={focusOnCanvas}
+                      onApproval={handleApproval}
+                      onWidgetAction={handleWidgetAction}
+                      thinking={awaitingReply}
+                      activity={activity}
+                      onRegenerate={handleRegenerate}
+                      onToggleSources={toggleSources}
+                      openSourcesMessageId={sourcesMessageId}
+                      openCanvasSkillId={
+                        canvas.open
+                          ? canvas.skillId
+                          : livingOpen
+                            ? livingSkillId
+                            : null
+                      }
+                    />
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
