@@ -266,6 +266,23 @@ export function siteFaviconUrl(
   }
 }
 
+export function siteFaviconCandidates(
+  pageUrl: string | undefined,
+  candidate?: string,
+): string[] {
+  const supplied = httpUrl(candidate);
+  const direct = siteFaviconUrl(pageUrl);
+  const page = httpUrl(pageUrl);
+  const proxy = page
+    ? `/api/source-icon?domain=${encodeURIComponent(new URL(page).hostname)}`
+    : undefined;
+  return [
+    ...new Set(
+      [supplied, direct, proxy].filter((url): url is string => Boolean(url)),
+    ),
+  ];
+}
+
 export function citationAnchor(
   citationId: number,
   available = true,

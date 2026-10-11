@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { VoiceTurn } from './useVoiceInterview';
+import { transcriptDisplayTurns } from './mergeTurns';
 
 import { EASE_ENTER } from '@magic-resume/utils';
 /**
@@ -18,15 +19,26 @@ export default function Transcript({
   turns,
   live,
   liveReply,
+  liveAt,
+  liveReplyAt,
 }: {
   turns: VoiceTurn[];
   /** 你正在说的那句。 */
   live: string;
   /** 面试官正在说的那句。已定稿的部分同时也在 `turns` 里，所以两者不会重复显示。 */
   liveReply: string;
+  liveAt?: number | null;
+  liveReplyAt?: number | null;
 }) {
   const { t } = useTranslation();
   const endRef = useRef<HTMLDivElement>(null);
+  const displayTurns = transcriptDisplayTurns(
+    turns,
+    live,
+    liveReply,
+    liveAt,
+    liveReplyAt,
+  );
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -41,17 +53,19 @@ export default function Transcript({
       className="absolute inset-0 overflow-y-auto px-5 pb-44 pt-2"
     >
       {turns.length === 0 && !live && !liveReply ? (
-        <p className="pt-10 text-center text-mr-caption text-muted">
+        <p className="text-mr-caption text-muted pt-10 text-center">
           {t('aiLab.interview.transcriptEmpty')}
         </p>
       ) : (
         <div className="mx-auto flex max-w-2xl flex-col gap-4">
-          {turns.map((turn, index) => (
-            <Line key={index} role={turn.role} text={turn.text} />
+          {displayTurns.map((turn, index) => (
+            <Line
+              key={`${turn.role}:${turn.segmentId ?? turn.at ?? index}`}
+              role={turn.role}
+              text={turn.text}
+              pending={turn.pending}
+            />
           ))}
-          {/* 还在说的两句用弱化色，读者一眼分得清「已经说完的」和「正在说的」。 */}
-          {liveReply && <Line role="interviewer" text={liveReply} pending />}
-          {live && <Line role="candidate" text={live} pending />}
           <div ref={endRef} />
         </div>
       )}

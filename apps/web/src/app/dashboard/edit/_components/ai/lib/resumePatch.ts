@@ -31,7 +31,12 @@ type TextPatchTarget = {
   fieldKey: string;
 };
 
-const NON_TEXT_TARGET_FIELDS = new Set(['id', 'visible', 'icon', 'customSectionKey']);
+const NON_TEXT_TARGET_FIELDS = new Set([
+  'id',
+  'visible',
+  'icon',
+  'customSectionKey',
+]);
 
 export function resolveResumePatchEvent(
   current: Resume,
@@ -44,11 +49,18 @@ export function resolveResumePatchEvent(
   const jsonPatch = getJsonPatch(payload);
   if (jsonPatch) return resolveJsonPatch(current, jsonPatch);
 
-  const oldString = getString(payload, 'oldString') ?? getString(payload, 'old_string');
-  const newString = getString(payload, 'newString') ?? getString(payload, 'new_string');
+  const oldString =
+    getString(payload, 'oldString') ?? getString(payload, 'old_string');
+  const newString =
+    getString(payload, 'newString') ?? getString(payload, 'new_string');
   if (oldString == null || newString == null) return null;
 
-  const direct = resolveTextPatch(current, oldString, newString, targetedSelection);
+  const direct = resolveTextPatch(
+    current,
+    oldString,
+    newString,
+    targetedSelection,
+  );
   if (direct) return direct;
   // edit_file operates on serialized JSON; fields in the browser are decoded.
   try {
@@ -60,7 +72,37 @@ export function resolveResumePatchEvent(
   } catch {
     // Plain text patches are already decoded and keep the exact-match boundary.
   }
-  return null;
+  const before = decodeProperty(oldString);
+  const after = decodeProperty(newString);
+  if (
+    !before ||
+    !after ||
+    before.key !== after.key ||
+    NON_TEXT_TARGET_FIELDS.has(before.key)
+  )
+    return null;
+  return resolveTextPatch(
+    current,
+    before.value,
+    after.value,
+    targetedSelection,
+    before.key,
+  );
+}
+
+function decodeProperty(
+  fragment: string,
+): { key: string; value: string } | null {
+  try {
+    const record = asRecord(
+      JSON.parse(`{${fragment.trim().replace(/,$/, '')}}`),
+    );
+    if (!record || Object.keys(record).length !== 1) return null;
+    const [key] = Object.keys(record);
+    return typeof record[key] === 'string' ? { key, value: record[key] } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** One stream projects consecutive edits onto its latest candidate, not its base. */
@@ -71,8 +113,15 @@ export class ResumePatchProjection {
     this.candidate = base;
   }
 
-  accept(rawPayload: unknown, context?: ResumePatchBatchContext): ResolvedResumePatchBatch | null {
-    const resolved = resolveResumePatchBatch(this.candidate, rawPayload, context);
+  accept(
+    rawPayload: unknown,
+    context?: ResumePatchBatchContext,
+  ): ResolvedResumePatchBatch | null {
+    const resolved = resolveResumePatchBatch(
+      this.candidate,
+      rawPayload,
+      context,
+    );
     if (!resolved) return null;
     this.candidate = resolved.proposedDocument;
     // Only a user's selection scopes the review. A matched patch substring is
@@ -90,7 +139,11 @@ export function resolveResumePatchBatch(
   rawPayload: unknown,
   context?: ResumePatchBatchContext,
 ): ResolvedResumePatchBatch | null {
-  const resolved = resolveResumePatchEvent(current, rawPayload, context?.targetedSelection);
+  const resolved = resolveResumePatchEvent(
+    current,
+    rawPayload,
+    context?.targetedSelection,
+  );
   if (!resolved?.resume.sections) return null;
 
   return {
@@ -102,11 +155,17 @@ export function resolveResumePatchBatch(
   };
 }
 
-function resolveJsonPatch(current: Resume, patch: Operation[]): ResolvedResumePatch | null {
+function resolveJsonPatch(
+  current: Resume,
+  patch: Operation[],
+): ResolvedResumePatch | null {
   try {
     const cloned = cloneResume(current);
     const { newDocument } = applyPatch(cloned, patch, true, true);
-    return { resume: newDocument as Resume, targetedSelection: targetedSelectionFromJsonPatch(current, patch) };
+    return {
+      resume: newDocument as Resume,
+      targetedSelection: targetedSelectionFromJsonPatch(current, patch),
+    };
   } catch (error) {
     console.warn('[ai] failed to apply resume_patch JSON Patch', error);
     return null;
@@ -118,13 +177,19 @@ function resolveTextPatch(
   oldString: string,
   newString: string,
   targetedSelection?: TargetedSelectionDiff,
+  fieldKey?: string,
 ): ResolvedResumePatch | null {
   if (!oldString) return null;
 
   if (targetedSelection) {
     const explicitTarget = targetFromSelectionPath(targetedSelection.path);
-    if (explicitTarget) {
-      const resolved = replaceTextAtTarget(current, explicitTarget, oldString, newString);
+    if (explicitTarget && (!fieldKey || explicitTarget.fieldKey === fieldKey)) {
+      const resolved = replaceTextAtTarget(
+        current,
+        explicitTarget,
+        oldString,
+        newString,
+      );
       if (resolved) {
         return {
           resume: resolved.resume,
@@ -139,10 +204,15 @@ function resolveTextPatch(
     return null;
   }
 
-  const fallbackTarget = findTextTarget(current.sections, oldString);
+  const fallbackTarget = findTextTarget(current.sections, oldString, fieldKey);
   if (!fallbackTarget) return null;
 
-  const resolved = replaceTextAtTarget(current, fallbackTarget, oldString, newString);
+  const resolved = replaceTextAtTarget(
+    current,
+    fallbackTarget,
+    oldString,
+    newString,
+  );
   if (!resolved) return null;
 
   return {
@@ -179,7 +249,9 @@ function replaceTextAtTarget(
   // interprets '$' sequences in newString (e.g. a salary like "$1,000" or "$&") as
   // replacement patterns and mangles the output. Slicing keeps newString literal.
   resume.sections[target.sectionKey][index][target.fieldKey] =
-    value.slice(0, matchIndex) + newString + value.slice(matchIndex + needle.length);
+    value.slice(0, matchIndex) +
+    newString +
+    value.slice(matchIndex + needle.length);
   return { resume, selectionText: needle };
 }
 
@@ -193,15 +265,27 @@ function targetFromSelectionPath(path: string): TextPatchTarget | null {
   };
 }
 
-function findTextTarget(sections: Section, needle: string): TextPatchTarget | null {
+function findTextTarget(
+  sections: Section,
+  needle: string,
+  propertyKey?: string,
+): TextPatchTarget | null {
   let matched: TextPatchTarget | null = null;
   for (const [sectionKey, items] of Object.entries(sections)) {
     if (!Array.isArray(items)) continue;
     for (const item of items) {
       if (!item?.id) continue;
       for (const [fieldKey, value] of Object.entries(item)) {
-        if (NON_TEXT_TARGET_FIELDS.has(fieldKey) || typeof value !== 'string' || !value.includes(needle)) continue;
-        if (matched || value.indexOf(needle) !== value.lastIndexOf(needle)) return null;
+        if (propertyKey && (propertyKey !== fieldKey || value !== needle))
+          continue;
+        if (
+          NON_TEXT_TARGET_FIELDS.has(fieldKey) ||
+          typeof value !== 'string' ||
+          !value.includes(needle)
+        )
+          continue;
+        if (matched || value.indexOf(needle) !== value.lastIndexOf(needle))
+          return null;
         matched = { sectionKey, itemId: String(item.id), fieldKey };
       }
     }
@@ -209,7 +293,10 @@ function findTextTarget(sections: Section, needle: string): TextPatchTarget | nu
   return matched;
 }
 
-function targetedSelectionFromJsonPatch(current: Resume, patch: Operation[]): TargetedSelectionDiff | undefined {
+function targetedSelectionFromJsonPatch(
+  current: Resume,
+  patch: Operation[],
+): TargetedSelectionDiff | undefined {
   if (patch.length !== 1) return undefined;
   const [op] = patch;
   if (op.op !== 'replace' || typeof op.value !== 'string') return undefined;
@@ -228,7 +315,10 @@ function targetedSelectionFromJsonPatch(current: Resume, patch: Operation[]): Ta
   };
 }
 
-function targetFromJsonPointer(current: Resume, pointer: string): TextPatchTarget | null {
+function targetFromJsonPointer(
+  current: Resume,
+  pointer: string,
+): TextPatchTarget | null {
   const segments = pointer
     .split('/')
     .slice(1)
@@ -254,7 +344,9 @@ function getJsonPatch(payload: Record<string, unknown>): Operation[] | null {
 
 function isJsonPatchOperation(value: unknown): value is Operation {
   const record = asRecord(value);
-  return Boolean(record && typeof record.op === 'string' && typeof record.path === 'string');
+  return Boolean(
+    record && typeof record.op === 'string' && typeof record.path === 'string',
+  );
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -263,7 +355,10 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-function getString(payload: Record<string, unknown>, key: string): string | undefined {
+function getString(
+  payload: Record<string, unknown>,
+  key: string,
+): string | undefined {
   const value = payload[key];
   return typeof value === 'string' ? value : undefined;
 }

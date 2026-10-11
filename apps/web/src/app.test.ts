@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import type { ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { GET as getSourceIcon } from "@/app/api/source-icon/route";
 import {
   FilterTable,
   RecordsTable,
@@ -52,6 +53,7 @@ import {
   mergeCitationSources,
   normalizeCitationSources,
   siteFaviconUrl,
+  siteFaviconCandidates,
   sourceHeadline,
   sourcesForToolCall,
   visibleCitationSources,
@@ -1199,6 +1201,61 @@ function testDiffFieldCoverage() {
   );
 }
 
+async function testSourceIconProxy() {
+  const originalFetch = globalThis.fetch;
+  const requests: string[] = [];
+  try {
+    globalThis.fetch = async (input) => {
+      requests.push(String(input));
+      return new Response(new Uint8Array([0, 0, 1, 0]), {
+        headers: { 'Content-Type': 'image/x-icon' },
+      });
+    };
+    for (const domain of [
+      '127.0.0.1',
+      'localhost',
+      'example.com/../../x',
+      'example.com@evil.com',
+      'x.internal',
+    ]) {
+      const response = await getSourceIcon(
+        new Request(
+          `https://app.example/api/source-icon?domain=${encodeURIComponent(domain)}`,
+        ),
+      );
+      assert.equal(response.status, 400);
+    }
+    assert.equal(requests.length, 0);
+    const icon = await getSourceIcon(
+      new Request('https://app.example/api/source-icon?domain=github.com'),
+    );
+    assert.equal(icon.status, 200);
+    assert.deepEqual(requests, [
+      'https://icons.duckduckgo.com/ip3/github.com.ico',
+    ]);
+    assert.equal(icon.headers.get('Content-Type'), 'image/x-icon');
+    globalThis.fetch = async () =>
+      new Response('<html>error</html>', {
+        headers: { 'Content-Type': 'text/html' },
+      });
+    assert.equal(
+      (
+        await getSourceIcon(
+          new Request('https://app.example/api/source-icon?domain=github.com'),
+        )
+      ).status,
+      404,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+/**
+ * 搜索行的三条正确性问题（见 `docs/specs/search-and-citations/design-brief.md` §4.0）：
+ * 按次归属、完成态时态、失败/空/额度可见。三条都是「界面在对用户说假话」，不是观感。
+ */
+
 function testCitationSources() {
   const sources = normalizeCitationSources([
     {
@@ -1244,6 +1301,14 @@ function testCitationSources() {
   assert.equal(
     siteFaviconUrl("https://jobs.example.com/role", "javascript:alert(1)"),
     "https://jobs.example.com/favicon.ico",
+  );
+  assert.deepEqual(
+    siteFaviconCandidates("https://jobs.example.com/role", "https://cdn.example.com/icon.png"),
+    ["https://cdn.example.com/icon.png", "https://jobs.example.com/favicon.ico", "/api/source-icon?domain=jobs.example.com"],
+  );
+  assert.deepEqual(
+    siteFaviconCandidates("https://jobs.example.com/role", "https://jobs.example.com/favicon.ico"),
+    ["https://jobs.example.com/favicon.ico", "/api/source-icon?domain=jobs.example.com"],
   );
   assert.equal(
     linkCitationMarkers("公开要求 [2]，未知 [9]。", sources),
@@ -3082,6 +3147,7 @@ async function main() {
   testCanvasReachability();
   testDiffFieldCoverage();
   testCitationSources();
+  await testSourceIconProxy();
   testSearchLine();
   testCodeHighlight();
   testAfterAuthUrl();

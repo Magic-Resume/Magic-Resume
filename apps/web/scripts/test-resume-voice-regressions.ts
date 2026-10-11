@@ -8,6 +8,7 @@ import { applyChangeToSections } from '../src/app/dashboard/edit/_components/ai/
 import {
   mergeInterviewTurns,
   upsertVoiceTurn,
+  transcriptDisplayTurns,
 } from '../src/app/dashboard/interview/_components/mergeTurns';
 import type { VoiceTurn } from '../src/app/dashboard/interview/_components/useVoiceInterview';
 
@@ -59,7 +60,9 @@ function fixture() {
   let state = {
     turns: [] as VoiceTurn[],
     liveReply: '',
+    liveReplyAt: null as number | null,
     liveTranscript: '',
+    liveTranscriptAt: null as number | null,
     phase: 'listening',
   };
   const reports: unknown[][] = [];
@@ -69,8 +72,11 @@ function fixture() {
     crypto: { randomUUID },
     Date,
     lyraMessagesRef: { current: new Map() },
+    lyraCursorRef: { current: null },
     transcriptClockRef: { current: 100 },
     transcriptTimesRef: { current: new Map() },
+    candidateSpeechAtRef: { current: null },
+    activeTranscriptsRef: { current: new Map() },
     voiceRef: {
       current: {
         connectionId: 'connection',
@@ -128,6 +134,92 @@ function fixture() {
 }
 
 async function main() {
+  await check(
+    'Vega deltas without ids settle into one caption with the original timestamp',
+    () => {
+      const f = fixture();
+      f.vega(
+        JSON.stringify({ type: 'output_transcript.delta', delta: 'Welcome' }),
+      );
+      const at = f.state().liveReplyAt;
+      f.vega(
+        JSON.stringify({
+          type: 'turn.done',
+          turn: { id: 'late-id', role: 'assistant', transcript: 'Welcome' },
+        }),
+      );
+      assert.equal(f.state().turns.length, 1);
+      assert.equal(f.state().turns[0].at, at);
+      assert.equal(f.state().liveReply, '');
+    },
+  );
+  await check(
+    'Lyra cursorless patches after a completed primer stream and persist every utterance',
+    () => {
+      const f = fixture();
+      f.runtime.primerRef.current = 'private interviewer instructions';
+      f.emit({
+        c: 0,
+        v: {
+          message: {
+            id: 'primer',
+            author: { role: 'user' },
+            content: { parts: ['private interviewer instructions'] },
+            status: 'finished_successfully',
+          },
+        },
+      });
+      f.start(1, 'assistant', 'Welcome');
+      f.emit({
+        p: '/message/content/parts/0/text',
+        o: 'append',
+        v: ' candidate',
+      });
+      assert.equal(f.state().liveReply, 'Welcome candidate');
+      f.emit({
+        p: '/message/status',
+        o: 'replace',
+        v: 'finished_successfully',
+      });
+      f.start(2, 'user', 'I use');
+      f.emit({
+        v: [{ p: '/message/content/parts/0/text', o: 'append', v: ' React' }],
+      });
+      f.emit({
+        p: '/message/status',
+        o: 'replace',
+        v: 'finished_successfully',
+      });
+      assert.deepEqual(
+        f.state().turns.map((t) => t.text),
+        ['Welcome candidate', 'I use React'],
+      );
+      assert.equal(f.reports.length, 2);
+      assert.equal(f.state().liveTranscript, '');
+    },
+  );
+  await check(
+    'Lyra complete message skeletons settle once without an additional status patch',
+    () => {
+      const f = fixture();
+      f.emit({
+        c: 1,
+        v: {
+          message: {
+            id: 'complete',
+            author: { role: 'user' },
+            content: { parts: ['Completed answer'] },
+            status: 'finished_successfully',
+          },
+        },
+      });
+      assert.deepEqual(
+        f.state().turns.map((t) => t.text),
+        ['Completed answer'],
+      );
+      assert.equal(f.reports.length, 1);
+    },
+  );
   const current = {
     experience: [{ id: 'saved-id', visible: true, summary: '<p>Node.js</p>' }],
   };
@@ -202,6 +294,55 @@ async function main() {
       ['question', 'answer'],
     );
   });
+  await check(
+    'pending speech is inserted by start time and does not duplicate a final segment',
+    () => {
+      const turns: VoiceTurn[] = [
+        { role: 'interviewer', text: 'reply', at: 200 },
+      ];
+      assert.deepEqual(
+        transcriptDisplayTurns(turns, 'answer', '', 100, null).map(
+          (t) => t.text,
+        ),
+        ['answer', 'reply'],
+      );
+      assert.equal(
+        transcriptDisplayTurns(turns, '', 'paced tail', null, 200).length,
+        1,
+      );
+    },
+  );
+  await check(
+    'a late Vega user transcript retains the locally observed speech start',
+    () => {
+      const f = fixture();
+      f.runtime.candidateSpeechAtRef.current = 100;
+      f.vega(
+        JSON.stringify({
+          type: 'turn.delta',
+          turn: { id: 'interviewer' },
+          delta: 'reply',
+        }),
+      );
+      f.vega(
+        JSON.stringify({
+          type: 'turn.done',
+          turn: { id: 'interviewer', role: 'assistant', transcript: 'reply' },
+        }),
+      );
+      f.vega(
+        JSON.stringify({
+          type: 'turn.done',
+          turn: { id: 'user', role: 'user', transcript: 'hello' },
+        }),
+      );
+      assert.deepEqual(
+        f.state().turns.map((t) => t.text),
+        ['hello', 'reply'],
+      );
+      assert.equal(f.state().turns[0].at, 100);
+    },
+  );
   await check(
     'late final updates replace their own segment and preserve genuine repeated speech',
     () => {
