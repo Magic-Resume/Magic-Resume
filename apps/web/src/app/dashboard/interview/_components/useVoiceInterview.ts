@@ -183,6 +183,7 @@ export function useVoiceInterview(sessionId: string | null) {
    * 上游语音渠道 的转写中间态。上游是「先 add 骨架、再按路径 patch 追加」，所以要按消息
    * 序号索引。放 ref 不放 state：它只是解析过程，界面要的是解析结果。
    */
+  const lyraCursorRef = useRef<number | null>(null);
   const lyraMessagesRef = useRef<
     Map<
       number,
@@ -217,6 +218,8 @@ export function useVoiceInterview(sessionId: string | null) {
   }, []);
 
   const teardown = useCallback(() => {
+    lyraCursorRef.current = null;
+    lyraMessagesRef.current.clear();
     const room = roomRef.current;
     roomRef.current = null;
     connectingRef.current = false;
@@ -665,6 +668,8 @@ export function useVoiceInterview(sessionId: string | null) {
       if (message.type !== 'chat_message_delta') return;
       const delta = payload.delta as Record<string, unknown> | undefined;
       if (!delta) return;
+      // Lyra omits unchanged cursors; keep the last explicit cursor for this connection.
+      if (typeof delta.c === 'number') lyraCursorRef.current = delta.c;
 
       /*
        * 骨架靠 `v.message` 认，**不能靠 `typeof v === 'object'`**：数组也是 object，
@@ -695,8 +700,13 @@ export function useVoiceInterview(sessionId: string | null) {
                   : undefined;
         if (!role || lyraMessagesRef.current.has(delta.c)) return;
         const parts = (content.parts ?? []).map((part) =>
-          String((part as { text?: unknown })?.text ?? ''),
+          typeof part === 'string'
+            ? part
+            : String((part as { text?: unknown })?.text ?? ''),
         );
+        const text = parts.join('').trim();
+        const primer = primerRef.current;
+        if (primer && text.startsWith(primer.slice(0, 60))) return;
         const now = performance.now();
         const at = transcriptAt(
           `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
@@ -705,12 +715,14 @@ export function useVoiceInterview(sessionId: string | null) {
         lyraMessagesRef.current.set(delta.c, {
           role,
           parts,
-          settled: false,
+          settled: msg.status === 'finished_successfully',
           at,
           segmentId: `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
           timing: { first: now, deltas: 0, lastAt: now },
         });
-        if (parts[0]) {
+        if (msg.status === 'finished_successfully') {
+          settleLyraTurn(delta.c);
+        } else if (parts[0]) {
           setState((s) =>
             role === 'candidate'
               ? { ...s, liveTranscript: parts[0], liveTranscriptAt: at }
@@ -727,17 +739,7 @@ export function useVoiceInterview(sessionId: string | null) {
           ? [delta]
           : [];
       if (ops.length === 0) return;
-      const pending = [...lyraMessagesRef.current.entries()].filter(
-        ([, value]) => !value.settled,
-      );
-      // An explicit cursor always owns its patches. Legacy cursorless patches are
-      // safe only when exactly one message is in progress.
-      const seq =
-        typeof delta.c === 'number'
-          ? delta.c
-          : pending.length === 1
-            ? pending[0][0]
-            : -1;
+      const seq = lyraCursorRef.current ?? -1;
       const current = lyraMessagesRef.current.get(seq);
       if (!current || current.settled) return;
 
@@ -817,6 +819,7 @@ export function useVoiceInterview(sessionId: string | null) {
        * 而两条渠道说的不是一套话。先挂一个转发器，拿到 `channel` 再定向。
        */
       dc.onmessage = (event) => {
+        if (superseded()) return;
         const handle =
           voiceRef.current?.channel === 'vega'
             ? handleVegaEvent

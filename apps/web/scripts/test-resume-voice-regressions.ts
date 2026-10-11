@@ -72,6 +72,7 @@ function fixture() {
     crypto: { randomUUID },
     Date,
     lyraMessagesRef: { current: new Map() },
+    lyraCursorRef: { current: null },
     transcriptClockRef: { current: 100 },
     transcriptTimesRef: { current: new Map() },
     candidateSpeechAtRef: { current: null },
@@ -150,6 +151,73 @@ async function main() {
       assert.equal(f.state().turns.length, 1);
       assert.equal(f.state().turns[0].at, at);
       assert.equal(f.state().liveReply, '');
+    },
+  );
+  await check(
+    'Lyra cursorless patches after a completed primer stream and persist every utterance',
+    () => {
+      const f = fixture();
+      f.runtime.primerRef.current = 'private interviewer instructions';
+      f.emit({
+        c: 0,
+        v: {
+          message: {
+            id: 'primer',
+            author: { role: 'user' },
+            content: { parts: ['private interviewer instructions'] },
+            status: 'finished_successfully',
+          },
+        },
+      });
+      f.start(1, 'assistant', 'Welcome');
+      f.emit({
+        p: '/message/content/parts/0/text',
+        o: 'append',
+        v: ' candidate',
+      });
+      assert.equal(f.state().liveReply, 'Welcome candidate');
+      f.emit({
+        p: '/message/status',
+        o: 'replace',
+        v: 'finished_successfully',
+      });
+      f.start(2, 'user', 'I use');
+      f.emit({
+        v: [{ p: '/message/content/parts/0/text', o: 'append', v: ' React' }],
+      });
+      f.emit({
+        p: '/message/status',
+        o: 'replace',
+        v: 'finished_successfully',
+      });
+      assert.deepEqual(
+        f.state().turns.map((t) => t.text),
+        ['Welcome candidate', 'I use React'],
+      );
+      assert.equal(f.reports.length, 2);
+      assert.equal(f.state().liveTranscript, '');
+    },
+  );
+  await check(
+    'Lyra complete message skeletons settle once without an additional status patch',
+    () => {
+      const f = fixture();
+      f.emit({
+        c: 1,
+        v: {
+          message: {
+            id: 'complete',
+            author: { role: 'user' },
+            content: { parts: ['Completed answer'] },
+            status: 'finished_successfully',
+          },
+        },
+      });
+      assert.deepEqual(
+        f.state().turns.map((t) => t.text),
+        ['Completed answer'],
+      );
+      assert.equal(f.reports.length, 1);
     },
   );
   const current = {
