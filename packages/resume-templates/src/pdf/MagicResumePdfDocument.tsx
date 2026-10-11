@@ -36,6 +36,7 @@ import { getPdfFontStack, getPdfRichTextFontFamily } from '../font-family';
 import { PdfHugeIcon, type PdfIconNode } from './PdfHugeIcon';
 import { iconNodeByName } from '../primitives/icons';
 import { PdfRichText } from './PdfRichText';
+import { pdfInlineText } from './PdfInlineFormattedText';
 import { isBuiltInSection, resolveSectionTitle } from '../sectionSemantics';
 import {
   getFieldValue as resolveField,
@@ -809,12 +810,12 @@ const ListSectionBlock = ({ component, items, context }: {
             <View key={item.id || index} wrap={false}>
               {inlineItemFields ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: 8, padding: 0, margin: 0 }}>
-                  {itemName ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{itemName}</Text> : null}
+                  {itemName ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{pdfInlineText(itemName)}</Text> : null}
                   {itemDetail ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize }}>{itemDetail}</Text> : null}
                 </View>
               ) : (
                 <>
-                  {itemName ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{itemName}</Text> : null}
+                  {itemName ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize, fontWeight: fieldWeight }}>{pdfInlineText(itemName)}</Text> : null}
                   {itemDetail ? <Text style={{ color: context.colors.text, fontSize: bodyFontSize }}>{itemDetail}</Text> : null}
                   {itemDate ? <DateText value={itemDate} color={context.colors.textSecondary} fontFamily={dateFontFamily} fontSize={bodyFontSize} /> : null}
                 </>
@@ -1008,7 +1009,7 @@ const CompactListBlock = ({ component, items, sidebar, context }: {
           const frac = levelBar ? skillLevelToFraction(level) : null;
           return (
             <View key={item.id || index} wrap={false} style={{ gap: 2 }}>
-              <Text style={{ color, fontSize: 8.5, fontWeight: 700 }}>{name}</Text>
+              <Text style={{ color, fontSize: 8.5, fontWeight: 700 }}>{pdfInlineText(name)}</Text>
               {frac !== null ? (
                 <View style={{ height: 3.5, borderRadius: 2, backgroundColor: trackColor, marginTop: 1 }}>
                   <View style={{ width: `${Math.round(frac * 100)}%`, height: '100%', borderRadius: 2, backgroundColor: fillColor }} />

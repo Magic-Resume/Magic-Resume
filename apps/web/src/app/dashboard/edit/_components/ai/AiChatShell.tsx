@@ -123,7 +123,7 @@ import {
   isQuotaOrCustomConfigError,
   resolveAiAccessConfig,
 } from "./lib/services/aiAccess";
-import { resolveResumePatchBatch } from "./lib/resumePatch";
+import { ResumePatchProjection } from "./lib/resumePatch";
 import { coerceSectionOrder } from "@/lib/utils/resumeSectionOrder";
 import { useResumeDraftStore } from "@/store/useResumeDraftStore";
 import { useSettingStore } from "@/store/useSettingStore";
@@ -1070,6 +1070,7 @@ export default function AiChatShell({
       // 记住"因审批暂停"，否则收尾时会在审批卡后留下一个空气泡。
       let pausedForApproval = false;
       const patchHandledRunIds = new Set<string>();
+      const resumePatchProjection = new ResumePatchProjection(resumeData);
       canvasDismissedForRun.current = false;
       let patchHandledWithoutRunId = false;
       try {
@@ -1635,8 +1636,7 @@ export default function AiChatShell({
             }
             if (ev.type === "resume_patch") {
               const batch = skillBatchRunRef.current;
-              const resolved = resolveResumePatchBatch(
-                resumeData,
+              const resolved = resumePatchProjection.accept(
                 ev.data ?? ev.payload,
                 batch,
               );
@@ -1691,6 +1691,7 @@ export default function AiChatShell({
                 typeof sections === "object" &&
                 !Array.isArray(sections)
               ) {
+                resumePatchProjection.reconcile(draft);
                 const batch = skillBatchRunRef.current;
                 if (batch) {
                   // optimize/translate → 在 living canvas 上按字段铺开真实 diff。

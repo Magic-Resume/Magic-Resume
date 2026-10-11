@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Link, Text, View } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import { PdfRichText } from '../../pdf/PdfRichText';
+import { pdfInlineText } from '../../pdf/PdfInlineFormattedText';
 import { PdfHugeIcon } from '../../pdf/PdfHugeIcon';
 import { iconNodeByName } from '../icons';
 import { listIndentPoints, markerFor } from '../listMarkers';
@@ -93,11 +94,11 @@ export function renderNode(node: ResolvedNode, ctx: PdfRenderContext): React.Rea
       const merged = toPdf(withRoleStyle(node.role, node.style));
       return node.href ? (
         <Link key={key} src={node.href} style={merged}>
-          {node.text}
+          {pdfInlineText(node.text)}
         </Link>
       ) : (
         <Text key={key} style={merged}>
-          {node.text}
+          {pdfInlineText(node.text)}
         </Text>
       );
     }

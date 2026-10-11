@@ -1,4 +1,5 @@
 import React from 'react';
+import { InlineFormattedText } from '../renderer/InlineFormattedText';
 import { getFieldValue, getFieldEntry } from './utils';
 import { Editable, SectionHandle } from '../renderer/EditableCanvas';
 import { EditableField } from './EditableField';
@@ -100,7 +101,7 @@ export const CompactList = React.memo(function CompactList({ title, items, field
                     text={nameEntry.value}
                   />
                 ) : (
-                  name
+                  <InlineFormattedText value={name} />
                 )}
               </div>
               {frac !== null ? (

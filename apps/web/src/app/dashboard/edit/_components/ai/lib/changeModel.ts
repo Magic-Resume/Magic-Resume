@@ -231,6 +231,9 @@ export function buildSelectionPreview(
 
   const beforeText = stripHtml(fullBefore);
   const afterText = stripHtml(fullAfter);
+  // A formatting-only edit needs the original HTML; stripping both sides makes
+  // the revision appear unchanged and loses the newly added emphasis.
+  if (beforeText === afterText && fullBefore !== fullAfter) return undefined;
   const replacement = extractSelectedReplacement(
     beforeText,
     afterText,

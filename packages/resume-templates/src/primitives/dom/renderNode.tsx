@@ -1,4 +1,5 @@
 import React from 'react';
+import { InlineFormattedText } from '../../renderer/InlineFormattedText';
 import { WysiwygContent } from '../../templateLayout/WysiwygContent';
 import {
   Editable,
@@ -191,7 +192,7 @@ export function renderNode(node: ResolvedNode, ctx?: DomRenderContext): React.Re
           {node.edit && !design ? (
             <Editable target={toEditableTarget(node.edit)} text={node.text} />
           ) : (
-            node.text
+            <InlineFormattedText value={node.text} />
           )}
         </Tag>,
       );

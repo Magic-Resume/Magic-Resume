@@ -48,7 +48,41 @@ export function resolveResumePatchEvent(
   const newString = getString(payload, 'newString') ?? getString(payload, 'new_string');
   if (oldString == null || newString == null) return null;
 
-  return resolveTextPatch(current, oldString, newString, targetedSelection);
+  const direct = resolveTextPatch(current, oldString, newString, targetedSelection);
+  if (direct) return direct;
+  // edit_file operates on serialized JSON; fields in the browser are decoded.
+  try {
+    const before: unknown = JSON.parse(oldString);
+    const after: unknown = JSON.parse(newString);
+    if (typeof before === 'string' && typeof after === 'string') {
+      return resolveTextPatch(current, before, after, targetedSelection);
+    }
+  } catch {
+    // Plain text patches are already decoded and keep the exact-match boundary.
+  }
+  return null;
+}
+
+/** One stream projects consecutive edits onto its latest candidate, not its base. */
+export class ResumePatchProjection {
+  private candidate: Resume;
+
+  constructor(base: Resume) {
+    this.candidate = base;
+  }
+
+  accept(rawPayload: unknown, context?: ResumePatchBatchContext): ResolvedResumePatchBatch | null {
+    const resolved = resolveResumePatchBatch(this.candidate, rawPayload, context);
+    if (!resolved) return null;
+    this.candidate = resolved.proposedDocument;
+    // Only a user's selection scopes the review. A matched patch substring is
+    // transport data; restricting the diff to it hides preceding edits.
+    return { ...resolved, targetedSelection: context?.targetedSelection };
+  }
+
+  reconcile(resume: Resume): void {
+    this.candidate = resume;
+  }
 }
 
 export function resolveResumePatchBatch(
