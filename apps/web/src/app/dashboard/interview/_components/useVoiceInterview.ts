@@ -55,6 +55,8 @@ export interface VoiceInterviewState {
   liveTranscript: string;
   /** 面试官正在说的那句，同样实时更新、定稿后并入 `turns`。 */
   liveReply: string;
+  liveTranscriptAt: number | null;
+  liveReplyAt: number | null;
   turns: VoiceTurn[];
   stage: InterviewStage;
   error: string | null;
@@ -89,6 +91,8 @@ const INITIAL_STATE: VoiceInterviewState = {
   phase: 'idle',
   liveTranscript: '',
   liveReply: '',
+  liveTranscriptAt: null,
+  liveReplyAt: null,
   turns: [],
   stage: 'introduction',
   error: null,
@@ -179,6 +183,7 @@ export function useVoiceInterview(sessionId: string | null) {
    * 上游语音渠道 的转写中间态。上游是「先 add 骨架、再按路径 patch 追加」，所以要按消息
    * 序号索引。放 ref 不放 state：它只是解析过程，界面要的是解析结果。
    */
+  const lyraCursorRef = useRef<number | null>(null);
   const lyraMessagesRef = useRef<
     Map<
       number,
@@ -213,9 +218,13 @@ export function useVoiceInterview(sessionId: string | null) {
   }, []);
 
   const teardown = useCallback(() => {
+    lyraCursorRef.current = null;
+    lyraMessagesRef.current.clear();
     const room = roomRef.current;
     roomRef.current = null;
     connectingRef.current = false;
+    candidateSpeechAtRef.current = null;
+    activeTranscriptsRef.current.clear();
     metersRef.current.input?.close();
     metersRef.current.output?.close();
     metersRef.current = {};
@@ -259,16 +268,35 @@ export function useVoiceInterview(sessionId: string | null) {
 
   const transcriptClockRef = useRef(0);
   const transcriptTimesRef = useRef(new Map<string, number>());
-  const transcriptAt = useCallback((segmentId?: string) => {
-    const existing = segmentId
-      ? transcriptTimesRef.current.get(segmentId)
-      : undefined;
-    if (existing !== undefined) return existing;
-    const at = Math.max(Date.now(), transcriptClockRef.current + 1);
-    transcriptClockRef.current = at;
-    if (segmentId) transcriptTimesRef.current.set(segmentId, at);
-    return at;
-  }, []);
+  const candidateSpeechAtRef = useRef<number | null>(null);
+  const activeTranscriptsRef = useRef(
+    new Map<VoiceTurn['role'], { segmentId?: string; at: number }>(),
+  );
+  const transcriptAt = useCallback(
+    (segmentId?: string, role?: VoiceTurn['role']) => {
+      const existing = segmentId
+        ? transcriptTimesRef.current.get(segmentId)
+        : undefined;
+      if (existing !== undefined) return existing;
+      const active = role ? activeTranscriptsRef.current.get(role) : undefined;
+      // Some Vega deltas have no turn id. Bind the final id to their original
+      // timestamp instead of creating a second caption when the id finally arrives.
+      const pendingAt =
+        active && (!active.segmentId || !segmentId) ? active.at : undefined;
+      const speechAt =
+        role === 'candidate' ? candidateSpeechAtRef.current : null;
+      const at =
+        pendingAt ??
+        speechAt ??
+        Math.max(Date.now(), transcriptClockRef.current + 1);
+      transcriptClockRef.current = Math.max(at, transcriptClockRef.current);
+      if (role === 'candidate') candidateSpeechAtRef.current = null;
+      if (segmentId) transcriptTimesRef.current.set(segmentId, at);
+      if (role) activeTranscriptsRef.current.set(role, { segmentId, at });
+      return at;
+    },
+    [],
+  );
   const transcriptQueueRef = useRef<Promise<unknown>>(Promise.resolve());
 
   const lyraTextOf = (m: { parts: string[] }) => m.parts.join('').trim();
@@ -373,6 +401,8 @@ export function useVoiceInterview(sessionId: string | null) {
       if (primer && text.startsWith(primer.slice(0, 60))) return;
       const role = m.role;
       const segmentId = m.segmentId;
+      if (activeTranscriptsRef.current.get(role)?.at === m.at)
+        activeTranscriptsRef.current.delete(role);
       setState((s) => {
         const turns = upsertVoiceTurn(s.turns, {
           role,
@@ -383,8 +413,20 @@ export function useVoiceInterview(sessionId: string | null) {
         return {
           ...s,
           turns,
-          liveTranscript: role === 'candidate' ? '' : s.liveTranscript,
-          liveReply: role === 'interviewer' ? '' : s.liveReply,
+          liveTranscript:
+            role === 'candidate' && s.liveTranscriptAt === m.at
+              ? ''
+              : s.liveTranscript,
+          liveReply:
+            role === 'interviewer' && s.liveReplyAt === m.at ? '' : s.liveReply,
+          liveTranscriptAt:
+            role === 'candidate' && s.liveTranscriptAt === m.at
+              ? null
+              : s.liveTranscriptAt,
+          liveReplyAt:
+            role === 'interviewer' && s.liveReplyAt === m.at
+              ? null
+              : s.liveReplyAt,
         };
       });
       // 上游消息序号配连接 id 是全局稳定的幂等键；结束时等这次写入确认。
@@ -419,11 +461,18 @@ export function useVoiceInterview(sessionId: string | null) {
       const message = parsed as Record<string, unknown>;
       const type = String(message.type ?? '');
       const eventTurn = (message.turn ?? {}) as Record<string, unknown>;
-      if (eventTurn.id !== undefined) {
-        transcriptAt(
-          `${voiceRef.current?.connectionId ?? 'unknown'}:${eventTurn.id}`,
-        );
-      }
+      const eventRole =
+        eventTurn.role === 'user' || type.startsWith('input_')
+          ? 'candidate'
+          : 'interviewer';
+      const eventId = eventTurn.id ?? message.turn_id ?? message.item_id;
+      const eventSegment =
+        eventId === undefined
+          ? undefined
+          : `${voiceRef.current?.connectionId ?? 'unknown'}:${eventId}`;
+      const at = eventSegment
+        ? transcriptAt(eventSegment, eventRole)
+        : undefined;
 
       // 上游真的起来了——解除「接通但不说话」的看门狗。
       if (type === 'session.started') {
@@ -443,6 +492,7 @@ export function useVoiceInterview(sessionId: string | null) {
           ...s,
           phase: 'speaking',
           liveReply: s.liveReply + delta,
+          liveReplyAt: at ?? transcriptAt(undefined, 'interviewer'),
         }));
         return;
       }
@@ -450,7 +500,12 @@ export function useVoiceInterview(sessionId: string | null) {
       // 候选人正在说。
       if (type === 'input_transcript.added') {
         const text = typeof message.text === 'string' ? message.text : '';
-        if (text) setState((s) => ({ ...s, liveTranscript: text }));
+        if (text)
+          setState((s) => ({
+            ...s,
+            liveTranscript: text,
+            liveTranscriptAt: at ?? transcriptAt(undefined, 'candidate'),
+          }));
         return;
       }
 
@@ -465,14 +520,28 @@ export function useVoiceInterview(sessionId: string | null) {
         const role = turn.role === 'user' ? 'candidate' : 'interviewer';
         const id = String(turn.id ?? crypto.randomUUID());
         const segmentId = `${voiceRef.current?.connectionId ?? 'unknown'}:${id}`;
-        const at = transcriptAt(segmentId);
+        const at = transcriptAt(segmentId, role);
+        if (activeTranscriptsRef.current.get(role)?.at === at)
+          activeTranscriptsRef.current.delete(role);
         setState((s) => {
           const turns = upsertVoiceTurn(s.turns, { role, text, segmentId, at });
           return {
             ...s,
             turns,
-            liveTranscript: role === 'candidate' ? '' : s.liveTranscript,
-            liveReply: role === 'interviewer' ? '' : s.liveReply,
+            liveTranscript:
+              role === 'candidate' && s.liveTranscriptAt === at
+                ? ''
+                : s.liveTranscript,
+            liveReply:
+              role === 'interviewer' && s.liveReplyAt === at ? '' : s.liveReply,
+            liveTranscriptAt:
+              role === 'candidate' && s.liveTranscriptAt === at
+                ? null
+                : s.liveTranscriptAt,
+            liveReplyAt:
+              role === 'interviewer' && s.liveReplyAt === at
+                ? null
+                : s.liveReplyAt,
             phase: role === 'candidate' ? 'speaking' : 'listening',
           };
         });
@@ -599,6 +668,8 @@ export function useVoiceInterview(sessionId: string | null) {
       if (message.type !== 'chat_message_delta') return;
       const delta = payload.delta as Record<string, unknown> | undefined;
       if (!delta) return;
+      // Lyra omits unchanged cursors; keep the last explicit cursor for this connection.
+      if (typeof delta.c === 'number') lyraCursorRef.current = delta.c;
 
       /*
        * 骨架靠 `v.message` 认，**不能靠 `typeof v === 'object'`**：数组也是 object，
@@ -629,24 +700,33 @@ export function useVoiceInterview(sessionId: string | null) {
                   : undefined;
         if (!role || lyraMessagesRef.current.has(delta.c)) return;
         const parts = (content.parts ?? []).map((part) =>
-          String((part as { text?: unknown })?.text ?? ''),
+          typeof part === 'string'
+            ? part
+            : String((part as { text?: unknown })?.text ?? ''),
         );
+        const text = parts.join('').trim();
+        const primer = primerRef.current;
+        if (primer && text.startsWith(primer.slice(0, 60))) return;
         const now = performance.now();
+        const at = transcriptAt(
+          `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
+          role,
+        );
         lyraMessagesRef.current.set(delta.c, {
           role,
           parts,
-          settled: false,
-          at: transcriptAt(
-            `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
-          ),
+          settled: msg.status === 'finished_successfully',
+          at,
           segmentId: `${voiceRef.current?.connectionId ?? 'unknown'}:${msg.id ?? delta.c}`,
           timing: { first: now, deltas: 0, lastAt: now },
         });
-        if (parts[0]) {
+        if (msg.status === 'finished_successfully') {
+          settleLyraTurn(delta.c);
+        } else if (parts[0]) {
           setState((s) =>
             role === 'candidate'
-              ? { ...s, liveTranscript: parts[0] }
-              : { ...s, liveReply: parts[0] },
+              ? { ...s, liveTranscript: parts[0], liveTranscriptAt: at }
+              : { ...s, liveReply: parts[0], liveReplyAt: at },
           );
         }
         return;
@@ -659,17 +739,7 @@ export function useVoiceInterview(sessionId: string | null) {
           ? [delta]
           : [];
       if (ops.length === 0) return;
-      const pending = [...lyraMessagesRef.current.entries()].filter(
-        ([, value]) => !value.settled,
-      );
-      // An explicit cursor always owns its patches. Legacy cursorless patches are
-      // safe only when exactly one message is in progress.
-      const seq =
-        typeof delta.c === 'number'
-          ? delta.c
-          : pending.length === 1
-            ? pending[0][0]
-            : -1;
+      const seq = lyraCursorRef.current ?? -1;
       const current = lyraMessagesRef.current.get(seq);
       if (!current || current.settled) return;
 
@@ -703,8 +773,8 @@ export function useVoiceInterview(sessionId: string | null) {
         const text = lyraTextOf(current);
         setState((s) =>
           current.role === 'candidate'
-            ? { ...s, liveTranscript: text }
-            : { ...s, liveReply: text },
+            ? { ...s, liveTranscript: text, liveTranscriptAt: current.at }
+            : { ...s, liveReply: text, liveReplyAt: current.at },
         );
       }
     },
@@ -749,6 +819,7 @@ export function useVoiceInterview(sessionId: string | null) {
        * 而两条渠道说的不是一套话。先挂一个转发器，拿到 `channel` 再定向。
        */
       dc.onmessage = (event) => {
+        if (superseded()) return;
         const handle =
           voiceRef.current?.channel === 'vega'
             ? handleVegaEvent
@@ -820,12 +891,18 @@ export function useVoiceInterview(sessionId: string | null) {
             stream,
             audioContext: context,
             onSpeechStart: () => {
+              candidateSpeechAtRef.current ??= Math.max(
+                Date.now(),
+                transcriptClockRef.current + 1,
+              );
               // 候选人开口，立刻把面试官压下去并切回聆听态——不等上游那个跨境往返。
               const current = voiceRef.current;
               if (current?.audio) current.audio.volume = DUCKED_VOLUME;
-              setState((s) =>
-                s.phase === 'speaking' ? { ...s, phase: 'listening' } : s,
-              );
+              setState((s) => ({
+                ...s,
+                phase: s.phase === 'speaking' ? 'listening' : s.phase,
+                liveTranscriptAt: candidateSpeechAtRef.current,
+              }));
             },
             onSpeechEnd: () => {
               const current = voiceRef.current;
@@ -1005,6 +1082,18 @@ export function useVoiceInterview(sessionId: string | null) {
 
     // agent 的状态由 LiveKit 以参与者属性广播（listening / thinking / speaking），
     // 不用我们再定义一套事件协议——手写那版的 `VoiceServerEvent` 就是在做这件事。
+    room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+      if (
+        speakers.some(
+          (speaker) => speaker.identity === room.localParticipant.identity,
+        )
+      ) {
+        candidateSpeechAtRef.current ??= Math.max(
+          Date.now(),
+          transcriptClockRef.current + 1,
+        );
+      }
+    });
     room.on(RoomEvent.ParticipantAttributesChanged, (changed, participant) => {
       const agentState = changed['lk.agent.state'];
       if (!agentState || !participant.isAgent) return;
@@ -1044,7 +1133,10 @@ export function useVoiceInterview(sessionId: string | null) {
         attrs['lk.segment_id'] === undefined
           ? undefined
           : `${info.identity}:${attrs['lk.segment_id']}`;
-      const at = transcriptAt(segmentId);
+      const at = transcriptAt(
+        segmentId,
+        fromAgent ? 'interviewer' : 'candidate',
+      );
 
       let text = '';
       for await (const chunk of reader) {
@@ -1052,8 +1144,8 @@ export function useVoiceInterview(sessionId: string | null) {
         // 逐字回显。面试官那一路是**跟着语音播放**推的，字与声音同步。
         setState((s) =>
           fromAgent
-            ? { ...s, liveReply: text }
-            : { ...s, liveTranscript: text },
+            ? { ...s, liveReply: text, liveReplyAt: at }
+            : { ...s, liveTranscript: text, liveTranscriptAt: at },
         );
       }
 
@@ -1068,6 +1160,9 @@ export function useVoiceInterview(sessionId: string | null) {
         return;
       }
 
+      const finalizedRole = fromAgent ? 'interviewer' : 'candidate';
+      if (activeTranscriptsRef.current.get(finalizedRole)?.at === at)
+        activeTranscriptsRef.current.delete(finalizedRole);
       setState((s) => {
         const role = fromAgent
           ? ('interviewer' as const)
@@ -1081,8 +1176,12 @@ export function useVoiceInterview(sessionId: string | null) {
 
         return {
           ...s,
-          liveTranscript: fromAgent ? s.liveTranscript : '',
-          liveReply: fromAgent ? '' : s.liveReply,
+          liveTranscript:
+            !fromAgent && s.liveTranscriptAt === at ? '' : s.liveTranscript,
+          liveReply: fromAgent && s.liveReplyAt === at ? '' : s.liveReply,
+          liveTranscriptAt:
+            !fromAgent && s.liveTranscriptAt === at ? null : s.liveTranscriptAt,
+          liveReplyAt: fromAgent && s.liveReplyAt === at ? null : s.liveReplyAt,
           turns,
         };
       });
