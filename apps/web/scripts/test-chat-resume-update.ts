@@ -63,6 +63,7 @@ function replay({
     activeSkillRef: { current: null },
     patchHandledRunIds: new Set(),
     patchHandledWithoutRunId: false,
+    resumePatchProjection: { reconcile() {} },
     coerceSectionOrder: (value: unknown) => value,
     resumeData: { sections },
     diffDocumentChanges: () => [],

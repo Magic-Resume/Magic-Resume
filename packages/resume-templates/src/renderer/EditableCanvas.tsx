@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { Check, X, RotateCcw, Sparkles, Plus, AlertCircle, ChevronDown } from '@magic-resume/icons';
 import DOMPurify from 'dompurify';
 import { WysiwygContent } from '../templateLayout/WysiwygContent';
+import { InlineFormattedText } from './InlineFormattedText';
+import { hasInlineFormatting, INLINE_FORMAT_TAGS } from '../inlineFormatting';
 
 /**
  * living canvas 的可编辑层：在**不改变默认渲染**的前提下，把只读的简历变成可定位、
@@ -121,16 +123,17 @@ function escapeText(value: string): string {
 
 function RawContent({ target, html, text }: EditableProps) {
   if (target.kind === 'html') return <WysiwygContent dirtyHtml={html || ''} />;
-  return <>{text}</>;
+  return <InlineFormattedText value={text ?? ''} />;
 }
 
 function RevisionContent({ kind, value }: { kind: 'html' | 'text'; value: string }) {
   if (kind === 'html') return <WysiwygContent dirtyHtml={value} />;
-  return <>{value}</>;
+  return <InlineFormattedText value={value} />;
 }
 
 export function Editable(props: EditableProps) {
-  const { target } = props;
+  const formattedText = props.target.kind === 'text' && hasInlineFormatting(props.text ?? '');
+  const target = formattedText ? { ...props.target, kind: 'html' as const } : props.target;
   const ctx = useEditableCanvas();
   const path = pathOf(target);
   const [hovered, setHovered] = useState(false);
@@ -196,11 +199,11 @@ export function Editable(props: EditableProps) {
       // Brief green flash, then the parent applies the change and drops it → render after-text.
       return (
         <div data-resume-path={path} className="lc-flash" style={{ borderRadius: 6 }}>
-          <RawContent target={target} html={pending.after} text={pending.after} />
+          <RawContent target={props.target} html={pending.after} text={pending.after} />
         </div>
       );
     }
-    return <PendingChangeCard path={path} kind={target.kind} pending={pending} ctx={ctx} />;
+    return <PendingChangeCard path={path} kind={props.target.kind} pending={pending} ctx={ctx} />;
   }
 
   /*
@@ -220,7 +223,9 @@ export function Editable(props: EditableProps) {
   const startEditing = () => {
     if (!ctx.onCommit || processing) return;
     cancelledRef.current = false;
-    initialContent.current = target.kind === 'html' ? props.html ?? '' : escapeText(props.text ?? '');
+    initialContent.current = target.kind === 'html'
+      ? DOMPurify.sanitize(props.html ?? props.text ?? '', formattedText ? { ALLOWED_TAGS: [...INLINE_FORMAT_TAGS], ALLOWED_ATTR: [] } : undefined)
+      : escapeText(props.text ?? '');
     ctx.onEditStart?.();
     setEditing(true);
   };
@@ -236,8 +241,8 @@ export function Editable(props: EditableProps) {
     if (target.kind === 'html') {
       // 用户能往 contentEditable 里粘贴任意东西，**净化必须在这里做**——
       // 指望每个调用方记得做，就等于迟早有一个忘了。
-      const clean = typeof window === 'undefined' ? '' : DOMPurify.sanitize(el.innerHTML);
-      if (clean !== (props.html ?? '')) ctx.onCommit(target, clean);
+      const clean = typeof window === 'undefined' ? '' : DOMPurify.sanitize(el.innerHTML, formattedText ? { ALLOWED_TAGS: [...INLINE_FORMAT_TAGS], ALLOWED_ATTR: [] } : undefined);
+      if (clean !== (props.html ?? props.text ?? '')) ctx.onCommit(target, clean);
       return;
     }
     const next = el.innerText.replace(/\u00a0/g, ' ').trim();
@@ -463,6 +468,12 @@ function PendingChangeCard({
       className="lc-enter"
       style={{
         margin: '2px 0',
+        boxSizing: 'border-box',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+        whiteSpace: 'normal',
+        fontWeight: kind === 'text' && hasInlineFormatting(afterValue) ? 400 : undefined,
         borderRadius: 8,
         overflow: 'hidden',
         border: '1px solid #ececed',
