@@ -3,6 +3,7 @@ import { getFieldValue, getFieldEntry } from './utils';
 import { EditableField } from './EditableField';
 import { WysiwygContent } from './WysiwygContent';
 import { Editable, SectionHandle, SectionInsertSlot } from '../renderer/EditableCanvas';
+import { InlineFormattedText } from '../renderer/InlineFormattedText';
 
 interface Item {
   [key: string]: unknown;
@@ -16,7 +17,9 @@ const INLINE_ITEM_ROW_STYLE: React.CSSProperties = {
   columnGap: '1rem',
   padding: 0,
   margin: 0,
-  whiteSpace: 'nowrap',
+  whiteSpace: 'normal',
+  minWidth: 0,
+  maxWidth: '100%',
 };
 
 interface Props {
@@ -84,11 +87,11 @@ export const ListSection = React.memo(function ListSection({ title, items, field
               text={itemName.value}
             />
           ) : (
-            itemName?.value
+            <InlineFormattedText value={itemName?.value ?? ''} />
           );
           const itemContent = inlineItemFields ? (
             <div style={INLINE_ITEM_ROW_STYLE}>
-              {itemName && <div className="font-bold">{renderedItemName}</div>}
+              {itemName && <div className="font-bold" style={{ flex: '1 1 0%', minWidth: 0 }}>{renderedItemName}</div>}
               {itemDetail && <span><EditableField item={item} field={fieldMap.itemDetail} sectionKey={sectionKey} label={title} /></span>}
             </div>
           ) : (

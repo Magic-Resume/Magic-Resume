@@ -49,3 +49,20 @@ test('nested fields stay readable without creating invalid flat write targets', 
   </EditableCanvasProvider>);
   assert.equal(html, 'Nested title');
 });
+
+test('skill formatting is rendered in the proposal and retained after acceptance', () => {
+  const path = 'sections.skills[skill-1].name';
+  const after = 'Proficient in <strong>HTML5</strong> and <strong>CSS3</strong>';
+  const skill = { id: 'skill-1', name: 'Proficient in HTML5 and CSS3' };
+  const render = (name: string, pendingByPath = {}) => renderToStaticMarkup(
+    <EditableCanvasProvider value={{ ...context, pendingByPath }}>
+      <ListSection title="Skills" sectionKey="skills" items={[{ ...skill, name }]} fieldMap={{ itemName: 'name' }} />
+    </EditableCanvasProvider>,
+  );
+  const proposal = render(skill.name, { [path]: { before: skill.name, after, rationale: 'Emphasize technologies' } });
+  const accepted = render(after);
+  for (const html of [proposal, accepted]) {
+    assert.ok(html.includes('<strong>HTML5</strong>'), 'formatting must render as markup');
+    assert.ok(!html.includes('&lt;strong&gt;'), 'formatting tags must never be displayed literally');
+  }
+});
