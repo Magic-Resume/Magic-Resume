@@ -809,7 +809,9 @@ export default function InterviewRoom({
                 turns={allTurns}
                 live={voice.state.liveTranscript}
                 // 展开的逐字稿也用配速版：整块吐出来的话，读的人会跑到声音前面去。
-                liveReply={pacedReply}
+                liveReply={voice.state.liveReply ? pacedReply : ''}
+                liveAt={voice.state.liveTranscriptAt}
+                liveReplyAt={voice.state.liveReplyAt}
               />
             )}
           </AnimatePresence>

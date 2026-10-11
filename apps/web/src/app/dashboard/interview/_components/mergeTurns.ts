@@ -55,3 +55,31 @@ export function mergeInterviewTurns(
   }
   return chronological(result);
 }
+
+/** Pending speech participates in the same timeline as finalized segments. */
+export function transcriptDisplayTurns(
+  turns: VoiceTurn[],
+  live: string,
+  liveReply: string,
+  liveAt?: number | null,
+  liveReplyAt?: number | null,
+): Array<VoiceTurn & { pending?: boolean }> {
+  const result: Array<VoiceTurn & { pending?: boolean }> = [...turns];
+  for (const [role, text, at] of [
+    ['candidate', live, liveAt],
+    ['interviewer', liveReply, liveReplyAt],
+  ] as const) {
+    if (
+      !text.trim() ||
+      (at != null && turns.some((t) => t.role === role && t.at === at))
+    )
+      continue;
+    result.push({
+      role,
+      text,
+      at: at ?? Number.MAX_SAFE_INTEGER,
+      pending: true,
+    });
+  }
+  return result.sort((a, b) => (a.at ?? 0) - (b.at ?? 0));
+}
