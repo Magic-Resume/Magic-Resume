@@ -4,7 +4,7 @@ type InlineTag = (typeof INLINE_FORMAT_TAGS)[number];
 export type InlineTextNode = string | { tag: InlineTag; children: InlineTextNode[] };
 
 export function hasInlineFormatting(value: string): boolean {
-  return /<(?:strong|b|em|i|u|s|br)(?:\s[^>]*|\s*\/?)>/i.test(value);
+  return /<(?:strong|b|em|i|u|s|br)(?:\s[^<>]*|\s*\/?)>/i.test(value);
 }
 
 function decodeEntities(value: string): string {
@@ -21,7 +21,9 @@ export function parseInlineText(value: string): InlineTextNode[] {
   if (!hasInlineFormatting(value)) return [value];
   const root: InlineTextNode[] = [];
   const stack: { tag?: InlineTag; children: InlineTextNode[] }[] = [{ children: root }];
-  const tokens = /<\/?(strong|b|em|i|u|s|br)(?:\s[^>]*|\s*\/?)>/gi;
+  // Do not scan across a new tag opener: malformed repeated "<b " input
+  // otherwise makes the attribute match rescan the remainder quadratically.
+  const tokens = /<\/?(strong|b|em|i|u|s|br)(?:\s[^<>]*|\s*\/?)>/gi;
   let offset = 0;
   for (const match of value.matchAll(tokens)) {
     const text = value.slice(offset, match.index);
