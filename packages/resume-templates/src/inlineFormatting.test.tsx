@@ -4,7 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { InlineFormattedText } from './renderer/InlineFormattedText';
 import { pdfInlineText } from './pdf/PdfInlineFormattedText';
-import { parseInlineText } from './inlineFormatting';
+import { hasInlineFormatting, parseInlineText } from './inlineFormatting';
 
 function pdfText(node: React.ReactNode): { text: string; weights: unknown[]; styles: unknown[] } {
   if (typeof node === 'string') return { text: node, weights: [], styles: [] };
@@ -28,6 +28,16 @@ test('inline emphasis preserves literal text and ignores HTML attributes', () =>
 
 test('plain text keeps literal entities and names unchanged', () => {
   assert.deepEqual(parseInlineText('A < B &amp; C'), ['A < B &amp; C']);
+});
+
+test('malformed tag openers remain literal and do not consume following formatting', () => {
+  const malformed = '<b '.repeat(100_000);
+  assert.equal(hasInlineFormatting(malformed), false);
+  assert.deepEqual(parseInlineText(malformed), [malformed]);
+  assert.deepEqual(parseInlineText(`${malformed}<strong>React</strong>`), [
+    malformed,
+    { tag: 'strong', children: ['React'] },
+  ]);
 });
 
 test('PDF and DOM consume the same formatting nodes', () => {
