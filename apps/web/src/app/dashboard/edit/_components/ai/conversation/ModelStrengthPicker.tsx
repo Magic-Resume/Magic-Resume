@@ -124,24 +124,26 @@ export default function ModelStrengthPicker({
         : t("aiLab.picker.auto");
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative min-w-0 flex-1">
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         onPointerEnter={() => void refresh()}
+        aria-label={`${modelLabel} · ${strengthLabel}`}
+        title={`${modelLabel} · ${strengthLabel}`}
         aria-haspopup="menu"
         aria-expanded={open}
         // 控件行的第二档重量:无框。它是**状态显示**,只是恰好可点——给它一圈边框,
         // 就是在假装它和「添加文件 / 模式」那一档一样重。规格见 design-brief §4。
         className={cn(
-          "inline-flex h-[38px] max-w-[260px] items-center gap-1.5 rounded-full pl-1 pr-2 text-mr-body transition-colors",
+          "inline-flex h-[38px] min-w-0 max-w-full sm:max-w-[260px] items-center gap-1.5 rounded-full pl-1 pr-2 text-mr-body transition-colors",
           "text-neutral-100 hover:bg-mr-surface-soft hover:text-neutral-50 disabled:opacity-40 cursor-pointer",
           open && "text-neutral-50",
         )}
       >
         {/* 当前模型所属厂商的标。"自动"由系统挑,没有具体模型 → 中性 sparkle。 */}
-        <ModelMark model={resolvedModel} generic={!resolvedModel} size={26} />
+        <span className="shrink-0"><ModelMark model={resolvedModel} generic={!resolvedModel} size={26} /></span>
         <span className="min-w-0 truncate">
           {modelLabel}
           <span className="text-neutral-500"> · {strengthLabel}</span>

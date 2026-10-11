@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useTranslation } from "react-i18next";
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   WidgetActionResult,
   WidgetInstance,
   WidgetRegistry,
   WidgetRenderContext,
-} from "../contract";
+} from '../contract';
 
 /**
  * Dispatches a widget message to its registered component. An unknown kind, or
@@ -35,11 +35,24 @@ export default function WidgetHost({
     : instance.props;
 
   if (!descriptor || !normalized) {
+    const awaitingInput =
+      instance.status === 'pending' &&
+      (instance.toolName === 'request_form' ||
+        instance.toolName === 'ask_choice');
     return (
       <div className="text-mr-label text-mr-muted">
         <span className="truncate">
-          {t("aiLab.widgets.unsupported", { kind: instance.kind })}
+          {t('aiLab.widgets.unsupported', { kind: instance.kind })}
         </span>
+        {awaitingInput ? (
+          <button
+            type="button"
+            className="rounded-mr-control text-mr-ink hover:bg-mr-surface-soft ml-2 px-2 py-1"
+            onClick={() => onAction(instance.widgetId, { type: 'cancel' })}
+          >
+            {t('aiLab.widgets.field.skip')}
+          </button>
+        ) : null}
       </div>
     );
   }

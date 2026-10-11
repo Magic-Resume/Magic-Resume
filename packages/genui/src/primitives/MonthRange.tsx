@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MiniSelect } from './MiniSelect';
 
@@ -16,7 +16,9 @@ const KNOWN_PRESENT = ['至今', '现在', 'Present', 'present', 'Now'];
 /** "2022.03" → { year: '2022', month: '03' }; anything else → empty. */
 function splitPoint(raw: string): { year: string; month: string } {
   const m = /^(\d{4})[.\-/](\d{1,2})$/.exec(raw.trim());
-  return m ? { year: m[1], month: m[2].padStart(2, '0') } : { year: '', month: '' };
+  return m
+    ? { year: m[1], month: m[2].padStart(2, '0') }
+    : { year: '', month: '' };
 }
 
 function parse(value: string, presentLabel: string) {
@@ -37,12 +39,18 @@ function join(
   presentLabel: string,
 ): string {
   const left = start.year && start.month ? `${start.year}.${start.month}` : '';
-  const right = ongoing ? presentLabel : end.year && end.month ? `${end.year}.${end.month}` : '';
+  const right = ongoing
+    ? presentLabel
+    : end.year && end.month
+      ? `${end.year}.${end.month}`
+      : '';
   if (!left && !right) return '';
   return `${left}${SEP}${right}`;
 }
 
-const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+const MONTHS = Array.from({ length: 12 }, (_, i) =>
+  String(i + 1).padStart(2, '0'),
+);
 
 function Point({
   value,
@@ -107,8 +115,27 @@ export function MonthRange({
     year: t('aiLab.widgets.field.year'),
     month: t('aiLab.widgets.field.month'),
   };
-  const { start, end, ongoing } = parse(value, present);
-  const years = Array.from({ length: 45 }, (_, i) => String(currentYear + 1 - i));
+  // Keep incomplete year/month selections in the control. The serialized value
+  // only contains complete dates, so parsing it on every click loses the first
+  // half of a date before the user can choose the other half.
+  const [draft, setDraft] = useState(() => parse(value, present));
+  const emittedValue = useRef(value);
+  useEffect(() => {
+    if (value !== emittedValue.current) {
+      setDraft(parse(value, present));
+      emittedValue.current = value;
+    }
+  }, [value, present]);
+  const { start, end, ongoing } = draft;
+  const update = (next: typeof draft) => {
+    setDraft(next);
+    const serialized = join(next.start, next.end, next.ongoing, present);
+    emittedValue.current = serialized;
+    onChange(serialized);
+  };
+  const years = Array.from({ length: 45 }, (_, i) =>
+    String(currentYear + 1 - i),
+  );
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -116,21 +143,21 @@ export function MonthRange({
         value={start}
         years={years}
         labels={labels}
-        onChange={(next) => onChange(join(next, end, ongoing, present))}
+        onChange={(next) => update({ ...draft, start: next })}
       />
-      <span className="text-xs text-mr-muted">–</span>
+      <span className="text-mr-muted text-xs">–</span>
       <Point
         value={end}
         years={years}
         disabled={ongoing}
         labels={labels}
-        onChange={(next) => onChange(join(start, next, false, present))}
+        onChange={(next) => update({ ...draft, end: next, ongoing: false })}
       />
-      <label className="inline-flex items-center gap-1.5 text-xs text-mr-ink-secondary cursor-pointer">
+      <label className="text-mr-ink-secondary inline-flex cursor-pointer items-center gap-1.5 text-xs">
         <input
           type="checkbox"
           checked={ongoing}
-          onChange={(e) => onChange(join(start, end, e.target.checked, present))}
+          onChange={(e) => update({ ...draft, ongoing: e.target.checked })}
           className="accent-mr-accent cursor-pointer"
         />
         {present}

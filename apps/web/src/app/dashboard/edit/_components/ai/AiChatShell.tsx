@@ -2477,7 +2477,7 @@ export default function AiChatShell({
         }
       }
       const status = result.type === "submit" ? "submitted" : "cancelled";
-      setMessages((prev) => settleWidgetInMessages(prev, widgetId, status));
+      setMessages((prev) => settleWidgetInMessages(prev, widgetId, status, result.values));
 
       const message = messagesRef.current.find(
         (m) => m.widget?.widgetId === widgetId,
@@ -3094,7 +3094,7 @@ export default function AiChatShell({
   return (
     // 搜索类卡片的候选数据从这里注入：字典留在 app（是我们的业务内容），
     // 组件库只知道「按名字要一份选项」。
-    <GenUIProvider sources={AI_WIDGET_SOURCES}>
+    <GenUIProvider sources={AI_WIDGET_SOURCES} popoverZIndex={120}>
       <div className="relative flex flex-col h-full">
         {/* 内嵌资产库：盖在对话上，不跳出去。返回一下就回到刚才那场对话，
             连滚动位置都还在——这正是「就地」和「另开」的差别。 */}
@@ -3133,7 +3133,7 @@ export default function AiChatShell({
             <span className="shrink-0 text-[17px] font-semibold tracking-tight text-white">
               {t("aiLab.header.title")}
             </span>
-            <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-neutral-500">
+            <span className="hidden min-w-0 items-center gap-1.5 text-xs text-neutral-500 sm:inline-flex">
               <FileText size={13} className="shrink-0" />
               <span className="max-w-[180px] truncate">
                 {resumeData.name || t("aiLab.header.untitledResume")}
@@ -3161,6 +3161,8 @@ export default function AiChatShell({
                 {...headerSurface.bind('trajectory')}
                 onClick={toggleTrajectory}
                 aria-pressed={conversationView === "trajectory"}
+                aria-label={t("aiLab.trajectory.run")}
+                title={t("aiLab.trajectory.run")}
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors cursor-pointer active:scale-[0.98]",
                   conversationView === "trajectory"
@@ -3169,7 +3171,7 @@ export default function AiChatShell({
                 )}
               >
                 <TrajectoryGlyph />
-                {t("aiLab.trajectory.run")}
+                <span className="hidden sm:inline">{t("aiLab.trajectory.run")}</span>
               </button>
               {/* 自带触发器的组件，包一层薄壳只为让共享面量得到它的盒子
                   （`display:contents` 不行——那样量出来是 0）。 */}
@@ -3190,7 +3192,7 @@ export default function AiChatShell({
                 )}
               >
                 <AiGenerateIcon size={13} />
-                {t("aiLab.header.liveCanvas")}
+                <span className="hidden sm:inline">{t("aiLab.header.liveCanvas")}</span>
               </button>
               <button
                 type="button"
@@ -3521,7 +3523,7 @@ function HeaderQuota() {
         )}
       >
         <Gauge size={13} />
-        {t("aiLab.header.quota")}
+        <span className="hidden sm:inline">{t("aiLab.header.quota")}</span>
       </button>
       <AnimatePresence>
         {open && (
