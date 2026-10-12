@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.6.5](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.4...v2.6.5) (2026-10-12)
+
+## 🐛 Bug Fixes
+- [`8d8eac2`](https://github.com/Magic-Resume/Magic-Resume/commit/8d8eac2)  fix(web): preserve human answers and unblock GenUI interactions (#253) (#254) (Issues: [`#253`](https://github.com/Magic-Resume/Magic-Resume/issues/253) [`#254`](https://github.com/Magic-Resume/Magic-Resume/issues/254))
+
 # [v2.6.3](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.2...v2.6.3) (2026-10-09)
 
 ## 🐛 Bug Fixes
