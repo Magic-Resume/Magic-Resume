@@ -159,10 +159,13 @@ export function settleWidgetInMessages(
   prev: ChatMessage[],
   widgetId: string,
   status: "submitted" | "cancelled",
+  submittedValues?: Record<string, string>,
 ): ChatMessage[] {
+  const result =
+    status === 'submitted' && submittedValues ? { submittedValues } : {};
   return prev.map((m) => {
     if (m.widget?.widgetId === widgetId && isLive(m.widget.status)) {
-      return { ...m, widget: { ...m.widget, status } };
+      return { ...m, widget: { ...m.widget, status, ...result } };
     }
     if (
       m.timeline?.some(
@@ -178,7 +181,7 @@ export function settleWidgetInMessages(
           beat.kind === "widget" &&
           beat.widget.widgetId === widgetId &&
           isLive(beat.widget.status)
-            ? { ...beat, widget: { ...beat.widget, status } }
+            ? { ...beat, widget: { ...beat.widget, status, ...result } }
             : beat,
         ),
       };

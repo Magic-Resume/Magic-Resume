@@ -31,16 +31,13 @@ const REQUIRED_KEYS = ['company', 'role'] as const;
 
 export default function TrackerFieldsCard({ instance, onAction }: WidgetProps) {
   const { t } = useTranslation();
-  const [answered, setAnswered] = useState<string | undefined>(
-    // 过期不是「已回答」：会话恢复后线程已回收，用户其实什么也没选。
-    instance.status === 'submitted'
+  const [answered, setAnswered] = useState<string | undefined>();
+  const inactive = instance.status === 'pending'
+    ? undefined
+    : instance.status === 'submitted'
       ? t('aiLab.widgets.trackerFields.answered')
-      : instance.status === 'expired'
-        ? t('aiLab.widgets.form.expired')
-        : instance.status === 'cancelled'
-          ? t('aiLab.widgets.form.cancelled')
-          : undefined,
-  );
+      : t(`aiLab.widgets.form.${instance.status}`);
+
 
   const optional = BOARD_FIELD_KEYS.filter(
     (key) => !REQUIRED_KEYS.includes(key as (typeof REQUIRED_KEYS)[number]),
@@ -60,40 +57,51 @@ export default function TrackerFieldsCard({ instance, onAction }: WidgetProps) {
     q: t('aiLab.widgets.trackerFields.question'),
     type: 'check' as const,
     options: Object.keys(labels),
-    answered,
+    answered: inactive ?? answered,
   };
 
   return (
-    <ApprovalCard
-      questions={[question]}
-      disabled={instance.status !== 'pending'}
-      freeTextPlaceholder={t('aiLab.widgets.trackerFields.freeText')}
-      labels={{
-        previous: t('aiLab.widgets.trackerFields.previous'),
-        next: t('aiLab.widgets.trackerFields.next'),
-        send: t('aiLab.widgets.trackerFields.send'),
-        goTo: t('aiLab.widgets.trackerFields.goTo'),
-        freeText: t('aiLab.widgets.trackerFields.freeText'),
-        freeTextAria: t('aiLab.widgets.trackerFields.freeText'),
-      }}
-      onAnswer={(_page, answer) => {
-        // 认得的译名换回键，认不出的原样留着——那是用户自己敲的诉求，交给模型读。
-        const keys: string[] = [...REQUIRED_KEYS];
-        const notes: string[] = [];
-        for (const entry of answer) {
-          const key = labels[entry];
-          if (key) keys.push(key);
-          else notes.push(entry);
-        }
-        setAnswered(t('aiLab.widgets.trackerFields.answered'));
-        onAction({
-          type: 'submit',
-          values: {
-            visibleColumns: keys.join(','),
-            ...(notes.length ? { note: notes.join('；') } : {}),
-          },
-        });
-      }}
-    />
+    <div className="flex flex-col items-start gap-2">
+      <ApprovalCard
+        questions={[question]}
+        disabled={instance.status !== 'pending'}
+        freeTextPlaceholder={t('aiLab.widgets.trackerFields.freeText')}
+        labels={{
+          previous: t('aiLab.widgets.trackerFields.previous'),
+          next: t('aiLab.widgets.trackerFields.next'),
+          send: t('aiLab.widgets.trackerFields.send'),
+          goTo: t('aiLab.widgets.trackerFields.goTo'),
+          freeText: t('aiLab.widgets.trackerFields.freeText'),
+          freeTextAria: t('aiLab.widgets.trackerFields.freeText'),
+        }}
+        onAnswer={(_page, answer) => {
+          // 认得的译名换回键，认不出的原样留着——那是用户自己敲的诉求，交给模型读。
+          const keys: string[] = [...REQUIRED_KEYS];
+          const notes: string[] = [];
+          for (const entry of answer) {
+            const key = labels[entry];
+            if (key) keys.push(key);
+            else notes.push(entry);
+          }
+          setAnswered(t('aiLab.widgets.trackerFields.answered'));
+          onAction({
+            type: 'submit',
+            values: {
+              visibleColumns: keys.join(','),
+              ...(notes.length ? { note: notes.join('；') } : {}),
+            },
+          });
+        }}
+      />
+      {instance.status === 'pending' ? (
+        <button
+          type="button"
+          className="rounded-mr-control text-mr-label text-mr-muted hover:bg-mr-surface-soft hover:text-mr-ink px-2 py-1"
+          onClick={() => onAction({ type: 'cancel' })}
+        >
+          {t('aiLab.widgets.field.skip')}
+        </button>
+      ) : null}
+    </div>
   );
 }

@@ -94,7 +94,10 @@ export default function RecommendationCard({
 
   if (!options.length) return null;
 
-  const active = options[selected] ?? options[0];
+  // Restored history must display the human answer, including a custom choice.
+  const active = answered !== undefined
+    ? options.find((option) => option.label === answered) ?? { label: answered }
+    : options[selected] ?? options[0];
   const others = options.map((o, i) => ({ o, i })).filter(({ i }) => i !== selected);
   const signal = active.confidence ? SIGNAL[active.confidence] : { bars: 0, tone: "var(--mr-muted)" };
   const confidenceLabel = labels.confidence[active.confidence ?? "none"];
