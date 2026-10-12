@@ -197,7 +197,7 @@ export type ResumeMutation =
   | {
       kind: "snapshot";
       authoritative: true;
-      final: true;
+      final: boolean;
       resume: Record<string, unknown>;
     };
 

@@ -191,8 +191,12 @@ const baseSession = (
 
 /** 记录投递了什么。默认端口会去打网络，单测里必须换掉。 */
 class RecordingSync {
-  pushed: Array<{ conversationId: string; seq: number; role: string }> = [];
-  push(input: { conversationId: string; seq: number; role: string }): void {
+  pushed: Array<{ conversationId: string; seq: number; role: string;
+    content?: string;
+    payload?: Record<string, unknown>; }> = [];
+  push(input: { conversationId: string; seq: number; role: string;
+    content?: string;
+    payload?: Record<string, unknown>; }): void {
     this.pushed.push(input);
   }
 }
@@ -478,6 +482,108 @@ async function testAiSessionStore() {
     store.getState().sealSession("resume-a");
     assert.equal(sync.pushed[4].seq, 0);
     assert.equal(sync.pushed[4].conversationId, "seal-session");
+  }
+
+  // A submitted AI form must replace its already uploaded pending row.
+  {
+    const db = new MemoryDb();
+    const sync = new RecordingSync();
+    const store = createAiSessionStore({ db, persistDelayMs: 0, sync });
+    const pending: ChatMessage = {
+      id: 'education-card',
+      role: 'widget',
+      widget: {
+        widgetId: 'education',
+        kind: 'request_form',
+        props: {},
+        status: 'pending',
+      },
+    };
+    store
+      .getState()
+      .patchSession('resume-a', baseSession({ messages: [pending] }));
+    store.getState().sealSession('resume-a');
+    const submitted = settleWidgetInMessages(
+      [pending],
+      'education',
+      'submitted',
+      { school: 'Human university' },
+    );
+    store.getState().patchSession('resume-a', { messages: submitted });
+    await store.getState().flushSession('resume-a');
+    assert.equal(sync.pushed.length, 2);
+    assert.equal(sync.pushed[1].seq, 0);
+    assert.equal(
+      (sync.pushed[1].payload?.widget as typeof pending.widget)?.status,
+      'submitted',
+    );
+    assert.deepEqual(
+      (sync.pushed[1].payload?.widget as typeof pending.widget)
+        ?.submittedValues,
+      { school: 'Human university' },
+    );
+    store.getState().sealSession('resume-a');
+    assert.equal(
+      sync.pushed.length,
+      2,
+      'unchanged cards should not be uploaded again',
+    );
+
+    // Pending uploads survive a local reload, retaining their original cloud key.
+    store.getState().patchSession('resume-a', {
+      messages: submitted.map((message) => ({
+        ...message,
+        content: 'Updated summary',
+      })),
+    });
+    await db.setItem(
+      getAiSessionStorageKey('resume-a'),
+      store.getState().sessions['resume-a'],
+    );
+    const reloaded = createAiSessionStore({ db, persistDelayMs: 0, sync });
+    await reloaded.getState().loadSession('resume-a');
+    reloaded.getState().sealSession('resume-a');
+    assert.equal(sync.pushed[2].seq, 0);
+    assert.equal(sync.pushed[2].content, 'Updated summary');
+    await reloaded.getState().flushSession('resume-a');
+  }
+
+  // A regenerated/continued conversation owns fresh cloud rows, even when its
+  // visible messages were copied from a previously synced history.
+  {
+    const sync = new RecordingSync();
+    const store = createAiSessionStore({
+      db: new MemoryDb(),
+      persistDelayMs: 0,
+      sync,
+    });
+    store.getState().adoptSession(
+      'resume-a',
+      {
+        ...store.getState().resetSession('resume-a'),
+        ...baseSession({
+        sessionId: 'forked-session',
+        syncedCount: 0,
+        syncedMessageKeys: { copied: 7 },
+        messages: [
+          {
+            id: 'copied',
+            role: 'user',
+            content: 'Keep my question',
+            conversationSeq: 7,
+          },
+        ],
+        }),
+      },
+    );
+    await store.getState().flushSession('resume-a');
+    assert.equal(
+      sync.pushed.length,
+      1,
+      'copied questions must be uploaded to the new conversation',
+    );
+    assert.equal(sync.pushed[0].conversationId, 'forked-session');
+    assert.equal(sync.pushed[0].seq, 0);
   }
 
   // Recovering a sparse history must not compress its cloud keys and overwrite a card.
@@ -2871,6 +2977,74 @@ function testCaptionPacing() {
  * 落在很久以前那一轮、按钮还不可点。
  */
 function testRecommendationCardStates() {
+  const answeredChoice = renderToStaticMarkup(
+    createElement(RecommendationCard, {
+      message: 'Choose a check',
+      options: [
+        { label: 'Education', why: 'Check education' },
+        { label: 'Skills', why: 'Check skills' },
+      ],
+      recommended: 0,
+      answered: 'Skills',
+      labels: {
+        alternatives: 'Other',
+        others: 'Other options',
+        accept: 'Accept',
+        accepted: 'Chosen',
+        confidence: {
+          high: 'High',
+          medium: 'Medium',
+          low: 'Low',
+          none: 'Unknown',
+        },
+      },
+    }),
+  );
+  assert.match(
+    answeredChoice,
+    /font-medium text-mr-ink">Skills<\/span>/,
+    'restored recommendation must show the actual human choice',
+  );
+
+  const invalidForm = renderToStaticMarkup(
+    createElement(WidgetHost, {
+      registry: WIDGETS,
+      instance: {
+        widgetId: 'invalid-logos',
+        kind: 'company_logo_picker',
+        toolName: 'request_form',
+        status: 'pending',
+        props: {
+          formKind: 'company_logos',
+          options: { companies: [{ company: '测试公司' }], candidates: '[]' },
+        },
+      },
+      onAction: () => undefined,
+    }),
+  );
+  assert.match(
+    invalidForm,
+    />跳过此步<\/button>/,
+    'a malformed AI form must still let the human resume the run',
+  );
+  const trackerForm = renderToStaticMarkup(
+    createElement(WidgetHost, {
+      registry: WIDGETS,
+      instance: {
+        widgetId: 'tracker-fields',
+        kind: 'tracker_fields_picker',
+        toolName: 'request_form',
+        status: 'pending',
+        props: {},
+      },
+      onAction: () => undefined,
+    }),
+  );
+  assert.match(
+    trackerForm,
+    />跳过此步<\/button>/,
+    'the optional tracker fields form must allow skipping to defaults',
+  );
   const labels = {
     alternatives: zhCopy.aiLab.widgets.recommendation.alternatives,
     others: zhCopy.aiLab.widgets.recommendation.others,
@@ -3002,6 +3176,52 @@ function testWidgetPlacement() {
     "不得回头篡改已应用的那张",
   );
   assert.equal(settled[1].widget?.status, "cancelled");
+
+  const answer = { school: 'Human university' };
+  const formMessages: ChatMessage[] = [
+    {
+      id: 'form-owner',
+      role: 'assistant',
+      timeline: [
+        {
+          kind: 'widget',
+          id: 'education-form',
+          widget: {
+            widgetId: 'education-form',
+            kind: 'request_form',
+            status: 'pending',
+            props: { formKind: 'create_education' },
+          },
+        },
+      ],
+    },
+  ];
+  const submitted = settleWidgetInMessages(
+    formMessages,
+    'education-form',
+    'submitted',
+    answer,
+  );
+  const beat = submitted[0].timeline?.[0];
+  assert.equal(beat?.kind, 'widget');
+  if (beat?.kind !== 'widget') throw new Error('missing form');
+  assert.deepEqual(beat.widget.submittedValues, answer);
+  const restored = renderToStaticMarkup(
+    createElement(WidgetHost, {
+      instance: beat.widget,
+      registry: WIDGETS,
+      onAction: () => undefined,
+    }),
+  );
+  assert.ok(
+    restored.includes('Human university'),
+    'history must retain the submitted answer',
+  );
+  assert.equal(
+    formMessages[0].timeline?.[0].kind === 'widget' &&
+      formMessages[0].timeline[0].widget.status,
+    'pending',
+  );
 }
 
 // 有状态的卡用固定 widgetId，「改一次面板」原本总是回去更新十几轮之前那张——

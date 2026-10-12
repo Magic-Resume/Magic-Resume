@@ -31,7 +31,7 @@ export default function ChoiceCard({ instance, onAction }: WidgetProps) {
   const [freeText, setFreeText] = useState('');
   const [typing, setTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [picked, setPicked] = useState('');
+  const [picked, setPicked] = useState(instance.submittedValues?.choice ?? '');
 
   const choose = (value: string) => {
     if (!value.trim()) return;
@@ -52,10 +52,7 @@ export default function ChoiceCard({ instance, onAction }: WidgetProps) {
         <div className="mt-2 text-xs text-mr-ink-secondary">
           {instance.status !== 'submitted'
             ? t(`aiLab.widgets.form.${instance.status}`)
-            : // `picked` is component state, so a transcript restored from
-              // storage has lost it — say "answered" rather than mislabelling
-              // a submitted card as cancelled.
-              picked || t('aiLab.widgets.form.submitted')}
+            : instance.submittedValues?.choice || picked || t('aiLab.widgets.form.submitted')}
         </div>
       ) : (
         <>

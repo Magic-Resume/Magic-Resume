@@ -51,14 +51,14 @@ export default function ModePicker({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full px-2 text-mr-body transition-colors hover:bg-mr-surface-soft disabled:opacity-40 cursor-pointer"
+        className="inline-flex h-[38px] shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full px-2 text-mr-body transition-colors hover:bg-mr-surface-soft disabled:opacity-40 cursor-pointer"
         style={{
           color: `color-mix(in oklab, ${accent} 78%, var(--text-mr-ink))`,
         }}

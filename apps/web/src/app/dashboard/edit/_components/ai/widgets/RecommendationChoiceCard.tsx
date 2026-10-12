@@ -17,7 +17,10 @@ import type { WidgetProps } from '@magic-resume/genui';
  * 提交发的是 `{ choice: label }`——与 `ChoiceCard` 一字不差，所以 HITL 的 `edit`
  * 那条路一行都不用改。
  */
-export default function RecommendationChoiceCard({ instance, onAction }: WidgetProps) {
+export default function RecommendationChoiceCard({
+  instance,
+  onAction,
+}: WidgetProps) {
   const { t } = useTranslation();
   const props = instance.props as {
     message?: string;
@@ -35,9 +38,11 @@ export default function RecommendationChoiceCard({ instance, onAction }: WidgetP
         message={props.message ?? ''}
         options={options}
         recommended={props.recommended}
-        // 从记录恢复的会话丢了「选的是哪个」，所以已答态只说「已选择」，不冒充某个选项。
         answered={
-          instance.status === 'submitted' ? t('aiLab.widgets.form.submitted') : undefined
+          instance.status === 'submitted'
+            ? instance.submittedValues?.choice ||
+              t('aiLab.widgets.form.submitted')
+            : undefined
         }
         disabled={resolved}
         inactive={

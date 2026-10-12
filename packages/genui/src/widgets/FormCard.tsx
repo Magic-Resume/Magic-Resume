@@ -151,15 +151,18 @@ export default function FormCard({ instance, onAction }: WidgetProps) {
     skippable?: boolean;
   };
   const fields = props.fields ?? [];
-  const [values, setValues] = useState<Record<string, string>>(() => initialValues(fields));
+  const [values, setValues] = useState<Record<string, string>>(() => ({
+    ...initialValues(fields),
+    ...(instance.status === 'submitted' ? instance.submittedValues : {}),
+  }));
   const resolved = instance.status !== 'pending';
   const set = (id: string, val: string) => setValues((prev) => ({ ...prev, [id]: val }));
 
   const missingRequired = fields.some((f) => !f.optional && !(values[f.id] ?? '').trim());
 
-  // Empty when a stored transcript is replayed: the values were never part of
-  // the message, only this component's state. Fall back to the status chip.
-  const summary = instance.status === 'submitted' ? summarize(fields, values) : '';
+  const summary = instance.status === 'submitted'
+    ? summarize(fields, instance.submittedValues ?? values)
+    : '';
 
   return (
     <WidgetShell className="min-w-[280px] max-w-md flex-1 rounded-2xl bg-mr-surface px-4 py-3.5">

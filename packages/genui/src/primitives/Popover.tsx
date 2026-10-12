@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
+import { useGenUIPopoverZIndex } from '../host/GenUIProvider';
 
 const GAP = 6;
 const VIEWPORT_MARGIN = 12;
@@ -30,6 +37,7 @@ export function Popover({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const popoverZIndex = useGenUIPopoverZIndex();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -67,7 +75,11 @@ export function Popover({
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (panelRef.current?.contains(target) || anchorRef.current?.contains(target)) return;
+      if (
+        panelRef.current?.contains(target) ||
+        anchorRef.current?.contains(target)
+      )
+        return;
       onClose();
     };
     const onKeyDown = (e: KeyboardEvent) => {
@@ -93,7 +105,7 @@ export function Popover({
         width: placement?.width,
         // Hidden until measured, or it flashes at the wrong spot for one frame.
         visibility: placement ? 'visible' : 'hidden',
-        zIndex: 60,
+        zIndex: popoverZIndex,
       }}
     >
       {children}

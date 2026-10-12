@@ -93,6 +93,8 @@ export interface WidgetInstance {
    * not decline it, and saying they did is a lie the UI shouldn't tell.
    */
   status: "pending" | "submitted" | "cancelled" | "expired";
+  /** Human-submitted input retained in the transcript, separate from model props. */
+  submittedValues?: Record<string, string>;
 }
 
 /** `ui_widget` SSE payload (non-blocking path); aligns with push_ui_message. */

@@ -17,7 +17,12 @@ import {
 export const AI_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const AI_SESSION_STORAGE_PREFIX = 'ai-session:';
 
-const CLOSED_CANVAS: CanvasState = { open: false, skillId: null, view: 'preview', status: 'idle' };
+const CLOSED_CANVAS: CanvasState = {
+  open: false,
+  skillId: null,
+  view: 'preview',
+  status: 'idle',
+};
 
 export type AiSessionChatMode = 'idle' | 'create';
 
@@ -45,6 +50,9 @@ export interface AiSessionSnapshot {
    * 但那是几十个白打的请求。`resetSession` 换新 sessionId 时它自然归零。
    */
   syncedCount: number;
+  /** Stable cloud keys and changed rows awaiting replacement, persisted for offline replay. */
+  syncedMessageKeys?: Record<string, number>;
+  dirtyMessageIds?: string[];
   updatedAt: number;
 }
 
@@ -107,7 +115,10 @@ export interface AiSessionState {
   /** 把这条会话里还没投递的消息推给服务端。在一轮跑完时调用——**那才是时间线不再变的时刻**。 */
   sealSession: (resumeId: string) => void;
   /** 从云端历史切过来。整份快照替换，`syncedCount` 置满：这些消息服务端本来就有。 */
-  adoptSession: (resumeId: string, session: AiSessionSnapshot) => AiSessionSnapshot;
+  adoptSession: (
+    resumeId: string,
+    session: AiSessionSnapshot,
+  ) => AiSessionSnapshot;
   deleteExpiredSessions: () => Promise<void>;
   flushSession: (resumeId: string) => Promise<void>;
 }
@@ -136,18 +147,45 @@ export function conversationTitle(messages: ChatMessage[]): string | undefined {
 
 function normalizeSession(
   saved: Partial<AiSessionSnapshot> | null | undefined,
-  fallback: AiSessionSnapshot
+  fallback: AiSessionSnapshot,
 ): AiSessionSnapshot {
   return {
     ...fallback,
     ...saved,
-    messages: Array.isArray(saved?.messages) ? saved.messages : fallback.messages,
-    canvas: saved?.canvas ? { ...fallback.canvas, ...saved.canvas } : fallback.canvas,
+    messages: Array.isArray(saved?.messages)
+      ? saved.messages
+      : fallback.messages,
+    canvas: saved?.canvas
+      ? { ...fallback.canvas, ...saved.canvas }
+      : fallback.canvas,
   };
 }
 
+function syncKeys(session: AiSessionSnapshot): Record<string, number> {
+  const keys = { ...session.syncedMessageKeys };
+  session.messages.forEach((message, index) => {
+    if (
+      message.conversationSeq !== undefined ||
+      (!session.syncedMessageKeys && index < session.syncedCount)
+    ) {
+      keys[message.id] ??= message.conversationSeq ?? index;
+    }
+  });
+  return keys;
+}
+
+function withoutCloudKey(message: ChatMessage): ChatMessage {
+  const copy = { ...message };
+  delete copy.conversationSeq;
+  return copy;
+}
+
+function messageContent(message: ChatMessage): string {
+  return JSON.stringify(withoutCloudKey(message));
+}
+
 export function createAiSessionStore(
-  options: CreateAiSessionStoreOptions = {}
+  options: CreateAiSessionStoreOptions = {},
 ): UseBoundStore<StoreApi<AiSessionState>> {
   const db: AiSessionDb = options.db ?? dbClient;
   const now = options.now ?? Date.now;
@@ -207,12 +245,16 @@ export function createAiSessionStore(
 
       loadSession: async (resumeId) => {
         const cached = get().sessions[resumeId];
-        if (cached && !isExpired(cached)) return { session: cached, cold: false };
+        if (cached && !isExpired(cached))
+          return { session: cached, cold: false };
 
         const fallback = createEmptySession();
-        const saved = await db.getItem<Partial<AiSessionSnapshot>>(getAiSessionStorageKey(resumeId));
+        const saved = await db.getItem<Partial<AiSessionSnapshot>>(
+          getAiSessionStorageKey(resumeId),
+        );
         const current = get().sessions[resumeId];
-        if (current && !isExpired(current)) return { session: current, cold: false };
+        if (current && !isExpired(current))
+          return { session: current, cold: false };
         const session = normalizeSession(saved, fallback);
 
         // 过期只是**缓存失效**，不是数据失效：云端才是权威，调用方会拿 `cold` 去回源。
@@ -231,9 +273,32 @@ export function createAiSessionStore(
       },
 
       patchSession: (resumeId, patch) => {
+        const previous = get().sessions[resumeId] ?? createEmptySession();
+        const sameSession =
+          !patch.sessionId || patch.sessionId === previous.sessionId;
+        const keys = sameSession ? syncKeys(previous) : {};
+        const dirty = new Set(sameSession ? previous.dirtyMessageIds : []);
+        if (sameSession && patch.messages) {
+          const previousMessages = new Map(
+            previous.messages.map((message) => [message.id, message]),
+          );
+          for (const message of patch.messages) {
+            const old = previousMessages.get(message.id);
+            if (
+              keys[message.id] !== undefined &&
+              old &&
+              old !== message &&
+              messageContent(old) !== messageContent(message)
+            ) {
+              dirty.add(message.id);
+            }
+          }
+        }
         const session = {
-          ...(get().sessions[resumeId] ?? createEmptySession()),
+          ...previous,
           ...patch,
+          syncedMessageKeys: keys,
+          dirtyMessageIds: [...dirty],
           updatedAt: now(),
         };
         set((state) => ({
@@ -247,15 +312,23 @@ export function createAiSessionStore(
         const session = get().sessions[resumeId];
         if (!session) return;
         const title = conversationTitle(session.messages);
-        let nextSeq = Math.max(-1, ...session.messages.map((message, index) => message.conversationSeq ?? (index < session.syncedCount ? index : -1))) + 1;
+        const keys = syncKeys(session);
+        const dirty = new Set(session.dirtyMessageIds);
+        let nextSeq = Math.max(-1, ...Object.values(keys)) + 1;
         const sealedMessages = [...session.messages];
         // Preserve cloud keys: a partially uploaded history may have gaps, and
         // recovered messages may display before rows with smaller storage keys.
-        for (let index = session.syncedCount; index < session.messages.length; index++) {
+        let changed = false;
+        for (let index = 0; index < session.messages.length; index++) {
           const message = session.messages[index];
-          const seq = message.conversationSeq ?? nextSeq++;
+          if (keys[message.id] !== undefined && !dirty.has(message.id))
+            continue;
+          const seq = keys[message.id] ?? message.conversationSeq ?? nextSeq++;
+          keys[message.id] = seq;
+          dirty.delete(message.id);
+          changed = true;
           sealedMessages[index] = { ...message, conversationSeq: seq };
-          const { role, content, ...rest } = message;
+          const { role, content, ...rest } = withoutCloudKey(message);
           sync.push({
             conversationId: session.sessionId,
             resumeId,
@@ -268,22 +341,39 @@ export function createAiSessionStore(
             payload: rest as Record<string, unknown>,
           });
         }
-        if (session.syncedCount === session.messages.length) return;
+        if (!changed) return;
         set((state) => ({
           sessions: {
             ...state.sessions,
-            [resumeId]: { ...session, messages: sealedMessages, syncedCount: session.messages.length },
+            [resumeId]: {
+              ...session,
+              messages: sealedMessages,
+              syncedCount: session.messages.length,
+              syncedMessageKeys: keys,
+              dirtyMessageIds: [...dirty],
+            },
           },
         }));
         scheduleWrite(resumeId);
       },
 
       adoptSession: (resumeId, session) => {
+        // Regeneration and "continue visible history" copy messages into a new
+        // conversation. Their old cloud row keys belong to the source only.
+        const fresh = session.syncedCount === 0;
+        const adopted = {
+          ...session,
+          messages: fresh
+            ? session.messages.map(withoutCloudKey)
+            : session.messages,
+          syncedMessageKeys: fresh ? {} : syncKeys(session),
+          dirtyMessageIds: [],
+        };
         set((state) => ({
-          sessions: { ...state.sessions, [resumeId]: session },
+          sessions: { ...state.sessions, [resumeId]: adopted },
         }));
         scheduleWrite(resumeId);
-        return session;
+        return adopted;
       },
 
       resetSession: (resumeId) => {

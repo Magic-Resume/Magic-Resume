@@ -599,7 +599,7 @@ function Composer({
               />
 
               <div className="mt-3 flex items-center justify-between gap-2.5">
-                <div className="flex min-w-0 items-center gap-1.5">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
                   {onUploadAttachment && (
                     <>
                       <input
@@ -634,7 +634,7 @@ function Composer({
                   <ModelStrengthPicker disabled={disabled} />
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2.5">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
                   {/* 浏览器不支持 / 权限被拒 → 整颗不渲染。点了没反应的假按钮比没有更糟。 */}
                   {speech.supported && (
                     <button
