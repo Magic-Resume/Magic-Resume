@@ -7,6 +7,8 @@ import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fetchPages, validDate, httpUrl } from './content-api.mjs';
+import { hasRequiredSources } from '../src/lib/article-policy.mjs';
+import { getAuthor } from '../src/data/authors.mjs';
 import { syncKnowledge } from './sync-knowledge.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -59,6 +61,7 @@ function toMarkdown(article) {
     hreflang.length ? 'hreflang:' : 'hreflang: []',
     ...hreflang.filter((item) => item && item.lang && item.href).map((item) => `  - lang: ${yamlQuote(item.lang)}\n    href: ${yamlQuote(item.href)}`),
     `author: ${yamlQuote(article.author || 'Magic Resume Editorial')}`,
+    article.authorSlug ? `authorSlug: ${yamlQuote(article.authorSlug)}` : null,
     `datePublished: ${yamlQuote(article.datePublished)}`,
     `dateModified: ${yamlQuote(article.dateModified)}`,
     `primaryIntent: ${yamlQuote(article.primaryIntent || 'job search')}`,
@@ -80,10 +83,16 @@ export async function syncArticles({ endpoint, destination = remoteRoot, headers
   let staging;
   let backup;
   try {
-    const articles = await fetchPages(endpoint, { headers, fetchImpl, pageCap });
-    if (!articles.length || !articles.every(isValidArticle)) throw new Error('empty or invalid article corpus');
-    const keys = articles.map((article) => `${article.locale}/${article.slug}`);
+    const fetched = await fetchPages(endpoint, { headers, fetchImpl, pageCap });
+    if (!fetched.length || !fetched.every(isValidArticle)) throw new Error('empty or invalid article corpus');
+    const keys = fetched.map((article) => `${article.locale}/${article.slug}`);
     if (new Set(keys).size !== keys.length) throw new Error('duplicate article across pages');
+    const articles = fetched.filter((article) => {
+      const reason = !hasRequiredSources(article) ? 'articles published or modified after 2026-10-14 require sources'
+        : article.authorSlug !== undefined && !getAuthor(article.authorSlug) ? 'unknown authorSlug' : null;
+      if (reason) console.warn(`[content-sync] dropping ${article.locale}/${article.slug}: ${reason}`);
+      return !reason;
+    });
     await mkdir(resolve(destination, '..'), { recursive: true });
     staging = await mkdtemp(`${destination}-staging-`);
     for (const article of articles) {

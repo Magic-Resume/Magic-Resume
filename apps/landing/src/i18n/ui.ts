@@ -1,10 +1,10 @@
-import { ENTITY } from '../data/entity';
-import en from './en.json';
-import zh from './zh.json';
+import { ENTITY } from '../data/entity.ts';
+import en from './en.json' with { type: 'json' };
+import zh from './zh.json' with { type: 'json' };
 
 export const LOCALES = ['en', 'zh'] as const;
 export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = 'en';
+export const DEFAULT_LOCALE: Locale = 'zh';
 
 /**
  * `meta.description` is the entity definition, not free copy: it comes from

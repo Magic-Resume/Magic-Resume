@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { DEFAULT_LOCALE, LOCALES } from './src/i18n/ui.ts';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -11,8 +12,8 @@ export default defineConfig({
   site: SITE,
   integrations: [react()],
   i18n: {
-    locales: ['en', 'zh'],
-    defaultLocale: 'en',
+    locales: [...LOCALES],
+    defaultLocale: DEFAULT_LOCALE,
     routing: {
       // Both /en and /zh are explicit; root is redirected below.
       prefixDefaultLocale: true,

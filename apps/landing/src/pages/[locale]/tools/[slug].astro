@@ -2,7 +2,7 @@
 import { templateIds, templateFacts } from '@/data/templates';
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import SyntheticDemo from '@/components/content/SyntheticDemo.astro';
-import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@/i18n/ui';
 import { getTool, getTools } from '@/data/tools';
 import { dashboardLink, CONTENT_LINKS, GITHUB } from '@/consts';
 
@@ -14,7 +14,7 @@ export function getStaticPaths() {
 
 const localeParam = Astro.params.locale;
 const slug = Astro.params.slug ?? '';
-if (!isLocale(localeParam)) return Astro.redirect('/en/tools');
+if (!isLocale(localeParam)) return Astro.redirect(`/${DEFAULT_LOCALE}/tools`);
 const locale = localeParam as Locale;
 const tool = Astro.props.tool ?? getTool(locale, slug);
 if (!tool) return Astro.redirect(`/${locale}/tools`);

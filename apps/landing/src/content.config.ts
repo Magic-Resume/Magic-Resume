@@ -1,4 +1,5 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { articleSchema } from './lib/article-schema';
 import { glob } from 'astro/loaders';
 
 /**
@@ -19,27 +20,7 @@ const articles = defineCollection({
       return `${locale}-${slug}-${source}`;
     },
   }),
-  schema: z.object({
-    title: z.string().min(1).max(160),
-    description: z.string().min(1).max(320),
-    locale: z.enum(['en', 'zh']),
-    slug: z.string().regex(/^[a-z0-9][a-z0-9-]*$/).optional(),
-    canonical: z.string().url().optional(),
-    hreflang: z
-      .array(z.object({ lang: z.string().min(2).max(16), href: z.string().url() }))
-      .default([]),
-    author: z.string().min(1).max(80).default('Magic Resume Editorial'),
-    datePublished: z.coerce.date(),
-    dateModified: z.coerce.date(),
-    primaryIntent: z.string().min(1).max(80),
-    tags: z.array(z.string().min(1).max(40)).max(12).default([]),
-    sources: z
-      .array(z.object({ title: z.string().min(1).max(160), url: z.string().url() }))
-      .max(12)
-      .default([]),
-    featured: z.boolean().default(false),
-    source: z.enum(['seed', 'api']).default('seed'),
-  }),
+  schema: articleSchema,
 });
 
 export const collections = { articles };

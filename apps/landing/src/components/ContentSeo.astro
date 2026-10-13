@@ -1,4 +1,7 @@
 ---
+import { articleAuthorSchema, getAuthor } from '@/data/authors.mjs';
+import { DEFAULT_LOCALE } from '@/i18n/ui';
+
 interface Alternate {
   lang: string;
   href: string;
@@ -13,6 +16,7 @@ interface Props {
   published?: Date;
   modified?: Date;
   author?: string;
+  authorSlug?: string;
   alternates?: Alternate[];
   image?: string;
 }
@@ -25,16 +29,19 @@ const {
   type = 'website',
   published,
   modified,
-  author = 'Magic Resume Editorial',
+  author,
+  authorSlug,
   alternates = [],
   image = new URL('/magic-resume-og.jpg', Astro.site).href,
 } = Astro.props;
 
+const xDefault = alternates.find((alt) => alt.lang === (DEFAULT_LOCALE === 'zh' ? 'zh-CN' : DEFAULT_LOCALE))?.href
+  ?? new URL(`/${DEFAULT_LOCALE}`, Astro.site).href;
 const inLanguage = locale === 'zh' ? 'zh-CN' : 'en';
 const graph: Record<string, unknown>[] = [
   {
     '@type': 'Organization',
-    '@id': `${new URL('/', Astro.site).href}#organization`,
+    '@id': 'https://www.magic-resume.cn/#organization',
     name: 'Magic Resume',
     url: new URL('/', Astro.site).href,
     logo: new URL('/magic-resume-mark.png', Astro.site).href,
@@ -49,8 +56,8 @@ const graph: Record<string, unknown>[] = [
     url: canonical,
     inLanguage,
     image,
-    author: type === 'article' ? { '@type': 'Person', name: author } : undefined,
-    publisher: type === 'article' ? { '@id': `${new URL('/', Astro.site).href}#organization` } : undefined,
+    author: type === 'article' ? articleAuthorSchema(getAuthor(authorSlug ?? author), locale, Astro.site!) : undefined,
+    publisher: type === 'article' ? { '@id': 'https://www.magic-resume.cn/#organization' } : undefined,
     datePublished: published?.toISOString(),
     dateModified: modified?.toISOString(),
     applicationCategory: type === 'software' ? 'BusinessApplication' : undefined,
@@ -65,7 +72,8 @@ const serialize = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u00
 ---
 
 <link rel="canonical" href={canonical} />
-{alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+<link rel="alternate" hreflang="x-default" href={xDefault} />
+{alternates.filter((alt) => alt.lang !== 'x-default').map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
 <meta name="robots" content="index,follow,max-image-preview:large" />
 <meta property="og:type" content={type === 'article' ? 'article' : 'website'} />
 <meta property="og:title" content={title} />

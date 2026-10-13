@@ -77,3 +77,22 @@ test('campus requires published, sourced, dated rows and 30 companies per season
   assert.deepEqual(campusPages(rows.map((row) => ({ ...row, sourceUrl: 'javascript:alert(1)' }))), []);
   assert.equal(campusPages(rows).length, 31);
 });
+
+test('sync drops new or revised unsourced articles with warnings and promotes the remaining corpus', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'landing-sources-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const destination = join(root, 'remote');
+  const warn = t.mock.method(console, 'warn', () => {});
+  const newArticle = { ...article('new'), datePublished: '2026-10-15', dateModified: '2026-10-15' };
+  const revised = { ...article('revised'), dateModified: '2026-10-15', sources: [] };
+  const sourced = { ...newArticle, slug: 'sourced', sources: [{ title: 'Research', url: 'https://example.org/study' }] };
+  const unknownAuthor = { ...sourced, slug: 'unknown-author', authorSlug: 'unregistered' };
+  assert.equal(await syncArticles({ endpoint: 'https://core.example', destination, fetchImpl: paged([article('seed-era'), newArticle, revised, sourced, unknownAuthor]) }), true);
+  assert.deepEqual((await readdir(join(destination, 'en'))).sort(), ['seed-era.md', 'sourced.md']);
+  assert.equal(warn.mock.callCount(), 3);
+  assert.match(warn.mock.calls[0].arguments[0], /dropping en\/new.*require sources/);
+  assert.match(warn.mock.calls[1].arguments[0], /dropping en\/revised.*require sources/);
+  // An all-dropped response must remove stale remote copies, not retain them.
+  assert.equal(await syncArticles({ endpoint: 'https://core.example', destination, fetchImpl: paged([newArticle]) }), true);
+  assert.deepEqual(await readdir(destination), []);
+});

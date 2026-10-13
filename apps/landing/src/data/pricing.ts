@@ -31,21 +31,26 @@ export function parsePricingSnapshot(payload: unknown, locale: Locale): PricingP
   return plans.sort((a,b) => ['free','pro','max'].indexOf(a.id)-['free','pro','max'].indexOf(b.id));
 }
 
-export async function loadPricing(copy: Copy, locale: Locale, endpoint?: string): Promise<PricingPlan[]> {
+export interface PricingResult {
+  plans: PricingPlan[];
+  source: 'snapshot' | 'fallback';
+}
+
+export async function loadPricing(copy: Copy, locale: Locale, endpoint?: string): Promise<PricingResult> {
   if (endpoint) {
     try {
       const url = new URL(endpoint);
       url.searchParams.set('locale', locale);
       const response = await fetch(url, {signal:AbortSignal.timeout(2500),headers:{Accept:'application/json'}});
       const plans = response.ok ? parsePricingSnapshot(await response.json(), locale) : null;
-      if (plans) return plans;
+      if (plans) return { plans, source: 'snapshot' };
     } catch { /* Public pricing is optional; local creation must stay available. */ }
   }
-  return copy.landing.pricing.plans.map(plan => ({
+  return { source: 'fallback', plans: copy.landing.pricing.plans.map(plan => ({
     id:plan.id as PlanId,name:plan.id === 'free' ? 'Free' : plan.id === 'pro' ? 'Pro' : 'Max',
     ...FALLBACK_PRICE[locale][plan.id as PlanId],
     tagline:plan.tagline,features:plan.features,highlight:plan.id === 'pro',
-  }));
+  })) };
 }
 
 /**
@@ -65,3 +70,22 @@ const FALLBACK_PRICE: Record<Locale, Record<PlanId, Pick<PricingPlan, 'priceCent
     max: {priceCents:999,currency:'USD',interval:'month'},
   },
 };
+
+/** Only validated build-time snapshots may make structured price claims. */
+export function pricingSchema(pricing: PricingResult) {
+  if (pricing.source !== 'snapshot') return {};
+  return {
+    offers: pricing.plans.map((plan) => ({
+      '@type': 'Offer',
+      name: plan.name,
+      price: (plan.priceCents / 100).toFixed(2),
+      priceCurrency: plan.currency,
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: (plan.priceCents / 100).toFixed(2),
+        priceCurrency: plan.currency,
+        ...(plan.interval ? { billingDuration: plan.interval === 'month' ? 'P1M' : 'P1Y' } : {}),
+      },
+    })),
+  };
+}

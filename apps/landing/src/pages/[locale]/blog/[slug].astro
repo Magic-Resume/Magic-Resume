@@ -1,7 +1,8 @@
 ---
+import { authorHref, getAuthor } from '@/data/authors.mjs';
 import { render } from 'astro:content';
 import ContentLayout from '@/layouts/ContentLayout.astro';
-import { isLocale, type Locale } from '@/i18n/ui';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/i18n/ui';
 import { articleAlternates, articleHref, articleSlug, getArticles } from '@/lib/articles';
 
 export async function getStaticPaths() {
@@ -14,11 +15,12 @@ export async function getStaticPaths() {
 
 const entry = Astro.props.entry;
 const localeParam = Astro.params.locale;
-if (!entry || !isLocale(localeParam)) return Astro.redirect('/en/blog');
+if (!entry || !isLocale(localeParam)) return Astro.redirect(`/${DEFAULT_LOCALE}/blog`);
 const locale = localeParam as Locale;
 const { Content } = await render(entry);
 const canonical = entry.data.canonical ?? new URL(articleHref(locale, entry), Astro.site).href;
 const alternates = articleAlternates(entry);
+const author = getAuthor(entry.data.authorSlug ?? entry.data.author);
 ---
 
 <ContentLayout
@@ -31,6 +33,7 @@ const alternates = articleAlternates(entry);
   published={entry.data.datePublished}
   modified={entry.data.dateModified}
   author={entry.data.author}
+  authorSlug={entry.data.authorSlug}
 >
   <article class="mx-auto max-w-[760px] px-5 py-14 md:px-6 md:py-24">
     <a href={`/${locale}/blog`} class="text-mr-caption text-muted hover:text-ink">← {locale === 'zh' ? '返回文章列表' : 'Back to all articles'}</a>
@@ -39,7 +42,7 @@ const alternates = articleAlternates(entry);
       <h1 class="type-heading-lg mt-4 text-ink">{entry.data.title}</h1>
       <p class="type-body-lg mt-5 text-muted">{entry.data.description}</p>
       <div class="mt-6 flex flex-wrap items-center gap-3 text-mr-overline text-muted">
-        <span>{entry.data.author}</span>
+        <span>{author ? <a href={authorHref(locale, author.slug)} class="underline underline-offset-4">{author.name}</a> : entry.data.author}</span>
         <span aria-hidden="true">·</span>
         <time datetime={entry.data.datePublished.toISOString()}>{entry.data.datePublished.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US')}</time>
       </div>

@@ -1,0 +1,31 @@
+---
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { authors, authorHref, articleAuthorSchema, type Author } from '@/data/authors.mjs';
+import { LOCALES, type Locale } from '@/i18n/ui';
+
+export function getStaticPaths() {
+  return authors.flatMap((author) => LOCALES.map((locale) => ({
+    params: { locale, slug: author.slug }, props: { author, locale },
+  })));
+}
+interface Props { author: Author; locale: Locale }
+const { author, locale } = Astro.props;
+const canonical = new URL(authorHref(locale, author.slug), Astro.site).href;
+const alternates = LOCALES.map((loc) => ({
+  lang: loc === 'zh' ? 'zh-CN' : loc,
+  href: new URL(authorHref(loc, author.slug), Astro.site).href,
+}));
+const schema = { '@context': 'https://schema.org', ...articleAuthorSchema(author, locale, Astro.site!) };
+---
+<ContentLayout locale={locale} title={`${author.name} | Magic Resume`} description={author.bio} canonical={canonical} alternates={alternates}>
+  <article class="mx-auto max-w-[760px] px-5 py-14 md:px-6 md:py-24">
+    <p class="eyebrow">{locale === 'zh' ? '作者' : 'Author'}</p>
+    <h1 class="type-heading-lg mt-4 text-ink">{author.name}</h1>
+    <p class="type-body-lg mt-5 text-muted">{author.bio}</p>
+    <a href={author.url} class="mt-6 inline-block underline underline-offset-4">{locale === 'zh' ? '个人网站' : 'Personal website'}</a>
+    <ul class="mt-4 space-y-2">
+      {author.sameAs.map((url) => <li><a href={url} class="underline underline-offset-4">{url}</a></li>)}
+    </ul>
+  </article>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(schema).replace(/</g, '\\u003c')} />
+</ContentLayout>

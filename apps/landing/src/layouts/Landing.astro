@@ -4,6 +4,7 @@ import '@/styles/global.css';
 import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
 import '@/styles/beui.css';
 import { DEFAULT_LOCALE, LOCALES, type Copy, type Locale } from '@/i18n/ui';
+import type { PricingResult } from '@/data/pricing';
 import Seo from '@/components/Seo.astro';
 import SiteVerification from '@/components/SiteVerification.astro';
 import RefForward from '@/components/RefForward.astro';
@@ -14,8 +15,9 @@ interface Props {
   title: string;
   description: string;
   copy: Copy;
+  pricing: PricingResult;
 }
-const { locale, title, description, copy } = Astro.props;
+const { locale, title, description, copy, pricing } = Astro.props;
 
 // Astro's directory build format makes `Astro.url.pathname` "/zh/", while the
 // hreflang alternates and the sitemap both address "/zh". To a search engine
@@ -75,6 +77,7 @@ const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
 
     <Seo
       copy={copy}
+      pricing={pricing}
       locale={locale}
       canonical={canonical}
       siteUrl={new URL('/', Astro.site).href}

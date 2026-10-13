@@ -14,26 +14,25 @@
  *
  *   aggregateRating — we have no review corpus. Inventing ratings is a Google
  *                     spam-policy violation and is dishonest besides.
- *   offers/price    — there is a real free tier and a paid Pro plan, and plan
- *                     pricing lives in the database under admin control. Any
- *                     number hard-coded here would drift. Until the landing
- *                     price decision (spec D2) lands, saying nothing is the
- *                     only accurate option — `price: "0"` would be a claim we
- *                     cannot stand behind.
  *   sameAs          — only verified, real URLs belong here; the GitHub repo
  *                     comes from `consts.ts` rather than being retyped.
  */
 import type { Copy, Locale } from '@/i18n/ui';
+import { pricingSchema, type PricingResult } from '@/data/pricing';
+import { loadSoftwareVersion } from '@/data/software-version';
 import { GITHUB } from '@/consts';
 
 interface Props {
   copy: Copy;
+  pricing: PricingResult;
   locale: Locale;
   canonical: string;
   siteUrl: string;
   ogImage: string;
 }
-const { copy, locale, canonical, siteUrl, ogImage } = Astro.props;
+const { copy, locale, canonical, siteUrl, ogImage, pricing } = Astro.props;
+
+const softwareVersion = await loadSoftwareVersion();
 
 const inLanguage = locale === 'zh' ? 'zh-CN' : 'en';
 
@@ -51,6 +50,8 @@ const faqSchema = {
 const appSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
+  ...pricingSchema(pricing),
+  ...(softwareVersion ? { softwareVersion } : {}),
   name: 'Magic Resume',
   url: canonical,
   applicationCategory: 'BusinessApplication',

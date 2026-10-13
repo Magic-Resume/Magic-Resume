@@ -26,9 +26,10 @@ interface Props {
   published?: Date;
   modified?: Date;
   author?: string;
+  authorSlug?: string;
 }
 
-const { locale, title, description, canonical, alternates = [], type, published, modified, author } = Astro.props;
+const { locale, title, description, canonical, alternates = [], type, published, modified, author, authorSlug } = Astro.props;
 const isZh = locale === 'zh';
 // 内容页与首页共用同一套 Header / Footer / 主题开关,锚点用 base 指回首页。
 const copy = getCopy(locale);
@@ -53,6 +54,7 @@ const home = `/${locale}`;
       published={published}
       modified={modified}
       author={author}
+      authorSlug={authorSlug}
       alternates={alternates}
     />
     <meta name="theme-color" content="#151515" />
