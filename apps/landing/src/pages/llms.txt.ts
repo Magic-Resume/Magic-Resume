@@ -61,11 +61,11 @@ ${LOCALES.map((loc) => {
 
 ## Tools
 
-${LOCALES.map((loc) => getTools(loc).map((tool) => `- [${tool.title}](${base}/${loc}/tools/${tool.slug}): ${tool.description}`).join('\\n')).join('\\n')}
+${LOCALES.map((loc) => getTools(loc).map((tool) => `- [${tool.title}](${base}/${loc}/tools/${tool.slug}): ${tool.description}`).join('\n')).join('\n')}
 
 ## Articles
 
-${articles.map((entry) => `- [${entry.data.title}](${base}${articleHref(entry.data.locale, entry)}): ${entry.data.description}`).join('\\n')}
+${articles.map((entry) => `- [${entry.data.title}](${base}${articleHref(entry.data.locale, entry)}): ${entry.data.description}`).join('\n')}
 
 ## FAQ (English)
 

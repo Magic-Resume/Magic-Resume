@@ -7,7 +7,7 @@
     "dev": "astro dev --port 3002",
     "content:sync": "node scripts/sync-content.mjs",
     "prebuild": "pnpm content:sync",
-    "build": "astro build",
+    "build": "astro build && node scripts/check-llms.mjs",
     "preview": "astro preview --port 3002",
     "lint": "astro check",
     "astro": "astro"
