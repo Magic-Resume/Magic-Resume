@@ -1,0 +1,52 @@
+name: IndexNow
+
+# After each successful production deploy of the landing site (www), submit
+# the URLs that are new or re-dated in its sitemap to IndexNow. Vercel reports
+# deploys as GitHub deployments; the environment name is how we tell landing
+# apart from web and docs. Needs the repository variable INDEXNOW_KEY, the
+# same value as INDEXNOW_KEY in the landing project's Vercel env (which
+# publishes /<key>.txt). Without it the job logs a notice and does nothing.
+on:
+  deployment_status:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production – magic-resume-landing')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE: https://www.magic-resume.cn
+      INDEXNOW_KEY: ${{ vars.INDEXNOW_KEY }}
+      INDEXNOW_STATE: .indexnow/sitemap.xml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: apps/landing/scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The sitemap from the last successful run; the diff is against it.
+      - uses: actions/cache/restore@v4
+        with:
+          path: .indexnow
+          key: indexnow-sitemap-${{ github.run_id }}
+          restore-keys: indexnow-sitemap-
+      - run: node apps/landing/scripts/indexnow-submit.mjs
+      # Only reached when the submission succeeded, so a failed run is retried
+      # in full by the next deploy.
+      - uses: actions/cache/save@v4
+        if: env.INDEXNOW_KEY != ''
+        with:
+          path: .indexnow
+          key: indexnow-sitemap-${{ github.run_id }}

@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["NEXT_DIST_DIR"],
+      "env": ["NEXT_DIST_DIR", "INDEXNOW_KEY"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
