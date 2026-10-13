@@ -11,7 +11,7 @@ import {
   resolveResumeId,
   serializeResumeContent,
   updateResumeContent,
-} from '../dist/resume-tools.js';
+} from '../dist/index.js'; // the bundled entry — what npm actually ships
 
 const resumeContent = {
   id: 'resume_1',

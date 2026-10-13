@@ -1,7 +1,30 @@
 {
   "name": "@magic-resume/mcp",
   "version": "0.1.0",
+  "description": "MCP server and CLI for Magic Resume, the open-source AI resume workbench: let Claude Code and other MCP clients read and edit your resumes.",
+  "license": "MIT",
+  "homepage": "https://docs.magic-resume.cn/en/guide/mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Magic-Resume/Magic-Resume.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": "https://github.com/Magic-Resume/Magic-Resume/issues",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "resume",
+    "cv",
+    "resume-builder",
+    "claude-code",
+    "magic-resume"
+  ],
+  "mcpName": "io.github.Magic-Resume/magic-resume",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "magic-resume": "./dist/cli.js"
   },
@@ -14,26 +37,29 @@
     }
   },
   "files": [
-    "dist"
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json --emitDeclarationOnly && node scripts/bundle.mjs",
     "dev": "tsc -p tsconfig.json --watch",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@magic-resume/resume-schema": "workspace:*",
-    "@magic-resume/resume-templates": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "fast-json-patch": "^3.1.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@magic-resume/resume-schema": "workspace:*",
+    "@magic-resume/resume-templates": "workspace:*",
     "@types/node": "^20.19.41",
+    "esbuild": "^0.28.0",
     "typescript": "^5"
   }
 }

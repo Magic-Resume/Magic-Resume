@@ -525,12 +525,6 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@magic-resume/resume-schema':
-        specifier: workspace:*
-        version: link:../resume-schema
-      '@magic-resume/resume-templates':
-        specifier: workspace:*
-        version: link:../resume-templates
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
@@ -541,9 +535,18 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
+      '@magic-resume/resume-schema':
+        specifier: workspace:*
+        version: link:../resume-schema
+      '@magic-resume/resume-templates':
+        specifier: workspace:*
+        version: link:../resume-templates
       '@types/node':
         specifier: ^20.19.41
         version: 20.19.41
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
       typescript:
         specifier: ^5
         version: 5.9.3
