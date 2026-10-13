@@ -1,0 +1,35 @@
+---
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { campusHref, type CampusPage } from '@/lib/knowledge';
+import { pathKey } from '@/lib/public-knowledge.mjs';
+import { dashboardLink } from '@/consts';
+interface Props { page: CampusPage }
+const { page } = Astro.props;
+const title = `${page.title}校招时间线`;
+const canonical = new URL(campusHref(page), Astro.site).href;
+const modified = new Date(Math.max(...page.entries.map((row) => Date.parse(row.updatedAt))));
+const schema = { '@context': 'https://schema.org', '@type': 'ItemList', name: title, url: canonical, itemListElement: page.entries.map((row, index) => ({ '@type': 'ListItem', position: index + 1, name: `${row.company}：${row.title}`, url: row.sourceUrl })) };
+---
+<ContentLayout locale="zh" title={`${title} | Magic Resume`} description="已发布的校招进度、申请时间和官方来源。请以来源页面的最新信息为准。" canonical={canonical} modified={modified}>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, '\u003c')} />
+  <article class="mx-auto max-w-[1100px] px-5 py-14 md:px-6 md:py-24">
+    <p class="eyebrow">校招时间线</p>
+    <h1 class="type-heading-lg mt-4 text-ink">{title}</h1>
+    <p class="type-body-lg mt-5 text-muted">申请时间可能调整，请打开每条记录的来源页面核实。</p>
+    {page.company && <a class="mt-5 inline-block text-muted underline" href={`/zh/campus/${page.season}`}>查看本季全部公司</a>}
+    <div class="mt-10 overflow-x-auto" tabindex="0" role="region" aria-label="校招时间表">
+      <table class="w-full min-w-[720px] text-left text-mr-body">
+        <caption class="sr-only">{title}：公司、申请时间、来源与更新日期</caption>
+        <thead class="border-b border-hair text-muted"><tr>{['公司 / 招聘项目', '开放日期', '截止日期', '来源', '更新于'].map((label) => <th scope="col" class="px-3 py-4">{label}</th>)}</tr></thead>
+        <tbody>{page.entries.map((row) => <tr class="border-b border-hair text-ink-soft">
+          <th scope="row" class="px-3 py-5 font-normal"><a class="underline" href={`/zh/campus/${page.season}/${pathKey(row.company)}`}>{row.company}</a><p class="mt-2">{row.title}</p></th>
+          <td class="px-3 py-5">{row.openAt ? <time datetime={row.openAt}>{row.openAt.slice(0, 10)}</time> : '未公布'}</td>
+          <td class="px-3 py-5">{row.deadlineAt ? <time datetime={row.deadlineAt}>{row.deadlineAt.slice(0, 10)}</time> : '未公布'}</td>
+          <td class="px-3 py-5"><a class="underline" href={row.sourceUrl} rel="noopener noreferrer">{row.sourceName}</a></td>
+          <td class="px-3 py-5"><time datetime={row.updatedAt}>{row.updatedAt.slice(0, 10)}</time></td>
+        </tr>)}</tbody>
+      </table>
+    </div>
+    <a data-ref-forward="href" href={dashboardLink('hero', 'zh')} class="mt-10 inline-flex rounded-md bg-ink px-5 py-3 text-workbench">准备申请简历</a>
+  </article>
+</ContentLayout>

@@ -1,0 +1,32 @@
+---
+import GuideExamples from '@/components/content/GuideExamples.mjs';
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { getGuides, guideHref, type GuidePage } from '@/lib/knowledge';
+import { dashboardLink } from '@/consts';
+export async function getStaticPaths() {
+  return (await getGuides()).map((guide) => ({ params: { locale: guide.locale, role: guide.role }, props: { guide } }));
+}
+interface Props { guide: GuidePage }
+const { guide } = Astro.props;
+const zh = guide.locale === 'zh';
+const title = zh ? `${guide.title}简历写法指南` : `${guide.title} resume writing guide`;
+const description = zh ? '用岗位写法要点和编辑示例，写清行动、范围与结果。' : 'Describe actions, scope and results with writing tips and editorial examples.';
+---
+<ContentLayout locale={guide.locale} title={`${title} | Magic Resume`} description={description} canonical={new URL(guideHref(guide), Astro.site).href}>
+  <article class="mx-auto max-w-[880px] px-5 py-14 md:px-6 md:py-24">
+    <p class="eyebrow">{zh ? '岗位写法指南' : 'Role writing guide'}</p>
+    <h1 class="type-heading-lg mt-4 text-ink">{title}</h1>
+    <p class="type-body-lg mt-5 text-muted">{description}</p>
+    <h2 class="type-heading mt-10 text-ink">{zh ? '写法要点' : 'Writing principles'}</h2>
+    <p class="mt-4 leading-8 text-ink-soft">{zh ? '先读目标岗位要求，再选择能证明相关能力的经历。每条写清你做了什么、影响了什么，以及能核实的结果。只填写你自己的真实经历和数据。' : 'Read the role requirements, then choose experience that demonstrates relevant skills. Explain your action, its scope and a result you can verify. Use only your own experience and figures.'}</p>
+    <h2 class="type-heading mt-10 text-ink">{zh ? '示例 bullet' : 'Example bullets'}</h2>
+    <GuideExamples entries={guide.entries} />
+    <h2 class="type-heading mt-10 text-ink">{zh ? '常见错误' : 'Common mistakes'}</h2>
+    <ul class="mt-4 list-disc space-y-3 pl-5 leading-7 text-ink-soft">
+      <li>{zh ? '只列职责，没有说明自己的行动。' : 'Listing duties without describing your contribution.'}</li>
+      <li>{zh ? '复制示例中的成果，或填写无法核实的数字。' : 'Copying an example’s achievements or adding unverifiable figures.'}</li>
+      <li>{zh ? '堆砌岗位关键词，却没有对应经历。' : 'Adding role keywords without supporting experience.'}</li>
+    </ul>
+    <a data-ref-forward="href" href={dashboardLink('hero', guide.locale)} class="mt-10 inline-flex rounded-md bg-ink px-5 py-3 text-workbench">{zh ? '整理我的经历' : 'Write my experience'}</a>
+  </article>
+</ContentLayout>

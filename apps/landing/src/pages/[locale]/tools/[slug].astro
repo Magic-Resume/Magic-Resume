@@ -1,4 +1,5 @@
 ---
+import { templateIds, templateFacts } from '@/data/templates';
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import SyntheticDemo from '@/components/content/SyntheticDemo.astro';
 import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
@@ -40,6 +41,10 @@ const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', 
       </div>
       <SyntheticDemo title={tool.demoTitle} button={tool.demoButton} done={tool.demoDone} items={tool.demoItems} />
     </div>
+    {tool.slug === 'resume-templates' && <nav class="mt-12" aria-label={locale === 'zh' ? '浏览模板' : 'Browse templates'}>
+      <h2 class="type-heading text-ink">{locale === 'zh' ? '浏览真实模板' : 'Explore the templates'} ({templateIds.length})</h2>
+      <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-3">{templateIds.map((id) => <li><a class="text-muted underline hover:text-ink" href={`/${locale}/templates/${id}`}>{templateFacts(id, locale).name}</a></li>)}</ul>
+    </nav>}
     <div class="mt-16 border-t border-hair pt-10">
       <h2 class="type-heading text-ink">{locale === 'zh' ? '推荐流程' : 'Recommended workflow'}</h2>
       <ol class="mt-7 grid gap-4 md:grid-cols-3">

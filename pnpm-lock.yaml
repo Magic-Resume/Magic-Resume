@@ -52,6 +52,12 @@ importers:
       '@magic-resume/design-system':
         specifier: workspace:*
         version: link:../../packages/design-system
+      '@magic-resume/resume-schema':
+        specifier: workspace:*
+        version: link:../../packages/resume-schema
+      '@magic-resume/resume-templates':
+        specifier: workspace:*
+        version: link:../../packages/resume-templates
       astro:
         specifier: ^5.2.5
         version: 5.18.2(@types/node@20.19.41)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.62.2)(tsx@4.22.4)(typescript@5.9.3)(yaml@2.9.0)

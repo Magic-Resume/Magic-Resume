@@ -1,0 +1,9 @@
+---
+import CampusTimeline from '@/components/content/CampusTimeline.astro';
+import { getCampus, type CampusPage } from '@/lib/knowledge';
+export async function getStaticPaths() {
+  return (await getCampus()).filter((page) => !page.company).map((page) => ({ params: { season: page.season }, props: { page } }));
+}
+interface Props { page: CampusPage }
+---
+<CampusTimeline page={Astro.props.page} />

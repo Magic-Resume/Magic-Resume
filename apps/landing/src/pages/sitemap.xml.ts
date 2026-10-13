@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
+import { templateIds } from '@/data/templates';
+import { getCampus, getGuides, campusHref, guideHref } from '@/lib/knowledge';
 import { DEFAULT_LOCALE, LOCALES } from '@/i18n/ui';
 import { getTools } from '@/data/tools';
 import { articleSlug, getArticles } from '@/lib/articles';
 
-// Small hand-rolled sitemap (two locale roots). Avoids a heavy dependency for
-// what is, today, two URLs. Add entries here as the landing grows.
+// Static routes and eligible build-time content share this sitemap.
 //
 // Each entry declares every locale as an alternate, including itself — that
 // self-reference is required by the spec, and omitting it is the usual reason
@@ -33,6 +34,22 @@ export const GET: APIRoute = async ({ site }) => {
       })),
     ),
   ];
+  for (const locale of LOCALES) {
+    for (const id of templateIds) entries.push({
+      path: `/${locale}/templates/${id}`,
+      modified: undefined,
+      alternates: LOCALES.map((alt) => ({ lang: hreflang(alt), href: `${base}/${alt}/templates/${id}` })),
+    });
+  }
+  for (const page of await getCampus()) entries.push({
+    path: campusHref(page),
+    modified: new Date(Math.max(...page.entries.map((row) => Date.parse(row.updatedAt)))),
+    alternates: [{ lang: 'zh-CN', href: `${base}${campusHref(page)}` }],
+  });
+  for (const page of await getGuides()) entries.push({
+    path: guideHref(page), modified: undefined,
+    alternates: [{ lang: hreflang(page.locale), href: `${base}${guideHref(page)}` }],
+  });
   const articles = await getArticles();
   for (const article of articles) {
     const locale = article.data.locale;

@@ -65,3 +65,8 @@ node_modules
 # 走 public/ + 运行时 fetch 而不是 import：被 gitignore 的文件如果被源码静态 import，
 # 新克隆的仓库会直接构建失败。fetch 的话文件不在就只是少一个数据源。
 apps/web/public/template-lab-reference.local.json
+
+# Build-time public content snapshots (seeds remain tracked).
+apps/landing/.content-cache/
+apps/landing/src/content/articles/remote/
+apps/landing/src/content/articles/remote-staging-*/
