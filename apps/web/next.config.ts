@@ -233,6 +233,7 @@ const nextConfig: NextConfig = {
    *
    * 只静音这一个模块的这一类警告，别的照旧。
    */
+  // Magic-Resume commercial overlay alias. Roots are provided only by private commercial builds.
   webpack: (config, { webpack }) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings ?? []),
