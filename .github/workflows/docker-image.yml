@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "apps/docs/**"
+      - ".gitignore"
 
 permissions:
   contents: read
@@ -13,8 +18,13 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+concurrency:
+  group: public-image-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build_and_push:
+    timeout-minutes: 40
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -49,6 +59,8 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: true
+          cache-from: type=gha,scope=public-web
+          cache-to: type=gha,mode=max,scope=public-web,ignore-error=true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |

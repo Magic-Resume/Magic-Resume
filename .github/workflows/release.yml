@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   release:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
       HUSKY: "0"
