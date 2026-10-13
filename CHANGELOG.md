@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.6.4](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.3...v2.6.4) (2026-10-10)
+
+## 🐛 Bug Fixes
+- [`bd8aa4a`](https://github.com/Magic-Resume/Magic-Resume/commit/bd8aa4a)  fix(web): repair conversation history, canvas targets and transitions
+
 # [v2.6.3](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.2...v2.6.3) (2026-10-09)
 
 ## 🐛 Bug Fixes
