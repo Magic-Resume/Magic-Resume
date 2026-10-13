@@ -1,0 +1,79 @@
+name: Open release pull request
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: ['release-*']
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Existing release-* branch to propose for the default branch'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: auto-release-pr-${{ inputs.release_branch || github.event.pull_request.base.ref }}
+  cancel-in-progress: false
+
+jobs:
+  open-pr:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Always execute the reviewed helper from the default branch. Never
+      # install dependencies or run application code from the release branch.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/release-pr
+
+      - name: Check changes and existing pull requests
+        id: plan
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { releaseBranchFromEvent, planReleasePr } = require('./.github/release-pr/ensure-release-pr.cjs');
+            const head = releaseBranchFromEvent(context);
+            if (!head) throw new Error('Expected a merged PR targeting release-* or a manual release branch');
+            const plan = await planReleasePr({ github, ...context.repo, head });
+            core.info(JSON.stringify(plan));
+            core.setOutput('create', plan.action === 'create');
+            return plan;
+
+      - name: Validate release bot configuration
+        if: steps.plan.outputs.create == 'true'
+        env:
+          APP_ID: ${{ vars.RELEASE_BOT_APP_ID }}
+          APP_KEY: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+        run: |
+          test -n "$APP_ID" || { echo '::error::Configure RELEASE_BOT_APP_ID repository variable'; exit 1; }
+          test -n "$APP_KEY" || { echo '::error::Configure RELEASE_BOT_PRIVATE_KEY repository secret'; exit 1; }
+
+      - name: Mint repository-scoped release bot token
+        if: steps.plan.outputs.create == 'true'
+        id: bot
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+
+      - name: Create release pull request
+        if: steps.plan.outputs.create == 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          RELEASE_PR_PLAN: ${{ steps.plan.outputs.result }}
+        with:
+          github-token: ${{ steps.bot.outputs.token }}
+          script: |
+            const { createReleasePr } = require('./.github/release-pr/ensure-release-pr.cjs');
+            const result = await createReleasePr({ github, ...context.repo, plan: JSON.parse(process.env.RELEASE_PR_PLAN) });
+            core.info(JSON.stringify(result));
+            await core.summary.addHeading('Release pull request').addRaw(`${result.action}: ${result.url || result.reason}`).write();
