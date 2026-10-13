@@ -1,7 +1,8 @@
 name: Open release pull request
 
 on:
-  push:
+  pull_request_target:
+    types: [closed]
     branches: ['release-*']
   workflow_dispatch:
     inputs:
@@ -15,12 +16,12 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: auto-release-pr-${{ inputs.release_branch || github.ref_name }}
+  group: auto-release-pr-${{ inputs.release_branch || github.event.pull_request.base.ref }}
   cancel-in-progress: false
 
 jobs:
   open-pr:
-    if: github.event_name == 'workflow_dispatch' || github.event.deleted == false
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -35,12 +36,12 @@ jobs:
       - name: Check changes and existing pull requests
         id: plan
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        env:
-          RELEASE_BRANCH: ${{ inputs.release_branch || github.ref_name }}
         with:
           script: |
-            const { planReleasePr } = require('./.github/release-pr/ensure-release-pr.cjs');
-            const plan = await planReleasePr({ github, ...context.repo, head: process.env.RELEASE_BRANCH });
+            const { releaseBranchFromEvent, planReleasePr } = require('./.github/release-pr/ensure-release-pr.cjs');
+            const head = releaseBranchFromEvent(context);
+            if (!head) throw new Error('Expected a merged PR targeting release-* or a manual release branch');
+            const plan = await planReleasePr({ github, ...context.repo, head });
             core.info(JSON.stringify(plan));
             core.setOutput('create', plan.action === 'create');
             return plan;

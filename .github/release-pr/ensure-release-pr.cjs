@@ -2,6 +2,18 @@
 
 const RELEASE_BRANCH = /^release-[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
+function releaseBranchFromEvent({ eventName, payload }) {
+  if (eventName === 'workflow_dispatch') return payload.inputs?.release_branch;
+  if (
+    eventName !== 'pull_request_target' ||
+    payload.action !== 'closed' ||
+    payload.pull_request?.merged !== true
+  )
+    return null;
+  const release = payload.pull_request.base.ref;
+  return RELEASE_BRANCH.test(release) ? release : null;
+}
+
 async function findOpenPr(github, owner, repo, head, base) {
   const { data } = await github.rest.pulls.list({
     owner,
@@ -33,7 +45,7 @@ async function planReleasePr({ github, owner, repo, head }) {
       github.rest.repos.getBranch({ owner, repo, branch: head }),
     ]);
   } catch (error) {
-    // A queued push can outlive a deleted release branch. Other failures matter.
+    // A queued merge event can outlive a deleted branch. Other failures matter.
     if (error.status === 404)
       return { action: 'skip', head, base, reason: 'branch-missing' };
     throw error;
@@ -52,6 +64,43 @@ async function planReleasePr({ github, owner, repo, head }) {
     });
   if (comparison.ahead_by === 0 || comparison.files.length === 0) {
     return { action: 'skip', head, base, reason: 'no-release-changes' };
+  }
+  // Squash merges leave different commit IDs. Compare the release's changed
+  // paths against current main, even if main has since changed unrelated files.
+  const trees = await Promise.all(
+    [
+      target.data.commit.commit.tree.sha,
+      source.data.commit.commit.tree.sha,
+      comparison.merge_base_commit.commit.tree.sha,
+    ].map(async (tree_sha) => {
+      const { data } = await github.rest.git.getTree({
+        owner,
+        repo,
+        tree_sha,
+        recursive: 'true',
+      });
+      if (data.truncated)
+        throw new Error(
+          'Cannot safely compare a truncated repository tree; create the release PR manually.',
+        );
+      return new Map(
+        data.tree
+          .filter((entry) => entry.type !== 'tree')
+          .map((entry) => [
+            entry.path,
+            `${entry.mode}:${entry.type}:${entry.sha}`,
+          ]),
+      );
+    }),
+  );
+  const [targetFiles, sourceFiles, ancestorFiles] = trees;
+  const changed = [
+    ...new Set([...sourceFiles.keys(), ...ancestorFiles.keys()]),
+  ].filter((path) => sourceFiles.get(path) !== ancestorFiles.get(path));
+  if (
+    changed.every((path) => targetFiles.get(path) === sourceFiles.get(path))
+  ) {
+    return { action: 'skip', head, base, reason: 'changes-already-integrated' };
   }
   const body = [
     `将 \`${head}\` 合入 \`${base}\`，发布该 release 分支已集成的变更。`,
@@ -110,4 +159,4 @@ async function createReleasePr({ github, owner, repo, plan }) {
   }
 }
 
-module.exports = { planReleasePr, createReleasePr };
+module.exports = { releaseBranchFromEvent, planReleasePr, createReleasePr };

@@ -1,6 +1,9 @@
 # 自动创建 release PR
 
-`Open release pull request` 在 `release-*` 分支收到 push（包括合并功能 PR）时运行。
+`Open release pull request` 在功能 PR **合入 `release-*`** 后运行：
+`feature → release-*` 合并成功，自动创建 `release-* → main/master` 的发布 PR。
+触发器为 `pull_request_target: closed`，且只处理 `merged == true`；直接 push、仅关闭
+未合并的 PR、打开/更新功能 PR、合入 main/master 均不会触发开发布 PR。
 它读取仓库的默认分支（Core 为 `main`，Web/Admin 为 `master`），有实际差异时创建
 release → 主干的普通 PR。同一来源/目标已有开放 PR 时直接复用，保留人工编辑的标题、
 说明和审核。已有 PR 会随 release 分支更新，不需要机器人再次写入。
@@ -16,9 +19,10 @@ release → 主干的普通 PR。同一来源/目标已有开放 PR 时直接复
 只读规划使用 `GITHUB_TOKEN`；创建 PR 使用 App token，以便正常触发 PR 检查，
 同时兼容组织禁止 `GITHUB_TOKEN` 创建 PR 的策略。缺少配置会明确失败，不静默退回其他 token。
 
-代码来自默认分支的 `.github/release-pr`，不会执行 release 分支中的应用代码。
-首次合并本功能后，从最新主干创建的新 release 分支会继承触发器；已存在的 release
-分支需同步主干中的 workflow 才能接收后续 push 事件。补开现有分支的 PR 可在主干上手动运行：
+工作流与 `.github/release-pr` helper 均从默认分支加载，不检出或执行功能 PR / release
+分支代码；不安装应用依赖，也不使用 Actions 缓存。合并本功能到主干后，已有和新建的
+release 分支均可响应后续合入事件，**无需给旧 release 分支同步工作流文件**。
+补开既有分支的 PR 可在主干上手动运行：
 
 ```sh
 gh workflow run auto-release-pr.yml --ref main -f release_branch=release-2026-10-13

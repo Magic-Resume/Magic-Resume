@@ -2,7 +2,79 @@
 
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { planReleasePr, createReleasePr } = require('./ensure-release-pr.cjs');
+const {
+  releaseBranchFromEvent,
+  planReleasePr,
+  createReleasePr,
+} = require('./ensure-release-pr.cjs');
+
+test('uses the release BASE of the merged feature PR as the new release PR HEAD', () => {
+  assert.equal(
+    releaseBranchFromEvent({
+      eventName: 'pull_request_target',
+      payload: {
+        action: 'closed',
+        pull_request: {
+          merged: true,
+          base: { ref: 'release-2026-10-13' },
+          head: { ref: 'feature/announcement' },
+        },
+      },
+    }),
+    'release-2026-10-13',
+  );
+});
+
+test('ignores closed but unmerged PRs and opened/synchronized PRs', () => {
+  for (const [action, merged] of [
+    ['closed', false],
+    ['opened', true],
+    ['synchronize', true],
+  ]) {
+    assert.equal(
+      releaseBranchFromEvent({
+        eventName: 'pull_request_target',
+        payload: {
+          action,
+          pull_request: { merged, base: { ref: 'release-2026-10-13' } },
+        },
+      }),
+      null,
+    );
+  }
+});
+
+test('does not create another release PR when a release PR merges into main/master', () => {
+  for (const ref of ['main', 'master', 'feature/example']) {
+    assert.equal(
+      releaseBranchFromEvent({
+        eventName: 'pull_request_target',
+        payload: {
+          action: 'closed',
+          pull_request: { merged: true, base: { ref } },
+        },
+      }),
+      null,
+    );
+  }
+  assert.equal(
+    releaseBranchFromEvent({
+      eventName: 'push',
+      payload: { ref: 'refs/heads/release-2026-10-13' },
+    }),
+    null,
+  );
+});
+
+test('allows explicit manual recovery for an existing release branch', () => {
+  assert.equal(
+    releaseBranchFromEvent({
+      eventName: 'workflow_dispatch',
+      payload: { inputs: { release_branch: 'release-2026-10-13' } },
+    }),
+    'release-2026-10-13',
+  );
+});
 
 function fixture(options = {}) {
   const calls = [];
@@ -43,8 +115,33 @@ function fixture(options = {}) {
             data: {
               ahead_by: options.ahead ?? 1,
               files: options.files ?? [{ filename: 'app.ts' }],
+              merge_base_commit: { commit: { tree: { sha: 'ancestor' } } },
             },
           };
+        },
+      },
+      git: {
+        getTree: async ({ tree_sha }) => {
+          const source = tree_sha.startsWith('release-');
+          const target = tree_sha === 'main' || tree_sha === 'master';
+          const tree = options.trees?.[tree_sha] || [
+            {
+              path: 'app.ts',
+              type: 'blob',
+              mode: '100644',
+              sha:
+                source || (target && options.integrated)
+                  ? 'new-code'
+                  : 'old-code',
+            },
+            {
+              path: '.github/ci.yml',
+              type: 'blob',
+              mode: '100644',
+              sha: target ? 'new-ci' : 'old-ci',
+            },
+          ];
+          return { data: { tree, truncated: options.truncated || false } };
         },
       },
       pulls: {
@@ -115,6 +212,37 @@ test('skips a behind branch and an empty merge-base diff', async () => {
       'no-release-changes',
     );
   }
+});
+
+test('skips already squash-merged changes when main has newer unrelated CI commits', async () => {
+  assert.equal(
+    (await planReleasePr(fixture({ integrated: true }))).reason,
+    'changes-already-integrated',
+  );
+});
+
+test('compares file modes and deletions rather than only file contents', async () => {
+  const file = {
+    path: 'script.sh',
+    type: 'blob',
+    mode: '100644',
+    sha: 'same-content',
+  };
+  for (const releaseTree of [[{ ...file, mode: '100755' }], []]) {
+    const trees = {
+      main: [file],
+      ancestor: [file],
+      'release-2026-10-13': releaseTree,
+    };
+    assert.equal((await planReleasePr(fixture({ trees }))).action, 'create');
+  }
+});
+
+test('refuses a partial tree comparison instead of silently missing changes', async () => {
+  await assert.rejects(
+    planReleasePr(fixture({ truncated: true })),
+    /truncated repository tree/,
+  );
 });
 
 test('handles a release branch deleted while its job was queued', async () => {
