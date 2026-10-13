@@ -1,7 +1,6 @@
 {
   "meta": {
-    "title": "Magic Resume — an AI-native resume workbench",
-    "description": "An open-source AI resume workbench. Build a local draft, tailor your experience to a role, review AI proposals, and export your resume."
+    "title": "Magic Resume — an AI-native resume workbench"
   },
   "nav": {
     "features": "Features",

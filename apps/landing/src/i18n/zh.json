@@ -1,7 +1,6 @@
 {
   "meta": {
-    "title": "Magic Resume — AI Native 简历工作台",
-    "description": "开源 AI 简历工作台，从本地草稿开始，围绕目标岗位整理经历，逐条审阅 AI 建议，排版并导出简历"
+    "title": "Magic Resume — AI Native 简历工作台"
   },
   "nav": {
     "features": "功能",
