@@ -35,7 +35,7 @@ const nav = copy.nav;
     <div class="landing-header-actions flex items-center gap-2">
       <button class="landing-mobile-menu md:hidden" type="button" data-landing-mobile aria-controls="landing-mobile-panel" data-open-label={locale === 'zh' ? '打开菜单' : 'Open menu'} data-close-label={locale === 'zh' ? '关闭菜单' : 'Close menu'} aria-label={locale === 'zh' ? '打开菜单' : 'Open menu'} aria-expanded="false"><span><i></i><i></i><i></i></span></button>
       <a
-        href={dashboardLink('header', locale)}
+        data-ref-forward="href" href={dashboardLink('header', locale)}
         class="landing-get-started flex items-center gap-1 rounded-full px-4 py-2 text-mr-caption font-w510 transition-opacity hover:opacity-85"
       >
         {locale === 'zh' ? '开始使用' : 'Get started'}
@@ -73,7 +73,7 @@ const nav = copy.nav;
         <a href={`${base}#faq`}>{nav.faq}</a><a href={`${base}#open-source`}>{nav.contributors}</a><a href={`/${locale}/blog`}>{locale === 'zh' ? '文章' : 'Blog'}</a><a href={`/${locale}/tools`}>{locale === 'zh' ? '工具' : 'Tools'}</a>
       </div>
       <a href={`${base}#pricing`}>{locale === 'zh' ? '定价' : 'Pricing'}</a><a href={`${base}#customers`}>{nav.useCases}</a>
-      <footer><a href={dashboardLink('header', locale)}>{nav.goToApp}</a></footer>
+      <footer><a data-ref-forward="href" href={dashboardLink('header', locale)}>{nav.goToApp}</a></footer>
     </div>
   </div>
 </header>

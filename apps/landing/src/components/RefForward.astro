@@ -1,0 +1,8 @@
+---
+import { transformWithEsbuild } from 'vite';
+import source from './ref-forward.js?raw';
+
+const { code } = await transformWithEsbuild(source, 'ref-forward.js', { minify: true });
+---
+
+<script is:inline set:html={code} />

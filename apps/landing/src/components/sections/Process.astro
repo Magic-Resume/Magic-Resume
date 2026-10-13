@@ -17,7 +17,7 @@ const badges = ['search', 'mic', 'clipboard'] as const;
       </div>
       <div class="be-walk-aside">
         <p>{p.subtitle}</p>
-        <a class="be-walk-cta" href={dashboardLink('interview', locale)}>{p.cta}<Icon name="arrow-right" size={16}/></a>
+        <a class="be-walk-cta" data-ref-forward="href" href={dashboardLink('interview', locale)}>{p.cta}<Icon name="arrow-right" size={16}/></a>
       </div>
     </header>
 

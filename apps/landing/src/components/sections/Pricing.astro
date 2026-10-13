@@ -32,7 +32,7 @@ const unit = (plan: PricingPlan) => plan.interval === 'year' ? (locale === 'zh' 
           <p class="be-plan-copy">{plan.tagline}</p>
           <div class="be-plan-rule"><span>{p.includes}</span></div>
           <ul>{plan.features.map(item => <li><Icon name="check" size={16}/>{item}</li>)}</ul>
-          <div class="be-plan-action"><a href={dashboardLink('pricing',locale)} data-astro-reload>{plan.id === 'free' ? p.ctaFree : p.ctaPaid.replace('{plan}',plan.name)}<Icon name="arrow-right" size={15}/></a></div>
+          <div class="be-plan-action"><a data-ref-forward="href" href={dashboardLink('pricing',locale)} data-astro-reload>{plan.id === 'free' ? p.ctaFree : p.ctaPaid.replace('{plan}',plan.name)}<Icon name="arrow-right" size={15}/></a></div>
         </div>
       </article>)}
     </div>

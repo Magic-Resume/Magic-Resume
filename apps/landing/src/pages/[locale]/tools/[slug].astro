@@ -34,7 +34,7 @@ const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', 
           {tool.bullets.map((bullet) => <li class="flex gap-3"><span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent"></span><span>{bullet}</span></li>)}
         </ul>
         <div class="mt-10 flex flex-wrap gap-3">
-          <a href={tool.slug === 'mcp-resume-editor' ? (CONTENT_LINKS.docs ?? GITHUB.repo) : dashboardLink('hero', locale)} target={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? '_blank' : undefined} rel={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? 'noopener noreferrer' : undefined} class="rounded-md bg-ink px-5 py-3 text-mr-body font-w510 text-workbench">{tool.cta}</a>
+          <a data-ref-forward={tool.slug === 'mcp-resume-editor' ? undefined : 'href'} href={tool.slug === 'mcp-resume-editor' ? (CONTENT_LINKS.docs ?? GITHUB.repo) : dashboardLink('hero', locale)} target={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? '_blank' : undefined} rel={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? 'noopener noreferrer' : undefined} class="rounded-md bg-ink px-5 py-3 text-mr-body font-w510 text-workbench">{tool.cta}</a>
           <span class="self-center text-mr-overline text-muted">{tool.ctaNote}</span>
         </div>
       </div>

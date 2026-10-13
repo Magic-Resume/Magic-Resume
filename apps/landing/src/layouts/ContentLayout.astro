@@ -6,6 +6,7 @@ import '@/styles/beui.css';
 import { getCopy, type Locale } from '@/i18n/ui';
 import ContentSeo from '@/components/ContentSeo.astro';
 import SiteVerification from '@/components/SiteVerification.astro';
+import RefForward from '@/components/RefForward.astro';
 import Header from '@/components/sections/Header.astro';
 import Footer from '@/components/sections/Footer.astro';
 import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
@@ -68,6 +69,7 @@ const home = `/${locale}`;
     </main>
     <Footer copy={copy} locale={locale} base={home} />
     <UtilityDock locale={locale} />
+    <RefForward />
     <script>
       const win = window as typeof window & { __magicResumeRevealBound?: boolean };
 
