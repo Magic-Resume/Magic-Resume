@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -9,6 +9,31 @@ export type MagicResumeCliConfig = {
 };
 
 const CONFIG_PATH = join(homedir(), '.magic-resume', 'mcp.json');
+
+export function getConfigPath(): string {
+  return CONFIG_PATH;
+}
+
+export async function hasConfig(): Promise<boolean> {
+  try {
+    await access(CONFIG_PATH);
+    return true;
+  } catch (error) {
+    if (isFileNotFound(error)) return false;
+    throw error;
+  }
+}
+
+/** Deletes the config file; resolves false when there was none. */
+export async function clearConfig(): Promise<boolean> {
+  try {
+    await rm(CONFIG_PATH);
+    return true;
+  } catch (error) {
+    if (isFileNotFound(error)) return false;
+    throw error;
+  }
+}
 
 export function getDefaultConfig(): MagicResumeCliConfig {
   return {

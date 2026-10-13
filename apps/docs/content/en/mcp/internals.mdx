@@ -10,20 +10,22 @@ For contributors hacking on the MCP package itself, or building a fork.
 ```
 packages/mcp/
 ├── src/
-│   ├── cli.ts           # `magic-resume` CLI entrypoint (config get/set/print/clear)
+│   ├── cli.ts           # `magic-resume` CLI entrypoint (config set/print/clear, mcp)
 │   ├── server.ts        # MCP server: tool registration, stdio transport
 │   ├── resume-tools.ts  # business logic for every tool above
 │   ├── config.ts        # ~/.magic-resume/mcp.json reader/writer
-│   └── http.ts          # thin axios wrapper that sends the PAT
+│   ├── client.ts        # thin fetch client that sends the PAT
+│   └── index.ts         # library exports
+├── scripts/bundle.mjs   # esbuild: bundles the private workspace packages for npm
 ├── test/                # node --test suites
 └── package.json         # type: "module", bin: magic-resume
 ```
 
-The CLI and the server share `config.ts` and `http.ts`. The CLI is for one-shot config commands; the MCP server is what AI tools spawn.
+The CLI and the server share `config.ts`; the server talks to the API through `client.ts`. The CLI is for one-shot config commands; the MCP server is what AI tools spawn.
 
 ## Entry points
 
-- **CLI:** `bin: { "magic-resume": "./dist/cli.js" }` in `package.json`. Subcommands: `config set`, `config get`, `config print`, `config clear`, and `mcp` (which boots the server).
+- **CLI:** `bin: { "magic-resume": "./dist/cli.js" }` in `package.json`. Subcommands: `config set`, `config print` (PAT masked), `config clear`, and `mcp` (which boots the server).
 - **MCP server:** `magic-resume mcp` boots `server.ts`, registers tools, attaches `StdioServerTransport`, and runs forever.
 
 ## Config file
@@ -33,7 +35,8 @@ The CLI and the server share `config.ts` and `http.ts`. The CLI is for one-shot 
 ```json
 {
   "apiUrl": "https://api.magic-resume.cn/api",
-  "pat": "mr_pat_xxx"
+  "token": "mr_pat_xxx",
+  "defaultResumeId": "optional"
 }
 ```
 
@@ -63,7 +66,7 @@ The MCP server is a client of the same NestJS Core API the web app talks to. Rel
 | `/api/resumes/:id` | GET | PAT |
 | `/api/resumes/:id` | PATCH | PAT |
 
-`http.ts` attaches `Authorization: Bearer <pat>` automatically. Unlike the web app, **there is no Clerk involvement** — PATs are a separate auth method the Core API understands.
+`client.ts` attaches `Authorization: Bearer <pat>` automatically. Unlike the web app, **there is no Clerk involvement** — PATs are a separate auth method the Core API understands.
 
 ## Build and publish
 

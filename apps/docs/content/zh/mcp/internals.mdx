@@ -10,20 +10,22 @@ description: "@magic-resume/mcp 的内部接线 —— 入口、配置、与 Cor
 ```
 packages/mcp/
 ├── src/
-│   ├── cli.ts           # `magic-resume` CLI 入口（config get/set/print/clear）
+│   ├── cli.ts           # `magic-resume` CLI 入口（config set/print/clear、mcp）
 │   ├── server.ts        # MCP 服务器：工具注册、stdio 传输
 │   ├── resume-tools.ts  # 上面那些工具的业务逻辑
 │   ├── config.ts        # ~/.magic-resume/mcp.json 读写
-│   └── http.ts          # 一个携带 PAT 的薄 axios 封装
+│   ├── client.ts        # 携带 PAT 的薄 fetch 客户端
+│   └── index.ts         # 库导出
+├── scripts/bundle.mjs   # esbuild：把私有 workspace 包打进 npm 产物
 ├── test/                # node --test 套件
 └── package.json         # type: "module", bin: magic-resume
 ```
 
-CLI 和服务器共用 `config.ts` 与 `http.ts`。CLI 负责一次性的配置命令；MCP 服务器是 AI 工具拉起的进程。
+CLI 和服务器共用 `config.ts`；服务器通过 `client.ts` 调 API。CLI 负责一次性的配置命令；MCP 服务器是 AI 工具拉起的进程。
 
 ## 入口
 
-- **CLI：** `package.json` 里的 `bin: { "magic-resume": "./dist/cli.js" }`。子命令：`config set`、`config get`、`config print`、`config clear`，以及 `mcp`（启动服务器）。
+- **CLI：** `package.json` 里的 `bin: { "magic-resume": "./dist/cli.js" }`。子命令：`config set`、`config print`（PAT 打码显示）、`config clear`，以及 `mcp`（启动服务器）。
 - **MCP 服务器：** `magic-resume mcp` 启动 `server.ts`，注册工具，挂上 `StdioServerTransport`，常驻运行。
 
 ## 配置文件
@@ -33,7 +35,8 @@ CLI 和服务器共用 `config.ts` 与 `http.ts`。CLI 负责一次性的配置�
 ```json
 {
   "apiUrl": "https://api.magic-resume.cn/api",
-  "pat": "mr_pat_xxx"
+  "token": "mr_pat_xxx",
+  "defaultResumeId": "可选"
 }
 ```
 
@@ -63,7 +66,7 @@ MCP 服务器是 Web 应用所用 NestJS Core API 的另一个客户端。相关
 | `/api/resumes/:id` | GET | PAT |
 | `/api/resumes/:id` | PATCH | PAT |
 
-`http.ts` 自动附上 `Authorization: Bearer <pat>`。和 Web 应用不同，**这里没有 Clerk** —— PAT 是 Core API 单独认识的一套鉴权方式。
+`client.ts` 自动附上 `Authorization: Bearer <pat>`。和 Web 应用不同，**这里没有 Clerk** —— PAT 是 Core API 单独认识的一套鉴权方式。
 
 ## 构建与发布
 
