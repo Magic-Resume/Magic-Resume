@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { ExternalLink, X } from '@magic-resume/icons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +17,7 @@ import {
   type AnnouncementDetail,
   type Notification,
 } from '@/lib/api/notifications';
+import { AnnouncementMarkdown } from './AnnouncementMarkdown';
 
 interface NotificationDetailDialogProps {
   notification: Notification;
@@ -118,8 +117,8 @@ export function NotificationDetailDialog({
           ) : announcement ? (
             <div>
               <p className="mb-5 text-sm leading-7 text-neutral-400">{announcement.summary}</p>
-              <div className="border-t border-mr-line-soft pt-5 text-sm leading-7 text-neutral-300 [&_a]:text-sky-300 [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-sky-400/30 [&_blockquote]:pl-4 [&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-4 [&_strong]:font-semibold [&_strong]:text-neutral-100">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{announcement.content}</ReactMarkdown>
+              <div className="border-t border-mr-line-soft pt-5 text-sm leading-7 text-neutral-300">
+                <AnnouncementMarkdown>{announcement.content}</AnnouncementMarkdown>
               </div>
             </div>
           ) : (
