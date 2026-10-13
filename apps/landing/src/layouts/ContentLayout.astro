@@ -5,6 +5,7 @@ import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
 import '@/styles/beui.css';
 import { getCopy, type Locale } from '@/i18n/ui';
 import ContentSeo from '@/components/ContentSeo.astro';
+import SiteVerification from '@/components/SiteVerification.astro';
 import Header from '@/components/sections/Header.astro';
 import Footer from '@/components/sections/Footer.astro';
 import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
@@ -41,6 +42,7 @@ const home = `/${locale}`;
     <link rel="icon" href="/magic-resume-mark.png" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <SiteVerification />
     <ContentSeo
       title={title}
       description={description}

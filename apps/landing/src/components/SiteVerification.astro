@@ -1,0 +1,15 @@
+---
+// Ownership tags for the five search consoles (Google, Bing, Baidu, Sogou,
+// Shenma). Codes come from the hosting environment, never the repo, and an
+// unset variable emits nothing: web once shipped a placeholder
+// "your-google-verification-code", which is worse than no tag at all.
+const tags = [
+  { name: 'google-site-verification', content: import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION },
+  { name: 'msvalidate.01', content: import.meta.env.PUBLIC_BING_SITE_VERIFICATION },
+  { name: 'baidu-site-verification', content: import.meta.env.PUBLIC_BAIDU_SITE_VERIFICATION },
+  { name: 'sogou_site_verification', content: import.meta.env.PUBLIC_SOGOU_SITE_VERIFICATION },
+  { name: 'shenma-site-verification', content: import.meta.env.PUBLIC_SHENMA_SITE_VERIFICATION },
+].flatMap(({ name, content }) => (content?.trim() ? [{ name, content: content.trim() }] : []));
+---
+
+{tags.map(({ name, content }) => <meta name={name} content={content} />)}

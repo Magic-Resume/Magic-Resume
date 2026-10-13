@@ -5,6 +5,7 @@ import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
 import '@/styles/beui.css';
 import { DEFAULT_LOCALE, LOCALES, type Copy, type Locale } from '@/i18n/ui';
 import Seo from '@/components/Seo.astro';
+import SiteVerification from '@/components/SiteVerification.astro';
 import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
 
 interface Props {
@@ -46,6 +47,7 @@ const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
     <link rel="icon" href="/magic-resume-mark.png" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <SiteVerification />
     <link rel="canonical" href={canonical} />
     {
       alternates.map((alt) => (
