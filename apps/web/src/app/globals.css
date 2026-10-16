@@ -674,6 +674,11 @@ body.grabbing, body.grabbing * {
   line-height: 1.5;
 }
 
+/* Honor explicit tree typography in both display and editable rich text. */
+[data-template-line-height] .wysiwyg p {
+  line-height: inherit;
+}
+
 .wysiwyg a {
   color: #2563eb;
   text-decoration: underline;

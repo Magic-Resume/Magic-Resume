@@ -20,19 +20,19 @@ const webFontsDir = resolve(packageDir, '../../apps/web/public/fonts/full');
 Font.register({
   family: 'Source Han Sans SC',
   fonts: [
-    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff2'), fontWeight: 400 },
-    { src: join(webFontsDir, 'SourceHanSansSC-RegularOblique.woff2'), fontWeight: 400, fontStyle: 'italic' },
-    { src: join(webFontsDir, 'SourceHanSansSC-Bold.woff2'), fontWeight: 700 },
-    { src: join(webFontsDir, 'SourceHanSansSC-BoldOblique.woff2'), fontWeight: 700, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSansSC-Regular.woff'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSansSC-RegularOblique.woff'), fontWeight: 400, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSansSC-Bold.woff'), fontWeight: 700 },
+    { src: join(webFontsDir, 'SourceHanSansSC-BoldOblique.woff'), fontWeight: 700, fontStyle: 'italic' },
   ],
 });
 Font.register({
   family: 'Source Han Serif SC',
   fonts: [
-    { src: join(webFontsDir, 'SourceHanSerifSC-Regular.woff2'), fontWeight: 400 },
-    { src: join(webFontsDir, 'SourceHanSerifSC-RegularOblique.woff2'), fontWeight: 400, fontStyle: 'italic' },
-    { src: join(webFontsDir, 'SourceHanSerifSC-Bold.woff2'), fontWeight: 700 },
-    { src: join(webFontsDir, 'SourceHanSerifSC-BoldOblique.woff2'), fontWeight: 700, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSerifSC-Regular.woff'), fontWeight: 400 },
+    { src: join(webFontsDir, 'SourceHanSerifSC-RegularOblique.woff'), fontWeight: 400, fontStyle: 'italic' },
+    { src: join(webFontsDir, 'SourceHanSerifSC-Bold.woff'), fontWeight: 700 },
+    { src: join(webFontsDir, 'SourceHanSerifSC-BoldOblique.woff'), fontWeight: 700, fontStyle: 'italic' },
   ],
 });
 Font.registerHyphenationCallback(magicPdfHyphenationCallback);

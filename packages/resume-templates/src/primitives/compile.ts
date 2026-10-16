@@ -214,7 +214,14 @@ const editAnchorOf = (
   kind: EditAnchor['kind'],
   nodeId: string,
 ): EditAnchor | undefined => {
-  if (!fieldKey || !scope.sectionKey) return undefined;
+  if (!fieldKey) return undefined;
+  if (!scope.sectionKey) {
+    // 表头没有条目作用域，仅允许直接 info 字段回写，嵌套自定义字段保持只读。
+    const infoField = /^info\.([A-Za-z_][\w]*)$/.exec(fieldKey)?.[1];
+    return infoField
+      ? { sectionKey: 'info', fieldKey: infoField, kind, label: '基本信息' }
+      : undefined;
+  }
   const item = scope.vars.item as Record<string, unknown> | undefined;
   const itemId = item?.id != null ? String(item.id) : undefined;
   if (item && !itemId) {

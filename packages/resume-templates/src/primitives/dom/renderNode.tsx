@@ -200,7 +200,10 @@ export function renderNode(node: ResolvedNode, ctx?: DomRenderContext): React.Re
 
     case 'RichText':
       return (
-        <div key={key} data-template-node={node.templateNodeId} {...designAttrs} style={style}>
+        <div
+          key={key} data-template-node={node.templateNodeId} {...designAttrs} style={style}
+          data-template-line-height={node.style.lineHeight !== undefined ? 'true' : undefined}
+        >
           {node.edit && !design ? (
             <Editable target={toEditableTarget(node.edit)} html={node.html} />
           ) : (

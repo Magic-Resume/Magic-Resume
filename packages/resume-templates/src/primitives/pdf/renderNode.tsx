@@ -111,6 +111,7 @@ export function renderNode(node: ResolvedNode, ctx: PdfRenderContext): React.Rea
             fontFamily={ctx.fontFamily}
             fontSize={(style.fontSize as number) ?? DEFAULT_FONT_SIZE}
             color={(style.color as string) ?? '#000'}
+            lineHeight={style.lineHeight as number | undefined}
           />
         </View>
       );

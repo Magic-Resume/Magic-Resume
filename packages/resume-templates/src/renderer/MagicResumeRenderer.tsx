@@ -297,11 +297,16 @@ export const MagicResumeRenderer = React.memo(({ template, data, locale: request
           // 声明了原语树就走新路径。19 个旧模板都没有这个字段，因此一行不改地
           // 继续走下面的 legacy 注册表。
           if (component.tree) {
+            if (component.dataBinding.startsWith('sections.')) {
+              const items = getSectionData(data, component.dataBinding);
+              if (!Array.isArray(items) || items.length === 0) return null;
+            }
             const root = compileTreeComponent(
               component.tree,
               data as unknown as Record<string, unknown>,
               component.id,
               locale,
+              { designTokens, layout },
             );
             return root ? (
               <React.Fragment key={component.id}>{renderTreeNode(root)}</React.Fragment>
