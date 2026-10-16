@@ -1,7 +1,10 @@
 import type { MagicTemplateDSL } from '../types/magic-dsl';
 import type { TemplateDocument, TemplateNode } from './ast';
 
-export type TreeTemplateStyleContext = Pick<MagicTemplateDSL, 'designTokens' | 'layout'>;
+export type TreeTemplateStyleContext = Pick<
+  MagicTemplateDSL,
+  'designTokens' | 'layout'
+>;
 
 const cssPixels = (value: string): number | undefined => {
   const match = value.trim().match(/^(-?\d+(?:\.\d+)?)(px|pt|rem|em|mm)?$/);
@@ -16,40 +19,72 @@ export function resolveTreeTemplateStyles(
   { designTokens, layout }: TreeTemplateStyleContext,
 ): TemplateDocument {
   const variables: Record<string, string | number | undefined> = {};
-  const kebab = (name: string) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  const kebab = (name: string) =>
+    name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   for (const [name, value] of Object.entries(designTokens.colors)) {
     variables[`color-${kebab(name)}`] = value;
   }
-  for (const [name, value] of Object.entries(designTokens.typography.fontSize)) {
+  for (const [name, value] of Object.entries(
+    designTokens.typography.fontSize,
+  )) {
     variables[`font-size-${name}`] = cssPixels(value);
   }
   for (const [name, value] of Object.entries(designTokens.spacing)) {
     variables[`spacing-${name}`] = cssPixels(value);
   }
   variables['line-height'] = designTokens.typography.lineHeight ?? 1.5;
-  variables['letter-spacing'] = cssPixels(designTokens.typography.letterSpacing ?? '0');
+  variables['letter-spacing'] = cssPixels(
+    designTokens.typography.letterSpacing ?? '0',
+  );
   variables['title-divider-width'] = layout.showTitleDivider === false ? 0 : 1;
   variables['container-gap'] = cssPixels(layout.gap);
 
-  const resolveStyle = (style: Record<string, unknown>): Record<string, unknown> =>
-    Object.fromEntries(Object.entries(style).map(([property, value]) => {
-      const reference = typeof value === 'string' ? value.match(/^var\(--([\w-]+)\)$/) : null;
-      return [property, reference ? variables[reference[1]] ?? value : value];
-    }));
+  const resolveStyle = (
+    style: Record<string, unknown>,
+  ): Record<string, unknown> =>
+    Object.fromEntries(
+      Object.entries(style).map(([property, value]) => {
+        const reference =
+          typeof value === 'string' ? value.match(/^var\(--([\w-]+)\)$/) : null;
+        return [
+          property,
+          reference ? (variables[reference[1]] ?? value) : value,
+        ];
+      }),
+    );
 
   const visit = (node: TemplateNode): TemplateNode => ({
     ...node,
-    ...(node.style ? { style: node.style.map((style) => typeof style === 'string' ? style : resolveStyle(style)) } : {}),
-    ...(node.type === 'Box' ? {
-      children: node.children?.map(visit),
-      ...(node.separator ? { separator: visit(node.separator) } : {}),
-    } : {}),
-    ...(node.fallback && node.fallback !== 'drop' ? { fallback: visit(node.fallback) } : {}),
+    ...(node.style
+      ? {
+          style: node.style.map((style) =>
+            typeof style === 'string' ? style : resolveStyle(style),
+          ),
+        }
+      : {}),
+    ...(node.type === 'Box'
+      ? {
+          children: node.children?.map(visit),
+          ...(node.separator ? { separator: visit(node.separator) } : {}),
+        }
+      : {}),
+    ...(node.fallback && node.fallback !== 'drop'
+      ? { fallback: visit(node.fallback) }
+      : {}),
   });
 
   return {
     ...tree,
-    ...(tree.styles ? { styles: Object.fromEntries(Object.entries(tree.styles).map(([name, style]) => [name, resolveStyle(style)])) } : {}),
+    ...(tree.styles
+      ? {
+          styles: Object.fromEntries(
+            Object.entries(tree.styles).map(([name, style]) => [
+              name,
+              resolveStyle(style),
+            ]),
+          ),
+        }
+      : {}),
     root: visit(tree.root),
   };
 }
