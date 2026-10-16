@@ -12,11 +12,7 @@ import { compileTreeComponent } from './treeComponent';
 
 const resume: Resume = {
   ...defaultResume,
-  info: {
-    ...defaultResume.info,
-    fullName: '林知远',
-    headline: '前端开发工程师',
-  },
+  info: { ...defaultResume.info, fullName: '林知远', headline: '前端开发工程师' },
   template: 'classic',
   documentLanguage: 'zh',
 };
@@ -29,30 +25,10 @@ test('primitive styles resolve customized design tokens without mutating the sav
   template.layout.showTitleDivider = false;
   const tree: TemplateDocument = {
     version: 1,
-    styles: {
-      body: {
-        color: 'var(--color-primary)',
-        fontSize: 'var(--font-size-md)',
-        gap: 'var(--spacing-md)',
-        borderBottomWidth: 'var(--title-divider-width)',
-      },
-    },
-    root: {
-      id: 'body',
-      type: 'Box',
-      style: ['body'],
-      children: [
-        { id: 'name', type: 'Text', value: { read: 'info.fullName' } },
-      ],
-    },
+    styles: { body: { color: 'var(--color-primary)', fontSize: 'var(--font-size-md)', gap: 'var(--spacing-md)', borderBottomWidth: 'var(--title-divider-width)' } },
+    root: { id: 'body', type: 'Box', style: ['body'], children: [{ id: 'name', type: 'Text', value: { read: 'info.fullName' } }] },
   };
-  const root = compileTreeComponent(
-    tree,
-    resume as unknown as Record<string, unknown>,
-    'tokens',
-    'zh',
-    template,
-  );
+  const root = compileTreeComponent(tree, resume as unknown as Record<string, unknown>, 'tokens', 'zh', template);
   assert.ok(root);
   assert.equal(root.style.color, '#a12345');
   assert.equal(root.style.fontSize, 18);
@@ -64,54 +40,23 @@ test('primitive styles resolve customized design tokens without mutating the sav
 test('malformed saved styles cannot crash tree rendering when theme tokens are applied', () => {
   const tree = {
     version: 1,
-    root: {
-      id: 'name',
-      type: 'Text',
-      value: { read: 'info.fullName' },
-      style: { color: '#000' },
-    },
+    root: { id: 'name', type: 'Text', value: { read: 'info.fullName' }, style: { color: '#000' } },
   };
-  assert.doesNotThrow(() =>
-    compileTreeComponent(
-      tree,
-      {},
-      'invalid-styles',
-      'zh',
-      getTemplateById('classic'),
-    ),
-  );
+  assert.doesNotThrow(() => compileTreeComponent(tree, {}, 'invalid-styles', 'zh', getTemplateById('classic')));
 });
 
 test('the template title-icon setting does not affect contact icons or saved section choices', () => {
   const template = structuredClone(getTemplateById('classic'));
   template.layout.showTitleIcon = false;
-  const data = {
-    ...resume,
-    sectionOrder: [{ key: 'experience', label: '工作经历', icon: 'briefcase' }],
-  };
+  const data = { ...resume, sectionOrder: [{ key: 'experience', label: '工作经历', icon: 'briefcase' }] };
   const tree: TemplateDocument = {
     version: 1,
     root: {
-      id: 'section',
-      type: 'Box',
-      section: { sectionKey: 'experience', handle: true },
-      children: [
-        {
-          id: 'title',
-          type: 'Text',
-          role: 'sectionHeading',
-          value: 'Experience',
-        },
-      ],
+      id: 'section', type: 'Box', section: { sectionKey: 'experience', handle: true },
+      children: [{ id: 'title', type: 'Text', role: 'sectionHeading', value: 'Experience' }],
     },
   };
-  const root = compileTreeComponent(
-    tree,
-    data as unknown as Record<string, unknown>,
-    'icons',
-    'zh',
-    template,
-  );
+  const root = compileTreeComponent(tree, data as unknown as Record<string, unknown>, 'icons', 'zh', template);
   assert.ok(root?.type === 'Box');
   assert.equal(root.editor?.icon, undefined);
   assert.equal(data.sectionOrder[0].icon, 'briefcase');
@@ -120,36 +65,17 @@ test('the template title-icon setting does not affect contact icons or saved sec
 test('root info bindings preserve headline editing and never produce nested write paths', () => {
   const tree: TemplateDocument = {
     version: 1,
-    root: {
-      id: 'header',
-      type: 'Box',
-      children: [
-        { id: 'headline', type: 'Text', value: { read: 'info.headline' } },
-        {
-          id: 'nested-contact',
-          type: 'Text',
-          value: { read: 'info.customFields.0.value' },
-        },
-      ],
-    },
+    root: { id: 'header', type: 'Box', children: [
+      { id: 'headline', type: 'Text', value: { read: 'info.headline' } },
+      { id: 'nested-contact', type: 'Text', value: { read: 'info.customFields.0.value' } },
+    ] },
   };
-  const root = compileTreeComponent(
-    tree,
-    {
-      info: {
-        headline: '前端开发工程师',
-        customFields: [{ id: 'github', value: 'example.com' }],
-      },
-    },
-    'header',
-  );
+  const root = compileTreeComponent(tree, {
+    info: { headline: '前端开发工程师', customFields: [{ id: 'github', value: 'example.com' }] },
+  }, 'header');
   assert.ok(root?.type === 'Box');
-  const headline = root.children.find(
-    (node) => node.templateNodeId === 'headline',
-  );
-  const nested = root.children.find(
-    (node) => node.templateNodeId === 'nested-contact',
-  );
+  const headline = root.children.find((node) => node.templateNodeId === 'headline');
+  const nested = root.children.find((node) => node.templateNodeId === 'nested-contact');
   assert.ok(headline && headline.type === 'Text');
   assert.equal(headline.edit?.sectionKey, 'info');
   assert.equal(headline.edit?.fieldKey, 'headline');
@@ -160,15 +86,11 @@ test('root info bindings preserve headline editing and never produce nested writ
 test('a saved section icon does not duplicate explicitly declared sections in PDF', () => {
   const data = {
     ...resume,
-    sections: {
-      education: [{ id: 'edu', visible: true, school: 'UniqueSchoolEntry' }],
-    },
+    sections: { education: [{ id: 'edu', visible: true, school: 'UniqueSchoolEntry' }] },
     sectionOrder: [{ key: 'education', label: '教育经历', icon: 'briefcase' }],
   } as Resume;
   const template = getTemplateById('classic');
-  const html = renderToStaticMarkup(
-    <MagicResumeRenderer template={template} data={data} />,
-  );
+  const html = renderToStaticMarkup(<MagicResumeRenderer template={template} data={data} />);
   const pdf = renderToStaticMarkup(MagicResumePdfDocument({ template, data }));
   assert.equal(html.split('UniqueSchoolEntry').length - 1, 1);
   assert.equal(pdf.split('UniqueSchoolEntry').length - 1, 1);
