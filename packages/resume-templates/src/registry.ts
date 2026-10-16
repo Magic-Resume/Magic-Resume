@@ -3,6 +3,7 @@ import { azurillTemplate } from './config/azurill-template';
 import { bronzorTemplate } from './config/bronzor-template';
 import { chikoritaTemplate } from './config/chikorita-template';
 import { classicTemplate } from './config/classic-template';
+import { blueLineTemplate } from './config/blue-line-template';
 import { cleanMinimalTemplate } from './config/clean-minimal-template';
 import { compactCnPhotoTemplate } from './config/compact-cn-photo-template';
 import { dittoTemplate } from './config/ditto-template';
@@ -69,6 +70,7 @@ export const templateRegistry: Record<TemplateId, TemplateManifest> = {
   'serif-minimal': createManifest(serifMinimalTemplate),
   'slate-sidebar': createManifest(slateSidebarTemplate),
   'cn-formal-photo': createManifest(cnFormalPhotoTemplate),
+  'blue-line': createManifest(blueLineTemplate),
 };
 
 export const templateManifestList = Object.values(templateRegistry);

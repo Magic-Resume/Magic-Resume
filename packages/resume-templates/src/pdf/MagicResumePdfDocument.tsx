@@ -221,7 +221,7 @@ const sortComponents = (template: MagicTemplateDSL, data: Resume): ComponentDefi
   }
 
   for (const component of sections) {
-    if (!ordered.includes(component)) ordered.push(component);
+    if (!ordered.some((entry) => entry.id === component.id)) ordered.push(component);
   }
 
   return [...sidebar, ...headers, ...ordered];
@@ -253,6 +253,7 @@ const toPdfComponentStyle = (style?: ComponentStyle): Style => {
 
 interface RenderContext {
   data: Resume;
+  templateStyles: MagicTemplateDSL;
   colors: MagicTemplateDSL['designTokens']['colors'];
   typography: MagicTemplateDSL['designTokens']['typography'];
   spacing: MagicTemplateDSL['designTokens']['spacing'];
@@ -1097,11 +1098,13 @@ const ComponentBlock = ({ component, data, sidebar, context }: {
   // 这两处必须同时改：只改一边，就又造出了一对孪生实现——
   // `summary` / `awards` 在导出里消失，起因正是这种「本该一致的两处」漂了。
   if (component.tree) {
+    if (component.dataBinding.startsWith('sections.') && getSectionItems(data, component.dataBinding).length === 0) return null;
     const root = compileTreeComponent(
       component.tree,
       data as unknown as Record<string, unknown>,
       component.id,
       context.locale,
+      context.templateStyles,
     );
     if (!root) return null;
     return <>{renderTreeNode(root, { fontFamily: context.richTextFontFamily })}</>;
@@ -1155,6 +1158,7 @@ export const MagicResumePdfDocument = ({ data, template, locale: requestedLocale
   const sectionGap = cssSizeToPoints(template.layout.gap, cssSizeToPoints(spacing.lg, 12));
   const context: RenderContext = {
     data,
+    templateStyles: template,
     colors,
     typography,
     spacing,
