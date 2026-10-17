@@ -108,6 +108,8 @@ const SECTION_TITLES: Record<DocumentLanguage, Record<string, string>> = {
     experience: '工作经历',
     education: '教育经历',
     projects: '项目经历',
+    openSource: '开源贡献',
+    personalEvaluation: '个人评价',
     skills: '专业技能',
     languages: '语言能力',
     certificates: '证书资质',
@@ -120,6 +122,8 @@ const SECTION_TITLES: Record<DocumentLanguage, Record<string, string>> = {
     experience: 'Work Experience',
     education: 'Education',
     projects: 'Projects',
+    openSource: 'Open Source Contributions',
+    personalEvaluation: 'Self Assessment',
     skills: 'Skills',
     languages: 'Languages',
     certificates: 'Certifications',
@@ -132,6 +136,8 @@ const SECTION_TITLES: Record<DocumentLanguage, Record<string, string>> = {
     experience: '職務経歴',
     education: '学歴',
     projects: 'プロジェクト',
+    openSource: 'オープンソースへの貢献',
+    personalEvaluation: '自己評価',
     skills: 'スキル',
     languages: '語学力',
     certificates: '資格',
@@ -144,6 +150,8 @@ const SECTION_TITLES: Record<DocumentLanguage, Record<string, string>> = {
     experience: '경력',
     education: '학력',
     projects: '프로젝트',
+    openSource: '오픈 소스 기여',
+    personalEvaluation: '자기 평가',
     skills: '보유 기술',
     languages: '외국어',
     certificates: '자격증',
@@ -156,6 +164,8 @@ const SECTION_TITLES: Record<DocumentLanguage, Record<string, string>> = {
     experience: 'Expérience professionnelle',
     education: 'Formation',
     projects: 'Projets',
+    openSource: 'Contributions open source',
+    personalEvaluation: 'Autoévaluation',
     skills: 'Compétences',
     languages: 'Langues',
     certificates: 'Certifications',
@@ -178,7 +188,7 @@ export function isDefaultSectionLabel(key: string, label: string): boolean {
   return (
     !normalized ||
     normalized === key.toLowerCase() ||
-    normalized === `sections.${key}` ||
+    normalized === `sections.${key.toLowerCase()}` ||
     Object.values(SECTION_TITLES).some(
       (titles) => titles[key]?.toLowerCase() === normalized,
     ) ||

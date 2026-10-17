@@ -22,6 +22,7 @@ export const templateIds = [
   'serif-minimal',
   'slate-sidebar',
   'cn-formal-photo',
+  'blue-line',
 ] as const;
 
 export const templateSchema = z.enum(templateIds);
