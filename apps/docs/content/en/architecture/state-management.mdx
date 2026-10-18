@@ -1,11 +1,11 @@
 ---
 title: State management
-description: Zustand stores, Immer drafts, IndexedDB persistence, and how cloud sync ties in.
+description: "The app manages state with Zustand and Immer, persists it in IndexedDB, and triggers sync according to settings in cloud mode."
 ---
 
-State lives in **Zustand** stores under `apps/web/src/store/`. Every store uses the Immer middleware so reducers read like mutation. IndexedDB is the persistence layer (`MagicResumeDB` via `src/lib/api/IndexDBClient.ts`).
+State is managed by **Zustand** stores under `apps/web/src/store/`, with every store using Immer middleware so reducers read like mutation. IndexedDB is the persistence layer, accessing `MagicResumeDB` through `src/lib/api/IndexDBClient.ts`.
 
-## Stores
+## What stores are available?
 
 | Store | File | Responsibility |
 |---|---|---|
@@ -16,7 +16,7 @@ State lives in **Zustand** stores under `apps/web/src/store/`. Every store uses 
 | `useResumeOptimizerStore` | `useResumeOptimizerStore.ts` | State for the JD-optimize AI flow. |
 | `useMessageStore` | `useMessageStore.ts` | UI toast/notification queue. |
 
-## The big store: `useResumeStore`
+## How does `useResumeStore` manage resumes and sync state?
 
 This holds the active resume plus a `syncStatus` machine:
 
@@ -40,7 +40,7 @@ The store does not maintain a separate "dirty fields" map — the sync diff is c
 The cloud sync side-effect runs only when both `APP_MODE === 'cloud'` and the user opted in via Settings. Self-hosted users never trigger a network request from the store.
 </Info>
 
-## IndexedDB layer
+## How does the IndexedDB layer persist data?
 
 `src/lib/api/IndexDBClient.ts` is a thin wrapper around `idb-keyval`. Keys are namespaced per store (e.g. `resume:current`, `resume:history:<id>`).
 

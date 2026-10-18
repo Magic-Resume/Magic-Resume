@@ -1,11 +1,11 @@
 ---
 title: 工具参考
-description: "@magic-resume/mcp 暴露的每一个工具，它们做什么、什么时候用。"
+description: "MCP 工具支持读取简历和 Schema、预览校验 JSON Patch，并将通过校验的修改保存到 Core API。"
 ---
 
-所有简历 mutation 都是 JSON Patch（RFC 6902）—— 外科手术式编辑，绝不整片重写。AI 工具一般每会话调一次 `get_resume_schema`，每次 `update_resume_content` 之前先调 `preview_resume_patch` 校验，避免一次失败导致整轮重来。
+所有简历 mutation 都是 JSON Patch（RFC 6902），不做整份重写。AI 工具一般每会话调用一次 `get_resume_schema`，每次 `update_resume_content` 之前先调用 `preview_resume_patch` 校验，避免校验错误导致重试。
 
-## 读
+## 有哪些读取简历和 Schema 的工具？
 
 ### `list_resumes`
 
@@ -35,7 +35,7 @@ get_resume({ id?: string, title?: string }) → Resume
 
 **何时用：** 一个会话里第一次准备修改前。它直接决定模型是一次起草出好 patch，还是来回往返三次。
 
-## Patch
+## 怎么预览和应用简历 Patch？
 
 ### `preview_resume_patch`
 
@@ -63,7 +63,7 @@ update_resume_content({ resumeId, patch }) → Resume
 这是唯一会改数据的工具。如果模型说"重写"或"替换"一份简历，那也仍然是一个 patch —— 一般是在 section 根做一次 `replace`。没有 `set_resume_content` 这种接口。
 </Warning>
 
-## Patch 形状
+## JSON Patch 的格式是什么？
 
 Patch 遵循 [RFC 6902](https://www.rfc-editor.org/rfc/rfc6902)：
 

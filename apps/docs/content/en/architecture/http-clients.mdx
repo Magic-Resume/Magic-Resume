@@ -1,11 +1,11 @@
 ---
 title: HTTP clients
-description: One gateway origin, two Axios instances for call-site semantics, a shared auth interceptor, and centralized routes.
+description: "The frontend uses two Axios instances with a shared auth interceptor to access one gateway origin and keeps API routes centralized."
 ---
 
-The whole frontend talks to **one configured address** — the gateway. `apps/web/src/lib/api/httpClient.ts` exposes two Axios instances that both point at that single origin and share one auth interceptor. All network calls go through them — never `fetch` directly, never a fresh Axios instance per feature.
+The whole frontend talks to **one configured gateway address**, with all network calls going through the two Axios instances exposed by `apps/web/src/lib/api/httpClient.ts`. Both instances point at the same origin and share one auth interceptor, so do not call `fetch` directly or create a fresh Axios instance per feature.
 
-## One origin
+## Which backend address does the frontend use?
 
 ```ts
 // apps/web/src/lib/api/routes.ts
@@ -18,7 +18,7 @@ export const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3
 `API_ORIGIN` lives in the dependency-free `routes.ts` (not `httpClient.ts`) so both client and server can import it without pulling Axios in.
 </Note>
 
-## Two instances, same origin
+## How do the two HTTP client instances differ?
 
 ```ts
 import { httpClient } from '@/lib/api/httpClient'
@@ -34,7 +34,7 @@ httpClient.agent    // AI-style calls (interview, …)
 
 Both are `createClient(API_ORIGIN)` — **the same base URL**. The split is purely for **call-site semantics** (CRUD vs AI reads better than one client everywhere); it is *not* two different backends. The gateway decides where each `/api/...` path actually goes.
 
-## Auth interceptor
+## How does the auth interceptor handle tokens?
 
 `configureHttpClient(getter)` registers one request interceptor on both clients:
 
@@ -48,7 +48,7 @@ The interceptor calls `getAuthToken()` and, if a token comes back, sets `Authori
 Don't pass tokens manually in feature code. If you're writing `httpClient.api.get(url, { headers: { Authorization: ... } })`, the interceptor isn't wired in that context — fix the wiring, don't bypass it.
 </Warning>
 
-## Centralized routes
+## Where are API routes centralized?
 
 All paths live in `src/lib/api/routes.ts` and are all under the `/api/*` prefix (the gateway's namespace):
 
@@ -82,7 +82,7 @@ Rules:
 
 This is what makes a backend route rename a one-file change instead of a grep-and-pray.
 
-## Adding a new endpoint
+## How do I add a new endpoint?
 
 1. Add the path to the right map in `routes.ts`.
 2. Add a typed wrapper in `src/lib/api/<feature>.ts` returning a typed response.

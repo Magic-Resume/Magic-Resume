@@ -1,11 +1,11 @@
 ---
 title: Commands
-description: Every pnpm and turbo command worth remembering.
+description: "This page collects common whole-repo, single-workspace, and MCP CLI commands, with paths relative to the repo root."
 ---
 
-A reference of every command worth remembering. All paths are relative to the repo root.
+This page collects common whole-repo (Turbo), single-workspace (pnpm filter), and MCP CLI commands. All paths are relative to the repo root.
 
-## Whole-repo (Turbo)
+## How do I run whole-repo commands with Turbo?
 
 ```bash
 pnpm install      # install all deps, resolve workspace links
@@ -15,7 +15,7 @@ pnpm run lint     # turbo lint
 pnpm run test     # turbo test
 ```
 
-## Single workspace (pnpm filter)
+## How do I run single-workspace commands with pnpm filter?
 
 ```bash
 pnpm --filter @magic-resume/web dev
@@ -36,7 +36,7 @@ pnpm --filter @magic-resume/mcp test
 pnpm --filter @magic-resume/mcp lint            # tsc --noEmit
 ```
 
-## MCP CLI (after install)
+## What MCP CLI commands are available after installation?
 
 ```bash
 npx -y @magic-resume/mcp config set --api-url <url> --pat <token>
@@ -45,7 +45,7 @@ npx -y @magic-resume/mcp config clear
 npx -y @magic-resume/mcp mcp                    # boot stdio server
 ```
 
-## Useful one-offs
+## What one-off commands are useful?
 
 ```bash
 # Rebuild the JSON Schema artifact only
@@ -58,7 +58,7 @@ pnpm --filter @magic-resume/web analyze
 pnpm --filter @magic-resume/web build:prod
 ```
 
-## Husky and lint-staged
+## What checks do Husky and lint-staged run automatically?
 
 These run automatically on `git commit`:
 

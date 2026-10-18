@@ -1,11 +1,11 @@
 ---
 title: Monorepo layout
-description: Workspaces, package boundaries, and what is allowed to import what.
+description: "This page lists workspace responsibilities, package dependency boundaries, and how to use Turborepo and the workspace protocol."
 ---
 
-Magic Resume is a **pnpm + Turborepo** monorepo. Package manager is pinned to `pnpm@10.28.1` in the root `package.json` so CI and local installs stay aligned.
+Magic Resume is a **pnpm + Turborepo** monorepo. The root `package.json` pins the package manager to `pnpm@10.28.1` so CI and local installs stay aligned.
 
-## Workspaces
+## What workspaces are available?
 
 | Path | Package name | Role |
 |---|---|---|
@@ -18,7 +18,7 @@ Magic Resume is a **pnpm + Turborepo** monorepo. Package manager is pinned to `p
 | `packages/utils` | `@magic-resume/utils` | Cross-workspace utilities (cn, color, logger, time). |
 | `packages/tsconfig` | `@magic-resume/tsconfig` | Shared TypeScript configs. |
 
-## Package boundaries
+## What are the package dependency boundaries?
 
 These are enforced by code review rather than tooling. Keep them honest:
 
@@ -36,7 +36,7 @@ It's a plain Node ESM library + CLI. Adding a browser import will break `node --
 - `packages/mcp` depends on `packages/resume-schema` and `packages/resume-templates`. Not on `apps/*`.
 - New shared shapes belong in `packages/resume-schema`, not duplicated into `apps/web`.
 
-## Turborepo
+## How do I run commands with Turborepo?
 
 The root `package.json` runs everything through Turbo:
 
@@ -55,7 +55,7 @@ pnpm --filter @magic-resume/resume-schema test
 pnpm --filter @magic-resume/mcp build
 ```
 
-## Working with `workspace:*`
+## How does the `workspace:*` protocol work?
 
 All cross-workspace deps use the `workspace:*` protocol in `package.json`. This means **you must run `pnpm install` from the repo root**, not from inside a workspace, or pnpm can't resolve the link.
 

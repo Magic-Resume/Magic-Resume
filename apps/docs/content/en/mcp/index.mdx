@@ -1,13 +1,13 @@
 ---
 title: MCP server overview
-description: "@magic-resume/mcp is a native Model Context Protocol server that exposes your resumes to AI coding tools as typed, patch-editable resources."
+description: "@magic-resume/mcp gives AI coding tools structured resume access through schemas, JSON Patch validation, and atomic application."
 ---
 
-`@magic-resume/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes your resumes to AI coding tools — Claude Code, Cursor, Windsurf, anything that speaks MCP — as typed, patch-editable resources.
+`@magic-resume/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes your resumes to AI coding tools — Claude Code, Cursor, Windsurf, anything that speaks MCP — as typed, patch-editable resources. MCP gives the model structured access through schemas, sample data, JSON Patch validation, and atomic application.
 
 Why this exists: pasting a resume JSON blob into an AI prompt is unreliable. The model has to guess the schema, doesn't know which fields are required, and can't validate its own edits. MCP gives the model **structured access** — schema, sample data, JSON Patch validation, atomic apply.
 
-## Design principles
+## What design principles does the MCP server follow?
 
 - **Patch-based, not rewrite-based.** Every mutation is a JSON Patch (RFC 6902) applied with `fast-json-patch`. Models don't echo the full resume back to apply a one-line change.
 - **Schema-aware.** Patches are validated against `@magic-resume/resume-schema` *before* they touch storage. Invalid patches are rejected with a structured error the model can read.
@@ -20,7 +20,7 @@ Why this exists: pasting a resume JSON blob into an AI prompt is unreliable. The
   <Card title="Internals" href="/en/mcp/internals" />
 </CardGroup>
 
-## When to use it
+## When should I use MCP?
 
 | Task | Use MCP? |
 |---|---|

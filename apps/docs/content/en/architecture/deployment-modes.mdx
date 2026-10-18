@@ -1,9 +1,9 @@
 ---
 title: Deployment modes
-description: How NEXT_PUBLIC_APP_MODE flips the app between self-hosted and cloud.
+description: "NEXT_PUBLIC_APP_MODE selects self-hosted or cloud mode at build time, and switching modes requires a rebuild."
 ---
 
-The web app has two modes selected by `NEXT_PUBLIC_APP_MODE`. The choice is **baked at build time** — there is no runtime toggle.
+The web app selects self-hosted or cloud mode through `NEXT_PUBLIC_APP_MODE`. The mode is determined at build time, with no runtime toggle, so switching modes requires a rebuild.
 
 ![Self-hosted vs cloud mode](/images/deployment-modes.png)
 
@@ -16,7 +16,7 @@ The web app has two modes selected by `NEXT_PUBLIC_APP_MODE`. The choice is **ba
 | Sharing & version history | Local only | Server-backed |
 | Sync indicator | `local` | `saved` / `syncing` / `modified` / `error` |
 
-## Detection
+## How does the app detect its deployment mode?
 
 `apps/web/src/lib/config/app.ts` derives the mode at module load:
 
@@ -35,7 +35,7 @@ export default APP_MODE === 'cloud'
 
 Because Next.js middleware is bundled per build, this means **changing modes requires a rebuild**, not just an env-var swap on a running server.
 
-## Why a flag, not two apps?
+## Why use a flag instead of two apps?
 
 The same React tree, store, and routes run in both modes. Adding a second app would double the surface area without adding behavior. The flag pattern keeps:
 
@@ -49,7 +49,7 @@ The same React tree, store, and routes run in both modes. Adding a second app wo
 Do not add new runtime mode toggles or local/cloud branches without strong justification. The current split is intentionally narrow. See the [contributing guide](/en/development/contributing).
 </Warning>
 
-## Adding a new cloud-only feature
+## How do I add a cloud-only feature?
 
 1. Gate the UI on `APP_MODE === 'cloud'` (or a more specific capability flag if it applies to BYO-Clerk users only).
 2. Put network calls behind `httpClient.api` so the auth interceptor handles tokens.

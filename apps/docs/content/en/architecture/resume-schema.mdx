@@ -1,13 +1,13 @@
 ---
 title: Resume schema
-description: The Zod-typed source of truth for what a resume is.
+description: "@magic-resume/resume-schema defines the shared resume data shape with Zod for the web app, MCP, templates, and AI tools."
 ---
 
-`@magic-resume/resume-schema` is the single source of truth for the resume data shape. The web app, the MCP server, every template, and every AI tool all conform to it. If a field isn't in the schema, it doesn't exist.
+`@magic-resume/resume-schema` is the single source of truth for the resume data shape. The web app, MCP server, every template, and every AI tool all conform to this schema. If a field is not in the schema, it does not exist.
 
 ![One schema, validated everywhere](/images/resume-schema.png)
 
-## Exports
+## What does the resume schema export?
 
 ```ts
 import {
@@ -23,7 +23,7 @@ import {
 
 All sub-schemas (`basicsSchema`, `experienceSchema`, etc.) are also exported individually so callers can validate one section in isolation.
 
-## Build output
+## What does the build produce?
 
 The build step does **two** things:
 
@@ -32,7 +32,7 @@ The build step does **two** things:
 
 `dist/schema.json` is what the MCP server serves as a resource, so AI tools can introspect the resume shape without a runtime call.
 
-## Patch flow
+## How are patches validated and written?
 
 Mutations are JSON Patch (RFC 6902) operations. The roundtrip:
 
@@ -50,7 +50,7 @@ This applies to **both** the web editor and MCP tools — the editor produces pa
 The MCP server has `preview_resume_patch` for exactly this validation loop without mutating state. Use it from AI tools before applying anything destructive.
 </Info>
 
-## Adding a new field
+## How do I add a new field?
 
 1. Add it to the right sub-schema in `packages/resume-schema/src/`.
 2. Update `defaultResume` and `sampleResume` if it's required.
@@ -58,7 +58,7 @@ The MCP server has `preview_resume_patch` for exactly this validation loop witho
 4. Update consuming templates in `packages/resume-templates` and the editor form in `apps/web/src/components/editor/`.
 5. If the field affects AI editing, add guidance to `get_resume_editing_guide` in `packages/mcp/src/resume-tools.ts`.
 
-## Adding a new template ID
+## How do I add a new template ID?
 
 Template IDs are part of the schema (`templateSchema` is a Zod enum over `templateIds`). When you add a new one, three things must stay in lockstep:
 

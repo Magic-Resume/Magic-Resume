@@ -1,7 +1,9 @@
 ---
 title: Cloud Mode
-description: How cloud mode wires Clerk, the Core API, and the agent backend into Magic Resume.
+description: "Cloud mode enables Clerk authentication, Core API resume sync, and agent-service AI capabilities, with the backend deployed separately."
 ---
+
+Cloud mode enables Clerk authentication, resume sync through the Core API, and agent-service chat, interview, translation, JD optimization, and PDF parsing. The backend is deployed separately, and the frontend connects to its gateway through `NEXT_PUBLIC_API_URL`.
 
 Cloud mode turns on three things that are off in self-hosted:
 
@@ -9,7 +11,7 @@ Cloud mode turns on three things that are off in self-hosted:
 2. **Cloud sync** — resumes round-trip through a NestJS **Core API**, with version history and resume sharing.
 3. **agent-service** (TypeScript, backend-side) — chat, interview, translation, JD-optimize, PDF parse.
 
-## How mode detection works
+## How does the app detect cloud mode?
 
 `apps/web/src/lib/config/app.ts` resolves the mode:
 
@@ -28,7 +30,7 @@ export const APP_MODE =
 If you set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` but forget `NEXT_PUBLIC_API_URL`, the app will still boot in cloud mode and every authenticated request will 404. Set both, or neither.
 </Warning>
 
-## Environment variables
+## What environment variables does cloud mode need?
 
 | Variable | Required (cloud) | Purpose |
 |---|---|---|
@@ -37,11 +39,11 @@ If you set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` but forget `NEXT_PUBLIC_API_URL`,
 | `CLERK_SECRET_KEY` | yes | Server-side Clerk key. |
 | `NEXT_PUBLIC_API_URL` | yes | The **gateway** origin — one URL for the whole backend (dev default `http://localhost:3110`). The gateway routes `/api/*` to the Core API / agent by path prefix. |
 
-## Backend services
+## How does cloud mode connect to backend services?
 
 The backend (Core API + agent) is deployed **separately** from this monorepo, fronted by a single **gateway**. For local cloud-mode development, run the backend and point `NEXT_PUBLIC_API_URL` at its gateway (dev default `http://localhost:3110`) — the frontend only ever needs that one URL. If you only want to develop the frontend, self-hosted mode is faster.
 
-## Auth flow
+## How are cloud requests authenticated?
 
 - Clerk issues a JWT on sign-in.
 - `apps/web/src/lib/api/httpClient.ts` attaches that JWT as a `Bearer` token via an Axios request interceptor (`configureHttpClient`).

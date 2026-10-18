@@ -1,11 +1,11 @@
 ---
 title: Tool reference
-description: Every MCP tool exposed by @magic-resume/mcp, what it does, and when to use it.
+description: "MCP tools read resumes and schemas, preview and validate JSON Patch operations, and save validated edits to the Core API."
 ---
 
-All resume mutations are JSON Patch (RFC 6902) — surgical edits, never full rewrites. AI tools should typically `get_resume_schema` once per session, then `preview_resume_patch` before each `update_resume_content` to catch validation errors before they cost a retry.
+All resume mutations use JSON Patch (RFC 6902), never full rewrites. AI tools should typically call `get_resume_schema` once per session, then `preview_resume_patch` before each `update_resume_content` to catch validation errors before a retry.
 
-## Read
+## What tools read resumes and schemas?
 
 ### `list_resumes`
 
@@ -35,7 +35,7 @@ Returns a natural-language guide describing how to construct valid patches — c
 
 **Use when:** before the first mutation in a session. This is the difference between a model that drafts good patches and one that round-trips three times.
 
-## Patch
+## How do I preview and apply resume patches?
 
 ### `preview_resume_patch`
 
@@ -63,7 +63,7 @@ Applies the patch, validates it against the schema, and persists to the Core API
 This is the only mutating tool. If a model asks to "rewrite" or "replace" a resume, that's still a patch — typically a `replace` op on the section root. There is no `set_resume_content` endpoint.
 </Warning>
 
-## Patch shape
+## What is the JSON Patch format?
 
 Patches follow [RFC 6902](https://www.rfc-editor.org/rfc/rfc6902):
 

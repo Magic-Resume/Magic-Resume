@@ -1,11 +1,13 @@
 ---
 title: Local development
-description: Day-to-day development workflow for the Magic Resume monorepo.
+description: "This page covers daily development after installing dependencies, including editor setup, cross-workspace hot reload, checks, and branch conventions."
 ---
 
-Day-to-day workflow once you have the repo cloned and `pnpm install` done. If you don't yet, start at [Self-Hosted](/en/getting-started/self-hosted).
+After cloning the Magic Resume repo and running `pnpm install`, run `pnpm run dev` from the repo root to start each workspace’s `dev` script in parallel through Turbo. Use `pnpm run lint` and `pnpm run test` for the full quality checks.
 
-## Repo at a glance
+If you have not set up the repo yet, start at [Self-Hosted](/en/getting-started/self-hosted).
+
+## How is the repository organized?
 
 ```
 Magic-Resume/
@@ -25,7 +27,7 @@ Magic-Resume/
 └── CLAUDE.md        # short-form context for AI coding agents
 ```
 
-## Editor setup
+## How do I set up my editor?
 
 The repo is TypeScript end-to-end. The recommended editor setup:
 
@@ -34,7 +36,7 @@ The repo is TypeScript end-to-end. The recommended editor setup:
 
 `pnpm-workspace.yaml` and `packages/tsconfig` mean type-checking works across workspaces with no extra config. If your editor doesn't find a type, restart its TS server.
 
-## Hot reload across workspaces
+## How does hot reload work across workspaces?
 
 `pnpm run dev` from the repo root runs every workspace's `dev` script in parallel through Turbo. Most workspaces are watch-mode:
 
@@ -52,7 +54,7 @@ So a change in `packages/resume-schema/src/index.ts` triggers a rebuild that the
 The web app supports Turbopack with `pnpm --filter @magic-resume/web dev:turbo`. It's faster but occasionally lags behind a Next.js minor — fall back to `dev` if you hit a Turbopack-specific bug.
 </Info>
 
-## Lint and test before pushing
+## How do I run lint and tests before committing?
 
 `lint-staged` (configured in the root `package.json`) runs on staged files via Husky, but the full sweep is:
 
@@ -69,6 +71,6 @@ pnpm --filter @magic-resume/web i18n:check
 
 This validates that every new translation key is present in every locale. Adding a key in `en.json` without adding it in `zh-CN.json` will fail the pre-commit hook.
 
-## Branch hygiene
+## What are the branch and commit conventions?
 
 The default branch is `master`. Feature branches use `<type>/<short-name>` (e.g. `feat/turborepo-mcp-migration-wip`). Commits follow conventional-commit style — see `git log` for examples.

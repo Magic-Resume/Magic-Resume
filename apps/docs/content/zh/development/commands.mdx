@@ -1,11 +1,11 @@
 ---
 title: 命令速查
-description: 值得记住的每一条 pnpm 与 turbo 命令。
+description: "本页汇总全仓、单 workspace 和 MCP CLI 的常用命令，路径均相对仓库根目录。"
 ---
 
-值得记住的所有命令。路径都相对仓库根目录。
+本页汇总全仓（Turbo）、单 workspace（pnpm filter）和 MCP CLI 的常用命令。路径都相对仓库根目录。
 
-## 全仓（Turbo）
+## 怎么运行全仓命令（Turbo）？
 
 ```bash
 pnpm install      # 装全部依赖，解析 workspace link
@@ -15,7 +15,7 @@ pnpm run lint     # turbo lint
 pnpm run test     # turbo test
 ```
 
-## 单 workspace（pnpm filter）
+## 怎么运行单个 workspace 的命令（pnpm filter）？
 
 ```bash
 pnpm --filter @magic-resume/web dev
@@ -36,7 +36,7 @@ pnpm --filter @magic-resume/mcp test
 pnpm --filter @magic-resume/mcp lint            # tsc --noEmit
 ```
 
-## MCP CLI（装好之后）
+## 安装后有哪些 MCP CLI 命令？
 
 ```bash
 npx -y @magic-resume/mcp config set --api-url <url> --pat <token>
@@ -45,7 +45,7 @@ npx -y @magic-resume/mcp config clear
 npx -y @magic-resume/mcp mcp                    # 启动 stdio 服务器
 ```
 
-## 偶尔会用的
+## 有哪些偶尔会用的命令？
 
 ```bash
 # 只重新生成 JSON Schema 产物
@@ -58,7 +58,7 @@ pnpm --filter @magic-resume/web analyze
 pnpm --filter @magic-resume/web build:prod
 ```
 
-## Husky 与 lint-staged
+## Husky 与 lint-staged 会自动运行哪些检查？
 
 这些在 `git commit` 时自动跑：
 

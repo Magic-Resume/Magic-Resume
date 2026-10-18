@@ -1,11 +1,11 @@
 ---
 title: 状态管理
-description: Zustand store、Immer draft、IndexedDB 持久化，以及云端同步是如何接进来的。
+description: "应用使用 Zustand 和 Immer 管理状态、IndexedDB 持久化，并在云端模式下按设置触发同步。"
 ---
 
-状态住在 `apps/web/src/store/` 里的 **Zustand** store 里。每个 store 都用 Immer middleware，写 reducer 时像直接 mutate 一样。IndexedDB 是持久化层（通过 `src/lib/api/IndexDBClient.ts` 访问 `MagicResumeDB`）。
+状态由 `apps/web/src/store/` 里的 **Zustand** store 管理，每个 store 都使用 Immer middleware，让 reducer 可以按直接修改数据的方式编写。IndexedDB 是持久化层，通过 `src/lib/api/IndexDBClient.ts` 访问 `MagicResumeDB`。
 
-## Store 列表
+## 有哪些 store？
 
 | Store | 文件 | 负责什么 |
 |---|---|---|
@@ -16,7 +16,7 @@ description: Zustand store、Immer draft、IndexedDB 持久化，以及云端同
 | `useResumeOptimizerStore` | `useResumeOptimizerStore.ts` | JD 优化 AI 流程的状态。 |
 | `useMessageStore` | `useMessageStore.ts` | UI toast / 通知队列。 |
 
-## 主角：`useResumeStore`
+## `useResumeStore` 如何管理简历和同步状态？
 
 它持有当前简历，并维护一个 `syncStatus` 状态机：
 
@@ -40,7 +40,7 @@ Store 不维护单独的"脏字段"map —— 同步的 diff 在 push 时计算�
 云端同步这条副作用只有同时满足 `APP_MODE === 'cloud'` 和用户在 Settings 里手动打开同步时才会触发。自托管用户永远不会因 store 操作发起网络请求。
 </Info>
 
-## IndexedDB 层
+## IndexedDB 层如何持久化数据？
 
 `src/lib/api/IndexDBClient.ts` 是 `idb-keyval` 上的薄包装。Key 按 store 命名（如 `resume:current`、`resume:history:<id>`）。
 
