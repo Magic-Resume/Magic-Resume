@@ -34,7 +34,7 @@
 
 <br/>
 
-**Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 19 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
+**Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
 
 It pairs a real-time visual editor with multi-model AI — and goes one step further with a native **MCP server** that lets AI coding tools (Claude Code, Cursor, Windsurf) read and safely patch your resumes without ever guessing the data shape.
 
@@ -51,7 +51,7 @@ Same features either way. The difference is where your data lives and who suppli
 | Version history | Local snapshots | Kept in the cloud, restorable |
 | AI | Bring your own API key | Built in, works out of the box |
 | Backend | No backend or database needed | Hosted for you |
-| Templates | 19, identical | 19, identical |
+| Templates | 20, identical | 20, identical |
 
 > [!NOTE]
 > The self-hosted build runs entirely in your browser; resume data never leaves your machine. The cloud build syncs across devices by default, with encrypted transport and storage, and a full export available at any time.
@@ -63,7 +63,7 @@ Same features either way. The difference is where your data lives and who suppli
 **Build — visual editing that just works**
 
 - **Real-time preview** — see every change the instant you type.
-- **19 professional templates** — ATS-friendly, with full color, font, and layout control.
+- **20 professional templates** — ATS-friendly, with full color, font, and layout control.
 - **Deep customization** — 22+ font styles, spacing, and layout controls.
 - **Version history** — snapshot and restore any previous version.
 - **Sharing** — share via a unique link with Viewer / Commenter / Editor permissions.
@@ -94,9 +94,9 @@ Same features either way. The difference is where your data lives and who suppli
 
 ## Templates
 
-Nineteen hand-crafted, ATS-friendly templates, each fully customizable (color, font, spacing, layout):
+Twenty hand-crafted, ATS-friendly templates, each fully customizable (color, font, spacing, layout):
 
-`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo`
+`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo` · `blue-line`
 
 ---
 

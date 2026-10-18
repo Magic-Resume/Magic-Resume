@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "almond",
   "name": "Magic Resume",
-  "description": "Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one. MIT-licensed core, 19 templates, six modes, cloud sync. This site is its user guide and developer handbook.",
+  "description": "Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one. MIT-licensed core, 20 templates, six modes, cloud sync. This site is its user guide and developer handbook.",
   "colors": {
     "primary": "#0284c7",
     "light": "#38bdf8"
