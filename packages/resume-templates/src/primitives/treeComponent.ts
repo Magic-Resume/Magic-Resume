@@ -3,6 +3,7 @@ import type { TemplateDocument } from './ast';
 import { compile } from './compile';
 import type { ResolvedNode } from './ir';
 import { validateTemplate } from './validate';
+import { resolveTreeTemplateStyles, type TreeTemplateStyleContext } from './templateStyles';
 
 /**
  * 新旧两条路径的接缝。**两个渲染器共用这一个入口。**
@@ -24,6 +25,7 @@ export function compileTreeComponent(
   resume: Record<string, unknown>,
   componentId: string,
   locale?: string,
+  templateStyles?: TreeTemplateStyleContext,
 ): ResolvedNode | undefined {
   const check = validateTemplate(tree);
   if (!check.ok) {
@@ -36,7 +38,14 @@ export function compileTreeComponent(
     return undefined;
   }
 
-  const { root, diagnostics } = compile(tree as TemplateDocument, resume);
+  let document = tree as TemplateDocument;
+  try {
+    if (templateStyles) document = resolveTreeTemplateStyles(document, templateStyles);
+  } catch {
+    if (isDev) console.warn(`[resume-templates] 组件 "${componentId}" 的主题样式无法解析，已跳过。`);
+    return undefined;
+  }
+  const { root, diagnostics } = compile(document, resume);
   if (isDev) {
     for (const d of diagnostics) {
       // warn 里最值得看的是「条目缺 id → 这个字段不可编辑」——
@@ -44,5 +53,15 @@ export function compileTreeComponent(
       console.warn(`[resume-templates] ${componentId}: ${d.message}`);
     }
   }
-  return root ? localizeDocumentTree(root, resume, locale) : undefined;
+  if (!root) return undefined;
+  const localized = localizeDocumentTree(root, resume, locale);
+  if (templateStyles?.layout.showTitleIcon !== false) return localized;
+  const withoutTitleIcons = (node: ResolvedNode): ResolvedNode => node.type === 'Box'
+    ? {
+        ...node,
+        ...(node.editor ? { editor: { ...node.editor, icon: undefined } } : {}),
+        children: node.children.map(withoutTitleIcons),
+      }
+    : node;
+  return withoutTitleIcons(localized);
 }
