@@ -18,7 +18,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import ErrorSurface from '@/components/shared/ErrorSurface';
+import ResumeMissing, { useResumeMissing } from './ResumeMissing';
 import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
 import {
   DndContext,
@@ -97,7 +97,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const [editingSection, setEditingSection] = useState<{ key: string; label: string; icon?: string } | null>(null);
   const [deletingSection, setDeletingSection] = useState<{ key: string; label: string } | null>(null);
   const [currentTemplateId, setCurrentTemplateId] = useState(activeResume?.template || 'classic');
-  const [resumeNotFound, setResumeNotFound] = useState(false);
+  const resumeNotFound = useResumeMissing(id);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const openJsonModal = () => router.push(`/dashboard/edit/${id}/json`);
@@ -202,10 +202,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     const setupEditor = async () => {
       if (!isStoreLoading) {
         const resume = resumes.find(r => r.id === id);
-        if (!resume && resumes.length > 0) {
-          setResumeNotFound(true);
-        } else if (resume) {
-          setResumeNotFound(false);
+        if (resume) {
           router.prefetch(`/dashboard/edit/${id}/ai-lab`);
           router.prefetch(`/dashboard/edit/${id}/history`);
           router.prefetch(`/dashboard/edit/${id}/json`);
@@ -400,20 +397,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   }
 
   if (resumeNotFound) {
-    // 和 404 同一套：东西不在，系统没坏。ID 已经在地址栏里，正文不再念一遍。
-    return (
-      <ErrorSurface
-        variant="missing"
-        fill="screen"
-        title={t('editPage.errors.resumeNotFound')}
-        note={t('editPage.errors.resumeNotFoundDescription')}
-        primary={{ label: t('errorPage.actions.backToResumes'), href: '/dashboard' }}
-        secondary={{
-          label: t('editPage.errors.goBack'),
-          onClick: () => window.history.back(),
-        }}
-      />
-    );
+    return <ResumeMissing />;
   }
 
   if (isStoreLoading || !activeResume || !info || !sectionItems || !sectionOrder) {

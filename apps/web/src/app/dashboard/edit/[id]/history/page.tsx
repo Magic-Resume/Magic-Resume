@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { useResumeDocumentStore } from '@/store/resume/document';
+import ResumeMissing, { useResumeMissing } from '@/app/dashboard/edit/_components/ResumeMissing';
 import { useResumeVersionsStore } from '@/store/resume/versions';
 import VersionHistoryDialog from '@/app/dashboard/edit/_components/modals/VersionHistoryDialog';
 import { useEffect, useState, useRef } from 'react';
@@ -12,6 +13,7 @@ export default function HistoryModalPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const missing = useResumeMissing(id);
   const cloudSync = useSettingStore((state) => state.cloudSync);
   const { activeResume, loadResumeForEdit } = useResumeDocumentStore();
   const { refreshCloudVersions, restoreVersion, deleteVersion } =
@@ -53,6 +55,7 @@ export default function HistoryModalPage() {
     handleOpenChange(false);
   };
 
+  if (missing) return <ResumeMissing />;
   if (!activeResume) return null;
 
   return (

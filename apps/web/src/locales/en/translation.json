@@ -1004,14 +1004,12 @@
       "post": "Post"
     },
     "error": {
-      "resumeNotFound": "This resume does not exist, or public access is turned off.",
-      "redirectingPre": "Redirecting to home in ",
-      "redirectingPost": " seconds…",
-      "returnNow": "Return now",
-      "failedToLoad": "The resume could not be loaded. Check the link or your network connection."
+      "missingTitle": "This share link isn't available",
+      "missingNote": "The resume may have been deleted, or its owner turned off public access. Ask the person who shared it for a new link.",
+      "failedTitle": "The resume didn't load",
+      "failedNote": "Your connection may be unstable. Trying again usually helps."
     },
     "notifications": {
-      "resumeNotFound": "This resume does not exist or is not public.",
       "syncing": "The resume is syncing to the cloud. Please wait.",
       "loginToComment": "Sign in to leave a comment",
       "commentAdded": "Comment added",
