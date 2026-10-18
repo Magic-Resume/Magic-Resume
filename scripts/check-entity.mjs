@@ -26,10 +26,27 @@ const surfaces = [
   { file: 'apps/docs/content/zh/guide/index.mdx', text: read('apps/docs/content/zh/guide/index.mdx'), expected: ENTITY.zh.short, form: 'zh.short' },
 ];
 
+// D1 (W2): the neutral "not the same project" statement, also word for word.
+const faq = (locale) => JSON.parse(read(`apps/landing/src/i18n/${locale}.json`)).faq.items.map((item) => item.a).join('\n');
+surfaces.push(
+  { file: 'README.md', text: read('README.md'), expected: ENTITY.en.disambiguation, form: 'en.disambiguation' },
+  { file: 'README.zh-CN.md', text: read('README.zh-CN.md'), expected: ENTITY.zh.disambiguation, form: 'zh.disambiguation' },
+  { file: 'apps/landing/src/i18n/en.json (faq)', text: faq('en'), expected: ENTITY.en.disambiguation, form: 'en.disambiguation' },
+  { file: 'apps/landing/src/i18n/zh.json (faq)', text: faq('zh'), expected: ENTITY.zh.disambiguation, form: 'zh.disambiguation' },
+  { file: 'apps/docs/content/en/guide/index.mdx', text: read('apps/docs/content/en/guide/index.mdx'), expected: ENTITY.en.disambiguation, form: 'en.disambiguation' },
+  { file: 'apps/docs/content/zh/guide/index.mdx', text: read('apps/docs/content/zh/guide/index.mdx'), expected: ENTITY.zh.disambiguation, form: 'zh.disambiguation' },
+);
+
+// The docs site's publisher entity must be the landing's, or engines see two organizations.
+const ORGANIZATION_ID = read('apps/landing/src/consts.ts').match(/ORGANIZATION_ID = '([^']+)'/)?.[1];
+const docsOrganization = JSON.parse(read('apps/docs/content/docs.json')).seo?.organization?.id;
+
 const violations = [];
 for (const { file, text, expected, form } of surfaces) {
   if (!text.includes(expected)) violations.push(`${file}: does not contain ENTITY.${form} word for word`);
 }
+if (!ORGANIZATION_ID || docsOrganization !== ORGANIZATION_ID)
+  violations.push(`apps/docs/content/docs.json: seo.organization.id must equal ORGANIZATION_ID in apps/landing/src/consts.ts (${ORGANIZATION_ID})`);
 
 // The definition makes a countable claim; keep it true as templates come and go.
 const schema = read('packages/resume-schema/src/index.ts');

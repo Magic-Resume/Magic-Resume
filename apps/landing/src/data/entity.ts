@@ -20,8 +20,9 @@ export const ENTITY = {
     long:
       'Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one. MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.',
     /**
-     * D1 in Magic-Core docs/specs/geo-visibility/spec.md. Not rendered anywhere
-     * yet: it ships with W2, after the GEO platform has three baseline
+     * D1 in Magic-Core docs/specs/geo-visibility/spec.md (W2): the landing FAQ
+     * (and so FAQPage and llms.txt), both READMEs and the docs home carry it
+     * word for word. Shipped only after the GEO platform had three baseline
      * measurements, so its effect on entity accuracy can be measured.
      */
     disambiguation:

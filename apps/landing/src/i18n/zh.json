@@ -178,6 +178,10 @@
       {
         "q": "页面中的预览会调用 AI 吗？",
         "a": "此处使用示例数据演示交互，帮助了解工作台的使用方式；点击「开始制作」即可进入应用编辑自己的简历"
+      },
+      {
+        "q": "Magic Resume 和魔方简历（magicv.art）是同一个项目吗？",
+        "a": "不是。Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。"
       }
     ]
   },

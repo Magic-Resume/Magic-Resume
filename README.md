@@ -36,6 +36,8 @@
 
 **Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
 
+> Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams.
+
 It pairs a real-time visual editor with multi-model AI — and goes one step further with a native **MCP server** that lets AI coding tools (Claude Code, Cursor, Windsurf) read and safely patch your resumes without ever guessing the data shape.
 
 ## Self-hosted vs Cloud

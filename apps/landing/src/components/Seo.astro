@@ -2,13 +2,16 @@
 /**
  * JSON-LD for the landing page.
  *
- * Two graphs, both built from copy that already exists on the page:
+ * Built from copy that already exists on the page:
  *
  *   FAQPage           — mirrors the visible FAQ accordion verbatim. Google
  *                       requires the marked-up answer to be the one the user
  *                       actually sees, so this reads from the same `copy.faq`
  *                       the component renders. Never hand-write a second copy.
  *   SoftwareApplication — what the product is, in the page's own language.
+ *   Organization      — the publisher, under the shared ORGANIZATION_ID that
+ *                       content pages and the docs site use as well.
+ *   SoftwareSourceCode — the MIT-licensed repository behind the product.
  *
  * Deliberately absent:
  *
@@ -20,7 +23,7 @@
 import type { Copy, Locale } from '@/i18n/ui';
 import { pricingSchema, type PricingResult } from '@/data/pricing';
 import { loadSoftwareVersion } from '@/data/software-version';
-import { GITHUB } from '@/consts';
+import { GITHUB, ORGANIZATION_ID } from '@/consts';
 
 interface Props {
   copy: Copy;
@@ -47,9 +50,22 @@ const faqSchema = {
   })),
 };
 
+const softwareId = `${siteUrl.replace(/\/$/, '')}/#software`;
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': ORGANIZATION_ID,
+  name: 'Magic Resume',
+  url: siteUrl,
+  logo: new URL('/magic-resume-mark.png', siteUrl).href,
+  sameAs: [GITHUB.repo],
+};
+
 const appSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
+  '@id': softwareId,
   ...pricingSchema(pricing),
   ...(softwareVersion ? { softwareVersion } : {}),
   name: 'Magic Resume',
@@ -59,13 +75,25 @@ const appSchema = {
   description: copy.meta.description,
   inLanguage,
   image: ogImage,
-  author: { '@type': 'Organization', name: 'Magic Resume', url: siteUrl },
+  author: { '@id': ORGANIZATION_ID },
+  publisher: { '@id': ORGANIZATION_ID },
   license: 'https://opensource.org/licenses/MIT',
   // First commit. No `dateModified`: it would have to be the build timestamp,
   // which claims the content changed every time we redeploy — a freshness
   // signal we would be manufacturing rather than reporting.
   datePublished: '2025-06-05',
   sameAs: [GITHUB.repo],
+};
+
+const sourceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareSourceCode',
+  name: 'Magic Resume',
+  codeRepository: GITHUB.repo,
+  license: 'https://opensource.org/licenses/MIT',
+  programmingLanguage: 'TypeScript',
+  author: { '@id': ORGANIZATION_ID },
+  targetProduct: { '@id': softwareId },
 };
 
 /**
@@ -78,4 +106,6 @@ const serialize = (data: unknown) =>
 ---
 
 <script type="application/ld+json" is:inline set:html={serialize(faqSchema)} />
+<script type="application/ld+json" is:inline set:html={serialize(organizationSchema)} />
 <script type="application/ld+json" is:inline set:html={serialize(appSchema)} />
+<script type="application/ld+json" is:inline set:html={serialize(sourceSchema)} />

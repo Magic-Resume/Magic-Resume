@@ -179,6 +179,10 @@
       {
         "q": "Do the previews on this page use real AI?",
         "a": "The previews are interactive examples using sample data that show how the workbench works. Select Start creating to work on your own resume in the app."
+      },
+      {
+        "q": "Is Magic Resume the same project as the Magic Resume at magicv.art?",
+        "a": "No. Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams."
       }
     ]
   },

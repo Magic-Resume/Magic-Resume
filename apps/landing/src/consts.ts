@@ -59,6 +59,13 @@ export function dashboardLink(placement: CtaPlacement, locale: Locale): string {
   return `${APP_LINKS.dashboard}?${params.toString()}`;
 }
 
+/**
+ * The one @id for Magic Resume as an organization. Landing, content pages and
+ * the docs site (docs.json `seo.organization.id`) all point at it, so engines
+ * merge them into one entity; the GEO site check asserts it too.
+ */
+export const ORGANIZATION_ID = 'https://www.magic-resume.cn/#organization';
+
 export const GITHUB = {
   repo: 'https://github.com/Magic-Resume/Magic-Resume',
   issues: 'https://github.com/Magic-Resume/Magic-Resume/issues',

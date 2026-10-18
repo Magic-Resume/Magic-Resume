@@ -36,6 +36,8 @@
 
 **Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。** MIT 协议内核，20 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
 
+> Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。
+
 它把实时可视化编辑器与多模型 AI 结合在一起，并更进一步 —— 内置原生 **MCP 服务**，让 AI 编程工具（Claude Code、Cursor、Windsurf）无需猜测数据结构即可安全读取与修改你的简历。
 
 ## 自部署版 vs 云端版

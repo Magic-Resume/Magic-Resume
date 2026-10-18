@@ -12,6 +12,15 @@
     "dark": "/logo/mark.png"
   },
   "favicon": "/logo/mark.png",
+  "seo": {
+    "organization": {
+      "id": "https://www.magic-resume.cn/#organization",
+      "name": "Magic Resume",
+      "url": "https://www.magic-resume.cn/",
+      "logo": "https://www.magic-resume.cn/magic-resume-mark.png",
+      "sameAs": ["https://github.com/Magic-Resume/Magic-Resume"]
+    }
+  },
   "navbar": {
     "primary": {
       "type": "github",

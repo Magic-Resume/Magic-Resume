@@ -1,6 +1,7 @@
 ---
 import { articleAuthorSchema, getAuthor } from '@/data/authors.mjs';
 import { DEFAULT_LOCALE } from '@/i18n/ui';
+import { ORGANIZATION_ID } from '@/consts';
 
 interface Alternate {
   lang: string;
@@ -41,7 +42,7 @@ const inLanguage = locale === 'zh' ? 'zh-CN' : 'en';
 const graph: Record<string, unknown>[] = [
   {
     '@type': 'Organization',
-    '@id': 'https://www.magic-resume.cn/#organization',
+    '@id': ORGANIZATION_ID,
     name: 'Magic Resume',
     url: new URL('/', Astro.site).href,
     logo: new URL('/magic-resume-mark.png', Astro.site).href,
@@ -57,7 +58,7 @@ const graph: Record<string, unknown>[] = [
     inLanguage,
     image,
     author: type === 'article' ? articleAuthorSchema(getAuthor(authorSlug ?? author), locale, Astro.site!) : undefined,
-    publisher: type === 'article' ? { '@id': 'https://www.magic-resume.cn/#organization' } : undefined,
+    publisher: type === 'article' ? { '@id': ORGANIZATION_ID } : undefined,
     datePublished: published?.toISOString(),
     dateModified: modified?.toISOString(),
     applicationCategory: type === 'software' ? 'BusinessApplication' : undefined,
