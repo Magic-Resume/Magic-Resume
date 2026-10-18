@@ -45,6 +45,12 @@ const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', 
       <h2 class="type-heading text-ink">{locale === 'zh' ? '浏览真实模板' : 'Explore the templates'} ({templateIds.length})</h2>
       <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-3">{templateIds.map((id) => <li><a class="text-muted underline hover:text-ink" href={`/${locale}/templates/${id}`}>{templateFacts(id, locale).name}</a></li>)}</ul>
     </nav>}
+    {tool.install && <div class="mt-12">
+      <h2 class="type-heading text-ink">{locale === 'zh' ? '安装来源' : 'Where to install it'}</h2>
+      <pre class="mt-5 overflow-x-auto rounded-xl border border-hair bg-surface/30 px-5 py-4 font-mono text-mr-body text-ink"><code>{tool.install.command}</code></pre>
+      <p class="mt-4 text-mr-body leading-7 text-muted">{tool.install.note}</p>
+      <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-2">{tool.install.links.map((link) => <li><a class="text-muted underline hover:text-ink" href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a></li>)}</ul>
+    </div>}
     <div class="mt-16 border-t border-hair pt-10">
       <h2 class="type-heading text-ink">{locale === 'zh' ? '推荐流程' : 'Recommended workflow'}</h2>
       <ol class="mt-7 grid gap-4 md:grid-cols-3">

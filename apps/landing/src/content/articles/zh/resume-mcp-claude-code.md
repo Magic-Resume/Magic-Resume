@@ -11,7 +11,7 @@ hreflang:
     href: https://www.magic-resume.cn/en/blog/resume-mcp-claude-code
 author: Magic Resume Editorial
 datePublished: 2026-08-27
-dateModified: 2026-08-27
+dateModified: 2026-10-18
 primaryIntent: resume MCP Claude Code
 tags: [MCP, Claude Code, 开源简历]
 sources:
@@ -34,7 +34,7 @@ MCP 是连接层，不是新的简历数据库；权限和数据边界仍由 Mag
 
 ### 推荐的最小流程
 
-1. 安装 `@magic-resume/mcp`。
+1. 从 npm 安装 [`@magic-resume/mcp`](https://www.npmjs.com/package/@magic-resume/mcp)，MCP 客户端里用 `npx -y @magic-resume/mcp mcp` 启动；源码在主仓库的 [packages/mcp](https://github.com/Magic-Resume/Magic-Resume/tree/master/packages/mcp)。
 2. 在 Magic Resume 创建个人访问令牌，并只授予必要范围。
 3. 在 Claude Code、Cursor 或 Windsurf 中配置本地 MCP server。
 4. 先问“列出我的简历”，确认连接到的是正确账户。

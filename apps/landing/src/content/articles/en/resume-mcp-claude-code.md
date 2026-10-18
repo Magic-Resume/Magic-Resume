@@ -11,7 +11,7 @@ hreflang:
     href: https://www.magic-resume.cn/zh/blog/resume-mcp-claude-code
 author: Magic Resume Editorial
 datePublished: 2026-08-27
-dateModified: 2026-08-27
+dateModified: 2026-10-18
 primaryIntent: resume MCP Claude Code
 tags: [MCP, Claude Code, open source resume]
 sources:
@@ -34,7 +34,7 @@ MCP is a connection layer, not a second resume database. Permissions and data bo
 
 ### A minimal setup flow
 
-1. Install `@magic-resume/mcp`.
+1. Install [`@magic-resume/mcp`](https://www.npmjs.com/package/@magic-resume/mcp) from npm and start it in your MCP client with `npx -y @magic-resume/mcp mcp`; the source lives in [packages/mcp](https://github.com/Magic-Resume/Magic-Resume/tree/master/packages/mcp) of the main repository.
 2. Create a personal access token in Magic Resume with the smallest useful scope.
 3. Configure the local MCP server in Claude Code, Cursor, or Windsurf.
 4. Ask it to “list my resumes” and confirm the account.

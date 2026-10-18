@@ -14,6 +14,8 @@ export interface ToolCopy {
   demoButton: string;
   demoDone: string;
   demoItems: string[];
+  /** Where the package comes from, for tools that are installed rather than opened. */
+  install?: { command: string; note: string; links: { label: string; href: string }[] };
 }
 
 const zh: ToolCopy[] = [
@@ -57,6 +59,14 @@ const zh: ToolCopy[] = [
     steps: ['安装 @magic-resume/mcp', '创建最小权限的个人访问令牌', '在 AI 工具中要求先预览再应用'],
     cta: '查看 MCP 设置指南',
     ctaNote: '适用于兼容 MCP 的 AI 工具',
+    install: {
+      command: 'npx -y @magic-resume/mcp mcp',
+      note: '从 npm 公共仓库安装，MIT 协议开源；源码在主仓库的 packages/mcp。',
+      links: [
+        { label: 'npm 包', href: 'https://www.npmjs.com/package/@magic-resume/mcp' },
+        { label: 'GitHub 源码', href: 'https://github.com/Magic-Resume/Magic-Resume/tree/master/packages/mcp' },
+      ],
+    },
     demoTitle: 'Patch preview（合成数据）',
     demoButton: '显示 patch',
     demoDone: '预览已生成：尚未写入任何数据',
@@ -105,6 +115,14 @@ const en: ToolCopy[] = [
     steps: ['Install @magic-resume/mcp', 'Create a least-privilege personal access token', 'Ask the AI tool to preview before applying'],
     cta: 'Read the MCP setup guide',
     ctaNote: 'Works with MCP-compatible AI tools',
+    install: {
+      command: 'npx -y @magic-resume/mcp mcp',
+      note: 'Installed from the public npm registry, MIT-licensed; the source lives in packages/mcp of the main repository.',
+      links: [
+        { label: 'npm package', href: 'https://www.npmjs.com/package/@magic-resume/mcp' },
+        { label: 'GitHub source', href: 'https://github.com/Magic-Resume/Magic-Resume/tree/master/packages/mcp' },
+      ],
+    },
     demoTitle: 'Patch preview (synthetic data)',
     demoButton: 'Show patch',
     demoDone: 'Preview generated: no data has been written',
