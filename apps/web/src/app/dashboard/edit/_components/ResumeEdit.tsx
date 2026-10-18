@@ -18,6 +18,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import ErrorSurface from '@/components/shared/ErrorSurface';
 import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
 import {
   DndContext,
@@ -399,21 +400,19 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   }
 
   if (resumeNotFound) {
+    // 和 404 同一套：东西不在，系统没坏。ID 已经在地址栏里，正文不再念一遍。
     return (
-      <div className="flex h-screen bg-desk text-white items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">{t('editPage.errors.resumeNotFound')}</h1>
-          <p className="text-neutral-400 mb-8">
-            {t('editPage.errors.resumeNotFoundDescription', { id })}
-          </p>
-          <button
-            onClick={() => window.history.back()}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors"
-          >
-            {t('editPage.errors.goBack')}
-          </button>
-        </div>
-      </div>
+      <ErrorSurface
+        variant="missing"
+        fill="screen"
+        title={t('editPage.errors.resumeNotFound')}
+        note={t('editPage.errors.resumeNotFoundDescription')}
+        primary={{ label: t('errorPage.actions.backToResumes'), href: '/dashboard' }}
+        secondary={{
+          label: t('editPage.errors.goBack'),
+          onClick: () => window.history.back(),
+        }}
+      />
     );
   }
 

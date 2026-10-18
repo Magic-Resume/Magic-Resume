@@ -1164,9 +1164,9 @@
       }
     },
     "errors": {
-      "resumeNotFound": "简历不存在",
-      "resumeNotFoundDescription": "未找到 ID 为 {{id}} 的简历，可能已被删除或链接有误",
-      "goBack": "返回"
+      "resumeNotFound": "找不到这份简历",
+      "resumeNotFoundDescription": "可能已被删除，或者链接有误。其他简历不受影响。",
+      "goBack": "返回上一页"
     }
   },
   "outline": {

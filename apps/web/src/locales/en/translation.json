@@ -1164,8 +1164,8 @@
       }
     },
     "errors": {
-      "resumeNotFound": "Resume not found",
-      "resumeNotFoundDescription": "No resume with ID {{id}} was found. It may have been deleted, or the link may be incorrect.",
+      "resumeNotFound": "We can't find this resume",
+      "resumeNotFoundDescription": "It may have been deleted, or the link may be wrong. Your other resumes are unaffected.",
       "goBack": "Go back"
     }
   },
