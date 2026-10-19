@@ -2,13 +2,15 @@ name: Build and Push Docker Image
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: ['master', 'release-*']
   push:
-    branches: [ "master" ]
+    branches: ['master']
     paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - "apps/docs/**"
-      - ".gitignore"
+      - '**.md'
+      - 'docs/**'
+      - 'apps/docs/**'
+      - '.gitignore'
 
 permissions:
   contents: read
@@ -25,10 +27,13 @@ concurrency:
 jobs:
   build_and_push:
     timeout-minutes: 40
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_TARGET || '["self-hosted","hk"]') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Prepare isolated Docker runtime
+        uses: ./.github/actions/ci-docker
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -37,6 +42,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -52,16 +58,55 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=sha,prefix=
 
-      - name: Build and push Docker image
-        # This action builds the web app image and pushes it to GitHub Container Registry.
+      - name: Build public image for boot smoke
         uses: docker/build-push-action@v5
         with:
           context: .
           file: apps/web/Dockerfile
-          push: true
+          push: false
+          load: true
           cache-from: type=gha,scope=public-web
           cache-to: type=gha,mode=max,scope=public-web,ignore-error=true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+
+      - name: Boot smoke the production image
+        env:
+          META_TAGS: ${{ steps.meta.outputs.tags }}
+          CLERK_SECRET_KEY: sk_test_ci_boot_smoke_no_real_credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="$(head -1 <<< "$META_TAGS")"
+          trap 'docker rm -f release-smoke >/dev/null 2>&1 || true' EXIT
+          docker run -d --name release-smoke -e CLERK_SECRET_KEY "$image"
+          healthy=false
+          for _ in {1..40}; do
+            if docker exec release-smoke node --input-type=module -e '
+              const hostname = process.env.HOSTNAME || "127.0.0.1";
+              const response = await fetch(`http://${hostname}:3000/robots.txt`, { signal: AbortSignal.timeout(5000) });
+              if (!response.ok || !(await response.text()).includes("User-agent:")) process.exit(1);
+            '; then
+              healthy=true
+              break
+            fi
+            sleep 3
+          done
+          if [[ "$healthy" != true ]]; then
+            docker logs release-smoke 2>&1 || true
+            echo 'Image failed production boot smoke' >&2
+            exit 1
+          fi
+
+      - name: Push the smoke-tested image
+        if: github.event_name != 'pull_request'
+        env:
+          META_TAGS: ${{ steps.meta.outputs.tags }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r tag; do
+            [[ -z "$tag" ]] || docker push "$tag"
+          done <<< "$META_TAGS"

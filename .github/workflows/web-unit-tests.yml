@@ -4,9 +4,9 @@ name: Web unit tests
 # suite (apps/web test:unit, incl. src/app.test.ts) never ran anywhere.
 on:
   pull_request:
-    branches: ["master", "release-*"]
+    branches: ['master', 'release-*']
   push:
-    branches: ["master"]
+    branches: ['master']
   workflow_dispatch: {}
 
 permissions:
@@ -18,12 +18,12 @@ concurrency:
 
 jobs:
   unit:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_TARGET || '["self-hosted","hk"]') }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Release PR automation contracts
-        run: node --test .github/release-pr/ensure-release-pr.test.cjs
+        run: node --test .github/release-pr/ensure-release-pr.test.cjs .github/actions/ci-docker/runtime.test.cjs
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:

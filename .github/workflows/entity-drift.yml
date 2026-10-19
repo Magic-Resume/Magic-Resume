@@ -6,7 +6,7 @@ name: Entity drift
 # every week; a failed run means someone edited About by hand.
 on:
   schedule:
-    - cron: "0 1 * * 1" # Monday 09:00 Asia/Shanghai
+    - cron: '0 1 * * 1' # Monday 09:00 Asia/Shanghai
   workflow_dispatch: {}
 
 permissions:
@@ -14,15 +14,19 @@ permissions:
 
 jobs:
   about:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_TARGET || '["self-hosted","hk"]') }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: apps/landing/src/data
+          sparse-checkout: |
+            apps/landing/src/data
+            .github/actions/setup-gh
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Prepare GitHub CLI
+        uses: ./.github/actions/setup-gh
       - name: Compare GitHub About with ENTITY.en.short
         env:
           GH_TOKEN: ${{ github.token }}

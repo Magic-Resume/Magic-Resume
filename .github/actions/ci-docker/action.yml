@@ -1,0 +1,12 @@
+name: Isolated CI Docker
+description: Run Docker and Testcontainers in a job-owned container and network
+outputs:
+  host:
+    description: Docker API endpoint
+  sock:
+    description: Docker API endpoint
+runs:
+  using: node24
+  main: main.cjs
+  post: post.cjs
+  post-if: always()

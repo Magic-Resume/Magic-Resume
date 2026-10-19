@@ -23,9 +23,9 @@ concurrency:
 jobs:
   release:
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_TARGET || '["self-hosted","hk"]') }}
     env:
-      HUSKY: "0"
+      HUSKY: '0'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -134,8 +134,8 @@ jobs:
           base: master
           branch: chore/changelog-v${{ steps.sr.outputs.version }}
           delete-branch: true
-          commit-message: ":memo: docs(changelog): update for v${{ steps.sr.outputs.version }}"
-          title: ":memo: docs(changelog): v${{ steps.sr.outputs.version }}"
+          commit-message: ':memo: docs(changelog): update for v${{ steps.sr.outputs.version }}'
+          title: ':memo: docs(changelog): v${{ steps.sr.outputs.version }}'
           body: |
             Automated `CHANGELOG.md` update for **v${{ steps.sr.outputs.version }}**.
             Full notes are on the [GitHub Release](../../releases/tag/v${{ steps.sr.outputs.version }}).

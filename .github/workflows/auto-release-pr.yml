@@ -22,7 +22,7 @@ concurrency:
 jobs:
   open-pr:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_TARGET || '["self-hosted","hk"]') }}
     timeout-minutes: 5
     steps:
       # Always execute the reviewed helper from the default branch. Never
