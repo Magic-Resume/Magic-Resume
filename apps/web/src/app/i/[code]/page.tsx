@@ -10,7 +10,7 @@ const PENDING_KEY = 'magic:pending-referral';
  * 邀请落地页 `/i/{code}`。
  *
  * 它自己不渲染任何东西——扫码的人要的是「进产品」，而不是先读一页说明。这里只做两件
- * 事：把码存下来、把人送进 dashboard；登录闸门在路上自然会拦（`middleware.ts`）。
+ * 事：把码存下来、把人送进 dashboard；登录闸门在路上自然会拦（`proxy.ts`）。
  *
  * **码存在 localStorage 而不是直接调认领接口**：扫码时用户通常尚未登录，此刻没有身份
  * 可归因。存下来，等他登录后由 `ReferralClaimer` 认领——注册与归因之间隔着一整段

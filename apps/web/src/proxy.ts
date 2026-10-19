@@ -8,7 +8,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { isCloudMode } from '@magic-resume/env';
 // Both the app and the coming-soon/reservation page require a signed-in user.
 // The whitelist gate (whitelisted → app, else → /coming-soon) runs in the
-// server components; middleware only enforces "must be logged in".
+// server components; this proxy only enforces "must be logged in".
 // `/billing` is the payment channel's return_url: only the buyer who placed the
 // order can be looking at it, and every call it makes is user-scoped anyway.
 // Without it here the page renders for anonymous visitors, its API calls 401,
