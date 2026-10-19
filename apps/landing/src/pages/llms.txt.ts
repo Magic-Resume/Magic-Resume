@@ -1,4 +1,6 @@
 import type { APIRoute } from 'astro';
+import { templateIds, templateFacts } from '@/data/templates';
+import { getCampus, getGuides, campusHref, guideHref } from '@/lib/knowledge';
 import { getCopy, LOCALES } from '@/i18n/ui';
 import { GITHUB } from '@/consts';
 import { getTools } from '@/data/tools';
@@ -14,7 +16,7 @@ import { articleHref, getArticles } from '@/lib/articles';
  * mismatch between the two is exactly the kind of inconsistency that costs an
  * entity its credibility with answer engines.
  *
- * Everything below must be verifiable: 19 template ids in
+ * Everything below must be verifiable: template ids in
  * packages/resume-schema, six modes in the landing copy, MIT in LICENSE.
  */
 export const GET: APIRoute = async ({ site }) => {
@@ -30,6 +32,8 @@ export const GET: APIRoute = async ({ site }) => {
   };
 
   const articles = await getArticles();
+  const campus = await getCampus();
+  const guides = await getGuides();
   const body = `# Magic Resume
 
 > ${en.meta.description}
@@ -38,7 +42,7 @@ export const GET: APIRoute = async ({ site }) => {
 
 Magic Resume is an open-source AI resume workbench. The self-hosted editor is
 local-first; the hosted edition adds built-in AI, cloud sync, and version
-history. Both editions ship the same 19 templates and six modes: create,
+history. Both editions ship the same ${templateIds.length} templates and six modes: create,
 optimize, analyze, translate, interview, and export.
 
 The defining behaviour: the AI never rewrites a resume silently. Every change is
@@ -61,11 +65,24 @@ ${LOCALES.map((loc) => {
 
 ## Tools
 
-${LOCALES.map((loc) => getTools(loc).map((tool) => `- [${tool.title}](${base}/${loc}/tools/${tool.slug}): ${tool.description}`).join('\\n')).join('\\n')}
+${LOCALES.map((loc) => getTools(loc).map((tool) => `- [${tool.title}](${base}/${loc}/tools/${tool.slug}): ${tool.description}`).join('\n')).join('\n')}
 
+## Templates
+
+${LOCALES.flatMap((loc) => templateIds.map((id) => `- [${templateFacts(id, loc).name}](${base}/${loc}/templates/${id}): ${loc === 'zh' ? '模板预览、布局、适用岗位与 PDF 文本说明。' : 'Template preview, layout, suggested roles and PDF text facts.'}`)).join('\n')}
+${campus.length ? `
+## Campus timelines
+
+${campus.map((page) => `- [${page.title}](${base}${campusHref(page)})`).join('\n')}
+` : ''}
+${guides.length ? `
+## Writing guides
+
+${guides.map((page) => `- [${page.title}](${base}${guideHref(page)})`).join('\n')}
+` : ''}
 ## Articles
 
-${articles.map((entry) => `- [${entry.data.title}](${base}${articleHref(entry.data.locale, entry)}): ${entry.data.description}`).join('\\n')}
+${articles.map((entry) => `- [${entry.data.title}](${base}${articleHref(entry.data.locale, entry)}): ${entry.data.description}`).join('\n')}
 
 ## FAQ (English)
 

@@ -14,6 +14,8 @@ export interface ToolCopy {
   demoButton: string;
   demoDone: string;
   demoItems: string[];
+  /** Where the package comes from, for tools that are installed rather than opened. */
+  install?: { command: string; note: string; links: { label: string; href: string }[] };
 }
 
 const zh: ToolCopy[] = [
@@ -37,11 +39,11 @@ const zh: ToolCopy[] = [
     title: 'ATS 友好的简历模板',
     description: '从清晰的文本结构开始，再用版式表达重点；模板不会替你编造经历。',
     eyebrow: 'TEMPLATES',
-    summary: 'Magic Resume 提供 19 套可编辑模板。选择模板时先看岗位和文本顺序，再调整颜色与密度；导出前复制 PDF 文本检查 ATS 是否能读懂。',
+    summary: 'Magic Resume 提供 20 套可编辑模板。选择模板时先看岗位和文本顺序，再调整颜色与密度；导出前复制 PDF 文本检查 ATS 是否能读懂。',
     bullets: ['单栏、双栏与衬线等不同版式', '标题、日期和联系方式保持可解析', '浏览器编辑与 PDF 导出使用同一份数据'],
     steps: ['选择与岗位匹配的版式', '填入并核对真实经历', '复制导出文本，确认顺序和链接'],
     cta: '打开模板选择器',
-    ctaNote: '19 套模板 · MIT 协议开源内核',
+    ctaNote: '20 套模板 · MIT 协议开源内核',
     demoTitle: '模板预览（合成简历）',
     demoButton: '切换预览',
     demoDone: '已切换：文本结构保持不变',
@@ -57,6 +59,14 @@ const zh: ToolCopy[] = [
     steps: ['安装 @magic-resume/mcp', '创建最小权限的个人访问令牌', '在 AI 工具中要求先预览再应用'],
     cta: '查看 MCP 设置指南',
     ctaNote: '适用于兼容 MCP 的 AI 工具',
+    install: {
+      command: 'npx -y @magic-resume/mcp mcp',
+      note: '从 npm 公共仓库安装，MIT 协议开源；源码在主仓库的 packages/mcp。',
+      links: [
+        { label: 'npm 包', href: 'https://www.npmjs.com/package/@magic-resume/mcp' },
+        { label: 'GitHub 源码', href: 'https://github.com/Magic-Resume/Magic-Resume/tree/master/packages/mcp' },
+      ],
+    },
     demoTitle: 'Patch preview（合成数据）',
     demoButton: '显示 patch',
     demoDone: '预览已生成：尚未写入任何数据',
@@ -85,11 +95,11 @@ const en: ToolCopy[] = [
     title: 'ATS-friendly resume templates',
     description: 'Start with a clear text structure, then use layout to show priorities. A template never invents your experience.',
     eyebrow: 'TEMPLATES',
-    summary: 'Magic Resume ships 19 editable templates. Choose for the role and text order first, then tune color and density; copy the exported PDF text to verify that an ATS can parse it.',
+    summary: 'Magic Resume ships 20 editable templates. Choose for the role and text order first, then tune color and density; copy the exported PDF text to verify that an ATS can parse it.',
     bullets: ['Single-column, two-column, and serif options', 'Headings, dates, and contact details stay parseable', 'Browser editing and PDF export use the same data'],
     steps: ['Choose a layout for the role', 'Enter and verify your real experience', 'Copy the exported text and check order and links'],
     cta: 'Open the template picker',
-    ctaNote: '19 templates · MIT-licensed open-source core',
+    ctaNote: '20 templates · MIT-licensed open-source core',
     demoTitle: 'Template preview (synthetic resume)',
     demoButton: 'Switch preview',
     demoDone: 'Switched: text structure stayed the same',
@@ -105,6 +115,14 @@ const en: ToolCopy[] = [
     steps: ['Install @magic-resume/mcp', 'Create a least-privilege personal access token', 'Ask the AI tool to preview before applying'],
     cta: 'Read the MCP setup guide',
     ctaNote: 'Works with MCP-compatible AI tools',
+    install: {
+      command: 'npx -y @magic-resume/mcp mcp',
+      note: 'Installed from the public npm registry, MIT-licensed; the source lives in packages/mcp of the main repository.',
+      links: [
+        { label: 'npm package', href: 'https://www.npmjs.com/package/@magic-resume/mcp' },
+        { label: 'GitHub source', href: 'https://github.com/Magic-Resume/Magic-Resume/tree/master/packages/mcp' },
+      ],
+    },
     demoTitle: 'Patch preview (synthetic data)',
     demoButton: 'Show patch',
     demoDone: 'Preview generated: no data has been written',

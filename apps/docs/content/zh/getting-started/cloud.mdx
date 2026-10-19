@@ -1,7 +1,9 @@
 ---
 title: 云端模式
-description: 云端模式如何把 Clerk、Core API、Agent 后端串到 Magic Resume 里。
+description: "云端模式启用 Clerk 鉴权、Core API 简历同步和 agent-service 的 AI 能力，后端独立部署。"
 ---
+
+云端模式启用 Clerk 鉴权、经 Core API 的简历同步，以及 agent-service 的对话、面试、翻译、JD 优化和 PDF 解析能力。后端独立部署，前端通过 `NEXT_PUBLIC_API_URL` 连接它的网关。
 
 云端模式打开了自托管模式下关闭的三件事：
 
@@ -9,7 +11,7 @@ description: 云端模式如何把 Clerk、Core API、Agent 后端串到 Magic R
 2. **云端同步** —— 简历经过一套 NestJS 写的 **Core API** 往返，附带版本历史和简历分享。
 3. **agent-service**（TypeScript，后端侧）—— 对话、面试、翻译、JD 优化、PDF 解析。
 
-## 模式判定逻辑
+## 应用如何判定云端模式？
 
 `apps/web/src/lib/config/app.ts` 解析当前模式：
 
@@ -28,7 +30,7 @@ export const APP_MODE =
 如果你设了 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` 但忘了 `NEXT_PUBLIC_API_URL`，应用仍然会以云端模式启动，所有鉴权请求都会 404。两个一起设，或者两个都别设。
 </Warning>
 
-## 环境变量
+## 云端模式需要哪些环境变量？
 
 | 变量 | 是否必需（云端） | 作用 |
 |---|---|---|
@@ -37,11 +39,11 @@ export const APP_MODE =
 | `CLERK_SECRET_KEY` | 是 | Clerk 服务端密钥。 |
 | `NEXT_PUBLIC_API_URL` | 是 | **网关**源——整个后端只用这一个 URL（dev 默认 `http://localhost:3110`）。网关按路径前缀把 `/api/*` 转发到 Core API / agent。 |
 
-## 后端服务
+## 云端模式如何连接后端服务？
 
 后端（Core API + agent）**独立部署**，不在本 monorepo 内，前面统一挡着一个**网关**。本地开发云端模式时，把后端跑起来，然后用 `NEXT_PUBLIC_API_URL` 指向它的网关（dev 默认 `http://localhost:3110`）——前端永远只需要这一个 URL。如果你只想改前端，自托管模式更快。
 
-## 鉴权流程
+## 云端请求如何鉴权？
 
 - Clerk 在登录时签发一个 JWT。
 - `apps/web/src/lib/api/httpClient.ts` 在 Axios 请求拦截器里（`configureHttpClient`）把这个 JWT 作为 `Bearer` token 附上。

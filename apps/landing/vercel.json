@@ -6,7 +6,12 @@
   "headers": [
     {
       "source": "/",
-      "headers": [{"key": "Vary", "value": "Accept-Language"}]
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept-Language"
+        }
+      ]
     }
   ],
   "redirects": [
@@ -24,7 +29,19 @@
     },
     {
       "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept-language",
+          "value": "^en(?:-|,|;|$)"
+        }
+      ],
       "destination": "/en",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "destination": "/zh",
       "permanent": false
     }
   ]

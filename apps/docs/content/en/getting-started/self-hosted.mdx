@@ -1,13 +1,13 @@
 ---
 title: Self-Hosted
-description: Run Magic Resume on your own machine with no backend, no database, and no account.
+description: "Self-hosted mode runs the editor in the browser and stores resumes in IndexedDB without an account or backend, with AI unavailable."
 ---
 
-In self-hosted mode the web app runs entirely in the browser. Resume data is persisted in IndexedDB under the database name `MagicResumeDB`. There is **no auth, no backend (gateway / platform-api / agent-service), and no product analytics delivery**. **AI is off entirely** — AI Lab and AI PDF import are proxied to the backend and need a signed-in user, so they don't work here.
+In self-hosted mode, the web app runs entirely in the browser and persists resume data in IndexedDB under the database name `MagicResumeDB`. This mode has no auth, no backend (gateway / platform-api / agent-service), and no product analytics delivery. AI is off entirely because AI Lab and AI PDF import are proxied to the backend and need a signed-in user.
 
 This is the recommended mode for hacking on the codebase.
 
-## Prerequisites
+## What prerequisites does self-hosting need?
 
 - Node.js 20+
 - pnpm `10.28.1` (the version in `packageManager`). Other versions work but lockfile drift is on you.
@@ -57,7 +57,7 @@ pnpm --filter @magic-resume/web dev
 </Step>
 </Steps>
 
-## What works without a backend
+## What works without a backend?
 
 | Feature | Self-hosted |
 |---|---|
@@ -72,7 +72,7 @@ pnpm --filter @magic-resume/web dev
 There is **no AI** in pure self-hosted mode — every AI feature is proxied to the backend and requires a signed-in user. Run the full backend and switch to cloud mode to enable it; there you can bring your own API key (stored only in the browser) instead of platform credits.
 </Info>
 
-## Environment reference
+## What environment variables are available for self-hosting?
 
 | Variable | Required | Purpose |
 |---|---|---|

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { parse } from 'node-html-parser';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { renderNode as renderDom } from '../dom/renderNode';
@@ -57,10 +58,14 @@ const compiled = () => {
   return root;
 };
 
-/** 从渲染出的 HTML 里按顺序抽文本，与一致性测试同一套办法。 */
+/**
+ * 从渲染出的 HTML 里按顺序抽文本，与一致性测试同一套办法。富文本块（`.wysiwyg`）
+ * 不参与比较：SSR 现在会把它画出来，但 PDF 抽取器看不到这部分。
+ */
 const domText = (): string => {
-  const html = renderToStaticMarkup(<>{renderDom(compiled())}</>);
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const root = parse(renderToStaticMarkup(<>{renderDom(compiled())}</>));
+  root.querySelectorAll('.wysiwyg').forEach((node) => node.remove());
+  return root.toString().replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 };
 
 const pdfText = (): string => {

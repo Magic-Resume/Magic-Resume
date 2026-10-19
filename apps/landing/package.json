@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "astro dev --port 3002",
     "content:sync": "node scripts/sync-content.mjs",
-    "prebuild": "pnpm content:sync",
-    "build": "astro build",
+    "build": "node scripts/sync-content.mjs && astro build && node scripts/check-llms.mjs && node scripts/check-content.mjs",
     "preview": "astro preview --port 3002",
-    "lint": "astro check",
+    "lint": "astro check && node --test scripts/*.test.mjs",
+    "test": "node --test scripts/*.test.mjs",
     "astro": "astro"
   },
   "dependencies": {
@@ -22,7 +22,9 @@
     "motion": "^12.0.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "@magic-resume/resume-schema": "workspace:*",
+    "@magic-resume/resume-templates": "workspace:*"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

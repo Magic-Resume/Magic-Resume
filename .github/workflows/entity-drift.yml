@@ -1,0 +1,39 @@
+name: Entity drift
+
+# The GitHub About text is one of the surfaces answer engines cross-check
+# (docs/specs/geo/spec.md §3), and the one `pnpm check:entity` cannot see: it
+# lives in repo settings, not in a file. Compare it with the entity constant
+# every week; a failed run means someone edited About by hand.
+on:
+  schedule:
+    - cron: "0 1 * * 1" # Monday 09:00 Asia/Shanghai
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  about:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: apps/landing/src/data
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compare GitHub About with ENTITY.en.short
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          about="$(gh repo view "$GITHUB_REPOSITORY" --json description --jq .description)"
+          expected="$(node --experimental-strip-types --disable-warning=ExperimentalWarning --input-type=module \
+            -e "const { ENTITY } = await import('./apps/landing/src/data/entity.ts'); process.stdout.write(ENTITY.en.short)")"
+          if [ "$about" != "$expected" ]; then
+            echo "::error::GitHub About has drifted from apps/landing/src/data/entity.ts (ENTITY.en.short)."
+            echo "About:    $about"
+            echo "Expected: $expected"
+            exit 1
+          fi
+          echo "GitHub About matches the entity definition."

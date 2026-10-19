@@ -1,11 +1,11 @@
 ---
 title: HTTP 客户端
-description: 单一网关源、两个仅用于调用语义的 Axios 实例、共享鉴权拦截器，以及集中存放的路由。
+description: "前端通过两个共享鉴权拦截器的 Axios 实例访问同一个网关源，并集中管理 API 路由。"
 ---
 
-整个前端只跟**一个配置好的地址**通信——网关。`apps/web/src/lib/api/httpClient.ts` 暴露两个 Axios 实例，它们都指向这同一个源、共享同一个鉴权拦截器。所有网络调用都走它们——不要直接 `fetch`，不要为某个功能再 `axios.create()` 一个。
+整个前端只跟**一个配置好的网关地址**通信，所有网络调用都走 `apps/web/src/lib/api/httpClient.ts` 暴露的两个 Axios 实例。两个实例指向同一个源、共享同一个鉴权拦截器，不要直接 `fetch` 或为某个功能再创建 Axios 实例。
 
-## 单一源
+## 前端使用哪个后端地址？
 
 ```ts
 // apps/web/src/lib/api/routes.ts
@@ -18,7 +18,7 @@ export const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3
 `API_ORIGIN` 放在无依赖的 `routes.ts`（而非 `httpClient.ts`），这样 client 和 server 都能 import 它、又不会顺带把 Axios 拉进来。
 </Note>
 
-## 两个实例，同一个源
+## 两个 HTTP 客户端实例有什么区别？
 
 ```ts
 import { httpClient } from '@/lib/api/httpClient'
@@ -34,7 +34,7 @@ httpClient.agent    // AI 类调用（面试等）
 
 两者都是 `createClient(API_ORIGIN)`——**同一个 base URL**。拆成两个纯粹是为了**调用侧语义**（CRUD 和 AI 分开读起来更清楚），**并不是两个后端**。每条 `/api/...` 具体去哪，由网关决定。
 
-## 鉴权拦截器
+## 鉴权拦截器如何处理 token？
 
 `configureHttpClient(getter)` 在两个客户端上注册同一个请求拦截器：
 
@@ -48,7 +48,7 @@ configureHttpClient(async () => clerk.session?.getToken())
 功能代码里不要手动传 token。如果你在写 `httpClient.api.get(url, { headers: { Authorization: ... } })`，说明拦截器在这个上下文没接好——去修接线，别绕过它。
 </Warning>
 
-## 集中存路由
+## API 路由在哪里集中管理？
 
 所有路径放在 `src/lib/api/routes.ts`，且都在 `/api/*` 前缀下（网关的命名空间）：
 
@@ -81,7 +81,7 @@ export const WEB_AGENT_ROUTES = { chat: '/api/chat-agent', chatApprove: '/api/ch
 
 这让"后端改路由"从"全仓 grep + 祈祷"变成一份单文件改动。
 
-## 加一个新接口
+## 怎么添加新接口？
 
 1. 把路径加到 `routes.ts` 里对应的表。
 2. 在 `src/lib/api/<feature>.ts` 里加一个带类型的封装，返回类型化响应。

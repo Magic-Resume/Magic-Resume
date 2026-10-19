@@ -1,7 +1,6 @@
 {
   "meta": {
-    "title": "Magic Resume — AI Native 简历工作台",
-    "description": "开源 AI 简历工作台，从本地草稿开始，围绕目标岗位整理经历，逐条审阅 AI 建议，排版并导出简历"
+    "title": "Magic Resume — AI Native 简历工作台"
   },
   "nav": {
     "features": "功能",
@@ -179,6 +178,10 @@
       {
         "q": "页面中的预览会调用 AI 吗？",
         "a": "此处使用示例数据演示交互，帮助了解工作台的使用方式；点击「开始制作」即可进入应用编辑自己的简历"
+      },
+      {
+        "q": "Magic Resume 和魔方简历（magicv.art）是同一个项目吗？",
+        "a": "不是。Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。"
       }
     ]
   },
@@ -282,8 +285,8 @@
           "desc": "AI 的每处修改均附有理由，由你决定采纳或放弃"
         },
         {
-          "title": "19 套模板\n随时切换",
-          "desc": "19 套模板随时切换，无需重新排版内容"
+          "title": "20 套模板\n随时切换",
+          "desc": "20 套模板随时切换，无需重新排版内容"
         },
         {
           "title": "双语表达\n同一段经历",

@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, Clock, Loader2, XCircle } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
+import { Button as DesignButton } from '@magic-resume/design-system';
 import {
   fetchOrder,
   fetchSubscription,
@@ -297,13 +298,15 @@ function Panel({
         <h1 className="text-ink text-lg font-semibold">{title}</h1>
         {detail ? <p className="text-ink-muted text-sm">{detail}</p> : null}
         {action ? (
-          <button
-            type="button"
+          // 设计系统的主按钮：浅蓝底配深色字。原先的白字在 ink-sky 上对比度不够。
+          <DesignButton
+            variant="primary"
+            size="lg"
+            className="mt-2"
             onClick={action.onClick}
-            className="bg-ink-sky mt-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
           >
             {action.label}
-          </button>
+          </DesignButton>
         ) : null}
       </div>
     </main>

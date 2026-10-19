@@ -1,0 +1,50 @@
+---
+import ContentLayout from '@/layouts/ContentLayout.astro';
+import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
+import { templateIds, templateFacts, previewResume } from '@/data/templates';
+import { LOCALES } from '@/i18n/ui';
+import { dashboardLink, GITHUB } from '@/consts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((locale) => templateIds.map((id) => ({ params: { locale, id }, props: { locale, id } })));
+}
+const { locale, id } = Astro.props;
+const facts = templateFacts(id, locale);
+const zh = locale === 'zh';
+const title = `${facts.name} ${zh ? '简历模板' : 'resume template'}`;
+const description = zh ? `${facts.name}：${facts.twoColumn ? '双栏' : '单栏'}布局、真实模板预览和 PDF 导出说明。` : `${facts.name}: ${facts.twoColumn ? 'two-column' : 'single-column'} layout, a real template preview and PDF export facts.`;
+const path = `/${locale}/templates/${id}`;
+const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : loc, href: new URL(`/${loc}/templates/${id}`, Astro.site).href }));
+---
+<ContentLayout locale={locale} title={`${title} | Magic Resume`} description={description} canonical={new URL(path, Astro.site).href} alternates={alternates}>
+  <article class="mx-auto max-w-[1100px] px-5 py-14 md:px-6 md:py-24">
+    <a href={`/${locale}/tools/resume-templates`} class="text-muted hover:text-ink">← {zh ? '简历模板' : 'Resume templates'}</a>
+    <p class="eyebrow mt-8">{zh ? '模板详情' : 'Template details'} · {id}</p>
+    <h1 class="type-heading-lg mt-4 text-ink">{title}</h1>
+    <p class="type-body-lg mt-5 text-muted">{description}</p>
+    <dl class="mt-8 grid gap-6 border-y border-hair py-7 md:grid-cols-3">
+      <div><dt class="text-muted">{zh ? '适用岗位建议' : 'Suggested roles'}</dt><dd class="mt-2 text-ink">{facts.roles}</dd></div>
+      <div><dt class="text-muted">{zh ? '页面布局' : 'Page layout'}</dt><dd class="mt-2 text-ink">{facts.twoColumn ? (zh ? '双栏' : 'Two columns') : (zh ? '单栏' : 'Single column')}</dd></div>
+      <div><dt class="text-muted">{zh ? 'PDF 文本' : 'PDF text'}</dt><dd class="mt-2 text-ink">{zh ? '正文可选择、可复制' : 'Body text is selectable and copyable'}</dd></div>
+    </dl>
+    <p class="mt-6 leading-7 text-ink-soft">{zh ? '内置 PDF 导出使用文本排版。照片和图标是图形；岗位建议依据版式特点，不代表招聘系统兼容性认证。导出后请复制正文，核对阅读顺序。' : 'The built-in PDF export typesets text. Photos and icons are graphics. Role suggestions reflect the layout, and are not an ATS certification. Copy text from your exported PDF to check its reading order.'}</p>
+    <p class="mt-3 text-muted">{facts.twoColumn ? (zh ? '预览的文本顺序是侧栏在前、主栏在后。' : 'The preview text order is sidebar first, then the main column.') : (zh ? '预览按照页面分区从上到下阅读。' : 'The preview reads from top to bottom through the page sections.')}</p>
+    <a data-ref-forward="href" href={dashboardLink('hero', locale)} class="mt-8 inline-flex rounded-md bg-ink px-5 py-3 text-workbench">{zh ? '开始编辑简历' : 'Start editing your resume'}</a>
+    <figure class="mt-12">
+      <figcaption class="mb-4 text-muted">{zh ? '真实模板 · 合成示例数据 · 可选择预览文字，横向滚动查看完整页面' : 'Actual template · Synthetic sample data · Selectable text; scroll horizontally to view the full page'}</figcaption>
+      <div class="template-preview overflow-x-auto rounded-xl border border-hair bg-surface p-3 md:p-6" tabindex="0" role="region" aria-label={zh ? '简历模板预览' : 'Resume template preview'}>
+        <MagicResumeRenderer template={facts.template} data={previewResume(id, locale)} locale={locale} />
+      </div>
+    </figure>
+    <p class="mt-5 text-mr-caption text-muted"><a class="underline" href={`${GITHUB.repo}/blob/master/packages/resume-templates/src/config/${id}-template.ts`}>{zh ? '模板源代码' : 'Template source'}</a> · <a class="underline" href={`${GITHUB.repo}/blob/master/packages/resume-templates/src/pdf/MagicResumePdfDocument.tsx`}>{zh ? 'PDF 渲染实现' : 'PDF renderer'}</a></p>
+    <nav class="mt-12 border-t border-hair pt-8" aria-label={zh ? '其他模板' : 'More templates'}>
+      <h2 class="type-heading text-ink">{zh ? '浏览全部模板' : 'Explore all templates'} ({templateIds.length})</h2>
+      <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-3">{templateIds.map((other) => <li><a class="text-muted underline hover:text-ink" href={`/${locale}/templates/${other}`}>{templateFacts(other, locale).name}</a></li>)}</ul>
+    </nav>
+  </article>
+</ContentLayout>
+<style is:global>
+  .template-preview .wysiwyg ul { list-style: disc; padding-left: 1.2em; }
+  .template-preview .wysiwyg ol { list-style: decimal; padding-left: 1.2em; }
+  .template-preview .wysiwyg p + p { margin-top: .5em; }
+</style>

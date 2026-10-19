@@ -1,11 +1,13 @@
 ---
 title: 本地开发
-description: Magic Resume monorepo 的日常开发流程。
+description: "本页介绍安装依赖后的日常开发流程，包括编辑器配置、跨 workspace 热更新、检查和分支约定。"
 ---
 
-仓库已经拉好、`pnpm install` 跑完之后的日常工作流。还没装好的话，从 [自托管](/zh/getting-started/self-hosted) 开始。
+克隆 Magic Resume 仓库并运行 `pnpm install` 后，在仓库根目录跑 `pnpm run dev` 会通过 Turbo 并行启动每个 workspace 的 `dev`。完整的质量检查使用 `pnpm run lint` 和 `pnpm run test`。
 
-## 仓库一瞥
+还没装好的话，从 [自托管](/zh/getting-started/self-hosted) 开始。
+
+## 仓库目录是什么结构？
 
 ```
 Magic-Resume/
@@ -25,7 +27,7 @@ Magic-Resume/
 └── CLAUDE.md        # 给 AI 编程 agent 看的精简上下文
 ```
 
-## 编辑器配置
+## 怎么配置开发编辑器？
 
 整个仓库是 TypeScript。推荐的编辑器组合：
 
@@ -34,7 +36,7 @@ Magic-Resume/
 
 `pnpm-workspace.yaml` 和 `packages/tsconfig` 一起让跨 workspace 的类型推导开箱即用。如果编辑器找不到类型，重启 TS 服务器。
 
-## 跨 workspace 的热更新
+## 跨 workspace 的热更新如何工作？
 
 仓库根目录跑 `pnpm run dev` 会通过 Turbo 并行启动每个 workspace 的 `dev`。多数 workspace 用 watch 模式：
 
@@ -52,7 +54,7 @@ Magic-Resume/
 Web 应用支持 Turbopack：`pnpm --filter @magic-resume/web dev:turbo`。更快，但偶尔比 Next.js minor 版本落后一拍 —— 撞上 Turbopack 特有的 bug 时回退到 `dev`。
 </Info>
 
-## 提交前过 lint 和测试
+## 提交前怎么运行 lint 和测试？
 
 `lint-staged`（在根 `package.json` 配置，由 Husky 触发）会对暂存文件跑一部分检查。完整的扫一遍：
 
@@ -69,6 +71,6 @@ pnpm --filter @magic-resume/web i18n:check
 
 它确保每个新增的翻译 key 都同时存在于每种语言里。`en.json` 加了 key 但 `zh-CN.json` 没加，会让 pre-commit hook 失败。
 
-## 分支约定
+## 分支和 Commit 有哪些约定？
 
 默认分支是 `master`。功能分支用 `<type>/<short-name>`（如 `feat/turborepo-mcp-migration-wip`）。Commit 遵循 conventional commits 风格 —— 看 `git log` 就能知道格式。

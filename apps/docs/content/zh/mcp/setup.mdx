@@ -1,9 +1,9 @@
 ---
 title: 配置
-description: 配置 MCP 服务器，并把它注册到 Claude Code、Cursor 或任意 MCP 客户端。
+description: "先配置 API 地址和 PAT，再向 Claude Code、Cursor 等客户端注册启动命令，即可运行 stdio MCP 服务器。"
 ---
 
-MCP 服务器以 stdio 子进程形式由你的 AI 工具拉起。两步：先一次性配凭据，再把启动命令告诉每个 AI 工具。
+MCP 服务器以 stdio 子进程形式由你的 AI 工具拉起。先一次性配置 API 地址和个人访问令牌（PAT），再把启动命令注册到 Claude Code、Cursor 或其他支持 stdio 的 MCP 客户端。
 
 <Steps>
 <Step title="签发个人访问令牌（PAT）">
@@ -63,7 +63,7 @@ npx -y @magic-resume/mcp mcp
 MCP 服务器通过 **stdio** 通信 —— 它不开端口、不监听 socket、不走 SSE。AI 工具把它作为子进程拉起，会话结束时关掉。
 </Info>
 
-## 更新
+## 怎么更新或固定 MCP 版本？
 
 因为命令是 `npx -y @magic-resume/mcp mcp`，每次 AI 工具启动都会拉最新版。要钉死某个版本：
 
@@ -71,7 +71,7 @@ MCP 服务器通过 **stdio** 通信 —— 它不开端口、不监听 socket�
 claude mcp add magic-resume -- npx -y @magic-resume/mcp@0.1.0 mcp
 ```
 
-## 重置凭据
+## 怎么重置 MCP 凭据？
 
 ```bash
 npx -y @magic-resume/mcp config clear

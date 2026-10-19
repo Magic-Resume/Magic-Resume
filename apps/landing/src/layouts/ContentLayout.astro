@@ -5,6 +5,8 @@ import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
 import '@/styles/beui.css';
 import { getCopy, type Locale } from '@/i18n/ui';
 import ContentSeo from '@/components/ContentSeo.astro';
+import SiteVerification from '@/components/SiteVerification.astro';
+import RefForward from '@/components/RefForward.astro';
 import Header from '@/components/sections/Header.astro';
 import Footer from '@/components/sections/Footer.astro';
 import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
@@ -24,9 +26,10 @@ interface Props {
   published?: Date;
   modified?: Date;
   author?: string;
+  authorSlug?: string;
 }
 
-const { locale, title, description, canonical, alternates = [], type, published, modified, author } = Astro.props;
+const { locale, title, description, canonical, alternates = [], type, published, modified, author, authorSlug } = Astro.props;
 const isZh = locale === 'zh';
 // 内容页与首页共用同一套 Header / Footer / 主题开关,锚点用 base 指回首页。
 const copy = getCopy(locale);
@@ -41,6 +44,7 @@ const home = `/${locale}`;
     <link rel="icon" href="/magic-resume-mark.png" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <SiteVerification />
     <ContentSeo
       title={title}
       description={description}
@@ -50,6 +54,7 @@ const home = `/${locale}`;
       published={published}
       modified={modified}
       author={author}
+      authorSlug={authorSlug}
       alternates={alternates}
     />
     <meta name="theme-color" content="#151515" />
@@ -66,6 +71,7 @@ const home = `/${locale}`;
     </main>
     <Footer copy={copy} locale={locale} base={home} />
     <UtilityDock locale={locale} />
+    <RefForward />
     <script>
       const win = window as typeof window & { __magicResumeRevealBound?: boolean };
 

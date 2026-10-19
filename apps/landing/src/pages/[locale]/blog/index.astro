@@ -2,7 +2,7 @@
 import ArticleCard from '@/components/content/ArticleCard.astro';
 import FeaturedArticle from '@/components/content/FeaturedArticle.astro';
 import ContentLayout from '@/layouts/ContentLayout.astro';
-import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@/i18n/ui';
 import { getArticles } from '@/lib/articles';
 
 export function getStaticPaths() {
@@ -10,7 +10,7 @@ export function getStaticPaths() {
 }
 
 const localeParam = Astro.params.locale;
-if (!isLocale(localeParam)) return Astro.redirect('/en/blog');
+if (!isLocale(localeParam)) return Astro.redirect(`/${DEFAULT_LOCALE}/blog`);
 const locale = localeParam as Locale;
 const entries = await getArticles(locale);
 const title = locale === 'zh' ? '求职与 AI 简历文章 | Magic Resume' : 'Resume and job-search guides | Magic Resume';

@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["NEXT_DIST_DIR"],
+      "env": ["NEXT_DIST_DIR", "INDEXNOW_KEY"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
@@ -27,6 +27,18 @@
     },
     "i18n:check": {
       "outputs": ["scripts/i18n-logs/**"]
+    },
+    "@magic-resume/landing#build": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "env": [
+        "INDEXNOW_KEY",
+        "PUBLIC_CONTENT_API_URL",
+        "PUBLIC_CONTENT_API_PATH",
+        "PUBLIC_EXEMPLAR_API_PATH",
+        "PUBLIC_CONTENT_API_TOKEN"
+      ],
+      "outputs": ["dist/**"]
     }
   }
 }

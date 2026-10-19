@@ -1,7 +1,9 @@
 ---
 title: 简介
-description: Magic Resume 是开源、AI 原生的简历平台——Turborepo 前端 + NestJS 后端（前面挡着单一网关）。这里是贡献者 / 集成者手册。
+description: "Magic Resume 是开源、AI 原生的简历平台，本页介绍其系统架构、部署模式和技术栈。"
 ---
+
+Magic Resume 文档站是贡献者与集成者手册。`Magic-Resume` 仓库包含前端、MCP 与共享 schema，后端是**独立部署**的一套服务。
 
 **Magic Resume** 是一个开源、AI 原生的简历平台，围绕三个理念：
 
@@ -11,7 +13,7 @@ description: Magic Resume 是开源、AI 原生的简历平台——Turborepo �
 
 本站是贡献者与集成者手册。想用托管版，去 [magic-resume.cn](https://magic-resume.cn)；想**跑它、改它、把 AI 工具接进去**，你来对地方了。
 
-## 系统架构
+## 系统架构是什么？
 
 本仓包含前端、MCP 与共享 schema，后端是**独立部署**的一套服务。前端只跟**一个网关源**通信，网关按路径前缀把 `/api/*` 转发到后端各服务。
 
@@ -53,12 +55,12 @@ description: Magic Resume 是开源、AI 原生的简历平台——Turborepo �
 
 Schema 一致性靠 `@magic-resume/resume-schema` —— 发到 npm、被后端作为依赖消费。**定义一次，处处校验。**
 
-## 部署模式
+## 有哪些部署模式？
 
 - **自托管：** 只需跑 `apps/web`。数据留在 IndexedDB —— 只能编辑和导出简历。**没有账户、没有后端、没有 AI**（AI 需要后端 / 云端模式）。见 [自托管](/zh/getting-started/self-hosted)。
 - **云端（magic-resume.cn）：** 前端与后端分开部署 —— Web 在 Vercel，后端在容器平台。前端把 `NEXT_PUBLIC_API_URL` 指向网关。见 [云端模式](/zh/getting-started/cloud)。
 
-## 技术栈
+## 使用了哪些技术？
 
 | 层 | 选型 | 备注 |
 |---|---|---|
@@ -74,7 +76,7 @@ Schema 一致性靠 `@magic-resume/resume-schema` —— 发到 npm、被后端�
 | MCP 服务器 | **`@modelcontextprotocol/sdk`** + `fast-json-patch` | `@magic-resume/mcp`（stdio，Node ESM） |
 | 文档 | **Mintlify** | `apps/docs/content`（即本站） |
 
-## 接下来读什么
+## 接下来读什么？
 
 <CardGroup>
   <Card title="快速开始" href="/zh/getting-started" />

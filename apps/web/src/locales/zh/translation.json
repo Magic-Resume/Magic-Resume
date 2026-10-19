@@ -1004,14 +1004,12 @@
       "post": "发布"
     },
     "error": {
-      "resumeNotFound": "简历不存在，或作者未开启公开访问",
-      "redirectingPre": "",
-      "redirectingPost": " 秒后返回首页…",
-      "returnNow": "立即返回",
-      "failedToLoad": "简历加载失败，请检查网络或链接是否正确"
+      "missingTitle": "这个分享链接打不开了",
+      "missingNote": "简历可能已被删除，或者作者关闭了公开访问。可以请分享给你的人重新发一个链接。",
+      "failedTitle": "简历没能加载出来",
+      "failedNote": "网络可能不太稳定，重试一下通常就好。"
     },
     "notifications": {
-      "resumeNotFound": "简历不存在或尚未公开",
       "syncing": "简历正在同步至云端，请稍候",
       "loginToComment": "登录后即可发表评论",
       "commentAdded": "评论已添加",
@@ -1164,9 +1162,9 @@
       }
     },
     "errors": {
-      "resumeNotFound": "简历不存在",
-      "resumeNotFoundDescription": "未找到 ID 为 {{id}} 的简历，可能已被删除或链接有误",
-      "goBack": "返回"
+      "resumeNotFound": "找不到这份简历",
+      "resumeNotFoundDescription": "可能已被删除，或者链接有误。其他简历不受影响。",
+      "goBack": "返回上一页"
     }
   },
   "outline": {

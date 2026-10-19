@@ -18,6 +18,7 @@ import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
 import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import ResumeMissing, { useResumeMissing } from './ResumeMissing';
 import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
 import {
   DndContext,
@@ -96,7 +97,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const [editingSection, setEditingSection] = useState<{ key: string; label: string; icon?: string } | null>(null);
   const [deletingSection, setDeletingSection] = useState<{ key: string; label: string } | null>(null);
   const [currentTemplateId, setCurrentTemplateId] = useState(activeResume?.template || 'classic');
-  const [resumeNotFound, setResumeNotFound] = useState(false);
+  const resumeNotFound = useResumeMissing(id);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const openJsonModal = () => router.push(`/dashboard/edit/${id}/json`);
@@ -201,10 +202,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     const setupEditor = async () => {
       if (!isStoreLoading) {
         const resume = resumes.find(r => r.id === id);
-        if (!resume && resumes.length > 0) {
-          setResumeNotFound(true);
-        } else if (resume) {
-          setResumeNotFound(false);
+        if (resume) {
           router.prefetch(`/dashboard/edit/${id}/ai-lab`);
           router.prefetch(`/dashboard/edit/${id}/history`);
           router.prefetch(`/dashboard/edit/${id}/json`);
@@ -399,22 +397,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   }
 
   if (resumeNotFound) {
-    return (
-      <div className="flex h-screen bg-desk text-white items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">{t('editPage.errors.resumeNotFound')}</h1>
-          <p className="text-neutral-400 mb-8">
-            {t('editPage.errors.resumeNotFoundDescription', { id })}
-          </p>
-          <button
-            onClick={() => window.history.back()}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors"
-          >
-            {t('editPage.errors.goBack')}
-          </button>
-        </div>
-      </div>
-    );
+    return <ResumeMissing />;
   }
 
   if (isStoreLoading || !activeResume || !info || !sectionItems || !sectionOrder) {

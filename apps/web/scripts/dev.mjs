@@ -33,9 +33,17 @@ const commercial =
 
 const next = new URL('../node_modules/next/dist/bin/next', import.meta.url);
 
+/*
+ * Next 16 起 dev 默认走 Turbopack，但 overlay 的实现文件在本 monorepo 之外，Turbopack 解析
+ * 不到（原因见 `scripts/build.mjs`）。带 overlay 时退回 webpack；显式传了打包器参数时以
+ * 命令行为准。
+ */
+const explicitBundler = forwarded.some((arg) => arg === '--webpack' || arg === '--turbopack');
+const bundler = commercial && !explicitBundler ? ['--webpack'] : [];
+
 const child = spawn(
   process.execPath,
-  [next.pathname, 'dev', ...forwarded],
+  [next.pathname, 'dev', ...bundler, ...forwarded],
   {
     stdio: 'inherit',
     env: commercial

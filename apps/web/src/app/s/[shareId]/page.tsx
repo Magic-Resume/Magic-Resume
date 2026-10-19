@@ -54,12 +54,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: 'Magic Resume',
-    description: 'Magic Resume - AI 智能简历制作器',
+    description: 'Magic Resume - 开源 AI 简历工作台',
     // 取不到简历时也一样不进索引：失败分支同样落在 /s/*，且下一次请求可能就取到了。
     robots: { index: false, follow: false },
     openGraph: {
       title: 'Magic Resume',
-      description: 'Magic Resume - AI 智能简历制作器',
+      description: 'Magic Resume - 开源 AI 简历工作台',
       type: 'website',
       url: `/s/${shareId}`,
       siteName: 'Magic Resume',
@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: 'summary_large_image',
       title: 'Magic Resume',
-      description: 'Magic Resume - AI 智能简历制作器',
+      description: 'Magic Resume - 开源 AI 简历工作台',
       images: ['/magic-resume-preview.png'],
     },
   };

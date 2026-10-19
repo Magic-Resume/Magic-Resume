@@ -14,14 +14,14 @@ const href = (prompt: string) => `${dashboardLink('use_cases', locale)}&prompt=$
     <div class="be-collage-copy">
       <p class="be-collage-chip reveal" style="--reveal-delay:0">{c.eyebrow}</p>
       <SectionHeading title={c.title} subtitle={c.subtitle} />
-      <a class="be-collage-cta reveal" style="--reveal-delay:1" data-collage-cta href={href(c.items[0].prompt)} data-astro-reload>{c.cta}<Icon name="arrow-right" size={16}/></a>
+      <a class="be-collage-cta reveal" style="--reveal-delay:1" data-collage-cta data-ref-forward="href" href={href(c.items[0].prompt)} data-astro-reload>{c.cta}<Icon name="arrow-right" size={16}/></a>
     </div>
 
     <div class="be-collage-stage reveal" style="--reveal-delay:2">
       <i class="be-collage-ring is-fill" aria-hidden="true"></i>
       <i class="be-collage-ring is-line" aria-hidden="true"></i>
       <story-collage class="be-collage">
-        {c.items.map((item, i) => <button type="button" class:list={['be-story', i === 0 && 'is-active']} style={`--offset:${i};--depth:${i}`} data-href={href(item.prompt)} aria-pressed={i === 0}>
+        {c.items.map((item, i) => <button type="button" class:list={['be-story', i === 0 && 'is-active']} style={`--offset:${i};--depth:${i}`} data-ref-forward="data-href" data-href={href(item.prompt)} aria-pressed={i === 0}>
           <span class="be-story-top"><span class="be-story-label">{item.tag}</span><span class="be-story-icon"><Icon name={icons[i]} size={16}/></span></span>
           <span class="be-story-title">{item.title}</span>
           <span class="be-story-body">{item.desc}</span>

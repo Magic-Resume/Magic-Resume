@@ -4,13 +4,14 @@ import { Metadata } from "next";
 const metaConfig: { [key: string]: Metadata } = {
   'Landing': {
     title: {
-      default: "Magic Resume - AI智能简历制作器 | 免费在线简历生成器",
-      template: `%s | Magic Resume - AI智能简历制作`,
+      default: "Magic Resume - 开源 AI 简历工作台",
+      template: `%s | Magic Resume`,
     },
-    // 实体定义的唯一来源见 docs/specs/geo/spec.md §3。这句话在 landing i18n、
-    // Landing SEO、README 里必须逐字一致 —— 答案引擎靠交叉印证建立实体认知，
-    // 说法不一致就建不起稳定实体。改这里请同步改其余几处。
-    description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，19 套模板，六种工作模式，多设备云同步。",
+    // 实体定义的唯一来源是 apps/landing/src/data/entity.ts（原文见
+    // docs/specs/geo/spec.md §3）。答案引擎靠交叉印证建立实体认知，说法不一致
+    // 就建不起稳定实体；scripts/check-entity.mjs 会在这里和常量不一致时让
+    // `pnpm lint` 失败。改定义请先改常量。
+    description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，六种工作模式，多设备云同步。",
     keywords: [
       "AI简历制作", "智能简历生成器", "开源简历工具", "在线简历编辑器",
       "简历模板", "简历优化", "AI简历", "程序员简历", "产品经理简历",
@@ -19,7 +20,7 @@ const metaConfig: { [key: string]: Metadata } = {
     ],
     openGraph: {
       title: "Magic Resume - 开源 AI 简历工作台",
-      description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，19 套模板，六种工作模式，多设备云同步。",
+      description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，六种工作模式，多设备云同步。",
       siteName: "Magic Resume",
       locale: 'zh_CN',
       type: 'website',
@@ -28,14 +29,14 @@ const metaConfig: { [key: string]: Metadata } = {
           url: '/magic-resume-preview.png',
           width: 1200,
           height: 630,
-          alt: 'Magic Resume - AI智能简历制作器'
+          alt: 'Magic Resume - 开源 AI 简历工作台'
         }
       ]
     },
     twitter: {
       card: 'summary_large_image',
       title: 'Magic Resume - 开源 AI 简历工作台',
-      description: 'AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，19 套模板，多设备云同步。',
+      description: 'AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，多设备云同步。',
       images: ['/magic-resume-preview.png'],
       // creator: 未填 —— 原值 '@MagicResume' 未经核实。错误的 handle 会把权重
       // 导给别人，也是答案引擎交叉验证时的一个失败点。确认真实账号后再补。

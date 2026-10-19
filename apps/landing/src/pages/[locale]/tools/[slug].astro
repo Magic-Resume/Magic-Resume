@@ -1,7 +1,8 @@
 ---
+import { templateIds, templateFacts } from '@/data/templates';
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import SyntheticDemo from '@/components/content/SyntheticDemo.astro';
-import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@/i18n/ui';
 import { getTool, getTools } from '@/data/tools';
 import { dashboardLink, CONTENT_LINKS, GITHUB } from '@/consts';
 
@@ -13,7 +14,7 @@ export function getStaticPaths() {
 
 const localeParam = Astro.params.locale;
 const slug = Astro.params.slug ?? '';
-if (!isLocale(localeParam)) return Astro.redirect('/en/tools');
+if (!isLocale(localeParam)) return Astro.redirect(`/${DEFAULT_LOCALE}/tools`);
 const locale = localeParam as Locale;
 const tool = Astro.props.tool ?? getTool(locale, slug);
 if (!tool) return Astro.redirect(`/${locale}/tools`);
@@ -34,12 +35,22 @@ const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : 'en', 
           {tool.bullets.map((bullet) => <li class="flex gap-3"><span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent"></span><span>{bullet}</span></li>)}
         </ul>
         <div class="mt-10 flex flex-wrap gap-3">
-          <a href={tool.slug === 'mcp-resume-editor' ? (CONTENT_LINKS.docs ?? GITHUB.repo) : dashboardLink('hero', locale)} target={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? '_blank' : undefined} rel={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? 'noopener noreferrer' : undefined} class="rounded-md bg-ink px-5 py-3 text-mr-body font-w510 text-workbench">{tool.cta}</a>
+          <a data-ref-forward={tool.slug === 'mcp-resume-editor' ? undefined : 'href'} href={tool.slug === 'mcp-resume-editor' ? (CONTENT_LINKS.docs ?? GITHUB.repo) : dashboardLink('hero', locale)} target={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? '_blank' : undefined} rel={tool.slug === 'mcp-resume-editor' && !CONTENT_LINKS.docs ? 'noopener noreferrer' : undefined} class="rounded-md bg-ink px-5 py-3 text-mr-body font-w510 text-workbench">{tool.cta}</a>
           <span class="self-center text-mr-overline text-muted">{tool.ctaNote}</span>
         </div>
       </div>
       <SyntheticDemo title={tool.demoTitle} button={tool.demoButton} done={tool.demoDone} items={tool.demoItems} />
     </div>
+    {tool.slug === 'resume-templates' && <nav class="mt-12" aria-label={locale === 'zh' ? '浏览模板' : 'Browse templates'}>
+      <h2 class="type-heading text-ink">{locale === 'zh' ? '浏览真实模板' : 'Explore the templates'} ({templateIds.length})</h2>
+      <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-3">{templateIds.map((id) => <li><a class="text-muted underline hover:text-ink" href={`/${locale}/templates/${id}`}>{templateFacts(id, locale).name}</a></li>)}</ul>
+    </nav>}
+    {tool.install && <div class="mt-12">
+      <h2 class="type-heading text-ink">{locale === 'zh' ? '安装来源' : 'Where to install it'}</h2>
+      <pre class="mt-5 overflow-x-auto rounded-xl border border-hair bg-surface/30 px-5 py-4 font-mono text-mr-body text-ink"><code>{tool.install.command}</code></pre>
+      <p class="mt-4 text-mr-body leading-7 text-muted">{tool.install.note}</p>
+      <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-2">{tool.install.links.map((link) => <li><a class="text-muted underline hover:text-ink" href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a></li>)}</ul>
+    </div>}
     <div class="mt-16 border-t border-hair pt-10">
       <h2 class="type-heading text-ink">{locale === 'zh' ? '推荐流程' : 'Recommended workflow'}</h2>
       <ol class="mt-7 grid gap-4 md:grid-cols-3">

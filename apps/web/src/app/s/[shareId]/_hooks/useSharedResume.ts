@@ -32,7 +32,8 @@ export function useSharedResume() {
     // Core State
     const [resume, setResume] = useState<Resume | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    // 只记哪一类：链接失效（东西不在）和加载失败（可以重试）是两屏，文案由页面出。
+    const [error, setError] = useState<'not_found' | 'failed' | null>(null);
     const [template, setTemplate] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [isCommentMode, setIsCommentMode] = useState(false);
     
@@ -171,21 +172,18 @@ export function useSharedResume() {
             } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
                 if (ignore) return;
                 console.error('Error fetching resume:', err);
-                setError(err.response?.status === 404 ? t('sharedPage.error.resumeNotFound') : t('sharedPage.error.failedToLoad'));
-                if (err.response?.status === 404) {
-                    toast.error(t('sharedPage.notifications.resumeNotFound'));
-                }
+                // 不再补一条 toast：整页已经在说同一件事。
+                setError(err.response?.status === 404 ? 'not_found' : 'failed');
             } finally {
                 if (!ignore) setLoading(false);
             }
         };
 
         fetchResume();
-        // `t` is intentionally omitted: it changes identity on language switch, which
-        // would refetch and (without cancellation) let a stale response overwrite newer
-        // data. The ignore flag cancels in-flight work on shareId change / unmount.
+        // The ignore flag cancels in-flight work on shareId change / unmount, so a stale
+        // response can't overwrite newer data.
         return () => { ignore = true; };
-    }, [shareId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [shareId]);
 
     // Handlers
     const handleResumeMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {

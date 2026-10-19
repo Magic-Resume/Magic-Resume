@@ -1,39 +1,42 @@
 ---
 title: Internals
-description: How @magic-resume/mcp is wired internally — entry points, config, and the Core API contract.
+description: "This page explains @magic-resume/mcp’s layout, entry points, configuration, tool registration, and Core API contract for contributors changing the package."
 ---
 
-For contributors hacking on the MCP package itself, or building a fork.
+This page is for contributors changing the MCP package itself or building a fork. The CLI and server share `config.ts`, and the server talks to the API through `client.ts`. The CLI handles one-shot config commands, while the MCP server is the process AI tools spawn.
 
-## Layout
+## How is the MCP package organized?
 
 ```
 packages/mcp/
 ├── src/
-│   ├── cli.ts           # `magic-resume` CLI entrypoint (config get/set/print/clear)
+│   ├── cli.ts           # `magic-resume` CLI entrypoint (config set/print/clear, mcp)
 │   ├── server.ts        # MCP server: tool registration, stdio transport
 │   ├── resume-tools.ts  # business logic for every tool above
 │   ├── config.ts        # ~/.magic-resume/mcp.json reader/writer
-│   └── http.ts          # thin axios wrapper that sends the PAT
+│   ├── client.ts        # thin fetch client that sends the PAT
+│   └── index.ts         # library exports
+├── scripts/bundle.mjs   # esbuild: bundles the private workspace packages for npm
 ├── test/                # node --test suites
 └── package.json         # type: "module", bin: magic-resume
 ```
 
-The CLI and the server share `config.ts` and `http.ts`. The CLI is for one-shot config commands; the MCP server is what AI tools spawn.
+The CLI and the server share `config.ts`; the server talks to the API through `client.ts`. The CLI is for one-shot config commands; the MCP server is what AI tools spawn.
 
-## Entry points
+## What are the CLI and MCP server entry points?
 
-- **CLI:** `bin: { "magic-resume": "./dist/cli.js" }` in `package.json`. Subcommands: `config set`, `config get`, `config print`, `config clear`, and `mcp` (which boots the server).
+- **CLI:** `bin: { "magic-resume": "./dist/cli.js" }` in `package.json`. Subcommands: `config set`, `config print` (PAT masked), `config clear`, and `mcp` (which boots the server).
 - **MCP server:** `magic-resume mcp` boots `server.ts`, registers tools, attaches `StdioServerTransport`, and runs forever.
 
-## Config file
+## Where is the config file and what does it contain?
 
 `~/.magic-resume/mcp.json`:
 
 ```json
 {
   "apiUrl": "https://api.magic-resume.cn/api",
-  "pat": "mr_pat_xxx"
+  "token": "mr_pat_xxx",
+  "defaultResumeId": "optional"
 }
 ```
 
@@ -43,7 +46,7 @@ The CLI and the server share `config.ts` and `http.ts`. The CLI is for one-shot 
 This file holds a PAT in plaintext. The CLI sets file permissions to `0600` on POSIX. If you're contributing on Windows, don't relax this.
 </Warning>
 
-## Tool registration
+## How are MCP tools registered?
 
 `server.ts` uses `@modelcontextprotocol/sdk` to register each tool with:
 
@@ -53,7 +56,7 @@ This file holds a PAT in plaintext. The CLI sets file permissions to `0600` on P
 
 Tools always return structured JSON. Errors throw `McpError` with a stable error code so AI tools can react (e.g. retry on transient network failures, abort on validation errors).
 
-## Core API contract
+## What Core API endpoints does MCP use?
 
 The MCP server is a client of the same NestJS Core API the web app talks to. Relevant endpoints:
 
@@ -63,9 +66,9 @@ The MCP server is a client of the same NestJS Core API the web app talks to. Rel
 | `/api/resumes/:id` | GET | PAT |
 | `/api/resumes/:id` | PATCH | PAT |
 
-`http.ts` attaches `Authorization: Bearer <pat>` automatically. Unlike the web app, **there is no Clerk involvement** — PATs are a separate auth method the Core API understands.
+`client.ts` attaches `Authorization: Bearer <pat>` automatically. Unlike the web app, **there is no Clerk involvement** — PATs are a separate auth method the Core API understands.
 
-## Build and publish
+## How do I build and publish the MCP package?
 
 ```bash
 pnpm --filter @magic-resume/mcp build      # tsc → dist/
@@ -75,7 +78,7 @@ pnpm --filter @magic-resume/mcp lint       # tsc --noEmit
 
 Publishing is gated by `publishConfig.access = "public"` and uses pnpm's `workspace:*` rewriting so the published `package.json` has real semver versions for `@magic-resume/resume-schema` and `@magic-resume/resume-templates`.
 
-## Adding a new tool
+## How do I add a new MCP tool?
 
 1. Add the handler to `resume-tools.ts`. Keep it pure and patch-based.
 2. Register it in `server.ts` with a Zod input schema and a short description.

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { useResumeDocumentStore } from '@/store/resume/document';
+import ResumeMissing, { useResumeMissing } from '@/app/dashboard/edit/_components/ResumeMissing';
 import { ShareModal } from '@/app/dashboard/edit/_components/modals/ShareModal';
 import { useEffect } from 'react';
 
@@ -10,6 +11,7 @@ export default function ShareModalPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const missing = useResumeMissing(id);
   const { activeResume, loadResumeForEdit } = useResumeDocumentStore();
 
   // Ensure resume is loaded if hitting this page directly
@@ -24,6 +26,8 @@ export default function ShareModalPage() {
       router.push(`/dashboard/edit/${id}`);
     }
   };
+
+  if (missing) return <ResumeMissing />;
 
   return (
     <div className="bg-desk flex min-h-screen items-center justify-center">

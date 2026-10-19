@@ -34,7 +34,9 @@
 
 <br/>
 
-**Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。** MIT 协议内核，19 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
+**Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。** MIT 协议内核，20 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
+
+> Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。
 
 它把实时可视化编辑器与多模型 AI 结合在一起，并更进一步 —— 内置原生 **MCP 服务**，让 AI 编程工具（Claude Code、Cursor、Windsurf）无需猜测数据结构即可安全读取与修改你的简历。
 
@@ -51,7 +53,7 @@
 | 版本历史 | 本地快照 | 云端保留，可回滚 |
 | AI 能力 | 自带 API Key | 内置，开箱即用 |
 | 后端依赖 | 无需后端与数据库 | 由官方托管 |
-| 模板 | 19 套，完全相同 | 19 套，完全相同 |
+| 模板 | 20 套，完全相同 | 20 套，完全相同 |
 
 > [!NOTE]
 > 自部署版全部在浏览器内运行，简历数据只保存在你自己的机器上。云端版默认开启多设备同步，数据加密传输与存储，随时可完整导出。
@@ -63,7 +65,7 @@
 **制作 —— 顺手的可视化编辑**
 
 - **实时预览** —— 输入即所见，改动立刻呈现。
-- **19 套专业模板** —— ATS 友好，颜色、字体、排版全可控。
+- **20 套专业模板** —— ATS 友好，颜色、字体、排版全可控。
 - **深度自定义** —— 22+ 字体、间距与布局调节。
 - **版本历史** —— 随时快照与回滚到任意历史版本。
 - **简历分享** —— 通过唯一链接分享，支持 查看 / 评论 / 编辑 权限。
@@ -94,9 +96,9 @@
 
 ## 简历模板
 
-19 套精心打磨、ATS 友好的模板，每套均可完全自定义（颜色、字体、间距、排版）：
+20 套精心打磨、ATS 友好的模板，每套均可完全自定义（颜色、字体、间距、排版）：
 
-`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo`
+`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo` · `blue-line`
 
 ---
 

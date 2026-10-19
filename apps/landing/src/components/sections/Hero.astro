@@ -31,7 +31,7 @@ let index = 0;
     </h1>
     <p class="be-hero-copy">{h.subtitle}</p>
     <resume-composer data-roles={JSON.stringify(h.roles)} data-prefix={h.promptPrefix} data-suffix={h.promptSuffix}>
-      <form class="be-composer" data-mira-form data-beui="agent-chat-input-studio" data-astro-reload action={`${cta.origin}${cta.pathname}`} method="get">
+      <form data-ref-forward="form" class="be-composer" data-mira-form data-beui="agent-chat-input-studio" data-astro-reload action={`${cta.origin}${cta.pathname}`} method="get">
         {Array.from(cta.searchParams).map(([name, value]) => <input type="hidden" name={name} value={value} />)}
         <div class="be-composer-top"><label for="mira-hero-prompt"><Icon name="sparkle" size={16} />{h.composerLabel}</label></div>
         <div class="be-composer-field">

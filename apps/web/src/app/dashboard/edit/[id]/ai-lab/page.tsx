@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useResumeDocumentStore } from '@/store/resume/document';
+import ResumeMissing, { useResumeMissing } from '@/app/dashboard/edit/_components/ResumeMissing';
 import { useResumeEditorUiStore } from '@/store/resume/editor-ui';
 import AIModal from '../../_components/modals/AIModal';
 import { useParams } from 'next/navigation';
@@ -11,6 +12,7 @@ export default function AIModalPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const missing = useResumeMissing(id);
 
   const {
     activeResume,
@@ -37,6 +39,7 @@ export default function AIModalPage() {
     }
   };
 
+  if (missing) return <ResumeMissing />;
   if (!activeResume) return null;
 
   return (

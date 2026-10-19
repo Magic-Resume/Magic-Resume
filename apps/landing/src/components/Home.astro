@@ -23,7 +23,7 @@ interface Props {
 }
 const { locale } = Astro.props;
 const copy = getCopy(locale);
-const [stars, contributors, plans] = await Promise.all([
+const [stars, contributors, pricing] = await Promise.all([
   getStarCount(),
   getContributors(),
   loadPricing(copy, locale, import.meta.env.LANDING_PRICING_URL),
@@ -35,6 +35,7 @@ const [stars, contributors, plans] = await Promise.all([
   title={copy.meta.title}
   description={copy.meta.description}
   copy={copy}
+  pricing={pricing}
 >
   <Header copy={copy} stars={stars} locale={locale} />
   <main id="main">
@@ -45,7 +46,7 @@ const [stars, contributors, plans] = await Promise.all([
     <Workflow copy={copy} />
     <Process copy={copy} locale={locale} />
     <Sync copy={copy} />
-    <Pricing copy={copy} locale={locale} plans={plans} />
+    <Pricing copy={copy} locale={locale} plans={pricing.plans} />
     <OpenSource copy={copy} stars={stars} />
     <FaqSection copy={copy} />
     <Team copy={copy} contributors={contributors} />

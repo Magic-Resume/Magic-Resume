@@ -142,9 +142,14 @@ function runtimeSingletonPackages(
  * 这个 key 是**配置加载时求值**的，不像 `webpack()` 那样按需调用。不加这道判断，
  * webpack 模式下也会白跑一遍单例解析（要读若干 package.json 并解析依赖），
  * 结果还没人用。
+ *
+ * Next 16 起 Turbopack 是默认打包器，`--webpack` 才切回；dev 下配置在服务进程里加载，
+ * 看不到命令行参数。所以以 CLI 选定打包器时写入的 `process.env.TURBOPACK`（'1' 或
+ * 'auto'）为准——再去找 `--turbopack` 的话，默认的 Turbopack 构建会得到 false，
+ * overlay 别名被清空，付费墙、法务文案和埋点一起静默消失。
  */
 function usingTurbopack(): boolean {
-  return process.argv.includes('--turbopack');
+  return Boolean(process.env.TURBOPACK);
 }
 
 function commercialOptIn(): boolean {
@@ -202,14 +207,9 @@ const nextConfig: NextConfig = {
   /**
    * 构建产物目录，可用 `NEXT_DIST_DIR` 覆盖。
    *
-   * `next dev` 与 `next build` 默认共用 `.next/`：dev 跑着的时候在同一棵树上跑一次
-   * 构建，会把 dev server 脚下的 chunk 整个换掉——dev 仍按旧 manifest 发请求，于是
-   * `/_next/static/css/app/layout.css` 之类全部 404，表现为「改完不重新打包就炸」。
-   * 因果其实是反的：不是改完要打包，是打包打坏了 dev。
-   *
-   * 留一个环境变量而不是写死另一个目录：CI / Docker / `pnpm build` 的默认行为完全
-   * 不变（未设时仍是 `.next`），只有想在 dev 开着的情况下验证构建时才需要
-   * `NEXT_DIST_DIR=.next-verify pnpm build`，两边各写各的目录，互不打扰。
+   * Next 16 起 `next dev` 写到 `.next/dev`、`next build` 写到 `.next`，两者可以同时跑，
+   * 不再需要靠换目录避免构建把 dev 脚下的 chunk 换掉。这个变量保留给已经在用
+   * `.next-verify` 的脚本与 turbo 缓存配置；未设时仍是 `.next`。
    */
   distDir: process.env.NEXT_DIST_DIR || ".next",
 
@@ -292,6 +292,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // 后台嵌入的简历预览：同样是别人的真名与履历。
+        source: '/embed/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+      {
         /**
          * PDF 用的 CJK 字体：内容固定、体积巨大（子集 2.4–4.0MB，全量 13–17MB），
          * 必须 immutable。
@@ -359,7 +366,7 @@ const nextConfig: NextConfig = {
     } : false,
   },
 
-  // Turbopack配置（现在是稳定功能）
+  // Turbopack 配置。Next 16 起 dev 与 build 默认都走 Turbopack，文件系统缓存默认开启。
   turbopack: {
     rules: {
       '*.svg': {
@@ -373,6 +380,11 @@ const nextConfig: NextConfig = {
      * `instrumentation.ts` 的断言就是为这个失败模式准备的。
      *
      * 单例去重在这里用裸键：`dep$` 是 webpack 的精确匹配语法，Turbopack 不认。
+     *
+     * 注意：overlay 位于本 monorepo 之外时 Turbopack 解析不到（绝对路径会被当成相对项目根），
+     * 所以 `scripts/build.mjs` 与 `scripts/dev.mjs` 在配置了 overlay 时改用 webpack；这一块
+     * 保留给 overlay 位于项目根之内的场景，`Magic-Resume-Commercial` 的 apply-overlay 也会
+     * 校验它仍然存在。
      */
     resolveAlias: usingTurbopack()
       ? { ...overlaySlots(), ...runtimeSingletonPackages(activeOverlayRoots()) }
@@ -390,7 +402,7 @@ const nextConfig: NextConfig = {
      * 这次开发根本没打开过的路由付重建成本。
      */
     preloadEntriesOnStart: false,
-    /** 大型 compilation 下少留内存。webpack 模式专用，默认 false。 */
+    /** 大型 compilation 下少留内存。webpack 模式（`--webpack`）专用，默认 false。 */
     webpackMemoryOptimizations: true,
     // 优化包导入。只列真的装了的——`react-icons` 与 `@radix-ui/react-icons` 都不在
     // 依赖里，列着是死配置（图标现在走 @magic-resume/icons → @hugeicons）。
@@ -399,7 +411,6 @@ const nextConfig: NextConfig = {
       'framer-motion',
       '@langchain/core',
     ],
-    viewTransition: true,
   },
 
   // Webpack优化暂时禁用，避免构建错误

@@ -1,5 +1,6 @@
 import React from 'react';
 import DOMPurify from 'dompurify';
+import { ServerRichText } from './ServerRichText';
 
 interface Props {
   dirtyHtml: string;
@@ -8,7 +9,7 @@ interface Props {
 
 export function WysiwygContent({ dirtyHtml, className }: Props) {
   if (typeof window === 'undefined') {
-    return <div className={className} />;
+    return <div className={`wysiwyg ${className || ''}`}><ServerRichText html={dirtyHtml} /></div>;
   }
   const cleanHtml = DOMPurify.sanitize(dirtyHtml);
   return (

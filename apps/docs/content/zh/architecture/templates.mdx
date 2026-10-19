@@ -1,13 +1,13 @@
 ---
 title: 模板系统
-description: Magic Template DSL、注册表，以及如何添加一套新模板。
+description: "模板以 MagicTemplateDSL 数据定义外观和布局，Web 预览与 PDF 导出共用同一套渲染器。"
 ---
 
-模板住在 `packages/resume-templates` 里。一个模板是一个 `MagicTemplateDSL` 值 —— 描述 design token、布局、按 section 渲染规则的声明式数据。本包里的渲染器把"一个 DSL 值 + 一份 `Resume`"渲染成 JSX。
+模板住在 `packages/resume-templates` 里，一个模板是描述 design token、布局和按 section 渲染规则的 `MagicTemplateDSL` 值。本包里的渲染器把一个 DSL 值和一份 `Resume` 渲染成 JSX，Web 应用和 PDF 导出共用一套渲染器。
 
 也就是说，模板是 **数据**，不是组件。Web 应用和 PDF 导出共用一套渲染器。
 
-## 一个模板长什么样
+## 一个模板长什么样？
 
 ```ts
 import type { MagicTemplateDSL } from '@magic-resume/resume-templates'
@@ -34,7 +34,7 @@ const myTemplate: MagicTemplateDSL = {
 
 渲染器按 `sections` 的顺序遍历，查找 `Resume` 中对应的子值，然后渲染。没在 `sections` 里出现的 section 在这套模板下就不会渲染。
 
-## 注册表
+## 模板注册表如何与 Schema 对齐？
 
 所有模板在 `packages/resume-templates/src/registry.ts` 里注册：
 
@@ -48,7 +48,7 @@ export const templateRegistry: Record<TemplateId, MagicTemplateDSL> = {
 
 模板 ID **必须与** `packages/resume-schema` 中的 `templateIds` 完全一致。Schema 的 Zod enum 校验 `selectedTemplate` 字段 —— 漂移会让保存过的简历校验失败。
 
-## 加一套新模板
+## 怎么添加一套新模板？
 
 <Steps>
 <Step title="在 Schema 里加 ID">
@@ -93,11 +93,11 @@ pnpm --filter @magic-resume/resume-templates build
 三个地方必须同步：Schema 里的 `templateIds`、resume-templates 里的 `templateRegistry`、`apps/web/public/templates/jpg/` 里的缩略图文件名。任何一个缺失都会以 404 或 Zod 校验错的形式浮出来。
 </Warning>
 
-## TemplateCustomizer
+## TemplateCustomizer 有什么用？
 
 `@magic-resume/resume-templates/TemplateCustomizer` 是一个子导出 —— Web 应用嵌入它，让用户在不 fork DSL 的前提下调整模板的 design token。如果你新增了 token，也要在这里加对应的控件。
 
-## 渲染流水线
+## 模板如何渲染成预览和 PDF？
 
 ```
 Resume + TemplateDSL ─▶ renderer (React) ─▶ DOM（编辑器预览）

@@ -1,13 +1,13 @@
 ---
 title: MCP 服务器总览
-description: "@magic-resume/mcp 是原生的 Model Context Protocol 服务器，把你的简历作为带类型、可 Patch 编辑的资源暴露给 AI 编程工具。"
+description: "@magic-resume/mcp 通过 Schema、JSON Patch 校验和原子应用，让 AI 编程工具结构化地读取和修改简历。"
 ---
 
-`@magic-resume/mcp` 是一个 [Model Context Protocol](https://modelcontextprotocol.io) 服务器，把你的简历作为带类型、可 Patch 编辑的资源暴露给 AI 编程工具 —— Claude Code、Cursor、Windsurf，任何会说 MCP 的客户端都能用。
+`@magic-resume/mcp` 是一个 [Model Context Protocol](https://modelcontextprotocol.io) 服务器，把你的简历作为带类型、可 Patch 编辑的资源暴露给 AI 编程工具 —— Claude Code、Cursor、Windsurf，任何会说 MCP 的客户端都能用。MCP 给模型提供结构化访问，包括 Schema、样例数据、JSON Patch 校验和原子应用。
 
 为什么要有它：把整份简历 JSON 粘到 AI prompt 里不靠谱。模型得猜 Schema、不知道哪些字段必填、也没办法验证自己的修改。MCP 给模型提供 **结构化访问** —— Schema、样例数据、JSON Patch 校验、原子应用。
 
-## 设计原则
+## MCP 服务器遵循哪些设计原则？
 
 - **基于 Patch，不做整片重写。** 每次 mutation 都是 JSON Patch（RFC 6902），通过 `fast-json-patch` 应用。模型改一行不用回吐整份简历。
 - **Schema 感知。** Patch 在落入存储 *之前* 已经被 `@magic-resume/resume-schema` 校验过。非法 Patch 会被拒掉，并返回模型能读懂的结构化错误。
@@ -20,7 +20,7 @@ description: "@magic-resume/mcp 是原生的 Model Context Protocol 服务器，
   <Card title="内部细节" href="/zh/mcp/internals" />
 </CardGroup>
 
-## 什么时候适合用
+## 什么时候适合用 MCP？
 
 | 任务 | 用 MCP？ |
 |---|---|

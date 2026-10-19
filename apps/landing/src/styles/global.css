@@ -3,6 +3,7 @@
 @import "@magic-resume/design-system/styles/utilities.css";
 @import "@magic-resume/design-system/styles/motion.css";
 @source "../../../../packages/design-system/src";
+@source "../../../../packages/resume-templates/src";
 
 /* Self-hosted brand face. Latin only — CJK falls back to the system stack. */
 @import "@fontsource-variable/inter";

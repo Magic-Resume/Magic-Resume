@@ -1,13 +1,13 @@
 'use client';
 
 import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Loader2, ZoomIn, ZoomOut, MessageSquare, RotateCcw, Eye, Wand2 } from '@magic-resume/icons';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 import { FloatingDock } from "@/components/ui/floating-dock";
+import ErrorSurface from '@/components/shared/ErrorSurface';
 import { useSharedResume } from '../_hooks/useSharedResume';
 import { SharedResumeHeader } from './SharedResumeHeader';
 import { CommentLayer } from './CommentLayer';
@@ -15,9 +15,7 @@ import { ResumeTransformView } from './ResumeTransformView';
 import { CommentSidebar } from './CommentSidebar';
 
 export default function SharedResumeClient() {
-  const router = useRouter();
   const { t } = useTranslation();
-  const [countdown, setCountdown] = useState(5);
   const {
     resume,
     loading,
@@ -126,61 +124,36 @@ export default function SharedResumeClient() {
     return true;
   }), [t, comments.length, toggleSidebar, isCommentMode, toggleCommentMode, resume, currentUserId, transformComponentRef]);
 
-  useEffect(() => {
-    if (error || (!loading && !resume)) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            router.push('/');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [error, loading, resume, router]);
-
   if (loading || !isScaleReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-950">
+      <div className="min-h-screen flex items-center justify-center bg-desk">
         <Loader2 className="w-8 h-8 text-neutral-500 animate-spin" />
       </div>
     );
   }
 
+  // 打开分享链接的多半是 HR：不替他倒计时跳走，让他看清是链接失效还是网络问题。
+  if (error === 'failed' || (resume && !template)) {
+    return (
+      <ErrorSurface
+        fill="screen"
+        title={t('sharedPage.error.failedTitle')}
+        note={t('sharedPage.error.failedNote')}
+        onRetry={() => window.location.reload()}
+        secondary={{ label: t('notFoundPage.buttons.backHome'), href: '/' }}
+      />
+    );
+  }
+
   if (error || !resume || !template) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 text-white p-4">
-        <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center"
-        >
-            <h1 className="text-6xl font-black mb-4 bg-linear-to-b from-white to-white/40 bg-clip-text text-transparent">404</h1>
-            <p className="text-xl text-neutral-400 mb-8">{error || t('sharedPage.error.resumeNotFound')}</p>
-            <div className="flex flex-col items-center gap-4">
-                <div className="h-1 w-48 bg-neutral-800 rounded-full overflow-hidden">
-                    <motion.div 
-                        initial={{ width: "100%" }}
-                        animate={{ width: "0%" }}
-                        transition={{ duration: 5, ease: "linear" }}
-                        className="h-full bg-blue-500"
-                    />
-                </div>
-                <p className="text-sm text-neutral-500">
-                    {t('sharedPage.error.redirectingPre')} <span className="text-blue-500 font-mono font-bold">{countdown}</span> {t('sharedPage.error.redirectingPost')}
-                </p>
-                <button 
-                    onClick={() => router.push('/')}
-                    className="mt-4 px-6 py-2 bg-[#fff] text-black rounded-full text-sm font-medium hover:bg-neutral-200 transition-colors"
-                >
-                    {t('sharedPage.error.returnNow')}
-                </button>
-            </div>
-        </motion.div>
-      </div>
+      <ErrorSurface
+        variant="missing"
+        fill="screen"
+        title={t('sharedPage.error.missingTitle')}
+        note={t('sharedPage.error.missingNote')}
+        primary={{ label: t('notFoundPage.buttons.backHome'), href: '/' }}
+      />
     );
   }
 

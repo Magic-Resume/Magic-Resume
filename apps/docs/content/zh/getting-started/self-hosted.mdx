@@ -1,13 +1,13 @@
 ---
 title: 自托管
-description: 不需要任何后端、数据库或账号，在自己机器上跑起 Magic Resume。
+description: "自托管模式在浏览器中运行编辑器并以 IndexedDB 保存简历，无需账户或后端，AI 不可用。"
 ---
 
-自托管模式下，Web 应用完全跑在浏览器里。简历数据持久化在名为 `MagicResumeDB` 的 IndexedDB 里。**没有鉴权、没有后端（gateway / platform-api / agent-service），也不会发送产品埋点事件。AI 完全不可用** —— AI Lab 和 AI PDF 导入都会代理到后端、需要已登录用户，这里用不了。
+自托管模式下，Web 应用完全跑在浏览器里，简历数据持久化在名为 `MagicResumeDB` 的 IndexedDB 里。这个模式没有鉴权、没有后端（gateway / platform-api / agent-service），也不会发送产品埋点事件。AI 完全不可用，因为 AI Lab 和 AI PDF 导入都会代理到后端、需要已登录用户。
 
 这是改造代码本身时推荐的模式。
 
-## 前置条件
+## 自托管需要哪些前置条件？
 
 - Node.js 20+
 - pnpm `10.28.1`（`packageManager` 里钉死的版本）。其他版本能跑，但 lockfile 漂移要你自己负责。
@@ -57,7 +57,7 @@ pnpm --filter @magic-resume/web dev
 </Step>
 </Steps>
 
-## 没有后端时能用什么
+## 没有后端时能用什么？
 
 | 功能 | 自托管 |
 |---|---|
@@ -72,7 +72,7 @@ pnpm --filter @magic-resume/web dev
 纯自托管模式下**没有 AI** —— 每个 AI 功能都会代理到后端、且要求已登录用户。把完整后端跑起来、切到云端模式才能用；那时你可以自带 API Key（只存浏览器本地）代替平台额度。
 </Info>
 
-## 环境变量速查
+## 自托管有哪些环境变量？
 
 | 变量 | 是否必需 | 作用 |
 |---|---|---|

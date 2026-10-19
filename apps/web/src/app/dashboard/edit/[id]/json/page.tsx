@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { getSanitizedResume } from '@/store/useResumeStore';
 import { useResumeDocumentStore } from '@/store/resume/document';
+import ResumeMissing, { useResumeMissing } from '@/app/dashboard/edit/_components/ResumeMissing';
 import JsonModal from '@/app/dashboard/edit/_components/modals/JsonModal';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ export default function JsonModalPage() {
   const { activeResume, loadResumeForEdit } = useResumeDocumentStore();
   const { t } = useTranslation();
   const id = params.id as string;
+  const missing = useResumeMissing(id);
 
   // Load resume if not present (handling refresh case)
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function JsonModalPage() {
     toast.success(t('editPage.notifications.jsonDownloadStarted'));
   };
 
+  if (missing) return <ResumeMissing />;
   if (!activeResume) return null;
 
   return (

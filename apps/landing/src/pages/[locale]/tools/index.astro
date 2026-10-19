@@ -1,6 +1,6 @@
 ---
 import ContentLayout from '@/layouts/ContentLayout.astro';
-import { LOCALES, isLocale, type Locale } from '@/i18n/ui';
+import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@/i18n/ui';
 import { getTools } from '@/data/tools';
 
 export function getStaticPaths() {
@@ -8,7 +8,7 @@ export function getStaticPaths() {
 }
 
 const localeParam = Astro.params.locale;
-if (!isLocale(localeParam)) return Astro.redirect('/en/tools');
+if (!isLocale(localeParam)) return Astro.redirect(`/${DEFAULT_LOCALE}/tools`);
 const locale = localeParam as Locale;
 const tools = getTools(locale);
 const title = locale === 'zh' ? 'AI 简历工具 | Magic Resume' : 'AI resume tools | Magic Resume';

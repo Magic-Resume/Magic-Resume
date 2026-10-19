@@ -1,17 +1,17 @@
 ---
 title: 贡献指南
-description: 如何为 Magic Resume 贡献代码、文档或模板。
+description: "本页说明贡献代码、文档或模板的工作流、必须遵守的边界和 MIT 许可约定。"
 ---
 
 Magic Resume 是 MIT 许可的开源项目，欢迎贡献。带着复现、测试和明确"为什么"的 PR 通常会被很快合并。
 
-## 开始之前
+## 开始贡献之前需要做什么？
 
 - 先在 [Issue 列表](https://github.com/LinMoQC/Magic-Resume/issues) 和 [PR 列表](https://github.com/LinMoQC/Magic-Resume/pulls) 搜一下，避免重复劳动。
 - 比小修小补更大的工作，请先开 Issue 描述方案。这样能省双方一个"谢谢但不收"的尴尬。
 - 新的部署模式、新的鉴权流程、新的本地/云端开关都需要 maintainer 先点头 —— 它们的边界是有意收窄的。
 
-## 工作流
+## 贡献的工作流是什么？
 
 1. Fork 仓库并克隆 fork。
 2. 从 `master` 切一个分支：`git checkout -b feat/<short-name>`。
@@ -20,7 +20,7 @@ Magic Resume 是 MIT 许可的开源项目，欢迎贡献。带着复现、测�
 5. 过一遍质量门槛：`pnpm run lint && pnpm run test`。Husky 的 pre-commit hook 会跑一个子集，但完整扫一遍比拿到红色 CI 便宜。
 6. 提 PR，写清楚 *做了什么* 和 *为什么*。如果有相关 Issue，链上。
 
-## 硬性规则
+## 贡献时必须遵守哪些规则？
 
 <Warning>
 **没人让你改 Clerk 鉴权时不要主动改。** 包括 `clerkMiddleware`、`<ClerkProvider>`、`useAuth`，以及 `useResumeStore` 里的云端同步逻辑。云端/自托管的切分依赖它们行为可预测。
@@ -34,7 +34,7 @@ Magic Resume 是 MIT 许可的开源项目，欢迎贡献。带着复现、测�
 **`@magic-resume/mcp` 必须保持无浏览器依赖。** 不能有 React、不能有 Next.js、不能有 `window`、不能有 IndexedDB。不小心 import 错了，`node --test` 会抓到你，但希望你自己先抓到。
 </Warning>
 
-## 改的东西归哪里
+## 改动应该放在哪个 workspace？
 
 | 你改的是… | 归哪里 |
 |---|---|
@@ -47,7 +47,7 @@ Magic Resume 是 MIT 许可的开源项目，欢迎贡献。带着复现、测�
 
 为什么是这样的边界，见 [架构总览](/zh/architecture)。
 
-## Commit 风格
+## Commit 应该遵循什么风格？
 
 Conventional commit，现在时。`git log --oneline` 看一眼就知道：
 
@@ -59,6 +59,6 @@ docs: add JSDoc signatures to all lib/api functions
 chore(deps): bump turbo to 2.5.4
 ```
 
-## 许可
+## 贡献采用什么许可？
 
 提交 PR 即视为同意以 [MIT 协议](https://github.com/LinMoQC/Magic-Resume/blob/master/LICENSE) 提供你的贡献。

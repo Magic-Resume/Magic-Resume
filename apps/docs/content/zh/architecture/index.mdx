@@ -1,7 +1,9 @@
 ---
 title: 架构总览
-description: Magic Resume 代码库的高层地图 —— workspace、数据流，以及"当我要改 X 时该去哪儿"。
+description: "Magic Resume 使用共享 Zod Schema 定义简历，通过 JSON Patch 编辑，并以 IndexedDB 持久化浏览器数据。"
 ---
+
+一份 Zod Schema（在 `@magic-resume/resume-schema` 里）定义了简历的形状，Web 应用、MCP 服务器、AI agent 全都读写这个统一形状。MCP 工具通过 JSON Patch 来改简历，写入存储前会先用 Schema 校验，Web 编辑器产生的也是 Patch。
 
 Magic Resume 围绕四个反复出现的核心思想构建：
 
@@ -10,7 +12,7 @@ Magic Resume 围绕四个反复出现的核心思想构建：
 3. **鉴权由 feature flag 控制。** `NEXT_PUBLIC_APP_MODE` 在构建时决定 Clerk middleware 和云端同步层是否加载。两种模式跑的是同一套 UI。
 4. **编辑就是 Patch。** MCP 工具通过 JSON Patch（`fast-json-patch`）来改简历，写入存储前会先用 Schema 校验。Web 编辑器产生的也是 Patch —— 同一条代码路径。
 
-## 数据流速览
+## 简历数据如何流转？
 
 ```
                 ┌───────────────┐
@@ -30,7 +32,7 @@ Magic Resume 围绕四个反复出现的核心思想构建：
    AI 工具 ────▶ @magic-resume/mcp ──▶ Core API（用 PAT 鉴权）
 ```
 
-## 该去哪里看
+## 修改不同功能该去哪里看？
 
 <CardGroup>
   <Card title="单仓结构" href="/zh/architecture/monorepo" />

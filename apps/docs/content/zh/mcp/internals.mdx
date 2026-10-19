@@ -1,39 +1,42 @@
 ---
 title: 内部细节
-description: "@magic-resume/mcp 的内部接线 —— 入口、配置、与 Core API 的契约。"
+description: "本页说明 @magic-resume/mcp 的目录、入口、配置、工具注册和 Core API 契约，供修改 MCP 包的贡献者参考。"
 ---
 
-给打算改 MCP 包本身或 fork 一份的贡献者看。
+本页供打算修改 MCP 包本身或 fork 的贡献者参考。CLI 和服务器共用 `config.ts`，服务器通过 `client.ts` 调用 API。CLI 负责一次性的配置命令，MCP 服务器是 AI 工具拉起的进程。
 
-## 目录
+## MCP 包的目录是什么结构？
 
 ```
 packages/mcp/
 ├── src/
-│   ├── cli.ts           # `magic-resume` CLI 入口（config get/set/print/clear）
+│   ├── cli.ts           # `magic-resume` CLI 入口（config set/print/clear、mcp）
 │   ├── server.ts        # MCP 服务器：工具注册、stdio 传输
 │   ├── resume-tools.ts  # 上面那些工具的业务逻辑
 │   ├── config.ts        # ~/.magic-resume/mcp.json 读写
-│   └── http.ts          # 一个携带 PAT 的薄 axios 封装
+│   ├── client.ts        # 携带 PAT 的薄 fetch 客户端
+│   └── index.ts         # 库导出
+├── scripts/bundle.mjs   # esbuild：把私有 workspace 包打进 npm 产物
 ├── test/                # node --test 套件
 └── package.json         # type: "module", bin: magic-resume
 ```
 
-CLI 和服务器共用 `config.ts` 与 `http.ts`。CLI 负责一次性的配置命令；MCP 服务器是 AI 工具拉起的进程。
+CLI 和服务器共用 `config.ts`；服务器通过 `client.ts` 调 API。CLI 负责一次性的配置命令；MCP 服务器是 AI 工具拉起的进程。
 
-## 入口
+## CLI 和 MCP 服务器有哪些入口？
 
-- **CLI：** `package.json` 里的 `bin: { "magic-resume": "./dist/cli.js" }`。子命令：`config set`、`config get`、`config print`、`config clear`，以及 `mcp`（启动服务器）。
+- **CLI：** `package.json` 里的 `bin: { "magic-resume": "./dist/cli.js" }`。子命令：`config set`、`config print`（PAT 打码显示）、`config clear`，以及 `mcp`（启动服务器）。
 - **MCP 服务器：** `magic-resume mcp` 启动 `server.ts`，注册工具，挂上 `StdioServerTransport`，常驻运行。
 
-## 配置文件
+## 配置文件存在哪里、包含什么？
 
 `~/.magic-resume/mcp.json`：
 
 ```json
 {
   "apiUrl": "https://api.magic-resume.cn/api",
-  "pat": "mr_pat_xxx"
+  "token": "mr_pat_xxx",
+  "defaultResumeId": "可选"
 }
 ```
 
@@ -43,7 +46,7 @@ CLI 和服务器共用 `config.ts` 与 `http.ts`。CLI 负责一次性的配置�
 这个文件以明文存了 PAT。CLI 在 POSIX 系统上把权限设为 `0600`。如果你在 Windows 上贡献代码，不要放宽这个设置。
 </Warning>
 
-## 工具注册
+## MCP 工具如何注册？
 
 `server.ts` 用 `@modelcontextprotocol/sdk` 注册每个工具，提供：
 
@@ -53,7 +56,7 @@ CLI 和服务器共用 `config.ts` 与 `http.ts`。CLI 负责一次性的配置�
 
 工具总是返回结构化 JSON。错误以稳定错误码抛出 `McpError`，让 AI 工具能据此反应（如网络瞬断时重试，校验错时放弃）。
 
-## Core API 契约
+## MCP 使用哪些 Core API 接口？
 
 MCP 服务器是 Web 应用所用 NestJS Core API 的另一个客户端。相关接口：
 
@@ -63,9 +66,9 @@ MCP 服务器是 Web 应用所用 NestJS Core API 的另一个客户端。相关
 | `/api/resumes/:id` | GET | PAT |
 | `/api/resumes/:id` | PATCH | PAT |
 
-`http.ts` 自动附上 `Authorization: Bearer <pat>`。和 Web 应用不同，**这里没有 Clerk** —— PAT 是 Core API 单独认识的一套鉴权方式。
+`client.ts` 自动附上 `Authorization: Bearer <pat>`。和 Web 应用不同，**这里没有 Clerk** —— PAT 是 Core API 单独认识的一套鉴权方式。
 
-## 构建与发布
+## 怎么构建和发布 MCP 包？
 
 ```bash
 pnpm --filter @magic-resume/mcp build      # tsc → dist/
@@ -75,7 +78,7 @@ pnpm --filter @magic-resume/mcp lint       # tsc --noEmit
 
 发布由 `publishConfig.access = "public"` 控制，pnpm 在打包时会把 `workspace:*` 重写为真实 semver，这样发出去的 `package.json` 里 `@magic-resume/resume-schema` 和 `@magic-resume/resume-templates` 都有合法版本号。
 
-## 加一个新工具
+## 怎么添加新的 MCP 工具？
 
 1. 把 handler 加到 `resume-tools.ts`。保持函数纯粹，并基于 patch。
 2. 在 `server.ts` 里注册它，附上 Zod 输入 Schema 和简短描述。

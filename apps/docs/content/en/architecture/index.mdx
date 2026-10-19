@@ -1,7 +1,9 @@
 ---
 title: Architecture overview
-description: A high-level map of the Magic Resume codebase — workspaces, data flow, and where to look when you touch X.
+description: "Magic Resume defines resumes with a shared Zod schema, edits them through JSON Patch, and persists browser data in IndexedDB."
 ---
+
+A single Zod schema in `@magic-resume/resume-schema` describes the resume shape, which the web app, MCP server, and AI agents all read and write. MCP tools edit resumes through JSON Patch, validated against the schema before storage, and the web editor produces patches too.
 
 Magic Resume is built around four ideas that show up everywhere in the code:
 
@@ -10,7 +12,7 @@ Magic Resume is built around four ideas that show up everywhere in the code:
 3. **Auth is feature-flagged.** `NEXT_PUBLIC_APP_MODE` chooses at build time whether Clerk middleware and the cloud sync layer are loaded. The same UI runs in both modes.
 4. **Edits are patches.** MCP tools mutate resumes via JSON Patch (`fast-json-patch`), validated against the schema before they touch storage. The web editor produces patches too — it's the same code path.
 
-## Data flow at a glance
+## How does resume data flow?
 
 ```
                 ┌───────────────┐
@@ -30,7 +32,7 @@ Magic Resume is built around four ideas that show up everywhere in the code:
    AI tool ────▶ @magic-resume/mcp ──▶ Core API (PAT auth)
 ```
 
-## Where to look
+## Where should I look to change a feature?
 
 <CardGroup>
   <Card title="Monorepo layout" href="/en/architecture/monorepo" />

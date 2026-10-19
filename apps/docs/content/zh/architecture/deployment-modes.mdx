@@ -1,9 +1,9 @@
 ---
 title: 部署模式
-description: NEXT_PUBLIC_APP_MODE 如何在自托管和云端之间切换应用。
+description: "NEXT_PUBLIC_APP_MODE 在构建时选择自托管或云端模式，切换模式需要重新构建。"
 ---
 
-Web 应用通过 `NEXT_PUBLIC_APP_MODE` 选择两种模式之一。选择是 **构建时烤进去的** —— 没有运行时开关。
+Web 应用通过 `NEXT_PUBLIC_APP_MODE` 选择自托管或云端模式。模式在构建时确定，没有运行时开关，切换模式需要重新构建。
 
 ![自托管 vs 云端模式](/images/deployment-modes.png)
 
@@ -16,7 +16,7 @@ Web 应用通过 `NEXT_PUBLIC_APP_MODE` 选择两种模式之一。选择是 **�
 | 分享和版本历史 | 仅本地 | 服务端支撑 |
 | 同步状态指示 | `local` | `saved` / `syncing` / `modified` / `error` |
 
-## 判定方式
+## 应用如何判定部署模式？
 
 `apps/web/src/lib/config/app.ts` 在模块加载时推导模式：
 
@@ -49,7 +49,7 @@ export default APP_MODE === 'cloud'
 没有充足理由，不要新增其他运行时模式开关或本地/云端分支。现在的边界是有意收窄的。详见 [贡献指南](/zh/development/contributing)。
 </Warning>
 
-## 加一个云端专属功能
+## 怎么添加云端专属功能？
 
 1. 在 UI 层用 `APP_MODE === 'cloud'` 做开关（如果只针对某些自带 Clerk 的用户，用更精确的 capability flag）。
 2. 网络调用走 `httpClient.api`，让鉴权拦截器处理 token。
