@@ -292,6 +292,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // 后台嵌入的简历预览：同样是别人的真名与履历。
+        source: '/embed/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+      {
         /**
          * PDF 用的 CJK 字体：内容固定、体积巨大（子集 2.4–4.0MB，全量 13–17MB），
          * 必须 immutable。
