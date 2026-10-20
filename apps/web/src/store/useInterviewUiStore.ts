@@ -1,3 +1,4 @@
+import type { InterviewAgentSettings } from '@/lib/api/interviewApi';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -39,6 +40,8 @@ export interface InterviewLaunch {
    * 编辑器算好的那份带着 HTML 和排版字段，不适合。
    */
   resumeId?: string;
+  /** 确认准备页后随启动参数保存，刷新或失败重试沿用本次选择。 */
+  agentSettings?: InterviewAgentSettings;
 }
 
 interface InterviewUiState {

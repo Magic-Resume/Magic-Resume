@@ -2388,7 +2388,72 @@
       "unavailable": "The mock interview could not start. Please try again later.",
       "noLaunch": "This interview was not found. Return to the dashboard to start a new one.",
       "showTranscript": "Show transcript",
-      "hideTranscript": "Hide transcript"
+      "hideTranscript": "Hide transcript",
+      "voiceAgent": {
+        "muted": "Microphone muted"
+      },
+      "problem": {
+        "back": "Back to workspace",
+        "retry": "Try again",
+        "reconnect": "Reconnect",
+        "continueText": "Continue by typing",
+        "reference": "Reference: {{id}}",
+        "missing": {
+          "title": "This interview is unavailable",
+          "description": "The session may have ended or the link may have expired. Return to your workspace and open it from interview history."
+        },
+        "access": {
+          "title": "This interview cannot be accessed",
+          "description": "Check that you are signed in with an account that can access this interview, then open it from your workspace."
+        },
+        "quota": {
+          "title": "Voice interview is unavailable",
+          "description": "Return to your workspace to check your plan and available interview time."
+        },
+        "busy": {
+          "title": "The interview service is busy",
+          "description": "Try again shortly, or return to your workspace to view interview history."
+        },
+        "connection": {
+          "title": "Unable to connect to the interview service",
+          "description": "Check your connection and try again, or return to your workspace."
+        },
+        "report": {
+          "title": "The debrief could not be generated yet",
+          "description": "Try again shortly. You can also review this session’s transcript before returning to your workspace."
+        },
+        "start": {
+          "title": "Your interview is not ready yet",
+          "description": "This interview could not start. Try again, or return to your workspace and reopen it."
+        },
+        "restore": {
+          "title": "This interview could not be restored",
+          "description": "The interview service is not responding. Try again shortly or reopen the interview from your workspace."
+        },
+        "loading": {
+          "title": "Preparing your interview debrief",
+          "description": "We’re organizing feedback from this session’s answers. Please wait."
+        }
+      },
+      "setup": {
+        "title": "Meet your interview partner",
+        "voice": "Interviewer voice",
+        "systemVoice": "System voice",
+        "preview": "Listen",
+        "stopPreview": "Stop",
+        "previewLabel": "Preview {{voice}} voice",
+        "stopPreviewLabel": "Stop previewing {{voice}}",
+        "previewFailed": "The preview could not play. Try again.",
+        "default": "Default",
+        "loading": "Loading voices and models…",
+        "model": "Debrief model",
+        "autoModel": "Recommended automatically",
+        "catalogDegraded": "The model catalog is temporarily unavailable. You can use automatic selection.",
+        "selectionReset": "Your previous model is unavailable. Automatic selection has been restored.",
+        "failed": "Unable to load settings. Please try again.",
+        "enter": "Create and enter interview",
+        "edit": "Adjust Voice Agent"
+      }
     },
     "living": {
       "askPolarisDetail": "Ask Polaris · get suggestions",
@@ -2907,5 +2972,21 @@
       "title": "Saved",
       "subtitle": "Generating your job profile. It will be ready shortly."
     }
+  },
+  "whatsNew": {
+    "open": "See what's new",
+    "dismiss": "Dismiss release announcement",
+    "close": "Close release notes",
+    "back": "Back",
+    "next": "Next",
+    "done": "Got it",
+    "feature": "New feature",
+    "improvement": "Improvement",
+    "highlights": "Highlights",
+    "slides": "Release slides",
+    "goTo": "Go to slide {{index}}: {{title}}",
+    "position": "Slide {{index}} of {{total}}",
+    "readFailed": "The update is open, but could not be marked as read. Please try again.",
+    "dismissFailed": "Could not dismiss this update. Please try again."
   }
 }

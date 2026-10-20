@@ -73,7 +73,9 @@ export const API_ROUTES = {
     markRead: (id: string) => `/api/notifications/${id}/read`,
     markAllRead: '/api/notifications/read',
     emailPreferences: '/api/notifications/preferences/email',
-    announcement: (id: string) => `/api/announcements/${id}`,
+    announcement: (id: string) => `/api/announcements/${encodeURIComponent(id)}`,
+    featuredAnnouncement: '/api/announcements/featured',
+    dismissAnnouncement: (id: string) => `/api/announcements/${encodeURIComponent(id)}/dismiss`,
   },
   /**
    * 投递面板的**只读**读取口。增删改查归 agent-service 的 `track_application` 工具——
@@ -139,6 +141,7 @@ export const AGENT_ROUTES = {
     settings:   '/api/job-profile/settings',
   },
   interview: {
+    setupOptions: '/api/interview/setup-options',
     start:       '/api/interview/start',
     /** 同一条逻辑，但边准备边报进度——入场那几秒的文案跟着它走。 */
     startStream: '/api/interview/start/stream',

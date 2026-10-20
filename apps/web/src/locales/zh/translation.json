@@ -2388,7 +2388,72 @@
       "unavailable": "模拟面试暂时无法启动，请稍后重试",
       "noLaunch": "未找到该场面试，请返回工作台重新开始",
       "showTranscript": "展开逐字稿",
-      "hideTranscript": "收起逐字稿"
+      "hideTranscript": "收起逐字稿",
+      "voiceAgent": {
+        "muted": "麦克风已静音"
+      },
+      "problem": {
+        "back": "返回工作区",
+        "retry": "再试一次",
+        "reconnect": "重新连接",
+        "continueText": "继续文字作答",
+        "reference": "问题编号：{{id}}",
+        "missing": {
+          "title": "这场面试暂时无法打开",
+          "description": "会话可能已结束或链接已失效。请返回工作区，从面试记录重新进入。"
+        },
+        "access": {
+          "title": "暂时无法访问这场面试",
+          "description": "请确认当前登录账号有权访问这场面试，再从工作区重新进入。"
+        },
+        "quota": {
+          "title": "当前无法继续语音面试",
+          "description": "当前面试额度不足，请返回工作区查看套餐及可用时长。"
+        },
+        "busy": {
+          "title": "面试服务暂时繁忙",
+          "description": "请稍后再试，或返回工作区查看面试记录。"
+        },
+        "connection": {
+          "title": "暂时无法连接面试服务",
+          "description": "请检查网络后重试，或返回工作区稍后进入。"
+        },
+        "report": {
+          "title": "复盘报告暂时未能生成",
+          "description": "请稍后重试。你也可以先查看本场记录，再返回工作区。"
+        },
+        "start": {
+          "title": "面试还没有准备好",
+          "description": "本次面试未能顺利启动。请重试连接，或返回工作区重新进入。"
+        },
+        "restore": {
+          "title": "暂时无法恢复这场面试",
+          "description": "面试服务暂时没有响应。请稍后重试，或从工作区重新进入。"
+        },
+        "loading": {
+          "title": "正在整理面试复盘",
+          "description": "正在根据本场回答整理反馈，请稍候。"
+        }
+      },
+      "setup": {
+        "title": "创建你的面试搭档",
+        "voice": "面试官声音",
+        "systemVoice": "系统音色",
+        "preview": "试听",
+        "stopPreview": "停止",
+        "previewLabel": "试听 {{voice}} 的声音",
+        "stopPreviewLabel": "停止试听 {{voice}}",
+        "previewFailed": "样音暂时无法播放，请点击试听重试。",
+        "default": "默认",
+        "loading": "正在载入声音与模型…",
+        "model": "复盘模型",
+        "autoModel": "自动推荐",
+        "catalogDegraded": "模型目录暂未同步，你可以使用自动推荐。",
+        "selectionReset": "上次选择的模型暂不可用，已恢复自动推荐。",
+        "failed": "设置暂时未能载入，请重试。",
+        "enter": "创建并进入面试",
+        "edit": "调整 Voice Agent"
+      }
     },
     "living": {
       "askPolarisDetail": "询问 Polaris · 获取修改建议",
@@ -2907,5 +2972,21 @@
       "title": "已保存",
       "subtitle": "正在生成求职画像，稍后即可使用"
     }
+  },
+  "whatsNew": {
+    "open": "查看公告",
+    "dismiss": "关闭公告提醒",
+    "close": "关闭弹窗公告",
+    "back": "上一步",
+    "next": "下一步",
+    "done": "知道了",
+    "feature": "新功能",
+    "improvement": "改进",
+    "highlights": "公告要点",
+    "slides": "公告页面",
+    "goTo": "第 {{index}} 页：{{title}}",
+    "position": "第 {{index}} 页，共 {{total}} 页",
+    "readFailed": "已打开更新介绍，但标记已读失败，请稍后重试",
+    "dismissFailed": "关闭提醒失败，请稍后重试"
   }
 }

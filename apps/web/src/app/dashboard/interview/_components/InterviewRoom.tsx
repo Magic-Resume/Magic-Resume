@@ -2,12 +2,13 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Clock, Loader2 } from '@magic-resume/icons';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { ChevronLeft, Clock } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import {
   interviewApi,
   type InterviewReport,
+  type InterviewAgentSettings,
   type InterviewStage,
   type InterviewVoiceChannel,
 } from '@/lib/api/interviewApi';
@@ -23,7 +24,12 @@ import { useVoiceInterview, type VoiceTurn } from './useVoiceInterview';
 import { mergeInterviewTurns } from './mergeTurns';
 import { useCaptionPacing } from './useCaptionPacing';
 import CaptionSlot, { type CaptionTone } from './CaptionSlot';
-import VoiceOrb from './VoiceOrb';
+import InterviewVoiceAgent from './InterviewVoiceAgent';
+import InterviewStatePanel from './InterviewStatePanel';
+import InterviewAgentSetup from './InterviewAgentSetup';
+import { useInterviewVoicePreview } from './useInterviewVoicePreview';
+import setupStyles from './InterviewAgentSetup.module.css';
+import { interviewIssueOf, type InterviewIssue } from './interviewPresentation';
 import type { OrbPhase } from './orbStates';
 import InterviewReportView, {
   countSubstantiveAnswers,
@@ -44,10 +50,10 @@ import { EASE_ENTER } from '@magic-resume/utils';
  * 现场）、要有正常的后退语义、且面试中不该点得到简历。
  *
  * **一颗球贯穿全程、绝不卸载**——它是候选人唯一能读到的社交信号（真人面试靠读表情判断
- * 对方在听/在记/在想，语音把那条通道砍掉了）。技术上也必须如此：WebGPU 设备每次重建会闪。
+ * 对方在听/在记/在想，语音把那条通道砍掉了）。技术上也必须如此：重建图形上下文会闪。
  */
 
-type Screen = 'restoring' | 'live' | 'report' | 'unavailable';
+type Screen = 'setup' | 'restoring' | 'live' | 'report' | 'unavailable';
 
 /** 入场准备的步骤。前三步来自服务端事件，`connecting` 是前端自己的边界。 */
 type PrepStep = 'session' | 'knowledge' | 'opening' | 'connecting';
@@ -108,7 +114,10 @@ export default function InterviewRoom({
   const returnTo = useInterviewUiStore((s) => s.returnTo);
   const clearReturnTo = useInterviewUiStore((s) => s.clearReturnTo);
 
-  const [screen, setScreen] = useState<Screen>('restoring');
+  const [screen, setScreen] = useState<Screen>(
+    routeId === 'new' ? 'setup' : 'restoring',
+  );
+  const [startRequested, setStartRequested] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(
     routeId === 'new' ? null : routeId,
   );
@@ -125,6 +134,11 @@ export default function InterviewRoom({
   const [reportSkipped, setReportSkipped] = useState(false);
   const [archivedWithoutReport, setArchivedWithoutReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [entryIssue, setEntryIssue] = useState<InterviewIssue | null>(null);
+  const [reportIssue, setReportIssue] = useState<InterviewIssue | null>(null);
+  const [entryAttempt, setEntryAttempt] = useState(0);
+  const [voiceProblemDismissed, setVoiceProblemDismissed] = useState(false);
+  const answerInput = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [lingering, setLingering] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
@@ -164,6 +178,7 @@ export default function InterviewRoom({
     toggleMute,
   } = voice;
   const voicePhase = voice.state.phase;
+  const preview = useInterviewVoicePreview(screen === 'setup');
 
   /**
    * 开场白来自 HTTP 的 `start`（落在 `turns`），之后的轮次来自 LiveKit。
@@ -223,7 +238,7 @@ export default function InterviewRoom({
           return;
         }
         setScreen('live');
-      } catch {
+      } catch (liveError) {
         // 历史报告不能依赖 1 小时 TTL 的 Redis。热态没了就读 PostgreSQL 归档；只有两边
         // 都没有时才是真正回不去。以前资产库里的「打开报告」正是卡在这层。
         try {
@@ -247,22 +262,35 @@ export default function InterviewRoom({
           if (!archived.report) reportAttemptedRef.current = true;
           setFinished(true);
           setScreen('report');
-        } catch {
-          if (!cancelled) setScreen('unavailable');
+        } catch (archiveError) {
+          if (!cancelled) {
+            const first = interviewIssueOf(liveError, 'restore');
+            setEntryIssue(
+              first.kind === 'missing'
+                ? interviewIssueOf(archiveError, 'restore')
+                : first,
+            );
+            setScreen('unavailable');
+          }
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [routeId]);
+  }, [routeId, entryAttempt]);
 
-  // ── 开场：进来就开，不问模式 ────────────────────────────────────────────
+  // ── 开场：确认 Voice Agent 后再创建会话 ────────────────────────────────────────────
   const beginRef = useRef(false);
   useEffect(() => {
     if (routeId !== 'new' || beginRef.current) return;
     if (!launch) {
       setScreen('unavailable');
+      return;
+    }
+    if (!startRequested) {
+      setRole(launch.brief.role);
+      setScreen('setup');
       return;
     }
     beginRef.current = true;
@@ -286,6 +314,12 @@ export default function InterviewRoom({
               language: launch.brief.language,
               difficulty: launch.brief.difficulty,
               duration_minutes: launch.brief.durationMinutes,
+              ...(launch.agentSettings?.voice
+                ? { voice: launch.agentSettings.voice }
+                : {}),
+              ...(launch.agentSettings?.reportModel
+                ? { report_model: launch.agentSettings.reportModel }
+                : {}),
               ...(process.env.NEXT_PUBLIC_INTERVIEW_VOICE_CHANNEL
                 ? {
                     channel: process.env
@@ -359,13 +393,22 @@ export default function InterviewRoom({
             // 没有已结束的归档，显示原始开场失败原因。
           }
         }
-        setError(describeFailure(err, t('aiLab.interview.startFailed')));
+        setEntryIssue(interviewIssueOf(err, 'start'));
         setScreen('unavailable');
       } finally {
         setBusy(false);
       }
     })();
-  }, [routeId, launch, router, clearLaunch, rememberCardSession, t]);
+  }, [
+    routeId,
+    entryAttempt,
+    startRequested,
+    launch,
+    router,
+    clearLaunch,
+    rememberCardSession,
+    t,
+  ]);
 
   // 会话建好之后才连房间。
   useEffect(() => {
@@ -397,8 +440,8 @@ export default function InterviewRoom({
    * worker 领 job、TTS 首包好几段，用阶段判会在每个接缝处闪一下。
    */
   const preparing =
-    routeId === 'new' &&
-    screen !== 'unavailable' &&
+    (routeId === 'new' || selfStartedRef.current) &&
+    (screen === 'restoring' || screen === 'live') &&
     voicePhase !== 'speaking' &&
     voice.state.turns.length === 0;
 
@@ -495,6 +538,7 @@ export default function InterviewRoom({
     reportAttemptedRef.current = true;
     setBusy(true);
     setError(null);
+    setReportIssue(null);
     try {
       let result;
       try {
@@ -516,16 +560,26 @@ export default function InterviewRoom({
       if ('skipped' in result) setReportSkipped(true);
       else setReport(result);
     } catch (err) {
-      const normalized = fromAxiosError(err);
-      setError(
-        normalized.errorCode === 'rate_limited'
-          ? t('aiLab.interview.reportRateLimited')
-          : describeFailure(err, t('aiLab.interview.reportFailed')),
-      );
+      const issue = interviewIssueOf(err, 'report');
+      // 响应丢失或热态过期时先读归档，避免重复调用模型生成已有报告。
+      try {
+        const archived = await interviewApi.archived(sessionId);
+        if (archived.report) {
+          setReport(archived.report);
+          return;
+        }
+        if (archived.stage === 'finished' && issue.kind === 'missing') {
+          setArchivedWithoutReport(true);
+          return;
+        }
+      } catch {
+        /* 归档也不可用时，展示本次报告失败的恢复入口。 */
+      }
+      setReportIssue(issue);
     } finally {
       setBusy(false);
     }
-  }, [sessionId, t]);
+  }, [sessionId]);
 
   const finishInterview = useCallback(async () => {
     if (!sessionId || busy) return;
@@ -647,12 +701,15 @@ export default function InterviewRoom({
     setArchivedWithoutReport(false);
     setFinished(false);
     setError(null);
+    setEntryIssue(null);
+    setReportIssue(null);
     setStage('introduction');
     setExpanded(false);
     setLingering(null);
     setPrep('session');
     setPrepStalled(false);
-    setScreen('restoring');
+    setStartRequested(false);
+    setScreen('setup');
     // “再来一场”是显式新面试，不能复用入口卡预分配的空间 ID。
     setLaunch(
       { ...again, roomId: undefined, cardId: undefined },
@@ -661,6 +718,43 @@ export default function InterviewRoom({
     router.replace('/dashboard/interview/new');
   }, [disconnectVoice, returnTo, router, setLaunch]);
 
+  const confirmAgentSetup = useCallback(
+    (settings: InterviewAgentSettings) => {
+      if (!launch || startRequested) return;
+      setLaunch(
+        { ...launch, agentSettings: settings },
+        returnTo ?? '/dashboard',
+      );
+      setStartRequested(true);
+      setScreen('restoring');
+    },
+    [launch, startRequested, setLaunch, returnTo],
+  );
+
+  const editAgentSetup = useCallback(() => {
+    beginRef.current = false;
+    setStartRequested(false);
+    setEntryIssue(null);
+    setScreen('setup');
+  }, []);
+
+  const retryEntry = useCallback(() => {
+    beginRef.current = false;
+    setEntryIssue(null);
+    setError(null);
+    setPrepStalled(false);
+    setPrep('session');
+    setScreen('restoring');
+    setEntryAttempt((value) => value + 1);
+  }, []);
+
+  useEffect(() => setVoiceProblemDismissed(false), [voice.state.error]);
+
+  const continueByTyping = useCallback(() => {
+    setVoiceProblemDismissed(true);
+    answerInput.current?.focus();
+  }, []);
+
   const onBack = useCallback(() => {
     if (inProgress) setLeaving(true);
     else leave();
@@ -668,19 +762,21 @@ export default function InterviewRoom({
 
   // ── 球 ──────────────────────────────────────────────────────────────────
   const orbPhase: OrbPhase =
-    screen === 'report'
-      ? 'finished'
-      : screen !== 'live'
-        ? 'idle'
-        : busy && voicePhase === 'listening'
-          ? // 打字送出后到面试官开口之间，球得有事可做，否则那几秒它看着像死了。
-            'thinking'
-          : voicePhase === 'speaking' ||
-              voicePhase === 'thinking' ||
-              voicePhase === 'listening' ||
-              voicePhase === 'connecting'
-            ? voicePhase
-            : 'idle';
+    screen === 'setup' && preview.state.phase === 'playing'
+      ? 'speaking'
+      : screen === 'report'
+        ? 'finished'
+        : screen !== 'live'
+          ? 'idle'
+          : busy && voicePhase === 'listening'
+            ? // 打字送出后到面试官开口之间，球得有事可做，否则那几秒它看着像死了。
+              'thinking'
+            : voicePhase === 'speaking' ||
+                voicePhase === 'thinking' ||
+                voicePhase === 'listening' ||
+                voicePhase === 'connecting'
+              ? voicePhase
+              : 'idle';
 
   const docked = expanded || screen === 'report' || screen === 'unavailable';
 
@@ -693,7 +789,8 @@ export default function InterviewRoom({
         defaultValue: t('aiLab.interview.voiceError.connection'),
       })
     : null;
-  const voiceFailure = screen === 'live' ? voiceError : null;
+  const voiceFailure =
+    screen === 'live' && !voiceProblemDismissed ? voiceError : null;
 
   /**
    * 槽里显示什么——**唯一的判定处**。
@@ -731,16 +828,29 @@ export default function InterviewRoom({
       />
 
       <OrbStage
+        setup={screen === 'setup'}
+        muted={voice.state.muted || voice.state.micDenied}
         docked={docked}
-        hidden={Boolean(voiceFailure)}
+        hidden={
+          Boolean(voiceFailure) ||
+          screen === 'unavailable' ||
+          (screen === 'report' && !report)
+        }
         phase={orbPhase}
-        readLevels={readLevels}
+        readLevels={screen === 'setup' ? preview.readLevels : readLevels}
         onToggle={screen === 'live' ? () => setExpanded((v) => !v) : undefined}
       >
         {/*
           等待与字幕共用输入框上方的固定槽位；故障使用独立状态卡片。
         */}
-        {screen !== 'report' && !voiceFailure && (
+        {screen === 'setup' && launch && (
+          <InterviewAgentSetup
+            preview={preview}
+            initialSettings={launch.agentSettings}
+            onConfirm={confirmAgentSetup}
+          />
+        )}
+        {screen !== 'setup' && screen !== 'report' && !voiceFailure && (
           <CaptionSlot
             text={slot.text}
             tone={slot.tone}
@@ -748,26 +858,29 @@ export default function InterviewRoom({
           />
         )}
         {voiceFailure && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center overflow-y-auto px-6 py-4">
-            <div className="border-hairline bg-raised rounded-mr-panel w-full max-w-md border p-6 text-center">
-              <span className="bg-sunk text-secondary mx-auto mb-4 flex size-10 items-center justify-center rounded-full">
-                <Clock size={19} aria-hidden="true" />
-              </span>
-              <p
-                className="text-mr-body text-primary leading-relaxed"
-                role="status"
-              >
-                {voiceFailure}
-              </p>
-              <button
-                type="button"
-                onClick={leave}
-                className="bg-sunk text-mr-caption text-primary hover:bg-desk mt-5 cursor-pointer rounded-full px-5 py-2.5 transition-colors"
-              >
-                {t('aiLab.interview.backToDashboard')}
-              </button>
-            </div>
-          </div>
+          <Centered>
+            <InterviewStatePanel
+              title={t(
+                `aiLab.interview.problem.${voice.state.errorCode === 'quota' ? 'quota' : 'connection'}.title`,
+              )}
+              description={voiceFailure}
+              onBack={leave}
+              onRetry={
+                voice.state.errorCode === 'connection'
+                  ? () => void connectVoice()
+                  : undefined
+              }
+              retryLabel={t('aiLab.interview.problem.reconnect')}
+              extraAction={
+                voice.state.errorCode === 'quota'
+                  ? undefined
+                  : {
+                      label: t('aiLab.interview.problem.continueText'),
+                      onClick: continueByTyping,
+                    }
+              }
+            />
+          </Centered>
         )}
         {prepStalled && preparing && (
           <div className="absolute inset-x-0 bottom-[124px] z-10 flex justify-center">
@@ -783,21 +896,25 @@ export default function InterviewRoom({
 
         {screen === 'unavailable' && (
           <Centered>
-            <p className="text-secondary max-w-sm text-center text-sm leading-relaxed">
-              {error ??
-                t(
-                  launch
-                    ? 'aiLab.interview.unavailable'
-                    : 'aiLab.interview.noLaunch',
-                )}
-            </p>
-            <button
-              type="button"
-              onClick={leave}
-              className="bg-sunk text-mr-caption text-primary hover:bg-raised cursor-pointer rounded-full px-5 py-2.5 transition-colors"
-            >
-              {t('aiLab.interview.backToDashboard')}
-            </button>
+            <InterviewStatePanel
+              title={t(
+                `aiLab.interview.problem.${entryIssue?.kind ?? 'missing'}.title`,
+              )}
+              description={t(
+                `aiLab.interview.problem.${entryIssue?.kind ?? 'missing'}.description`,
+              )}
+              onBack={leave}
+              onRetry={entryIssue?.retryable ? retryEntry : undefined}
+              extraAction={
+                routeId === 'new' && launch
+                  ? {
+                      label: t('aiLab.interview.setup.edit'),
+                      onClick: editAgentSetup,
+                    }
+                  : undefined
+              }
+              requestId={entryIssue?.requestId}
+            />
           </Centered>
         )}
 
@@ -818,7 +935,9 @@ export default function InterviewRoom({
         )}
 
         {screen === 'report' && (
-          <div className="absolute inset-0 overflow-y-auto px-5 pb-32 pt-2">
+          <div
+            className={`absolute inset-0 overflow-y-auto px-5 ${report ? 'pb-32 pt-2' : 'flex items-start justify-center py-8'}`}
+          >
             {report ? (
               <InterviewReportView
                 report={report}
@@ -860,23 +979,29 @@ export default function InterviewRoom({
                   {t('common.back')}
                 </button>
               </div>
-            ) : !error ? (
-              <div className="text-mr-caption text-secondary flex items-center justify-center gap-2 pt-16">
-                <Loader2 size={14} className="animate-spin" />
-                {t('aiLab.interview.report.generating')}
-              </div>
-            ) : null}
-            {error && (
-              <p className="text-mr-overline text-rev-del mt-4">{error}</p>
-            )}
-            {!report && !reportSkipped && error && (
-              <button
-                type="button"
-                onClick={() => void loadReport()}
-                className="bg-sunk text-mr-caption text-primary mt-3 cursor-pointer rounded-full px-4 py-2"
+            ) : reportIssue ? (
+              <InterviewStatePanel
+                title={t(`aiLab.interview.problem.${reportIssue.kind}.title`)}
+                description={t(
+                  `aiLab.interview.problem.${reportIssue.kind}.description`,
+                )}
+                onBack={leave}
+                onRetry={
+                  reportIssue.retryable ? () => void loadReport() : undefined
+                }
+                retryLabel={t('aiLab.interview.report.retry')}
+                requestId={reportIssue.requestId}
               >
-                {t('aiLab.interview.report.retry')}
-              </button>
+                {allTurns.length > 0 && (
+                  <ReportTranscript turns={allTurns} showHeading={false} />
+                )}
+              </InterviewStatePanel>
+            ) : (
+              <InterviewStatePanel
+                busy
+                title={t('aiLab.interview.problem.loading.title')}
+                description={t('aiLab.interview.problem.loading.description')}
+              />
             )}
           </div>
         )}
@@ -884,6 +1009,7 @@ export default function InterviewRoom({
 
       {screen === 'live' && (
         <InterviewComposer
+          inputRef={answerInput}
           value={draft}
           onChange={setDraft}
           onSend={() => void send()}
@@ -979,6 +1105,8 @@ function Header({
  * 后备存储每帧重建一次交换链。
  */
 function OrbStage({
+  setup,
+  muted,
   docked,
   hidden,
   phase,
@@ -986,6 +1114,8 @@ function OrbStage({
   onToggle,
   children,
 }: {
+  setup: boolean;
+  muted: boolean;
   docked: boolean;
   hidden: boolean;
   phase: OrbPhase;
@@ -994,6 +1124,7 @@ function OrbStage({
   children: React.ReactNode;
 }) {
   const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
   const stageRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
 
@@ -1012,17 +1143,51 @@ function OrbStage({
   const y = docked ? Math.max(0, height / 2 - 74) : 0;
 
   return (
-    <div ref={stageRef} className="relative min-h-0 flex-1">
-      {children}
-      {!hidden && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+    <div
+      ref={stageRef}
+      className={
+        setup
+          ? 'relative flex min-h-0 flex-1 overflow-y-auto py-5'
+          : 'relative min-h-0 flex-1'
+      }
+    >
+      <div className={setup ? setupStyles.frame : 'contents'}>
+        {children}
+        <div
+          style={{ display: hidden ? 'none' : undefined }}
+          aria-hidden={hidden || undefined}
+          className={
+            setup
+              ? setupStyles.visual
+              : 'pointer-events-none absolute inset-0 flex items-center justify-center'
+          }
+        >
           <motion.div
-            initial={{ scale: 0.35, opacity: 0 }}
+            initial={reduceMotion ? false : { scale: 0.35, opacity: 0 }}
             animate={{ scale, opacity: 1, y }}
-            transition={{ duration: 0.6, ease: EASE_ENTER }}
-            style={{ width: 'min(38vh, 300px)', height: 'min(38vh, 300px)' }}
-            className={onToggle ? 'pointer-events-auto cursor-pointer' : ''}
+            transition={{ duration: reduceMotion ? 0 : 0.6, ease: EASE_ENTER }}
+            style={{
+              width: setup ? 'min(28vh, 240px)' : 'min(38vh, 300px)',
+              height: setup ? 'min(28vh, 240px)' : 'min(38vh, 300px)',
+            }}
+            className={
+              onToggle
+                ? 'pointer-events-auto cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-current'
+                : ''
+            }
             onClick={onToggle}
+            tabIndex={onToggle ? 0 : undefined}
+            aria-expanded={onToggle ? docked : undefined}
+            onKeyDown={
+              onToggle
+                ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onToggle();
+                    }
+                  }
+                : undefined
+            }
             role={onToggle ? 'button' : undefined}
             aria-label={
               onToggle
@@ -1034,30 +1199,42 @@ function OrbStage({
                 : undefined
             }
           >
-            <VoiceOrb phase={phase} readLevels={readLevels} />
+            <InterviewVoiceAgent
+              phase={phase}
+              readLevels={readLevels}
+              muted={muted}
+            />
           </motion.div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-8">
+    <div className="absolute inset-0 z-10 flex items-center justify-center overflow-y-auto px-6 py-8">
       {children}
     </div>
   );
 }
 
-function ReportTranscript({ turns }: { turns: VoiceTurn[] }) {
+function ReportTranscript({
+  turns,
+  showHeading = true,
+}: {
+  turns: VoiceTurn[];
+  showHeading?: boolean;
+}) {
   const { t } = useTranslation();
   if (turns.length === 0) return null;
   return (
     <section className="flex flex-col gap-4 border-t border-white/10 pt-6">
-      <h3 className="text-mr-caption text-primary font-medium">
-        {t('aiLab.interview.report.transcriptTitle')}
-      </h3>
+      {showHeading && (
+        <h3 className="text-mr-caption text-primary font-medium">
+          {t('aiLab.interview.report.transcriptTitle')}
+        </h3>
+      )}
       {turns.map((turn, index) => (
         <div key={index} className="flex flex-col gap-1">
           <span className="text-mr-label text-muted">
