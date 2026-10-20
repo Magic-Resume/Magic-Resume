@@ -262,7 +262,7 @@ export function renderNode(node: ResolvedNode, ctx?: DomRenderContext): React.Re
       if (!Icon) return null;
       const size = node.size ?? 14;
       return (
-        <span key={key} data-template-node={node.templateNodeId} {...designAttrs} style={style}>
+        <span key={key} data-template-node={node.templateNodeId} {...designAttrs} style={{ display: 'inline-flex', flexShrink: 0, ...style }}>
           <Icon size={size} />
         </span>
       );
