@@ -36,8 +36,7 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
   useEffect(() => {
     if (!notification.campaignId || searchParams.get('campaign') !== notification.campaignId) return;
     setDetailOpen(true);
-    if (unread) void markAsRead(notification.id);
-  }, [markAsRead, notification.campaignId, notification.id, searchParams, unread]);
+  }, [notification.campaignId, searchParams]);
 
   return (
     <div
@@ -128,7 +127,7 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
                 type="button"
                 onClick={() => {
                   setDetailOpen(true);
-                  if (unread) void markAsRead(notification.id);
+                  if (unread && !notification.campaignId) void markAsRead(notification.id);
                 }}
                 className="rounded-full px-2.5 py-1 text-xs text-neutral-300 transition-colors hover:bg-mr-surface-soft hover:text-white"
               >
@@ -153,6 +152,7 @@ export const NotificationItem = ({ notification, markAsRead }: NotificationItemP
         actionHref={actionHref}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        onRead={() => { void markAsRead(notification.id); }}
       />
     </div>
   );

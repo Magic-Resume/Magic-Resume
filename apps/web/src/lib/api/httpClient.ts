@@ -71,7 +71,8 @@ const createClient = (baseURL: string): AxiosInstance => {
       // No-op in the open-source build. In the commercial build this is the
       // only place server errors become visible without also throwing in the
       // UI; the reporter decides what is worth reporting and redacts the URL.
-      appLifecycle.reportApiError(error);
+      // 商业上报器属于浏览器边界；服务端保留原 HTTP 错误交给页面处理。
+      if (typeof window !== 'undefined') appLifecycle.reportApiError(error);
       return Promise.reject(error);
     }
   );

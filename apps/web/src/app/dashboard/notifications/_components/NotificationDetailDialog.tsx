@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { ExternalLink, X } from '@magic-resume/icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ReleaseDialog } from '@/components/announcements/whats-new';
+import { useWhatsNewLabels } from '@/components/announcements/useWhatsNewLabels';
+import { toRelease } from '@/lib/announcements/presentation';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +27,7 @@ interface NotificationDetailDialogProps {
   actionHref?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRead?: () => void;
 }
 
 export function NotificationDetailDialog({
@@ -31,8 +35,11 @@ export function NotificationDetailDialog({
   actionHref,
   open,
   onOpenChange,
+  onRead,
 }: NotificationDetailDialogProps) {
   const { t, i18n } = useTranslation();
+  const labels = useWhatsNewLabels();
+  const readCampaign = useRef<string | null>(null);
   const [announcement, setAnnouncement] = useState<AnnouncementDetail | null>(null);
   const [announcementLoading, setAnnouncementLoading] = useState(false);
   const [announcementError, setAnnouncementError] = useState(false);
@@ -58,6 +65,7 @@ export function NotificationDetailDialog({
   useEffect(() => {
     if (!open || !notification.campaignId) return;
     let active = true;
+    setAnnouncement(null);
     setAnnouncementLoading(true);
     setAnnouncementError(false);
     void notificationsApi.getAnnouncement(notification.campaignId)
@@ -67,7 +75,20 @@ export function NotificationDetailDialog({
     return () => { active = false; };
   }, [notification.campaignId, open]);
 
+  useEffect(() => {
+    if (!open) { readCampaign.current = null; return; }
+    if (announcement && !announcementLoading && !announcementError && !notification.isRead && readCampaign.current !== announcement.id) {
+      readCampaign.current = announcement.id;
+      onRead?.();
+    }
+  }, [open, announcement, announcementLoading, announcementError, notification.isRead, onRead]);
+
   const resolvedActionHref = announcement?.actionUrl || actionHref;
+
+  const release = announcement && !announcementLoading && !announcementError
+    ? toRelease(announcement, notification.createdAt, i18n.language) : null;
+  if (open && release) return <ReleaseDialog key={announcement!.id} release={release} labels={labels}
+    onClose={() => onOpenChange(false)} />;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

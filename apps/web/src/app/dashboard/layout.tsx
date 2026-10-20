@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import DashboardSidebar from "./_components/DashboardSidebar";
+import { WhatsNewHost } from '@/components/announcements/WhatsNewHost';
 import AccountUiHost from "@/components/providers/AccountUiHost";
 import ReferralClaimer from "@/components/account/invite/ReferralClaimer";
 import TermsGuard from "@/components/account/TermsGuard";
@@ -36,6 +37,7 @@ export default async function DashboardLayout({
       </div>
       {/* Global settings + account overlays (cover dashboard and editor) */}
       <AccountUiHost />
+      <WhatsNewHost />
     </div>
   );
 }

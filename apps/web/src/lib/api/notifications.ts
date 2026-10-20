@@ -1,5 +1,8 @@
 import { httpClient } from './httpClient';
 import { API_ROUTES } from './routes';
+import { fromAxiosError } from '@/lib/errors/normalize';
+
+const READ_RECEIPT_RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000] as const;
 
 export type NotificationCategory =
   | 'COLLABORATION'
@@ -49,11 +52,18 @@ export interface NotificationPreference {
   emailEnabled: boolean;
 }
 
+export interface FeaturedAnnouncement {
+  notificationId: string;
+  receivedAt: string;
+  announcement: AnnouncementDetail;
+}
+
 export interface AnnouncementDetail {
   id: string;
   title: string;
   summary: string;
   content: string;
+  presentation?: unknown;
   actionLabel?: string | null;
   actionUrl?: string | null;
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
@@ -61,6 +71,15 @@ export interface AnnouncementDetail {
 }
 
 export const notificationsApi = {
+  getFeaturedAnnouncement: async (): Promise<FeaturedAnnouncement | null> => {
+    const response = await httpClient.api.get(API_ROUTES.notifications.featuredAnnouncement);
+    return response.data.data;
+  },
+
+  dismissAnnouncement: async (id: string): Promise<void> => {
+    await httpClient.api.patch(API_ROUTES.notifications.dismissAnnouncement(id), {});
+  },
+
   fetchPage: async (cursor?: string, limit = 30): Promise<NotificationPage> => {
     const response = await httpClient.api.get(API_ROUTES.notifications.list, {
       params: { cursor, limit },
@@ -69,8 +88,20 @@ export const notificationsApi = {
   },
 
   markAsRead: async (id: string): Promise<Notification> => {
-    const response = await httpClient.api.patch(API_ROUTES.notifications.markRead(id), {});
-    return response.data.data;
+    // 已读写入幂等，服务短暂不可用时在后台有限重试。
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const response = await httpClient.api.patch(API_ROUTES.notifications.markRead(id), {});
+        return response.data.data;
+      } catch (error) {
+        const failure = fromAxiosError(error);
+        const delay = READ_RECEIPT_RETRY_DELAYS[attempt];
+        if (delay === undefined || !failure.retryable || ![502, 503, 504].includes(failure.httpStatus ?? 0)) {
+          throw error;
+        }
+        await new Promise<void>(resolve => setTimeout(resolve, delay));
+      }
+    }
   },
 
   markAllRead: async (): Promise<{ count: number }> => {
