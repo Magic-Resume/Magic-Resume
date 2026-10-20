@@ -2,6 +2,12 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.8.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.7.0...v2.8.0) (2026-10-20)
+
+## ✨ New Features
+- [`2bf7aec`](https://github.com/Magic-Resume/Magic-Resume/commit/2bf7aec)  feat: merge frontend release 2026-10-19 [skip ci] 
+- [`aa36b9b`](https://github.com/Magic-Resume/Magic-Resume/commit/aa36b9b)  feat(web): add voice interview setup and announcement carousel (Issues: [`#265`](https://github.com/Magic-Resume/Magic-Resume/issues/265))
+
 # [v2.6.5](https://github.com/Magic-Resume/Magic-Resume/compare/v2.6.4...v2.6.5) (2026-10-12)
 
 ## 🐛 Bug Fixes
