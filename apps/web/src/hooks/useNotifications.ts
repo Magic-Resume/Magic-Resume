@@ -48,6 +48,7 @@ export function useNotifications() {
         false,
       );
       await notificationsApi.markAsRead(id);
+      window.dispatchEvent(new CustomEvent('notification:read'));
       void mutate();
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
@@ -67,6 +68,7 @@ export function useNotifications() {
     );
     try {
       await notificationsApi.markAllRead();
+      window.dispatchEvent(new CustomEvent('notification:read'));
       void mutate();
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);

@@ -1,0 +1,241 @@
+.frame {
+  display: grid;
+  grid-template-areas: 'heading' 'orb' 'form';
+  grid-template-rows: auto minmax(200px, 250px) auto;
+  gap: 16px;
+  width: min(calc(100% - 40px), 500px);
+  margin: auto;
+  padding: 28px 32px 24px;
+  border-radius: 28px;
+  background: var(--surface-raised);
+  box-shadow: 0 24px 80px -40px rgb(0 0 0 / 0.3);
+}
+.visual {
+  grid-area: orb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.heading {
+  grid-area: heading;
+  text-align: center;
+}
+.eyebrow {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+.heading h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.35;
+  font-weight: 550;
+  letter-spacing: -0.03em;
+}
+.form {
+  grid-area: form;
+  min-width: 0;
+}
+.voices {
+  border: 0;
+  margin: 0 0 22px;
+  padding: 0;
+  min-width: 0;
+}
+.voices legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.voiceControls {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.voiceSelect {
+  min-width: 0;
+  flex: 1;
+}
+.previewButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  min-width: 84px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface-desk);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.previewButton:hover,
+.previewButton[aria-pressed='true'] {
+  color: var(--ink-sky);
+  background: color-mix(in srgb, var(--fill-sky) 12%, var(--surface-desk));
+}
+.previewButton:focus-visible {
+  outline: 2px solid var(--fill-sky);
+  outline-offset: 3px;
+}
+.previewButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.modelLabel {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.selectTrigger {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface-desk);
+  color: var(--text-primary);
+  box-shadow: none;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+.selectTrigger:hover,
+.selectTrigger[data-pressed] {
+  background: color-mix(in srgb, var(--surface-desk) 94%, var(--text-primary));
+}
+.selectTrigger:focus-visible {
+  outline: 2px solid var(--fill-sky);
+  outline-offset: 3px;
+}
+.selectTrigger:disabled {
+  background: var(--surface-desk);
+  color: var(--text-secondary);
+  cursor: default;
+  opacity: 0.5;
+}
+.selectPopover {
+  z-index: 100;
+  width: var(--trigger-width);
+}
+.selectOption {
+  min-height: 40px;
+  font-size: 14px;
+  line-height: 20px;
+}
+.notice {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+.spinner {
+  animation: setup-spin 1s linear infinite;
+}
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.error p {
+  margin: 0;
+}
+.error button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 24px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text-primary);
+  color: var(--surface-desk);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.start:hover {
+  opacity: 0.87;
+}
+.start:focus-visible,
+.error button:focus-visible {
+  outline: 2px solid var(--fill-sky);
+  outline-offset: 4px;
+}
+.start:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@keyframes setup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 560px) {
+  .frame {
+    padding: 24px 20px 20px;
+    grid-template-rows: auto 210px auto;
+    border-radius: 24px;
+    gap: 12px;
+    width: calc(100% - 32px);
+  }
+  .heading h1 {
+    font-size: 22px;
+  }
+}
+@media (max-height: 740px) {
+  .frame {
+    grid-template-rows: auto 180px auto;
+    gap: 12px;
+    padding-top: 20px;
+  }
+  .voices {
+    margin-bottom: 16px;
+  }
+  .start {
+    margin-top: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start,
+  .previewButton {
+    transition: none;
+  }
+  .spinner {
+    animation: none;
+  }
+}

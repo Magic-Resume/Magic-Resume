@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
  * 再放一枚「在听」胶囊是把同一件事说两遍。
  */
 export default function InterviewComposer({
+  inputRef,
   value,
   onChange,
   onSend,
@@ -27,6 +28,7 @@ export default function InterviewComposer({
   expired,
   error,
 }: {
+  inputRef?: React.Ref<HTMLInputElement>;
   value: string;
   onChange: (next: string) => void;
   onSend: () => void;
@@ -64,6 +66,8 @@ export default function InterviewComposer({
       )}
       <div className="bg-raised/80 mx-auto flex max-w-2xl items-center gap-1.5 rounded-full py-1.5 pl-5 pr-1.5 backdrop-blur">
         <input
+          ref={inputRef}
+          aria-label={t('aiLab.interview.inputPlaceholder')}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           disabled={expired}

@@ -221,6 +221,18 @@ export interface VoiceCredentials {
 }
 
 /** 开一场面试要带的东西。`start` 与 `startStream` 共用，两者只是取回方式不同。 */
+export interface InterviewAgentSettings {
+  voice?: string;
+  reportModel?: string;
+}
+
+export interface InterviewSetupOptions {
+  voices: Array<{ id: string; name: string }>;
+  defaultVoice: string;
+  reportModels: string[];
+  catalogDegraded: boolean;
+}
+
 export interface StartInterviewInput {
   /** Fixed when the entry card is issued; retries resume the same room. */
   room_id?: string;
@@ -244,12 +256,25 @@ export interface StartInterviewInput {
     duration_minutes?: number;
     /** 点名语音渠道；缺省按订阅声明的顺序。点名越不过订阅。 */
     channel?: InterviewVoiceChannel;
+    voice?: string;
+    report_model?: string;
   };
 }
 
 const unwrap = <T>(response: { data: ApiResponse<T> }): T => response.data.data;
 
 export const interviewApi = {
+  async setupOptions(
+    channel?: InterviewVoiceChannel,
+  ): Promise<InterviewSetupOptions> {
+    return unwrap(
+      await httpClient.agent.get<ApiResponse<InterviewSetupOptions>>(
+        AGENT_ROUTES.interview.setupOptions,
+        { params: channel ? { channel } : undefined },
+      ),
+    );
+  },
+
   async start(input: StartInterviewInput): Promise<StartInterviewResult> {
     return unwrap(
       await httpClient.agent.post<ApiResponse<StartInterviewResult>>(

@@ -95,6 +95,7 @@ import {
   PaintBoardIcon,
   InternetIcon,
   PlugSocketIcon,
+  PlayIcon,
   PlusSignIcon,
   RefreshIcon,
   RedoIcon,
@@ -296,6 +297,7 @@ export const PenLine = roundedIcon(Pen01Icon);
 export const Pencil = roundedIcon(PencilEdit01Icon);
 export const PencilRuler = roundedIcon(ToolsIcon);
 export const Phone = roundedIcon(CallIcon);
+export const Play = roundedIcon(PlayIcon);
 export const PlugZap = roundedIcon(PlugSocketIcon);
 export const Plus = roundedIcon(PlusSignIcon);
 export const Redo2 = roundedIcon(RedoIcon);
