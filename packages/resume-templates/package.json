@@ -63,7 +63,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
