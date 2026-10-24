@@ -1,55 +1,17 @@
-import { Bug, ChevronLeft, Gift, History } from '@magic-resume/icons';
-import { useAccountUiStore } from '@/store/useAccountUiStore';
-import { warmInvitePoster } from '@/lib/utils/invite-poster';
+import { ChevronLeft } from '@magic-resume/icons';
 import Link from 'next/link';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useSettingStore } from '@/store/useSettingStore';
-import { isCloudMode } from '@/lib/config/app';
-import { formatCompactDateTime } from '@/lib/utils/dateTime';
 import ResumeSwitcher from './ResumeSwitcher';
 
 import { EASE_ENTER } from '@magic-resume/utils';
-import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
-export type SyncStatus = 'saved' | 'syncing' | 'modified' | 'local' | 'error';
-
-interface HeaderTabProps {
-    updatedAt?: number;
-    syncStatus?: SyncStatus;
-    onVersionClick?: () => void;
-    onFeedbackClick?: () => void;
-}
 
 /**
- * 工作台顶栏 —— 不做盒子,做"舞台的边"。一层从画布顶部淡出的 scrim 托起标题与控件,
- * 让 chrome 退入背景(设计原则:画布是舞台、对话是旁白、能力按需浮现)。标题是主角,
- * 文档动作默认低调、靠近才点亮;同步收敛成一颗 sky 状态点 + 短词,完整时间在 hover。
+ * 工作台顶栏 —— 不做盒子,做"舞台的边"。一层从画布顶部淡出的 scrim 托起标题,
+ * 让 chrome 退入背景(设计原则:画布是舞台、能力按需浮现)。
  */
-export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionClick, onFeedbackClick }: HeaderTabProps) {
+export default function HeaderTab() {
     const { t } = useTranslation();
-    /* 右侧那簇文档动作共用一块滑动的底。三颗按钮的 hover 文字色各不相同（中性 /
-       sky），互不影响——面只负责底。 */
-    const toolSurface = useHoverSurface();
-
-    const openInvitePoster = useAccountUiStore((state) => state.openInvitePoster);
-    const cloudSync = useSettingStore((state) => state.cloudSync);
-    const reduce = useReducedMotion();
-
-    // 紧凑同步状态:一颗状态点 + 短词;syncing 时呼吸扩散;完整时间在外层 title 里。
-    const status = (() => {
-        switch (syncStatus) {
-            case 'syncing':
-                return { word: t('header.syncing').replace(/\./g, ''), dot: 'bg-sky-400', text: 'text-sky-300/90', pulse: true };
-            case 'error':
-                return { word: t('header.syncError'), dot: 'bg-red-400', text: 'text-red-400/90', pulse: false };
-            case 'modified':
-                return { word: t('header.pendingSync'), dot: 'bg-neutral-500', text: 'text-neutral-500', pulse: false };
-            case 'local':
-                return { word: t('header.localOnly'), dot: 'bg-neutral-500', text: 'text-neutral-500', pulse: false };
-            default:
-                return { word: t('header.synced'), dot: 'bg-sky-400', text: 'text-neutral-500', pulse: false };
-        }
-    })();
 
     return (
         <motion.header
@@ -70,106 +32,6 @@ export default function HeaderTab({ updatedAt, syncStatus = 'saved', onVersionCl
                 </Link>
                 <ResumeSwitcher />
             </div>
-
-            <div className="min-w-0 flex-1" />
-
-            {/* 右:文档动作(按需浮现)+ 紧凑同步状态 */}
-            {(cloudSync || isCloudMode) && (
-                <div className="pointer-events-auto flex shrink-0 items-center gap-3">
-                    <div
-                        className="relative flex items-center gap-0.5 opacity-70 transition-opacity duration-200 hover:opacity-100"
-                        {...toolSurface.containerProps}
-                    >
-                        <HoverSurface
-                            {...toolSurface.surfaceProps}
-                            className="rounded-lg bg-mr-surface-soft"
-                        />
-                        {cloudSync && (
-                            <button
-                                {...toolSurface.bind('version')}
-                                onClick={onVersionClick}
-                                aria-label={t('header.versionHistory')}
-                                type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-neutral-100"
-                            >
-                                <History size={16} />
-                                <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
-                                    {t('header.versionHistory')}
-                                </span>
-                            </button>
-                        )}
-                        {/* 邀请入口放这儿而不是账户弹窗深处：增长入口要在人干活的路上，
-                            不能等人主动去翻第五个 tab。 */}
-                        {isCloudMode && (
-                            <button
-                                {...toolSurface.bind('invite')}
-                                onClick={openInvitePoster}
-                                // 覆盖绑定里的同名接管点，把这一颗自己的预热并进去。
-                                onPointerEnter={() => {
-                                    toolSurface.bind('invite').onPointerEnter();
-                                    void warmInvitePoster();
-                                }}
-                                onFocus={() => {
-                                    toolSurface.bind('invite').onFocus();
-                                    void warmInvitePoster();
-                                }}
-                                aria-label={t('account.invite.headerAction')}
-                                type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-sky-300"
-                            >
-                                <Gift size={16} />
-                                <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
-                                    {t('account.invite.headerAction')}
-                                </span>
-                            </button>
-                        )}
-                        {isCloudMode && (
-                            <button
-                                {...toolSurface.bind('feedback')}
-                                onClick={onFeedbackClick}
-                                aria-label={t('tools.feedback')}
-                                type="button"
-                                className="group/htip relative flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition active:scale-95 hover:text-neutral-100"
-                            >
-                                <Bug size={16} />
-                                <span className="pointer-events-none absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 shadow-lg shadow-black/40 opacity-0 transition-opacity duration-150 group-hover/htip:opacity-100">
-                                    {t('tools.feedback')}
-                                </span>
-                            </button>
-                        )}
-                    </div>
-
-                    {cloudSync && (
-                        <>
-                            <span className="h-4 w-px bg-white/10" />
-                            <div
-                                className="flex items-center gap-2"
-                                title={updatedAt ? `${t('header.lastUpdated')} ${formatCompactDateTime(updatedAt)}` : undefined}
-                            >
-                                <span className="relative flex h-1.5 w-1.5 items-center justify-center">
-                                    {status.pulse && (
-                                        <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${status.dot} opacity-75`} />
-                                    )}
-                                    <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${status.dot} transition-colors duration-300`} />
-                                </span>
-                                {/* C3:同步状态几态切换用极轻的纵向 crossfade,替代硬切;reduced-motion 下直切 */}
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <motion.span
-                                        key={syncStatus}
-                                        initial={{ opacity: 0, y: reduce ? 0 : 2 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: reduce ? 0 : -2 }}
-                                        transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
-                                        className={`whitespace-nowrap text-xs ${status.text}`}
-                                    >
-                                        {status.word}
-                                    </motion.span>
-                                </AnimatePresence>
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
         </motion.header>
     );
 }

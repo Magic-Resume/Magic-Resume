@@ -1,8 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Share2, Loader2 } from '@magic-resume/icons';
+import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Loader2 } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
-import { useSettingStore } from "@/store/useSettingStore";
 import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
 import ExportModal from "../modals/ExportModal";
 import { useResumeExport } from "../modals/useResumeExport";
@@ -15,7 +14,6 @@ type EditorDockProps = {
   zoomOut: (step?: number) => void;
   resetTransform: (step?: number) => void;
   resume: Resume;
-  onShareClick?: () => void;
   onJsonClick: () => void;
 };
 
@@ -29,11 +27,10 @@ type DockEntry =
  * 纯合成层动画,无 width/height 抖动,顺滑不卡。放在预览 section 内(relative),
  * `absolute … left-1/2` 自动避开右侧模板栏。
  */
-export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareClick, onJsonClick }: EditorDockProps) {
+export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onJsonClick }: EditorDockProps) {
   const { t } = useTranslation();
   const [exportOpen, setExportOpen] = useState(false);
   const { isExporting, runExport } = useResumeExport(resume, 'dock');
-  const cloudSync = useSettingStore((state) => state.cloudSync);
   // Match the locale the preview renders with so the export reuses its cached blob.
 
   const warmupPdfExport = () => {
@@ -62,12 +59,9 @@ export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onShareCli
       },
       { id: "view-json", title: t("resumeContent.viewJson"), icon: <FileJson size={16} />, onClick: onJsonClick },
     ];
-    if (cloudSync) {
-      list.push({ id: "share", title: t("tools.share"), icon: <Share2 size={16} />, onClick: onShareClick });
-    }
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, isExporting, cloudSync, onShareClick, onJsonClick]);
+  }, [t, isExporting, onJsonClick]);
 
   return (
     // 居中 translate 留在静态外层(framer 会覆写 transform,不能同元素混用)。

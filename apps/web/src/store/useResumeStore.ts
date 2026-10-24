@@ -1,4 +1,4 @@
-import { normalizeDocumentLanguage, resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { normalizeDocumentLanguage } from '@magic-resume/resume-schema';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import i18next from 'i18next';
@@ -6,11 +6,6 @@ import sidebarMenu from '@/lib/constants/sidebarMenu';
 import { dbClient, RESUMES_KEY } from '@/lib/api/IndexDBClient';
 import { MagicDebugger } from '@/lib/utils/debuggger';
 import { toast } from 'sonner';
-import { useSettingStore } from './useSettingStore';
-import { resumeApi, isLocalResumeId, buildSyncDoc } from '@/lib/api/resume';
-import { getAuthToken, getCachedAuthToken } from '@/lib/api/httpClient';
-import { compare as compareJsonDocs } from 'fast-json-patch';
-import { isAxiosError } from 'axios';
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
 import {
@@ -26,40 +21,7 @@ import {
   SectionItem,
   SectionOrder,
   CustomTemplateConfig,
-  CloudResume,
-  CloudVersion,
-  ResumeVersion,
 } from '@/types/frontend/resume';
-import type { CloudResumeResponse } from '@/types/backend/resume';
-
-const MAX_RESUME_VERSION_HISTORY = 10;
-
-// 离线编辑时同步每 10~45s 失败一次,不能次次弹 toast(状态 pill 已持续传达 error)。
-const SYNC_ERROR_TOAST_COOLDOWN_MS = 60_000;
-let lastSyncErrorToastAt = 0;
-
-// 每份简历的同步基线:最后已知的云端 revision(乐观锁)与推送文档(增量 diff 与脏检查的参照)。
-// 只存内存,跨会话由 loadResumes 重新播种;未播种时退化为无条件全量推。
-type SyncBaseline = {
-  revision?: number;
-  doc?: Record<string, unknown>;
-};
-const syncBaselines = new Map<string, SyncBaseline>();
-
-const setSyncBaseline = (id: string, patch: SyncBaseline) => {
-  syncBaselines.set(id, { ...syncBaselines.get(id), ...patch });
-};
-
-// 脏检查比较键。不含 updatedAt:手动保存会 bump 它,含入则重复 Ctrl+S 永远"脏"。
-// 方向安全:构造差异只会假脏(多同步一次),不会假净。
-const syncCompareKey = (doc: Record<string, unknown> | Resume): string =>
-  JSON.stringify(getSanitizedResume(doc as Resume));
-
-// 建版本冷却的会话内记录:会话开头 versions 还没从云端加载,只看它会判成 0 → 首次同步必建版本。
-const lastVersionSnapshotAt = new Map<string, number>();
-
-/** 同步结果:调用方(手动保存)据此区分"真同步了"与"本就没得同步"。 */
-export type SyncOutcome = 'synced' | 'noop' | 'skipped' | 'failed';
 
 export type ResumeState = {
   resumes: Resume[];
@@ -68,8 +30,6 @@ export type ResumeState = {
   rightCollapsed: boolean;
   leftCollapsed: boolean;
   activeSection: string;
-  syncStatus: 'saved' | 'syncing' | 'modified' | 'local' | 'error';
-  isSyncing: boolean;
   loadResumes: () => Promise<void>;
   createResume: (name: string) => Promise<string>;
   importResume: (resume: Resume) => Promise<string>;
@@ -78,21 +38,8 @@ export type ResumeState = {
   duplicateResume: (id: string) => Promise<void>;
   renameResume: (id: string, newName: string) => Promise<void>;
   deleteResume: (id: string) => Promise<void>;
-  deleteVersion: (resumeId: string, versionId: string) => Promise<void>;
   loadResumeForEdit: (id: string) => void;
   saveResume: (type?: 'auto' | 'manual', resumeData?: Resume) => Promise<void>;
-  createVersion: (
-    type: 'auto' | 'manual',
-    name?: string,
-    resumeData?: Resume,
-  ) => Promise<void>;
-  restoreVersion: (versionId: string) => void;
-  syncToCloud: (options?: { skipVersioning?: boolean }) => Promise<SyncOutcome>;
-  fetchCloudResume: (id: string) => Promise<void>;
-  /** 只刷新版本列表,不触内容字段 —— 避免云端副本覆盖正在编辑的内容。 */
-  refreshCloudVersions: (id: string) => Promise<void>;
-  /** pagehide 退出送达:若有未落云修改,用 keepalive 请求尽力推送。 */
-  flushSyncOnExit: () => void;
   updateInfo: (info: Partial<InfoType>) => void;
   setSectionOrder: (sectionOrder: SectionOrder[]) => void;
   updateSectionItems: (key: string, items: SectionItem[]) => void;
@@ -113,19 +60,6 @@ export type ResumeState = {
   setRightCollapsed: (collapsed: boolean) => void;
   setLeftCollapsed: (collapsed: boolean) => void;
   setActiveSection: (section: string) => void;
-  updateSharing: (
-    isPublic: boolean,
-    shareRole: 'VIEWER' | 'COMMENTER' | 'EDITOR' | undefined,
-  ) => Promise<void>;
-
-  isAiGenerating: boolean;
-  setIsAiGenerating: (isGenerating: boolean) => void;
-  applyFullResume: (resume: Resume) => void;
-  /** Apply Platform's already-committed Workspace result without re-syncing it. */
-  applyWorkspaceResolution: (
-    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder' | 'documentLanguage' | 'documentLanguageSource'>,
-    revision: number,
-  ) => void;
 };
 
 export const initialResume: Omit<Resume, 'id' | 'updatedAt' | 'name'> = {
@@ -190,157 +124,6 @@ export const getSanitizedResumeForLocal = (resume: Resume) => {
   };
 };
 
-const getCloudVersionTimestamp = (version: CloudVersion) =>
-  version.createdAt
-    ? new Date(version.createdAt).getTime()
-    : version.timestamp || Date.now();
-
-const normalizeResumeVersions = (versions: ResumeVersion[] = []) =>
-  [...versions]
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_RESUME_VERSION_HISTORY);
-
-const normalizeCloudVersions = (
-  versions: CloudVersion[] = [],
-  resumeId: string,
-): ResumeVersion[] =>
-  versions
-    .map((version) => {
-      const updatedAt = getCloudVersionTimestamp(version);
-      return {
-        id: version.id,
-        updatedAt,
-        type: (version.changelog === 'Manual Save'
-          ? 'manual'
-          : version.changelog === 'Auto Save' ||
-              version.changelog === 'Initial version'
-            ? 'auto'
-            : version.type || 'auto') as 'manual' | 'auto',
-        name:
-          version.changelog !== 'Manual Save' &&
-          version.changelog !== 'Auto Save' &&
-          version.changelog !== 'Initial version'
-            ? version.changelog
-            : '',
-        data: (() => {
-          const rawVersion =
-            typeof version.content === 'string'
-              ? JSON.parse(version.content)
-              : version.content;
-          return {
-            ...getSanitizedResume((rawVersion || {}) as Resume),
-            id: resumeId,
-            updatedAt,
-          } as Omit<Resume, 'versions'>;
-        })(),
-      };
-    })
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_RESUME_VERSION_HISTORY);
-
-const buildResumeFromCloud = (
-  cloudResume: CloudResume,
-  fallbackVersions?: ResumeVersion[],
-): Resume => {
-  const rawParsed =
-    typeof cloudResume.content === 'string'
-      ? JSON.parse(cloudResume.content)
-      : cloudResume.content;
-  const sanitizedContent = getSanitizedResume({
-    ...((rawParsed || {}) as Resume),
-    name: cloudResume.title,
-    isPublic: cloudResume.isPublic,
-    shareId: cloudResume.shareId,
-    shareRole: cloudResume.shareRole,
-  });
-
-  return {
-    id: cloudResume.id,
-    updatedAt: new Date(cloudResume.updatedAt).getTime(),
-    ...sanitizedContent,
-    versions: cloudResume.versions
-      ? normalizeCloudVersions(cloudResume.versions, cloudResume.id)
-      : normalizeResumeVersions(fallbackVersions),
-  };
-};
-
-/** axios 错误且带指定 HTTP 状态码。 */
-const isHttpStatus = (error: unknown, status: number): boolean =>
-  isAxiosError(error) && error.response?.status === status;
-
-/**
- * 一次云端推送,两级降级:有基线走增量,400 退条件全量;409(其它端已写入)则备份远端
- * 为历史版本后无条件强推。返回实际推送的文档——强推时它比入参更新,基线播种要用它。
- */
-const syncWithConflictRecovery = async (
-  resume: Resume,
-  sentDoc: Record<string, unknown>,
-  baseline: SyncBaseline | undefined,
-  getLatestResume: () => Resume | null,
-): Promise<{
-  result: CloudResumeResponse;
-  sentDoc: Record<string, unknown>;
-}> => {
-  const isLocal = isLocalResumeId(resume.id);
-  const baseRevision = baseline?.revision;
-
-  const pushConditional = async (): Promise<CloudResumeResponse> => {
-    if (!isLocal && baseline?.doc && baseRevision !== undefined) {
-      const patchOps = compareJsonDocs(baseline.doc, sentDoc);
-      try {
-        return await resumeApi.syncResume(resume, { baseRevision, patchOps });
-      } catch (error) {
-        // 400 = 补丁在服务端不可应用(基线分叉/存量非 JSON) → 条件全量兜底。
-        if (!isHttpStatus(error, 400)) throw error;
-        console.warn(
-          '[Sync] contentPatch rejected (400), falling back to conditional full push.',
-        );
-        return await resumeApi.syncResume(resume, { baseRevision });
-      }
-    }
-    return await resumeApi.syncResume(
-      resume,
-      !isLocal && baseRevision !== undefined ? { baseRevision } : undefined,
-    );
-  };
-
-  try {
-    return { result: await pushConditional(), sentDoc };
-  } catch (error) {
-    if (!isHttpStatus(error, 409)) throw error;
-
-    // --- 409 冲突恢复:先保住远端,再让眼前的编辑胜出 ---
-    console.warn(
-      '[Sync] Revision conflict detected, backing up remote then force-pushing local.',
-    );
-    const remote = (await resumeApi.fetchCloudResumeById(resume.id)) as {
-      content?: string | object;
-    } | null;
-    const remoteContent =
-      typeof remote?.content === 'string'
-        ? remote.content
-        : remote?.content
-          ? JSON.stringify(remote.content)
-          : null;
-    if (remoteContent) {
-      await resumeApi.createCloudVersionRaw(
-        resume.id,
-        remoteContent,
-        i18next.t('store.sync.conflictBackupChangelog'),
-      );
-      lastVersionSnapshotAt.set(resume.id, Date.now());
-    }
-
-    // 强推用 store 里最新的内容(恢复期间用户可能又打了字),不带 base —— 蓄意 LWW。
-    const latest = getLatestResume();
-    const forceResume = latest && latest.id === resume.id ? latest : resume;
-    const forceDoc = buildSyncDoc(forceResume);
-    const result = await resumeApi.syncResume(forceResume);
-    toast.info(i18next.t('store.notifications.syncConflictResolved'));
-    return { result, sentDoc: forceDoc };
-  }
-};
-
 const useResumeStore = create<ResumeState>()(
   immer((set, get) => ({
     resumes: [],
@@ -349,51 +132,6 @@ const useResumeStore = create<ResumeState>()(
     rightCollapsed: false,
     leftCollapsed: false,
     activeSection: 'basics',
-    syncStatus: 'saved',
-    isSyncing: false,
-    isAiGenerating: false,
-
-    setIsAiGenerating: (isGenerating) => set({ isAiGenerating: isGenerating }),
-
-    applyFullResume: (newResume) => {
-      const active = get().activeResume;
-      if (!active) return;
-      get().updateResume(active.id, {
-        info: newResume.info,
-        sections: newResume.sections,
-        sectionOrder: normalizeResumeSectionOrder(newResume.sectionOrder, newResume.sections),
-        documentLanguage: newResume.documentLanguage ?? active.documentLanguage ?? resolveDocumentLanguage(newResume),
-        documentLanguageSource: newResume.documentLanguageSource ?? active.documentLanguageSource,
-      });
-    },
-
-    applyWorkspaceResolution: (document, revision) => {
-      const active = get().activeResume;
-      if (!active) return;
-      const next = {
-        ...active,
-        info: document.info,
-        sections: document.sections,
-        sectionOrder: document.sectionOrder,
-        documentLanguage: document.documentLanguage,
-        documentLanguageSource: document.documentLanguageSource,
-        updatedAt: Date.now(),
-      };
-      set((state) => {
-        state.activeResume = next;
-        const index = state.resumes.findIndex(
-          (resume) => resume.id === next.id,
-        );
-        if (index !== -1) state.resumes[index] = next;
-        // Platform already performed the authoritative CAS write. Marking this
-        // document modified would schedule a second PATCH and bump revision again.
-        state.syncStatus = useSettingStore.getState().cloudSync
-          ? 'saved'
-          : 'local';
-      });
-      setSyncBaseline(next.id, { revision, doc: buildSyncDoc(next) });
-    },
-
     loadResumes: async () => {
       if (!get().isStoreLoading) {
         set({ isStoreLoading: true });
@@ -414,64 +152,6 @@ const useResumeStore = create<ResumeState>()(
         const mergedMap = new Map<string, Resume>();
         localResumes.forEach((r) => mergedMap.set(r.id, r));
 
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        if (isCloudSyncOn && (await getAuthToken())) {
-          try {
-            const cloudResult = await resumeApi.fetchCloudResumes();
-            if (cloudResult && cloudResult.data) {
-              const cloudResumes = cloudResult.data as CloudResume[];
-
-              if (Array.isArray(cloudResumes)) {
-                const cloudIds = new Set(cloudResumes.map((cr) => cr.id));
-
-                cloudResumes.forEach((cr) => {
-                  const local = mergedMap.get(cr.id);
-                  const cloudWins =
-                    !local ||
-                    new Date(cr.updatedAt).getTime() > local.updatedAt;
-                  if (cloudWins) {
-                    const mergedResume = buildResumeFromCloud(
-                      cr,
-                      local?.versions,
-                    );
-                    mergedMap.set(cr.id, mergedResume);
-                    // 本地被云端副本替换 → 本地 === 云端,revision 与 doc 都是权威基线。
-                    setSyncBaseline(cr.id, {
-                      revision: cr.revision,
-                      doc: buildSyncDoc(mergedResume),
-                    });
-                  } else {
-                    // 本地更新(离线编辑过):doc 不播种(内容与云端已分叉,首推走全量),
-                    // 但 revision 必须记 —— 这正是冲突检测要保护的场景。
-                    setSyncBaseline(cr.id, { revision: cr.revision });
-                  }
-                });
-
-                // 清掉在别的设备上已删除的云端简历。防数据丢失:云端列表为空时不当权威
-                // (残缺的 200 不能清空一切),且绝不删本地 id 的离线简历。
-                if (cloudResumes.length > 0) {
-                  for (const id of mergedMap.keys()) {
-                    if (!cloudIds.has(id) && !isLocalResumeId(id)) {
-                      mergedMap.delete(id);
-                    }
-                  }
-                }
-              }
-
-              const uniqueResumes = Array.from(mergedMap.values());
-              await dbClient.setItem(
-                RESUMES_KEY,
-                uniqueResumes.map((r) => getSanitizedResumeForLocal(r)),
-              ); // Persist cleaned data
-            }
-          } catch (cloudError) {
-            console.error(
-              'Failed to fetch cloud resumes during load:',
-              cloudError,
-            );
-          }
-        }
-
         const finalResumes = Array.from(mergedMap.values()).sort(
           (a, b) => b.updatedAt - a.updatedAt,
         );
@@ -483,7 +163,6 @@ const useResumeStore = create<ResumeState>()(
     },
 
     createResume: async (name) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const { addResume } = get();
 
       const newId = Date.now().toString();
@@ -496,49 +175,12 @@ const useResumeStore = create<ResumeState>()(
         updatedAt: Date.now(),
       };
 
-      if (isCloudSyncOn) {
-        try {
-          const result = await resumeApi.syncResume(newResume);
-          if (result && result.id) {
-            const cloudResume: Resume = {
-              ...newResume,
-              id: result.id,
-              updatedAt: new Date(result.updatedAt).getTime(),
-            };
-            addResume(cloudResume);
-            return result.id;
-          }
-        } catch (error) {
-          console.error('Failed to create resume in cloud:', error);
-          toast.error(i18next.t('store.notifications.createCloudFailed'));
-        }
-      }
-
       addResume(newResume);
       return newId;
     },
 
     importResume: async (resume) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const { addResume } = get();
-
-      if (isCloudSyncOn) {
-        try {
-          const result = await resumeApi.syncResume(resume);
-          if (result && result.id) {
-            const cloudResume: Resume = {
-              ...resume,
-              id: result.id,
-              updatedAt: new Date(result.updatedAt).getTime(),
-            };
-            addResume(cloudResume);
-            return result.id;
-          }
-        } catch (error) {
-          console.error('Failed to import resume to cloud:', error);
-          toast.error(i18next.t('store.notifications.importCloudFailed'));
-        }
-      }
 
       addResume(resume);
       return resume.id;
@@ -558,7 +200,6 @@ const useResumeStore = create<ResumeState>()(
     },
 
     updateResume: (id, updates) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const now = Date.now();
 
       set((state) => {
@@ -577,60 +218,16 @@ const useResumeStore = create<ResumeState>()(
               ...updates,
               updatedAt: now,
             },
-            syncStatus: isCloudSyncOn ? 'modified' : 'local',
           }),
         };
       });
     },
 
     duplicateResume: async (id) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const resumeToDuplicate = get().resumes.find((r) => r.id === id);
       if (!resumeToDuplicate) {
         toast.error(i18next.t('store.notifications.resumeNotFound'));
         return;
-      }
-
-      const isLocalId = !isNaN(Number(id)) && id.length > 10;
-      if (isCloudSyncOn && !isLocalId) {
-        try {
-          toast.promise(
-            async () => {
-              const newResume = await resumeApi.duplicateResume(id);
-              if (newResume) {
-                const parsedContent =
-                  typeof newResume.content === 'string'
-                    ? JSON.parse(newResume.content)
-                    : newResume.content;
-
-                const cloudResume: Resume = {
-                  ...parsedContent,
-                  id: newResume.id,
-                  name: newResume.title, // Backend uses 'title', Frontend uses 'name'
-                  updatedAt: new Date(newResume.updatedAt).getTime(),
-                  isPublic: false,
-                  shareId: undefined,
-                  shareRole: undefined,
-                  versions: undefined,
-                  customTemplate:
-                    typeof newResume.customTemplate === 'string'
-                      ? JSON.parse(newResume.customTemplate)
-                      : newResume.customTemplate,
-                };
-                get().addResume(cloudResume);
-              }
-            },
-            {
-              loading: i18next.t('store.notifications.duplicatingInCloud'),
-              success: i18next.t('store.notifications.duplicateCloudSuccess'),
-              error: i18next.t('store.notifications.duplicateCloudError'),
-            },
-          );
-          return;
-        } catch (error) {
-          console.error('Cloud duplication failed', error);
-          return;
-        }
       }
 
       const newResume: Resume = {
@@ -652,7 +249,6 @@ const useResumeStore = create<ResumeState>()(
     },
 
     renameResume: async (id, newName) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const now = Date.now();
       const { resumes } = get();
       const targetResume = resumes.find((r) => r.id === id);
@@ -681,37 +277,13 @@ const useResumeStore = create<ResumeState>()(
         RESUMES_KEY,
         currentResumes.map((r) => getSanitizedResumeForLocal(r)),
       );
-
-      const isLocalId = !isNaN(Number(id)) && id.length > 10;
-      if (isCloudSyncOn && !isLocalId) {
-        try {
-          await resumeApi.syncResume(updatedResume);
-          toast.success(i18next.t('store.notifications.renameSuccess'));
-        } catch (error) {
-          console.error('Failed to rename in cloud', error);
-          toast.error(i18next.t('store.notifications.renameCloudFailed'));
-        }
-      }
     },
 
     deleteResume: async (id) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const resumeToDelete = get().resumes.find((r) => r.id === id);
-
-      const isLocalId = !isNaN(Number(id)) && id.length > 10;
-      if (isCloudSyncOn && !isLocalId) {
-        try {
-          await resumeApi.deleteResume(id);
-        } catch (error) {
-          console.error('Failed to delete cloud resume:', error);
-          toast.error(i18next.t('store.notifications.deleteCloudFailed'));
-        }
-      }
 
       const newResumes = get().resumes.filter((r) => r.id !== id);
       set({ resumes: newResumes });
-      syncBaselines.delete(id);
-      lastVersionSnapshotAt.delete(id);
       dbClient.setItem(
         RESUMES_KEY,
         newResumes.map((r) => getSanitizedResumeForLocal(r)),
@@ -723,79 +295,8 @@ const useResumeStore = create<ResumeState>()(
       );
     },
 
-    deleteVersion: async (resumeId, versionId) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
-      const isLocalId = !isNaN(Number(resumeId)) && resumeId.length > 10;
-
-      console.log('[deleteVersion] Debug:', {
-        resumeId,
-        versionId,
-        isCloudSyncOn,
-        isLocalId,
-        willCallAPI: isCloudSyncOn && !isLocalId,
-      });
-
-      if (isCloudSyncOn && !isLocalId) {
-        try {
-          console.log('[deleteVersion] Calling API to delete version...');
-          await resumeApi.deleteVersion(resumeId, versionId);
-          console.log('[deleteVersion] API call successful');
-        } catch (error) {
-          console.error('Failed to delete version from cloud:', error);
-          toast.error(i18next.t('store.notifications.versionDeleteFailed'));
-          return; // Don't delete locally if cloud failed (to keep sync)
-        }
-      } else {
-        console.log(
-          '[deleteVersion] Skipping API call, proceeding with local deletion only',
-        );
-      }
-
-      const { resumes, activeResume } = get();
-      const updatedResumes = resumes.map((r) => {
-        if (r.id === resumeId && r.versions) {
-          return {
-            ...r,
-            versions: r.versions.filter((v) => v.id !== versionId),
-          };
-        }
-        return r;
-      });
-
-      const updatedActiveResume =
-        activeResume?.id === resumeId && activeResume.versions
-          ? {
-              ...activeResume,
-              versions: activeResume.versions.filter((v) => v.id !== versionId),
-            }
-          : activeResume;
-
-      set({
-        resumes: updatedResumes,
-        activeResume: updatedActiveResume,
-      });
-
-      await dbClient.setItem(
-        RESUMES_KEY,
-        updatedResumes.map((r) => getSanitizedResumeForLocal(r)),
-      );
-      toast.success(i18next.t('store.notifications.versionDeleted'));
-    },
-
     loadResumeForEdit: (id) => {
-      const { resumes, isStoreLoading, loadResumes, fetchCloudResume } = get();
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
-
-      const { isSyncing, activeResume: currentActive } = get();
-      if (isCloudSyncOn && !isSyncing) {
-        if (!currentActive || currentActive.id !== id) {
-          console.log(
-            '[Store] Cloud sync is ON, fetching latest resume data for edit:',
-            id,
-          );
-          fetchCloudResume(id);
-        }
-      }
+      const { resumes, isStoreLoading, loadResumes } = get();
 
       if (isStoreLoading) {
         loadResumes().then(() => {
@@ -828,12 +329,12 @@ const useResumeStore = create<ResumeState>()(
     },
 
     saveResume: async (type = 'auto', resumeData) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
       const now = Date.now();
 
       const targetResume = resumeData || get().activeResume;
       if (!targetResume) return;
 
+      // Bumping updatedAt changes `resumes`, which the subscriber below persists to IndexedDB.
       set((state) => {
         const newResumes = state.resumes.map((r) =>
           r.id === targetResume.id ? { ...r, updatedAt: now } : r,
@@ -845,92 +346,13 @@ const useResumeStore = create<ResumeState>()(
         return {
           resumes: newResumes,
           ...(isUpdatingActive && {
-            activeResume: { ...state.activeResume!, updatedAt: now }, // Trigger small update for timestamp
+            activeResume: { ...state.activeResume!, updatedAt: now },
           }),
-          syncStatus: 'syncing',
         };
       });
 
-      if (isCloudSyncOn) {
-        if (type === 'manual') {
-          // 必须先同步主记录再建版本:createVersion 会拉云端状态并占住 isSyncing 锁,
-          // 顺序反了会让 syncToCloud 静默跳过 PATCH,并把 activeResume 退回旧内容。
-          const outcome = await get().syncToCloud({ skipVersioning: true });
-          if (outcome === 'noop') {
-            // 内容自上次同步没变:不建冗余版本快照,也不假装"保存"了什么。
-            toast.success(i18next.t('store.notifications.resumeUpToDate'));
-            return;
-          }
-          if (outcome === 'failed') {
-            // 同步失败(已 toast/置 error 态):跳过建版本,避免"失败提示后紧跟成功提示"。
-            return;
-          }
-          await get().createVersion('manual', undefined, targetResume);
-          toast.success(i18next.t('store.notifications.resumeSavedCloud'));
-        } else {
-          void get().syncToCloud();
-        }
-      } else {
-        set({ syncStatus: 'local' });
-        if (type === 'manual')
-          toast.success(i18next.t('store.notifications.resumeSavedLocally'));
-      }
-    },
-
-    createVersion: async (type, name, resumeData) => {
-      const isCloudSyncOn = useSettingStore.getState().cloudSync;
-      const targetResume = resumeData || get().activeResume;
-
-      if (!targetResume) return;
-
-      const isLocalId = isLocalResumeId(targetResume.id);
-      if (isCloudSyncOn && !isLocalId) {
-        try {
-          const changelog =
-            name || (type === 'manual' ? 'Manual Save' : 'Auto Save');
-          const created = await resumeApi.createCloudVersion(
-            targetResume.id,
-            targetResume,
-            changelog,
-          );
-          lastVersionSnapshotAt.set(targetResume.id, Date.now());
-          // 建版本服务端会 bump revision 并把 content 置为本版本内容;回写基线,
-          // 否则下一次自动同步会吃一记无谓 409。doc 同步更新为本版本推送的文档。
-          setSyncBaseline(targetResume.id, {
-            ...(created?.resumeRevision !== undefined
-              ? { revision: created.resumeRevision }
-              : {}),
-            doc: buildSyncDoc(targetResume),
-          });
-          // 只刷新版本列表:旧版在此 fetchCloudResume 整体拉回云端副本,请求往返窗口内
-          // 用户刚打的字会被静默回滚(手动保存丢字的根因)。
-          void get().refreshCloudVersions(targetResume.id);
-        } catch (error) {
-          console.error('Failed to create cloud version:', error);
-        }
-      }
-    },
-
-    restoreVersion: (versionId) => {
-      const { activeResume, updateResume } = get();
-      if (!activeResume || !activeResume.versions) return;
-
-      const version = activeResume.versions.find((v) => v.id === versionId);
-      if (!version) {
-        toast.error(i18next.t('store.notifications.versionNotFound'));
-        return;
-      }
-
-      const restoredData = JSON.parse(JSON.stringify(version.data));
-
-      updateResume(activeResume.id, {
-        ...restoredData,
-        documentLanguage: restoredData.documentLanguage,
-        documentLanguageSource: restoredData.documentLanguageSource,
-        updatedAt: Date.now(),
-      });
-
-      toast.success(i18next.t('store.notifications.versionRestored'));
+      if (type === 'manual')
+        toast.success(i18next.t('store.notifications.resumeSavedLocally'));
     },
 
     updateInfo: (info) => {
@@ -955,9 +377,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].info = newInfo;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -986,9 +405,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].sectionOrder = normalizedSectionOrder;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1012,9 +428,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].sections[key] = items;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1053,9 +466,6 @@ const useResumeStore = create<ResumeState>()(
             state.activeResume.sectionOrder;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
 
       return key;
@@ -1099,9 +509,6 @@ const useResumeStore = create<ResumeState>()(
             state.activeResume.sectionOrder;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1126,9 +533,6 @@ const useResumeStore = create<ResumeState>()(
             state.activeResume.sectionOrder;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1152,9 +556,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].sections = sections;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1184,9 +585,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].templateOverride = undefined;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1207,9 +605,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].customTemplate = customTemplate;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1229,9 +624,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].themeColor = themeColor;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1251,9 +643,6 @@ const useResumeStore = create<ResumeState>()(
           state.resumes[resumeIndex].typography = typography;
           state.resumes[resumeIndex].updatedAt = state.activeResume.updatedAt;
         }
-
-        const isCloudSyncOn = useSettingStore.getState().cloudSync;
-        state.syncStatus = isCloudSyncOn ? 'modified' : 'local';
       });
     },
 
@@ -1262,352 +651,6 @@ const useResumeStore = create<ResumeState>()(
     setLeftCollapsed: (collapsed) => set({ leftCollapsed: collapsed }),
 
     setActiveSection: (section) => set({ activeSection: section }),
-
-    updateSharing: async (isPublic, shareRole) => {
-      const { activeResume } = get();
-
-      if (!activeResume) {
-        toast.error(i18next.t('store.notifications.loginToShare'));
-        return;
-      }
-
-      try {
-        const result = await resumeApi.updateSharing(activeResume.id, {
-          isPublic,
-          shareRole,
-        });
-
-        // 服务端任何 update 都会 bump revision(含分享设置):回写基线,否则下一次内容
-        // 同步的条件写会撞一记良性 409。content 未变,doc 基线保留。
-        const resultRevision = (result as { revision?: number } | null)
-          ?.revision;
-        if (resultRevision !== undefined) {
-          setSyncBaseline(activeResume.id, { revision: resultRevision });
-        }
-
-        // Update local state
-        set((state) => {
-          if (!state.activeResume) return state;
-          const updatedResume = {
-            ...state.activeResume,
-            isPublic: result.isPublic,
-            shareId: result.shareId,
-            shareRole: result.shareRole,
-          };
-
-          const newResumes = state.resumes.map((r) =>
-            r.id === updatedResume.id ? updatedResume : r,
-          );
-
-          return {
-            activeResume: updatedResume,
-            resumes: newResumes,
-          };
-        });
-
-        // Persist local
-        const { resumes } = get();
-        dbClient.setItem(
-          RESUMES_KEY,
-          resumes.map((r) => getSanitizedResumeForLocal(r)),
-        );
-
-        toast.success(
-          isPublic
-            ? i18next.t('store.notifications.resumePublished')
-            : i18next.t('store.notifications.resumeUnpublished'),
-        );
-      } catch (error) {
-        console.error('Failed to update sharing:', error);
-        toast.error(i18next.t('store.notifications.sharingUpdateFailed'));
-      }
-    },
-
-    syncToCloud: async (options?: {
-      skipVersioning?: boolean;
-    }): Promise<SyncOutcome> => {
-      const { activeResume, isSyncing } = get();
-      if (!activeResume || !useSettingStore.getState().cloudSync)
-        return 'skipped';
-      if (!(await getAuthToken())) return 'skipped';
-
-      // Prevent concurrent syncs (LOCK)
-      // 注:被锁挡掉的触发不会丢 —— 正在跑的那次同步结束时会检测"飞行中是否有新编辑",
-      // 有则自动续链一轮(见 finally),兜住这里 early-return 丢触发的场景。
-      if (isSyncing) {
-        console.log('[Sync] Sync is already in progress, skipping...');
-        return 'skipped';
-      }
-
-      // 脏检查:与基线(最后已知与云端一致的文档)逐字段比较,内容没变就不打扰服务端。
-      // 手动保存的调用方据 'noop' 提示"已是最新"并跳过建版本。
-      const baseline = syncBaselines.get(activeResume.id);
-      if (
-        baseline?.doc &&
-        syncCompareKey(baseline.doc) === syncCompareKey(activeResume)
-      ) {
-        console.log(
-          '[Sync] Content unchanged since last sync, skipping request.',
-        );
-        set({ syncStatus: 'saved' });
-        return 'noop';
-      }
-
-      // 飞行期间是否有新编辑落地;true 时在锁释放后自动补一轮同步。
-      let hadNewerEdits = false;
-
-      try {
-        set({ isSyncing: true, syncStatus: 'syncing' });
-
-        console.log(
-          '[Sync] Starting sync for resume:',
-          activeResume.id,
-          'Is Local:',
-          !isNaN(Number(activeResume.id)),
-        );
-        const { result, sentDoc } = await syncWithConflictRecovery(
-          activeResume,
-          buildSyncDoc(activeResume),
-          baseline,
-          () => get().activeResume,
-        );
-        console.log(
-          '[Sync] Cloud returned:',
-          result?.id,
-          result?.updatedAt,
-          'rev:',
-          result?.revision,
-        );
-        // 播种基线:下次同步以本次实际推送的文档为基做增量 diff 与脏检查(冲突强推时
-        // 它比入参更新)。ID rebind(本地临时 id → CUID)时迁移键。
-        if (result?.id) {
-          setSyncBaseline(result.id, {
-            revision: result.revision,
-            doc: sentDoc,
-          });
-          if (result.id !== activeResume.id)
-            syncBaselines.delete(activeResume.id);
-        }
-
-        // Update local resume ID if backend returned a different one (e.g. converting temp ID to CUID)
-        // This is crucial for fixing the "duplicate resume on creation" issue
-        const currentActive = get().activeResume; // Re-get latest state
-
-        if (!currentActive) {
-          console.warn('[Sync] Active resume lost during sync!');
-          return 'synced'; // 推送本身已成功,只是本地态在飞行中被清了
-        }
-
-        if (result && result.id && result.id !== currentActive.id) {
-          console.log(
-            '[Sync] ID Mismatch detected. Updating local ID from',
-            currentActive.id,
-            'to',
-            result.id,
-          );
-
-          const oldId = currentActive.id;
-          const newId = result.id;
-
-          // Update in resumes list
-          const newResumes = get().resumes.map((r) =>
-            r.id === oldId
-              ? {
-                  ...r,
-                  id: newId,
-                  updatedAt: new Date(result.updatedAt).getTime(),
-                }
-              : r,
-          );
-
-          // Check if map actually worked
-          const exists = newResumes.find((r) => r.id === newId);
-          if (!exists) {
-            console.error(
-              '[Sync] Failed to update resume in list! Old ID not found?',
-              oldId,
-            );
-          } else {
-            console.log('[Sync] Resume list updated successfully.');
-          }
-
-          // Update IndexedDB
-          dbClient.setItem(
-            RESUMES_KEY,
-            newResumes.map((r) => getSanitizedResumeForLocal(r)),
-          );
-
-          // Update active resume state
-          set({
-            resumes: newResumes,
-            activeResume: {
-              ...currentActive,
-              id: newId,
-              updatedAt: new Date(result.updatedAt).getTime(),
-            },
-          });
-          console.log('[Sync] Active resume state updated to:', newId);
-
-          // Update URL
-          window.history.replaceState(null, '', `/dashboard/edit/${newId}`);
-        } else {
-          console.log('[Sync] No ID update needed or result invalid.', {
-            resultId: result?.id,
-            activeId: currentActive.id,
-          });
-        }
-
-        // Auto-versioning logic: Create a version if 5 minutes have passed since last version
-        // This prevents spamming versions on every 10s sync
-        if (!options?.skipVersioning) {
-          const versions = currentActive.versions || [];
-          const now = Date.now();
-          // 冷却基准取"本地版本列表最新时间"与"会话内快照记录"的较大者:会话开头
-          // versions 往往还没从云端加载(=0),仅靠它判定会导致每个会话的首次自动同步
-          // 都建一个多余版本。
-          const lastVersionTime = Math.max(
-            versions.length > 0
-              ? Math.max(...versions.map((v) => v.updatedAt))
-              : 0,
-            lastVersionSnapshotAt.get(currentActive.id) ?? 0,
-          );
-          const cooldownMs = 5 * 60 * 1000;
-
-          if (now - lastVersionTime > cooldownMs) {
-            console.log('[Sync] Cooldown expired, creating auto-version...');
-            get().createVersion('auto', undefined);
-          } else {
-            console.log(
-              '[Sync] Skipping auto-version (cooldown active). Last version at:',
-              new Date(lastVersionTime).toLocaleTimeString(),
-            );
-          }
-        } else {
-          console.log(
-            '[Sync] Skipping auto-version as requested (skipVersioning=true).',
-          );
-        }
-
-        // Only claim 'saved' if no newer edit (or id rebind) landed while the request
-        // was in flight; otherwise keep 'modified' so the follow-up sync flushes the
-        // latest state instead of the UI lying that everything is persisted.
-        const latest = get().activeResume;
-        if (latest && latest.updatedAt !== activeResume.updatedAt) {
-          set({ syncStatus: 'modified' });
-          hadNewerEdits = true;
-        } else {
-          set({ syncStatus: 'saved' });
-        }
-        return 'synced';
-      } catch (error) {
-        console.error('[Sync] Cloud sync failed:', error);
-        set({ syncStatus: 'error' });
-        // 离线时静默(必然失败,状态 pill 在传达;网络恢复由编辑器的 online 监听补同步),
-        // 在线失败按冷却窗节流,持续故障不随防抖节拍反复弹。
-        const offline = typeof navigator !== 'undefined' && !navigator.onLine;
-        if (
-          !offline &&
-          Date.now() - lastSyncErrorToastAt > SYNC_ERROR_TOAST_COOLDOWN_MS
-        ) {
-          lastSyncErrorToastAt = Date.now();
-          toast.error(i18next.t('store.notifications.cloudSyncFailed'));
-        }
-        return 'failed';
-      } finally {
-        // Release LOCK
-        set({ isSyncing: false });
-        console.log('[Sync] Lock released.');
-        // 飞行期间落地的新编辑不能干等下一次击键才同步:锁释放后自动续链一轮,1s 缓冲
-        // 聚合紧随其后的连续输入。syncToCloud 自带锁与前置检查,链式调用安全;仅当飞行中
-        // 确有新编辑才续,收敛不成环。
-        if (hadNewerEdits) {
-          setTimeout(() => {
-            void get().syncToCloud();
-          }, 1000);
-        }
-      }
-    },
-
-    fetchCloudResume: async (id: string) => {
-      if (get().isSyncing) return;
-
-      try {
-        set({ isSyncing: true, syncStatus: 'syncing' });
-        const cloudResume = (await resumeApi.fetchCloudResumeById(
-          id,
-        )) as CloudResume;
-        if (cloudResume) {
-          const mergedResume = buildResumeFromCloud(cloudResume);
-
-          const newResumes = get().resumes.map((r) =>
-            r.id === id ? mergedResume : r,
-          );
-          set({
-            resumes: newResumes,
-            activeResume:
-              get().activeResume?.id === id ? mergedResume : get().activeResume,
-            syncStatus: 'saved',
-          });
-
-          // Persist to local DB (Sanitized)
-          dbClient.setItem(
-            RESUMES_KEY,
-            newResumes.map((r) => getSanitizedResumeForLocal(r)),
-          );
-
-          // 本地内容刚被云端副本整体替换 → 此刻本地 === 云端,是权威基线。
-          setSyncBaseline(id, {
-            revision: cloudResume.revision,
-            doc: buildSyncDoc(mergedResume),
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch individual cloud resume:', error);
-        set({ syncStatus: 'error' });
-      } finally {
-        set({ isSyncing: false });
-      }
-    },
-
-    // 只刷新版本列表(历史页 / 建版本后),不触内容字段。旧实现用 fetchCloudResume 整体
-    // 拉回云端副本,会把"请求往返窗口内用户刚打的字"静默回滚 —— 打开历史弹窗都会丢字。
-    refreshCloudVersions: async (id: string) => {
-      if (isLocalResumeId(id) || !useSettingStore.getState().cloudSync) return;
-      try {
-        const versions = (await resumeApi.fetchVersions(id)) as
-          CloudVersion[] | null;
-        if (!Array.isArray(versions)) return;
-        const normalized = normalizeCloudVersions(versions, id);
-        set((state) => {
-          const applyVersions = (r: Resume) =>
-            r.id === id ? { ...r, versions: normalized } : r;
-          return {
-            resumes: state.resumes.map(applyVersions),
-            activeResume: state.activeResume
-              ? applyVersions(state.activeResume)
-              : state.activeResume,
-          };
-        });
-      } catch (error) {
-        console.error('Failed to refresh cloud versions:', error);
-      }
-    },
-
-    // pagehide 退出送达:axios 在页面卸载后不保送达,keepalive fetch 会被浏览器托管送完。
-    // 无条件全量(退出后无人处理 409;远端若有并发写,下次会话由 409 恢复流程收敛),
-    // token 用最近一次请求的缓存(同步可得)。一切失败静默 —— 本地 IndexedDB 始终有底。
-    flushSyncOnExit: () => {
-      const { activeResume, syncStatus } = get();
-      if (!activeResume || !useSettingStore.getState().cloudSync) return;
-      if (syncStatus !== 'modified' && syncStatus !== 'error') return;
-      const token = getCachedAuthToken();
-      if (!token) return;
-      resumeApi.syncResumeKeepalive(activeResume, token);
-      // keepalive 送达与否此刻不可知,但它一旦落地服务端 revision 就会 ++;把基线清掉,
-      // 万一页面从 bfcache 复活继续编辑,下次同步走无条件全量(LWW),而不是拿着过期
-      // revision 吃一记无谓 409、平白多出一个"冲突备份"版本。
-      syncBaselines.delete(activeResume.id);
-    },
   })),
 );
 

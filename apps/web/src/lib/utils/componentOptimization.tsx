@@ -21,21 +21,6 @@ export function createOptimizedComponent<T = object>(
 }
 
 /**
- * AI相关组件的懒加载配置
- * 这些组件通常较大且不是首屏必需的
- */
-export const AIComponents = {
-  // 代码编辑器 - Monaco Editor很大
-  MonacoEditor: createOptimizedComponent(
-    () => import('@monaco-editor/react'),
-    {
-      ssr: false,
-      loading: () => <div className="animate-pulse bg-gray-800 h-64 rounded" />,
-    }
-  ),
-};
-
-/**
  * 编辑器相关组件的懒加载
  */
 export const EditorComponents = {
@@ -94,11 +79,6 @@ export const preloadComponents = () => {
       setTimeout(() => {
         import('@/components/features/resume/TiptapEditor');
       }, 1000);
-
-      // 预加载Monaco编辑器
-      setTimeout(() => {
-        import('@monaco-editor/react');
-      }, 2000);
     }
   }
 };

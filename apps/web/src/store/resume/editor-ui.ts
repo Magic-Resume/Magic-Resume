@@ -6,11 +6,9 @@ export type ResumeEditorUiStore = Pick<
   | 'rightCollapsed'
   | 'leftCollapsed'
   | 'activeSection'
-  | 'isAiGenerating'
   | 'setRightCollapsed'
   | 'setLeftCollapsed'
   | 'setActiveSection'
-  | 'setIsAiGenerating'
 >;
 
 export const useResumeEditorUiStore =
@@ -18,9 +16,7 @@ export const useResumeEditorUiStore =
     rightCollapsed: state.rightCollapsed,
     leftCollapsed: state.leftCollapsed,
     activeSection: state.activeSection,
-    isAiGenerating: state.isAiGenerating,
     setRightCollapsed: state.setRightCollapsed,
     setLeftCollapsed: state.setLeftCollapsed,
     setActiveSection: state.setActiveSection,
-    setIsAiGenerating: state.setIsAiGenerating,
   }));

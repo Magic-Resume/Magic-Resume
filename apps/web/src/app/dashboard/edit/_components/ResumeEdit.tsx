@@ -1,14 +1,11 @@
 "use client";
 import { documentSectionTitle, isDefaultSectionLabel, resolveDocumentLanguage } from '@magic-resume/resume-schema';
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Section, SectionItem } from '@/types/frontend/resume';
 import { getSanitizedResume } from '@/store/useResumeStore';
 import { useResumeDocumentStore } from '@/store/resume/document';
 import { useResumeEditorUiStore } from '@/store/resume/editor-ui';
 import { useResumePersistenceStore } from '@/store/resume/persistence';
-import { useResumeSyncStore } from '@/store/resume/sync';
-import { useSettingStore } from '@/store/useSettingStore';
-import debounce from 'lodash/debounce';
 import BasicForm from './forms/BasicForm';
 import sidebarMenu from '@/lib/constants/sidebarMenu';
 import SectionListWithModal from './forms/SectionListWithModal';
@@ -72,7 +69,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   } = useResumeDocumentStore();
 
   const { saveResume: saveActiveResumeToResumes } = useResumePersistenceStore();
-  const { syncToCloud, syncStatus } = useResumeSyncStore();
   const {
     rightCollapsed,
     setRightCollapsed,
@@ -80,12 +76,9 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
     setLeftCollapsed,
     activeSection,
     setActiveSection,
-    isAiGenerating,
   } = useResumeEditorUiStore();
 
   const router = useRouter();
-
-  const cloudSync = useSettingStore(state => state.cloudSync);
 
   const { isMobile } = useMobile();
 
@@ -102,22 +95,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
 
   const openJsonModal = () => router.push(`/dashboard/edit/${id}/json`);
 
-  const openAIModal = async () => {
-    // agent 是从云端库读简历的，先尽力把编辑器最新状态推上去（关了云同步则无操作）。
-    try {
-      await syncToCloud();
-    } catch (err) {
-      // 这一次吞掉的后果不是「少存一次」，而是**agent 接下来读的是旧简历**：它会照着
-      // 过时内容提改动，用户看着自己刚写的段落被改回去。必须说出来。
-      presentAppError(fromThrown(err, 'local'), { surface: 'background' });
-    }
-    router.push(`/dashboard/edit/${id}/ai-lab`);
-  };
   const [isSaving, setIsSaving] = useState(false);
-
-  const openVersionHistory = () => router.push(`/dashboard/edit/${id}/history`);
-  const openShareModal = () => router.push(`/dashboard/edit/${id}/share`);
-  const openFeedback = () => router.push(`/dashboard/edit/${id}/feedback`);
 
   const { t } = useTranslation();
 
@@ -203,17 +181,12 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       if (!isStoreLoading) {
         const resume = resumes.find(r => r.id === id);
         if (resume) {
-          router.prefetch(`/dashboard/edit/${id}/ai-lab`);
-          router.prefetch(`/dashboard/edit/${id}/history`);
           router.prefetch(`/dashboard/edit/${id}/json`);
-          router.prefetch(`/dashboard/edit/${id}/share`);
-          router.prefetch(`/dashboard/edit/${id}/feedback`);
         }
       }
 
       const { activeResume } = useResumeDocumentStore.getState();
-      const { isSyncing } = useResumeSyncStore.getState();
-      if (activeResume?.id === id && !isStoreLoading && !isSyncing) {
+      if (activeResume?.id === id && !isStoreLoading) {
           return;
       }
 
@@ -246,15 +219,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       }
       
       console.log('[Save] Calling store saveResume...');
-      
-      console.log('[Save] Calling store saveResume...');
       await saveActiveResumeToResumes('manual', activeResume || undefined);
       console.log('[Save] Store saveResume completed.');
-      
-      const freshResume = useResumeDocumentStore.getState().activeResume;
-      if (freshResume) {
-          lastUpdatedAtRef.current = freshResume.updatedAt;
-      }
     } catch (err) {
       console.error('[Save] Manual save failed:', err);
       // 用户按了保存按钮，然后什么都没发生——静默在这里就是 bug。
@@ -264,82 +230,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
       console.log('[Save] Manual save process ended, loading state released.');
     }
   };
-
-  // 自动同步:10s 防抖 + 45s maxWait。纯 trailing 防抖会被持续输入无限重置,
-  // maxWait 保证再怎么连续编辑至多 45s 也会落一次云。
-  const debouncedSync = useMemo(
-    () => debounce(async () => {
-      await syncToCloud();
-    }, 10000, { maxWait: 45000 }),
-    [syncToCloud]
-  );
-
-  const lastUpdatedAtRef = React.useRef<number | null>(null);
-  
-  useEffect(() => {
-    lastUpdatedAtRef.current = null;
-  }, [id]);
-
-  useEffect(() => {
-    const triggerSync = async () => {
-      if (cloudSync && activeResume && !isStoreLoading) {
-        if (lastUpdatedAtRef.current === null) {
-          lastUpdatedAtRef.current = activeResume.updatedAt;
-          return;
-        }
-
-        if (activeResume.updatedAt === lastUpdatedAtRef.current) {
-          return;
-        }
-
-        debouncedSync();
-        lastUpdatedAtRef.current = activeResume.updatedAt;
-      }
-    };
-    
-    triggerSync();
-
-    // cleanup 里不要 cancel:此 effect 每次编辑都重跑,cancel 会静默丢弃待同步修改,
-    // 并把 maxWait 计时每次击键清零,让"最迟 45s 必落云"彻底失效。
-  }, [activeResume, cloudSync, isStoreLoading, debouncedSync]);
-
-  // 卸载或切换简历时把防抖窗口里的待同步刷出去而不是丢弃。flush 时 syncToCloud 同步
-  // 快照 store 里的 activeResume(此刻仍是旧简历),对象不会串。
-  useEffect(() => {
-    return () => {
-      debouncedSync.flush();
-    };
-  }, [id, debouncedSync]);
-
-  // 隐藏/关闭时尽力刷出,分两档:visibilitychange 页面还活着 → axios flush 走完整算法;
-  // pagehide 时 axios 不保送达 → keepalive fetch,并 cancel 防抖避免 bfcache 恢复后重推。
-  useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') void debouncedSync.flush();
-    };
-    const onPageHide = () => {
-      debouncedSync.cancel();
-      useResumeSyncStore.getState().flushSyncOnExit();
-    };
-    window.addEventListener('pagehide', onPageHide);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      window.removeEventListener('pagehide', onPageHide);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, [debouncedSync]);
-
-  // 网络恢复时若仍有未落云的修改或上次同步失败,立即补一次,不必等下次编辑。
-  useEffect(() => {
-    const onOnline = () => {
-      const { syncStatus: status } = useResumeSyncStore.getState();
-      if (cloudSync && (status === 'modified' || status === 'error')) {
-        void syncToCloud();
-      }
-    };
-    window.addEventListener('online', onOnline);
-    return () => window.removeEventListener('online', onOnline);
-  }, [cloudSync, syncToCloud]);
 
   const toggleSection = useCallback((key: string) => {
     setOpenSections(prev => ({ ...prev, [key]: !(prev[key] ?? true) }));
@@ -542,9 +432,6 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         handleCopyJson={handleDownloadJson}
         renderSections={renderSections}
         handleSave={handleSave}
-        onShowAI={openAIModal}
-        isAiJobRunning={isAiGenerating}
-        onShareClick={openShareModal}
         onSelectTemplate={handleSelectTemplate}
         currentTemplateId={currentTemplateId}
       />
@@ -585,18 +472,10 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
             marginRight: rightWorkspaceInset
           }}
         >
-          <HeaderTab
-            updatedAt={activeResume?.updatedAt}
-            syncStatus={syncStatus}
-            onVersionClick={openVersionHistory}
-            onFeedbackClick={openFeedback}
-          />
+          <HeaderTab />
           {/* 简历预览面板 */}
           <ResumePreviewPanel
             activeResume={activeResume}
-            onShowAI={openAIModal}
-            isAiJobRunning={isAiGenerating}
-            onShareClick={openShareModal}
             onJsonClick={openJsonModal}
           />
         </div>

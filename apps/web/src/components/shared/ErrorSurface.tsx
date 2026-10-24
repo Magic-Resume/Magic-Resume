@@ -9,7 +9,7 @@ import {
   buttonVariants,
 } from '@magic-resume/design-system';
 import { cn } from '@/lib/utils';
-import { SUPPORT_EMAIL } from '@/lib/extensions/legal';
+import { ISSUES_URL } from '@/lib/constants/projectLinks';
 
 /**
  * 四个失败界面（段级 / 根级 / 404 / 根布局兜底）共用的这一屏。
@@ -343,14 +343,14 @@ export default function ErrorSurface({
                     </span>
                   )}
                 </button>
-                {SUPPORT_EMAIL && (
-                  <a
-                    href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[${code}] ${title}`)}`}
-                    className="text-muted hover:text-secondary text-mr-label underline-offset-4 transition-colors hover:underline"
-                  >
-                    {t('errorPage.support')}
-                  </a>
-                )}
+                <a
+                  href={ISSUES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted hover:text-secondary text-mr-label underline-offset-4 transition-colors hover:underline"
+                >
+                  {t('errorPage.support')}
+                </a>
               </div>
             )}
             {detail && (

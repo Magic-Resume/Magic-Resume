@@ -1,12 +1,9 @@
 import { cn } from "@/lib/utils";
 import { Resume } from '@/types/frontend/resume';
 import { DownloadIcon } from '@magic-resume/icons';
-import { Bot, History, Share2, MessageCircle, ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume/icons';
+import { ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { useSettingStore } from "@/store/useSettingStore";
-import { isCloudMode } from "@/lib/config/app";
 import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
 import ExportModal from "../modals/ExportModal";
 import { useResumeExport } from "../modals/useResumeExport";
@@ -17,11 +14,7 @@ export type ToolsProps = {
   zoomOut: (step?: number) => void;
   resetTransform: (step?: number) => void;
   resume: Resume;
-  onShowAI: () => void;
-  onVersionClick?: () => void;
   rightCollapsed?: boolean;
-  onShareClick?: () => void;
-  onFeedbackClick?: () => void;
 };
 
 type ToolButtonProps = {
@@ -52,17 +45,11 @@ function ToolButton({ title, children, onClick, onFocus, onPointerEnter, disable
   );
 }
 
-export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onShowAI, onVersionClick, rightCollapsed = false, onShareClick, onFeedbackClick }: ToolsProps){
+export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, rightCollapsed = false }: ToolsProps){
   const { t } = useTranslation();
-  const router = useRouter();
-  const params = useParams();
-  // We can fallback to 'default' or handle error if id is missing, but it should be present in this context
-  const currentId = (params?.id as string) || resume.id;
-
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const { isExporting, runExport } = useResumeExport(resume, 'tools');
-  const cloudSync = useSettingStore((state) => state.cloudSync);
   
   // 计算桌面端工具栏的right位置，避免被模板栏遮挡
   const desktopRightPosition = rightCollapsed ? '76px' : '300px'; // 56px模板栏 + 20px间距 或 280px模板栏 + 20px间距
@@ -97,48 +84,6 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onSho
         )}
       >
         <>
-          {!isMobile && isCloudMode && (
-            <ToolButton
-              title={t('tools.aiAssistant')}
-              onClick={onShowAI}
-            >
-              <Bot size={18}/>
-            </ToolButton>
-          )}
-          
-          {cloudSync && (
-            <ToolButton
-              title={t('tools.share', 'Share')}
-              onClick={onShareClick}
-            >
-              <Share2 size={18}/>
-            </ToolButton>
-          )}
-
-          {isCloudMode && (
-            <ToolButton
-              onClick={() => {
-                  if (onFeedbackClick) {
-                      onFeedbackClick();
-                  } else if (currentId) {
-                      // Fallback to internal navigation if prop is not provided, though it should be.
-                      router.push('/dashboard/edit/' + currentId + '/feedback');
-                  }
-              }}
-              title={t('tools.feedback', 'Feedback')}
-            >
-              <MessageCircle size={18}/>
-            </ToolButton>
-          )}
-
-          {cloudSync && !isMobile && (
-            <ToolButton
-              onClick={onVersionClick}
-              title={t('header.versionHistory')}
-            >
-              <History size={18}/>
-            </ToolButton>
-          )}
           <ToolButton
             onClick={() => setExportOpen(true)}
             disabled={isExporting}

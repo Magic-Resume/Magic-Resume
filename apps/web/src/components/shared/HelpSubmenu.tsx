@@ -3,16 +3,9 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import {
-  Bug,
-  ChevronRight,
-  FileText,
-  HelpCircle,
-  LifeBuoy,
-  Shield,
-} from '@magic-resume/icons';
+import { Bug, ChevronRight, HelpCircle, LifeBuoy } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
-import { SUPPORT_EMAIL } from "@/lib/extensions/legal";
+import { ISSUES_URL } from "@/lib/constants/projectLinks";
 import { cn } from "@/lib/utils";
 import {
   HoverSurface,
@@ -198,29 +191,12 @@ export function HelpSubmenu({
               />
             )}
             <HelpLink
-              href="/legal/terms"
-              surface={rowSurface.bind('terms')}
-              icon={<FileText size={15} />}
-              label={t("account.menu.terms")}
+              href={ISSUES_URL}
+              surface={rowSurface.bind('support')}
+              icon={<Bug size={15} />}
+              label={t("account.menu.reportBug")}
               onNavigate={onNavigate}
             />
-            <HelpLink
-              href="/legal/privacy"
-              surface={rowSurface.bind('privacy')}
-              icon={<Shield size={15} />}
-              label={t("account.menu.privacy")}
-              onNavigate={onNavigate}
-            />
-            <div className="mx-1 my-1 h-px bg-mr-surface-soft" />
-            {SUPPORT_EMAIL && (
-              <HelpLink
-                href={`mailto:${SUPPORT_EMAIL}`}
-                surface={rowSurface.bind('support')}
-                icon={<Bug size={15} />}
-                label={t("account.menu.reportBug")}
-                onNavigate={onNavigate}
-              />
-            )}
           </div>,
           document.body,
         )}

@@ -25,17 +25,14 @@
 
 ## 本地启动
 
-Magic Resume 完全在浏览器中运行 —— 大部分开发无需后端或数据库。
+Magic Resume 完全在浏览器中运行 —— 不需要后端、数据库，也不需要 `.env` 文件。
 
 ```bash
 # 1. Fork 后克隆你的 fork
 git clone https://github.com/<你>/Magic-Resume.git
 cd Magic-Resume
 
-# 2. 配置自托管模式
-cp apps/web/.env.example apps/web/.env.local   # 设置 NEXT_PUBLIC_APP_MODE=self-hosted
-
-# 3. 安装并运行
+# 2. 安装并运行
 pnpm install
 pnpm run dev
 ```

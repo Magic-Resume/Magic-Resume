@@ -3,7 +3,7 @@ import type { ResumeState } from '@/store/useResumeStore';
 
 export type ResumePersistenceStore = Pick<
   ResumeState,
-  'loadResumes' | 'addResume' | 'saveResume' | 'flushSyncOnExit'
+  'loadResumes' | 'addResume' | 'saveResume'
 >;
 
 export const useResumePersistenceStore =
@@ -11,5 +11,4 @@ export const useResumePersistenceStore =
     loadResumes: state.loadResumes,
     addResume: state.addResume,
     saveResume: state.saveResume,
-    flushSyncOnExit: state.flushSyncOnExit,
   }));

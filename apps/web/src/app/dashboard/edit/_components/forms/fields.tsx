@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Upload, Loader2, X } from '@magic-resume/icons';
 import { cn } from "@/lib/utils";
-import { processAndStoreAvatar, AvatarError } from "@/lib/api/avatarUpload";
+import { processAndStoreAvatar, AvatarError } from "@/lib/avatar/processAvatar";
 import { ACCEPTED_IMAGE_ACCEPT_ATTR } from "@/lib/utils/image";
 
 /* ------------------------------------------------------------------ *
@@ -97,11 +97,11 @@ export function AvatarField({
     if (!file) return;
     setUploading(true);
     try {
-      const next = await processAndStoreAvatar(file, value);
+      const next = await processAndStoreAvatar(file);
       onValueChange?.(next);
       toast.success(t("basicForm.avatarUpload.success"));
     } catch (err) {
-      const code = err instanceof AvatarError ? err.code : "UPLOAD_FAILED";
+      const code = err instanceof AvatarError ? err.code : "PROCESS_FAILED";
       toast.error(t(`basicForm.avatarUpload.errors.${code}`));
     } finally {
       setUploading(false);
