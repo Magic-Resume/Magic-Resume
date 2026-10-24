@@ -10,10 +10,17 @@ const styles: TemplateDocument['styles'] = {
   entry: { gap: 'var(--spacing-xs)' },
   title: { color: 'var(--color-secondary)', fontSize: 'var(--font-size-md)', fontWeight: 700, textDecoration: 'none' },
   muted: { color: 'var(--color-text-secondary)' },
-  contactText: { color: 'var(--color-text-secondary)', textDecoration: 'none' },
+  contactText: {
+    color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: 'var(--font-size-sm)',
+    lineHeight: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%',
+  },
+  contactValue: { flexBasis: 0, flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' },
   accent: { color: 'var(--color-primary)' },
   date: { color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', flexShrink: 0 },
-  contact: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  contact: {
+    flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: 3, paddingBottom: 3,
+    flexShrink: 1, minWidth: 0, width: '100%',
+  },
   heading: {
     paddingBottom: 5, borderBottomWidth: 'var(--title-divider-width)',
     borderStyle: 'solid', borderColor: 'var(--color-primary)',
@@ -28,12 +35,16 @@ const text = (id: string, read: string | string[], style?: TextNode['style']): T
 const customFields = (id: string, path: string): TemplateNode => ({
   id, type: 'Box', each: { path, as: 'field' },
   when: { or: [{ exists: 'field.name' }, { exists: 'field.value' }] },
-  style: ['contact', 'muted', { flexWrap: 'wrap' }],
+  style: ['contact', 'muted'],
   children: [
     { id: `${id}-icon`, type: 'Icon', name: { read: 'field.icon' }, size: 15, when: { exists: 'field.icon' }, style: ['muted'] },
-    { id: `${id}-name`, type: 'Text', when: { exists: 'field.name' }, value: '{{field.name}}：' },
+    { id: `${id}-label`, type: 'Box', when: { exists: 'field.name' }, style: ['contactValue', { flexBasis: 'auto', flexGrow: 0, maxWidth: '40%' }], children: [
+      { id: `${id}-name`, type: 'Text', value: '{{field.name}}：', style: ['contactText'] },
+    ] },
     // Nested custom fields are displayed read-only: section edits target the parent item.
-    { id: `${id}-value`, type: 'Text', value: '{{field.value}}', href: { read: 'field.value' }, style: ['contactText'] },
+    { id: `${id}-content`, type: 'Box', style: ['contactValue'], children: [
+      { id: `${id}-value`, type: 'Text', value: '{{field.value}}', href: { read: 'field.value' }, style: ['contactText'] },
+    ] },
   ],
 });
 
@@ -41,7 +52,10 @@ const contact = (id: string, path: string, icon: string, linked = false): Templa
   id, type: 'Box', when: { exists: path }, style: ['contact'],
   children: [
     { id: `${id}-icon`, type: 'Icon', name: icon, size: 16, style: ['muted'] },
-    { ...text(`${id}-value`, path, ['contactText']), ...(linked ? { href: { read: path } } : {}) },
+    // Constrain the box around links too: the DOM backend wraps linked Text in an anchor.
+    { id: `${id}-content`, type: 'Box', style: ['contactValue'], children: [
+      { ...text(`${id}-value`, path, ['contactText']), ...(linked ? { href: { read: path } } : {}) },
+    ] },
   ],
 });
 
@@ -56,13 +70,13 @@ export function blueLineHeaderPreset(): TemplateDocument {
         { id: 'blue-line-contact-grid', type: 'Box',
           style: [{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--spacing-lg)', fontSize: 'var(--font-size-sm)' }],
           children: [
-            { id: 'blue-line-contact-left', type: 'Box', style: [{ flexGrow: 1, flexShrink: 1, minWidth: 0 }], children: [
+            { id: 'blue-line-contact-left', type: 'Box', style: [{ flexBasis: 0, flexGrow: 1, flexShrink: 1, minWidth: 0 }], children: [
               text('blue-line-name', 'info.fullName'),
               contact('blue-line-phone', 'info.phoneNumber', 'phone'),
               contact('blue-line-email', 'info.email', 'mail'),
               contact('blue-line-address', 'info.address', 'location'),
             ] },
-            { id: 'blue-line-contact-right', type: 'Box', style: [{ alignItems: 'flex-end', flexShrink: 1, maxWidth: '52%' }], children: [
+            { id: 'blue-line-contact-right', type: 'Box', style: [{ alignItems: 'flex-end', flexBasis: 0, flexGrow: 1, flexShrink: 1, minWidth: 0 }], children: [
               contact('blue-line-website', 'info.website', 'globe', true),
               customFields('blue-line-custom-contact', 'info.customFields'),
             ] },

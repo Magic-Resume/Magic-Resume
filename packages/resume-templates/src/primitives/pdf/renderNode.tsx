@@ -163,8 +163,9 @@ export function renderNode(node: ResolvedNode, ctx: PdfRenderContext): React.Rea
         <PdfHugeIcon
           key={key}
           icon={icon}
-          size={node.size ?? 14}
+          size={(node.size ?? 14) * PX_TO_PT}
           color={(style.color as string) ?? '#000'}
+          style={{ flexShrink: 0, ...style }}
         />
       );
     }
