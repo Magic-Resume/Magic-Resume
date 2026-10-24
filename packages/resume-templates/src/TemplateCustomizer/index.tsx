@@ -378,7 +378,7 @@ const TemplateCustomizer = React.memo(({
                     showTitleDivider ? 'bg-blue-500' : 'bg-neutral-600'
                   }`}
                 >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-mr-control-thumb rounded-full transition-transform duration-200 ${
                     showTitleDivider ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>
@@ -398,7 +398,7 @@ const TemplateCustomizer = React.memo(({
                     showTitleIcon ? 'bg-blue-500' : 'bg-neutral-600'
                   }`}
                 >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-mr-control-thumb rounded-full transition-transform duration-200 ${
                     showTitleIcon ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>

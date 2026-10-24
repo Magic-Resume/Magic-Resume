@@ -388,7 +388,7 @@ export function ColorField({
               >
                 <div aria-hidden className="absolute inset-0 rounded-[10px]" style={{ background: "linear-gradient(to right, #fff, transparent)" }} />
                 <div aria-hidden className="absolute inset-0 rounded-[10px]" style={{ background: "linear-gradient(to top, #000, transparent)" }} />
-                <span aria-hidden className="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.4)]" style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%` }} />
+                <span aria-hidden className="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#fff] shadow-[0_1px_4px_rgba(0,0,0,0.4)]" style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%` }} />
               </div>
               <p id={`${id}-color-hint`} className="sr-only">{t("templateCustomizer.colors.saturationBrightnessHint", { defaultValue: "Use left and right arrows for saturation, up and down for brightness. Hold Shift for larger steps." })}</p>
               <p id={`${id}-color-value`} className="sr-only">{t("templateCustomizer.colors.saturationBrightnessValue", { saturation: Math.round(hsv.s * 100), brightness: Math.round(hsv.v * 100), defaultValue: "Saturation {{saturation}}%, brightness {{brightness}}%." })}</p>
@@ -416,7 +416,7 @@ export function ColorField({
                 className="relative my-2 h-7 w-full cursor-pointer touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-mr-focus focus-visible:ring-offset-2 focus-visible:ring-offset-mr-surface"
               >
                 <span aria-hidden className="pointer-events-none absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" }} />
-                <span aria-hidden className="pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.4)]" style={{ left: `${hsv.h / 360 * 100}%`, backgroundColor: `hsl(${hsv.h}, 100%, 50%)` }} />
+                <span aria-hidden className="pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#fff] shadow-[0_1px_4px_rgba(0,0,0,0.4)]" style={{ left: `${hsv.h / 360 * 100}%`, backgroundColor: `hsl(${hsv.h}, 100%, 50%)` }} />
               </div>
 
               <div className={cn("flex items-center rounded-[10px] border bg-mr-surface-subtle px-1 focus-within:border-mr-focus/60", invalid ? "border-mr-danger/70" : "border-mr-line")}>

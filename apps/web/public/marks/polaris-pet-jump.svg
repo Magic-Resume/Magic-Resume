@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" shape-rendering="crispEdges">
+  <!-- 腾空帧(欢迎态 → 输入框工位的那一跳)。
+       与 excited 的区别:那个是「原地连跳」,腿始终踩地、靠 translateY 循环;
+       这一帧是「已经在空中」,所以腿收起、不落地,而且**不带任何 translateY 动画**
+       —— 抛物线由 PolarisPerch 外层负责,精灵图再自己上下跳就是双重运动。 -->
+  <style>
+    /* 只留天线星的闪烁:那是角色本身的呼吸,不是位移,和外层的弧不冲突。 */
+    .tw { animation: jtw 0.34s steps(1, end) infinite; }
+    @keyframes jtw {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+    /* 起跳带起的两粒尘:短促、只闪一轮的观感靠 steps 硬切,不做淡入淡出。 */
+    .dust { animation: jdust 0.42s steps(1, end) infinite; }
+    @keyframes jdust {
+      0% { opacity: 0.7; }
+      50%, 100% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tw, .dust { animation: none; }
+      .dust { opacity: 0; }
+    }
+  </style>
+
+  <!-- 起跳带起的尘:留在身体下方,暗示刚离地 -->
+  <g class="dust" fill="#a8e2fd">
+    <rect x="8" y="21.5" width="1" height="1"/>
+    <rect x="15" y="22" width="1" height="1"/>
+  </g>
+
+  <!-- 收起的短腿:站姿是 y=19 h=3 垂下来,这里缩到 h=1.5 并向内收,读作贴住肚子 -->
+  <rect x="8" y="19" width="2.5" height="1.5" fill="#2fa8ea"/>
+  <rect x="13.5" y="19" width="2.5" height="1.5" fill="#2fa8ea"/>
+
+  <!-- 天线星:腾空时全亮 -->
+  <g class="tw" fill="#dbeffe">
+    <rect x="11.5" y="0.5" width="1" height="3"/>
+    <rect x="10.5" y="1.5" width="3" height="1"/>
+  </g>
+  <rect x="11.5" y="4" width="1" height="3" fill="#67cdf9"/>
+
+  <!-- 身体:与静态帧同一组矩形,不做拉伸——像素画拉伸会破网格,靠姿态而非形变表达 -->
+  <rect x="5" y="6" width="14" height="13" fill="#67cdf9"/>
+  <rect x="4" y="7" width="16" height="11" fill="#67cdf9"/>
+  <rect x="5" y="6" width="7" height="1" fill="#a8e2fd"/>
+  <rect x="4" y="7" width="1" height="6" fill="#a8e2fd"/>
+  <rect x="5" y="18" width="14" height="1" fill="#2fa8ea"/>
+  <rect x="19" y="12" width="1" height="6" fill="#2fa8ea"/>
+
+  <!-- 耳朵被气流带起 1px(静态帧在 y=9) -->
+  <rect x="2" y="8" width="2" height="4" fill="#a8e2fd"/>
+  <rect x="20" y="8" width="2" height="4" fill="#2fa8ea"/>
+
+  <!-- 瞪大的眼:静态帧是 h=4,这里 h=5 并上移,配一粒高光 -->
+  <rect x="7.5" y="9" width="3" height="5" fill="#082f49"/>
+  <rect x="13.5" y="9" width="3" height="5" fill="#082f49"/>
+  <rect x="8" y="9.5" width="1" height="1" fill="#bfe6fb"/>
+  <rect x="14" y="9.5" width="1" height="1" fill="#bfe6fb"/>
+</svg>

@@ -125,7 +125,8 @@ export function AvatarField({
         ) : null}
         <span
           className={cn(
-            "absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity",
+            "absolute inset-0 flex items-center justify-center transition-opacity",
+            value ? "bg-black/50 text-[#fff]" : "bg-avatar-neutral-background text-text-secondary",
             uploading
               ? "opacity-100"
               : value

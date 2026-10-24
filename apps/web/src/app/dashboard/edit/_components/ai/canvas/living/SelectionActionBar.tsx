@@ -1,0 +1,102 @@
+'use client';
+
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume/resume-schema';
+import { SELECTION_ACTIONS, type SelectionActionId } from '../../lib/changeModel';
+import { PolarisGlyph } from '../../PolarisMark';
+
+const BAR_MAX_WIDTH = 320;
+
+/** 划词翻译的目标语言。与 `target_language` 表单同一组，保持一致。 */
+const TRANSLATE_LANGS = DOCUMENT_LANGUAGE_OPTIONS.map(({ label }) => label);
+
+type SelectionActionBarProps = {
+  rect: DOMRect;
+  /** `free` 带自由指令，`translate` 带目标语言，其余不带参数。 */
+  onRun: (action: SelectionActionId | 'free', arg?: string) => void;
+  onClose: () => void;
+};
+
+export default function SelectionActionBar({ rect, onRun, onClose }: SelectionActionBarProps) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  // 翻译此前不带目标语言就直接发出去，模型只能猜。展开一行语言 chips 比再问一轮快。
+  const [pickingLang, setPickingLang] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number }>({
+    top: rect.top - 48,
+    left: rect.left,
+  });
+
+  useLayoutEffect(() => {
+    const margin = 12;
+    const el = ref.current;
+    const height = el?.offsetHeight ?? 44;
+    const width = el?.offsetWidth ?? 240;
+    let top = rect.top - height - 8;
+    if (top < margin) top = rect.bottom + 8;
+    let left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - margin - width));
+    setPos({ top, left });
+  }, [rect]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      ref={ref}
+      data-selection-bar
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 6 }}
+      transition={{ duration: 0.14, ease: 'easeOut' }}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, maxWidth: BAR_MAX_WIDTH, zIndex: 120 }}
+      className="flex items-center gap-1 rounded-xl bg-neutral-900 border border-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.14)] p-1"
+    >
+      {pickingLang ? (
+        TRANSLATE_LANGS.map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            onClick={() => onRun('translate', lang)}
+            className="text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer active:scale-95"
+          >
+            {lang}
+          </button>
+        ))
+      ) : (
+        SELECTION_ACTIONS.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => (a.id === 'translate' ? setPickingLang(true) : onRun(a.id))}
+            className="text-xs text-neutral-200 hover:bg-neutral-800 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer active:scale-95"
+          >
+            {t(a.label, { defaultValue: a.label })}
+          </button>
+        ))
+      )}
+      {!pickingLang && <div className="w-px h-4 bg-neutral-800 mx-0.5" />}
+      {!pickingLang && (
+      <>
+      {/* 询问 Polaris lifts the selection into the chat composer for a freeform instruction (Track B). */}
+      <button
+        type="button"
+        onClick={() => onRun('free')}
+        className="text-xs text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 rounded-lg px-2 py-1.5 transition-colors cursor-pointer inline-flex items-center gap-1"
+      >
+        <PolarisGlyph size={11} className="text-sky-400" />
+        {t('aiLab.living.askPolaris')}
+      </button>
+      </>
+      )}
+    </motion.div>
+  );
+}

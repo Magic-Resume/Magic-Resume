@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { RiSettings6Line } from '@remixicon/react';
+import { RiSettings6Line, RiRobot2Line } from '@remixicon/react';
 import { useTranslation } from 'react-i18next';
 import {
   SettingsModalShell,
@@ -18,9 +18,12 @@ import {
   useTheme,
   type ThemePreference,
 } from '@/components/providers/ThemeProvider';
-import { useSettingsUiStore } from '@/store/useSettingsUiStore';
+import { useSettingsUiStore, type SettingsSection } from '@/store/useSettingsUiStore';
+import { useSettingStore } from '@/store/useSettingStore';
+import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
-type SettingsSection = 'general';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -32,7 +35,18 @@ export function SettingsModal() {
   const { t, i18n } = useTranslation();
   const reduce = useReducedMotion();
   const { theme, setTheme } = useTheme();
-  const { settingsOpen, closeSettings } = useSettingsUiStore();
+  const { settingsOpen, closeSettings, section, setSection } = useSettingsUiStore();
+  const { isDirty, saveSettings, resetSettings } = useSettingStore();
+  const [saving, setSaving] = useState(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveSettings();
+      toast.success(t('settings.notifications.settingsSaved'));
+    } catch {
+      toast.error(t('settings.notifications.saveFailed'));
+    } finally { setSaving(false); }
+  };
   const currentLang = i18n.language.startsWith('en') ? 'en' : 'zh';
 
   const modalItems = useMemo<SettingsModalNavItem<SettingsSection>[]>(
@@ -42,6 +56,7 @@ export function SettingsModal() {
         label: t('account.settings.nav.general'),
         icon: RiSettings6Line,
       },
+      { page: 'model', label: t('account.settings.nav.model'), icon: RiRobot2Line },
     ],
     [t],
   );
@@ -50,22 +65,30 @@ export function SettingsModal() {
     <SettingsModalShell
       isOpen={settingsOpen}
       onClose={closeSettings}
-      activePage="general"
-      onPageChange={() => {}}
-      title={t('account.settings.nav.general')}
+      activePage={section}
+      onPageChange={setSection}
+      title={t(`account.settings.nav.${section}`)}
       closeLabel={t('common.close')}
       navigationLabel={t('account.settings.title')}
       items={modalItems}
     >
       <AnimatePresence mode="wait">
         <motion.div
-          key="general"
+          key={section}
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
           animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
           transition={{ duration: 0.15, ease: EASE }}
         >
-          <Pane
+          {section === 'model' ? (
+            <Pane title={t('settings.llm.title')} description={t('settings.llm.description')}>
+              <div className="mt-5"><ModelConfigFields /></div>
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="outline" disabled={!isDirty || saving} onClick={resetSettings}>{t('settings.buttons.reset')}</Button>
+                <Button disabled={!isDirty || saving} onClick={handleSave}>{t('settings.buttons.save')}</Button>
+              </div>
+            </Pane>
+          ) : <Pane
             title={t('account.settings.nav.general')}
             description={t('account.settings.general.description')}
           >
@@ -116,7 +139,7 @@ export function SettingsModal() {
                 </Select>
               </SettingsRow>
             </SettingsCard>
-          </Pane>
+          </Pane>}
         </motion.div>
       </AnimatePresence>
     </SettingsModalShell>

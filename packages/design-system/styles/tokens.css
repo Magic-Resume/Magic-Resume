@@ -89,6 +89,7 @@
      分不开——参照实现是把它抬到页面之上，读起来才像一颗浮起的药丸。 */
   --mr-code-ink: oklch(0.79 0.12 55);
   --mr-code-surface: oklch(0.24 0.008 70);
+  --mr-control-thumb: #ffffff;
   --mr-accent: #38bdf8;
   --mr-accent-hover: #7dd3fc;
   --mr-accent-ink: #0a0a0a;
@@ -164,6 +165,7 @@
   --color-mr-surface-soft: var(--mr-surface-soft);
   --color-mr-surface-subtle: var(--mr-surface-subtle);
   --color-mr-surface-muted: var(--mr-surface-muted);
+  --color-mr-control-thumb: var(--mr-control-thumb);
   --color-mr-accent: var(--mr-accent);
   --color-mr-accent-hover: var(--mr-accent-hover);
   --color-mr-accent-ink: var(--mr-accent-ink);

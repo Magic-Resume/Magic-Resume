@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "rootDir": ".."
+  },
+  "include": ["./**/*.ts", "./**/*.tsx", "../stories/**/*.tsx"],
+  "exclude": ["../src/components/_vendor/**"]
+}

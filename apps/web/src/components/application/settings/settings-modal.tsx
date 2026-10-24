@@ -98,7 +98,7 @@ export function SettingsModalShell<Page extends string>({
   if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="presentation">
+    <div className="fixed inset-0 z-[105] flex items-center justify-center p-4" role="presentation">
       <button
         type="button"
         aria-label={closeLabel}

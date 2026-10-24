@@ -24,7 +24,9 @@ type Translate = (
  * 永远不会只剩一句外语。
  */
 export function appErrorCopy(error: AppError, t: Translate): AppErrorCopy {
-  const title = translateCode(error.errorCode, error.params, t);
+  const title = error.subCode === 'ai_backend_not_configured'
+    ? t('aiLab.backendNotConfigured')
+    : translateCode(error.errorCode, error.params, t);
   const detail = error.publicMessage?.trim();
   return { title, ...(detail && detail !== title ? { detail } : {}) };
 }

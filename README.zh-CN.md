@@ -5,7 +5,7 @@
 
   <h1>Magic Resume</h1>
 
-  <p><strong>开源简历编辑器。</strong><br/>完全在浏览器里运行，简历不会离开你的电脑。</p>
+  <p><strong>开源简历编辑器。</strong><br/>简历保存在本地；AI Lab 可接入自己的模型 Key 和后端。</p>
 
   <p>
     <a href="https://magic-resume.cn"><strong>立即开始 »</strong></a>
@@ -38,11 +38,11 @@
 
 > Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。
 
-本仓库就是其中 MIT 协议的内核：一个完全在浏览器里运行的简历编辑器。不需要账号、后端和数据库，简历保存在浏览器的 IndexedDB 里，不会离开你的电脑。AI 工作模式和云同步属于 [magic-resume.cn](https://magic-resume.cn) 上的托管版。
+本仓库提供 MIT 协议的本地编辑器和 BYOK AI Lab。编辑与导出不需要账号或后端，简历和每份简历唯一的会话保存在 IndexedDB。主动使用 AI 时，消息、相关简历内容、附件和模型密钥会通过本应用发送到你部署的 AI 后端。云同步与托管 AI 由 [magic-resume.cn](https://magic-resume.cn) 提供。
 
 ## 开源版与 magic-resume.cn
 
-编辑器和模板相同；托管版另外提供账号、AI 和多设备同步。
+编辑器和模板相同；托管版代为管理 AI 后端，并提供账号和多设备同步。
 
 | | 开源版（本仓库） | magic-resume.cn |
 |---|---|---|
@@ -50,12 +50,12 @@
 | 账号 | 不需要 | 需要 |
 | 数据存储 | 仅本机浏览器 IndexedDB | 加密云端存储，随时完整导出 |
 | 多设备同步 | 不支持 | 支持 |
-| AI（优化、分析、翻译、面试） | 暂不提供，见[路线图](#路线图) | 内置 |
-| 后端 | 无 | 官方托管 |
+| AI Lab | 自带 Key + 自部署兼容后端；不含面试或记忆 | 托管 AI、面试与记忆 |
+| 后端 | 编辑无需后端；AI 后端需另行部署 | 官方托管 |
 | 模板 | 20 套，完全相同 | 20 套，完全相同 |
 
 > [!NOTE]
-> 从 v3 起，本仓库移除了云端模式和 AI 功能：它们都依赖一个不公开的后端，自部署的副本本来就用不了。具体变化见 [CHANGELOG](./CHANGELOG.md)。
+> 从 v3 起，本仓库移除了账号、云同步和计费。AI Lab 使用 BYOK 和可配置的后端入口；本仓库包含界面与代理，不包含后端实现。具体变化见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 
@@ -65,8 +65,8 @@
 - **20 套模板**：适配 ATS，每套都可以调整配色、字体、间距和版式。
 - **自定义模块**：新增、重命名、排序、隐藏模块，正文用 Tiptap 富文本编辑。
 - **JSON 查看**：查看简历的原始数据并下载。
-- **导入与导出**：导入 Magic Resume JSON；导出为 PDF、PNG 或 JSON。
-- **本地优先**：全部数据存在 IndexedDB，不上传任何内容，也不发送统计数据。
+- **导入与导出**：本地导入 Magic Resume JSON，或用 AI 解析 PDF、Word、图片与 Markdown；导出为 PDF、PNG 或 JSON。
+- **本地优先**：简历与会话保存在 IndexedDB；仅主动使用 AI 时向配置的后端发送内容，不发送统计数据。
 - **浅色与深色主题，中英文界面。**
 
 ---
@@ -94,7 +94,7 @@ pnpm run dev
 
 ## 自托管
 
-应用就是一个 Next.js 服务，不依赖任何外部服务。两种方式任选：
+编辑功能只需要一个 Next.js 服务。启用 AI 时需配置 `AI_BACKEND_URL` 并在「设置 → 模型」填写自己的 Key，后端需实现[接口契约](./docs/reference/ai-backend.md)。两种方式任选：
 
 **Docker**
 
@@ -116,6 +116,7 @@ docker run -p 3000:3000 magic-resume
 |---|---|---|
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | 对外地址，用于 `robots.txt` 和页面元数据。 |
 | `APP_PUBLIC_URL` | — | 同上，但在请求时读取，同一个镜像可以服务多个域名。 |
+| `AI_BACKEND_URL` | — | 自部署 AI 后端地址，仅服务端读取；未配置时 AI 请求返回 503。 |
 | `NEXT_PUBLIC_DOCS_URL` | — | 「帮助中心」菜单项的链接；不设置时隐藏该菜单项。 |
 
 </details>
@@ -130,7 +131,7 @@ docker run -p 3000:3000 magic-resume
 
 ## 路线图
 
-计划提供一个小型的开源后端：无状态，自带 Key（由你提供自己的模型 API Key）。AI 功能会基于它回到自部署版。
+小型开源后端另行实现。目前已提供 BYOK 界面和 [HTTP/SSE 契约](./docs/reference/ai-backend.md)。普通模型 API 地址不能直接充当 AI_BACKEND_URL，后端还需要实现对话、工具和导入协议。
 
 ---
 
@@ -162,6 +163,7 @@ docker run -p 3000:3000 magic-resume
 | `apps/docs` | 文档站（Mintlify） |
 | `packages/resume-schema` | 共享的 Zod schema、类型与示例数据 |
 | `packages/resume-templates` | 模板 DSL、渲染器与注册表 |
+| `packages/genui` | AI Lab 组件与卡片 |
 | `packages/design-system` | 设计 token 与共享样式 |
 | `packages/icons` | 图标集 |
 | `packages/utils` | 小工具函数（`cn`、时间、颜色） |
