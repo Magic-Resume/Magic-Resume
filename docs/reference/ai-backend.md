@@ -65,7 +65,7 @@ Chat accepts `messages: [{ role, content }]`, `sessionId`, `turnId`, `agentMode`
 
 `agentMode` sets the permission boundary: `cocreate` can propose changes, `plan` can read but cannot change the resume, and `ask` receives neither resume ID nor snapshot. Do not infer permission from model-generated text. The UI keeps approvals and review controls; generated changes must not bypass user acceptance.
 
-The transcript and session ID survive closing the panel and page reloads. Each resume has one local conversation slot, with no seven-day expiry. Clearing the conversation replaces that slot. The backend may maintain ephemeral agent/checkpoint state, but must not require cloud conversation storage.
+The transcript and session ID survive closing the panel and page reloads. Each resume has one local conversation slot, with no seven-day expiry. Starting a new conversation always asks for confirmation, then replaces that slot; cancelling preserves the current conversation. Saved resume content is unchanged. The backend may maintain ephemeral agent/checkpoint state, but must not require cloud conversation storage.
 
 Session status returns `{ data: { state, checkpointId?, pendingApproval? } }` (a bare inner object is also accepted). `state` is `active`, `awaiting_input`, `checkpoint_missing` or `not_found`. `pendingApproval` contains `requestId`, `interruptId`, `operationId`, `expectedCheckpointId` and `actions: [{ name, args }]`.
 
