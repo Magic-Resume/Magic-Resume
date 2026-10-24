@@ -210,9 +210,9 @@ const ResumeCard = React.memo(
             templateId: resume.template,
           })}
           className={cn(
-            // content-visibility:auto — skip layout/paint of off-screen cards, so a
-            // reflow during the sidebar animation only costs the visible ones. The
-            // intrinsic-size reserves each card's box so scroll height stays stable.
+            // content-visibility:auto — skip layout/paint of off-screen cards in a
+            // long library. The intrinsic-size reserves each card's box so scroll
+            // height stays stable.
             'group relative overflow-hidden rounded-2xl border bg-white/[0.02] transition-colors duration-200 [content-visibility:auto] [contain-intrinsic-size:auto_15rem]',
             // hover 描边由网格上那圈共享的环承担，这里只剩「菜单开着」这一个状态。
             isMenuOpen ? 'border-sky-400/25' : 'border-mr-line-soft',
@@ -317,7 +317,7 @@ function ResumeCardSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto bg-desk [contain:layout_paint]">
-      <div className="mx-auto w-full max-w-[1400px] px-6 py-10 md:px-12">
+      <div className="mx-auto w-full max-w-[1400px] px-6 pb-12 pt-6 md:px-12">
         {/* 标题 */}
         <header className="mb-8 flex items-end justify-between gap-4">
           <div className="h-7 w-32 animate-pulse rounded-lg bg-mr-surface-soft" />
@@ -383,11 +383,10 @@ const ResumeList = React.memo(
     if (!isMounted || isLoading) return <DashboardSkeleton />;
 
     return (
-      // contain: layout paint — isolate this large subtree so the sidebar's width
-      // animation (which reflows/re-centers this block every frame) can't invalidate
-      // layout/paint outside it, keeping the collapse transition smooth.
+      // contain: layout paint — the library can grow large; keep its layout and
+      // paint work from invalidating anything outside it.
       <div className="flex-1 overflow-y-auto bg-desk [contain:layout_paint]">
-        <div className="mx-auto w-full max-w-[1400px] px-6 py-10 md:px-12">
+        <div className="mx-auto w-full max-w-[1400px] px-6 pb-12 pt-6 md:px-12">
           {/* header */}
           <header className="mb-8 flex items-end justify-between gap-4">
             <div className="flex items-baseline gap-2.5">
@@ -409,10 +408,7 @@ const ResumeList = React.memo(
             <ImportPanel onClick={onImport} />
           </section>
 
-          {/* library — column count keys off the viewport (media queries), NOT the
-              container width. The sidebar collapse changes this block's width but not
-              the viewport, so columns stay fixed and cards resize smoothly instead of
-              teleporting between rows (auto-fill would re-flow rows mid-animation). */}
+          {/* library — column count follows the viewport (media queries). */}
           <motion.div
             className="relative grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             variants={gridVariants}

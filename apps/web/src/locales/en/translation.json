@@ -1,7 +1,7 @@
 {
   "account": {
     "menu": {
-      "title": "Account",
+      "title": "Settings and help",
       "upgrade": "Upgrade to Pro",
       "upgradeHint": "Unlock all AI features",
       "upgradeSoon": "Coming soon",
@@ -1211,15 +1211,6 @@
     "empty": {
       "title": "No resumes yet"
     }
-  },
-  "sidebar": {
-    "resumes": "Resumes",
-    "notifications": "Notifications",
-    "knowledge": "Campus recruiting timeline",
-    "settings": "Settings",
-    "open": "Open sidebar",
-    "close": "Close sidebar",
-    "assets": "Assets"
   },
   "importDialog": {
     "title": "Import resume",

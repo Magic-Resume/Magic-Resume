@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import DashboardSidebar from "./_components/DashboardSidebar";
+import DashboardHeader from "./_components/DashboardHeader";
 import SettingsHost from "@/components/settings/SettingsHost";
 import metaConfig from "@/lib/constants/metaConfig";
 
@@ -13,9 +13,9 @@ export default function DashboardLayout({
   modal: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-desk text-white overflow-hidden">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex h-screen flex-col bg-desk text-white overflow-hidden">
+      <DashboardHeader />
+      <div className="flex min-h-0 flex-1 flex-col">
         {children}
         {modal}
       </div>
