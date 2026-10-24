@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v2.8.1](https://github.com/Magic-Resume/Magic-Resume/compare/v2.8.0...v2.8.1) (2026-10-24)
+
+## 🐛 Bug Fixes
+- [`874b303`](https://github.com/Magic-Resume/Magic-Resume/commit/874b303)  fix(templates): 修复 Blue Line 联系方式对齐与长链接越界 (#268) (Issues: [`#268`](https://github.com/Magic-Resume/Magic-Resume/issues/268))
+
 # [v2.8.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.7.0...v2.8.0) (2026-10-20)
 
 ## ✨ New Features
