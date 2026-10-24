@@ -11,15 +11,8 @@ const DISALLOW = [
   '/dashboard*',
   '/edit*',
   '/api/*',
-  '/sign-in*',
-  '/sign-up*',
   '/*?*', // 禁止带参数的URL
 ]
-
-// `/s/*`（分享出去的简历，页面里有真名 / 电话 / 邮箱）**故意不写进 disallow**：
-// 被 robots.txt 挡住的页面爬虫根本抓不到，也就看不到页面里的 `noindex`，
-// 反而可能被"仅 URL"收录且撤不下来。让它可抓、由 `s/[shareId]/page.tsx` 的
-// `robots: { index: false, follow: false }` 明确要求除名，才是能真正生效的那条路。
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = runtimePublicUrl()

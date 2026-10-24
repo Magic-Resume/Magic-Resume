@@ -31,9 +31,11 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`.
 
 | Workspace | Package name | Purpose |
 |---|---|---|
-| `apps/web` | `@magic-resume/web` | Next.js 15 App Router frontend |
-| `packages/env` | `@magic-resume/env` | Shared env parsing |
-| `packages/genui` | `@magic-resume/genui` | GenUI widget contract, host, motion, interactive cards |
+| `apps/web` | `@magic-resume/web` | Next.js 16 App Router editor (local-only) |
+| `apps/landing` | `@magic-resume/landing` | Marketing site for magic-resume.cn (Astro, Vercel) |
+| `apps/docs` | — | Docs site (Mintlify) |
+| `packages/design-system` | `@magic-resume/design-system` | Design tokens and shared styles |
+| `packages/icons` | `@magic-resume/icons` | Icon set |
 | `packages/mcp` | `@magic-resume/mcp` | stdio MCP server + CLI (Node ESM) |
 | `packages/resume-schema` | `@magic-resume/resume-schema` | Shared Zod schemas, types, sample data |
 | `packages/resume-templates` | `@magic-resume/resume-templates` | Template DSL, renderer, registry |
@@ -44,33 +46,26 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`.
 
 ## Architecture
 
-### Deployment modes (`apps/web`)
+### Local-only (`apps/web`)
 
-The web app supports two modes, controlled by `NEXT_PUBLIC_APP_MODE`:
+Since v3 the app runs entirely in the browser: no login, no backend, no billing, no AI. Resumes persist in IndexedDB. The cloud mode, Clerk, the Core API client and the AI features were removed because they depended on a private backend; a small open-source backend is planned, and AI will come back on top of it.
 
-- **`self-hosted`** (default): no auth, no backend required. All data stored in IndexedDB.
-- **`cloud`**: Clerk authentication, cloud sync to NestJS Core API.
+`pnpm check:local-only` (`scripts/check-local-only.mjs`, part of `pnpm lint` and CI) fails on markers of that code: `@clerk/`, `/api/billing`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_MODE`, `commercial`, and so on.
 
-Mode is auto-detected in `src/lib/config/app.ts`: if `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is set and `NEXT_PUBLIC_APP_MODE` is unset, the app defaults to `cloud`. The proxy (`src/proxy.ts`, formerly `middleware.ts` before Next 16) switches between Clerk's `clerkMiddleware` and a no-op handler based on this.
-
-### HTTP clients (`src/lib/api/httpClient.ts`)
-
-Two Axios instances share a single auth interceptor (Clerk JWT via `configureHttpClient`):
-
-- `httpClient.api` → NestJS Core gateway (`NEXT_PUBLIC_API_URL`, default `http://localhost:3110`)
-- `httpClient.agent` → the same gateway (`NEXT_PUBLIC_API_URL`, default `http://localhost:3110`); path routing is owned by the gateway
-
-All Core API paths are centralized in `src/lib/api/routes.ts` (`API_ROUTES`/`AGENT_ROUTES`). AI Lab Next route handlers (`app/api/chat-agent/*`) proxy streaming calls through the gateway.
+`src/lib/extensions/app-lifecycle.ts` is a set of no-op hooks the app calls at measurable moments (resume created, exported, error caught). A deployment that wants analytics replaces the bodies.
 
 ### State management (`apps/web`)
 
 Zustand + Immer stores in `src/store/`:
 
-- **`useResumeStore`**: primary resume state. Persists to IndexedDB, optionally syncs to cloud. Tracks `syncStatus` ('saved' | 'syncing' | 'modified' | 'local' | 'error').
-- **`useSettingStore`**: user settings including `cloudSync` toggle and AI API key. Persists to IndexedDB.
-- Other stores: `useMessageStore`, `useResumeDraftStore`, `useResumeAnalyzerStore`, `useResumeOptimizerStore`.
+- **`useResumeStore`**: primary resume state, persisted to IndexedDB. `store/resume/*` are typed projections of it; see `store/resume/README.md`.
+- **`useSettingsUiStore`**: whether the settings modal is open. Theme and language persist on their own (`ThemeProvider`, `i18n.ts`).
 
 IndexedDB persistence is handled by `src/lib/api/IndexDBClient.ts` (db name: `MagicResumeDB`).
+
+### Builds
+
+`apps/web/scripts/next.mjs` wraps `next <command>` only to drop the bare `--` pnpm passes through. Dev and build use Turbopack (Next 16 default). `next build` type-checks with `tsconfig.build.json`, which leaves out tests and `scripts/`: several tests still reference modules v3 removed and are due to be reworked with the test setup.
 
 ### Resume schema (`packages/resume-schema`)
 
@@ -92,7 +87,7 @@ Preview thumbnails are static assets at `apps/web/public/templates/jpg/{template
 
 ### MCP package (`packages/mcp`)
 
-A **Node.js ESM** package — no React, no browser APIs, no IndexedDB. It communicates with the Core API using Personal Access Tokens (PATs).
+A **Node.js ESM** package — no React, no browser APIs, no IndexedDB. It communicates with the Magic Resume API (magic-resume.cn) using Personal Access Tokens (PATs).
 
 Config is stored at `~/.magic-resume/mcp.json` (set via `magic-resume config set --api-url <url> --pat <token>`).
 
@@ -100,14 +95,7 @@ The MCP server (`src/server.ts`) exposes tools via `@modelcontextprotocol/sdk`. 
 
 ## Environment variables
 
-Copy `apps/web/.env.example` to `apps/web/.env.local`.
-
-| Variable | Required for | Notes |
-|---|---|---|
-| `NEXT_PUBLIC_APP_MODE` | Both | `self-hosted` or `cloud`; auto-detected if omitted |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Cloud | Triggers cloud mode auto-detection |
-| `CLERK_SECRET_KEY` | Cloud | Server-side Clerk key |
-| `NEXT_PUBLIC_API_URL` | Cloud | Gateway origin for all browser/server Core and agent calls (default `http://localhost:3110`) |
+None are required. `apps/web/.env.example` lists the optional ones: `NEXT_PUBLIC_APP_URL` / `APP_PUBLIC_URL` (public origin for robots and metadata) and `NEXT_PUBLIC_DOCS_URL` (help menu link).
 
 ## Commit messages
 
@@ -117,19 +105,14 @@ Format: `<emoji> <type>(<scope>?): <subject>` — e.g. `:sparkles: feat(web): ad
 
 ## Guardrails
 
-- Do not modify Clerk auth (`clerkMiddleware`, `ClerkProvider`, `useAuth`, cloud sync) unless explicitly requested.
-  - Recorded exception: the sign-in redirect carries `redirect_url` (`proxy.ts` → `signInUrl`). `/billing(.*)` is a protected route, and without it a lapsed session loses `?orderId=` — the return page then cannot poll or sync, which is the only thing that captures a PayPal payment from the browser. Same-origin paths only.
-  - Recorded exception: signed-in users are redirected away from `/sign-in(.*)` and `/sign-up(.*)` (`proxy.ts` → `isAuthRoute` / `afterAuthUrl`). Rendering a login form to someone already logged in is the bug this fixes. It honours the `redirect_url` the exception above puts there, so a lapsed-then-restored session still lands on the order it was paying for — and it accepts **same-origin paths only** (leading single `/`, no backslash), because unlike `signInUrl` this value comes off the query string and an unchecked redirect there is an open redirect.
-  - Recorded exception: the auth cards run that same check **client-side** (`useSignedInRedirect.ts` → `useRedirectIfSignedIn`, used by `SignInCard` / `SignUpCard`), and treat Clerk's `session_exists` as "already signed in" rather than as an error. Not a duplicate of the middleware: the middleware reads the **server** session (`auth()`), while Clerk's browser SDK holds its own **client** session, and the two diverge — routinely on development instances, where `__session` expires while the FAPI session is still live. In that window the middleware sees nobody and renders the form, then every submit (password, email code and OAuth alike) comes back `400 session_exists` with only a generic error on screen. Client-side is the only place that gap is visible.
-  - Recorded exception: `SignInCard` picks the next step from the attempt's `supportedFirstFactors` instead of always stepping to a password form. Whether password is a sign-in factor is per-instance (`user_settings.attributes.password.used_for_first_factor`) and can be off — it is off on the current dev instance, which accepts only `email_code` + `oauth_github`. Hardcoding the password step marches every user into a form whose strategy the instance will reject.
-- Do not add new deployment modes or local/cloud switches unless explicitly requested.
+- Keep `apps/web` local-only. Do not add accounts, a backend client, cloud sync, billing or a deployment-mode switch unless explicitly requested.
 - MCP tools must remain schema-aware and patch-based. The `@magic-resume/mcp` package must not import from Next.js, React components, browser APIs, or IndexedDB.
 - When adding shared schema or type changes, prefer `packages/resume-schema` over duplicating shapes in `apps/web`.
 - Keep template IDs aligned: any new `templateId` added to `packages/resume-schema` must have a corresponding entry in `packages/resume-templates/src/registry.ts`, and a thumbnail at `apps/web/public/templates/jpg/{id}.jpg`.
 
 ## Design Context
 
-> Full version + design principles live in `.impeccable.md` (project root); read it before any UI / UX work. Source: `docs/specs/ai-lab-living-canvas/design.md`.
+> Full version + design principles live in `.impeccable.md` (project root); read it before any UI / UX work.
 
 - **Users**: 求职者(中文市场为主),为某个目标岗位搭建 / 打磨简历。`create`(引导创建)服务"从零 / 另起一份"的人——含经验少需引导者与求快出稿者;其余能力面向已有简历、准备投递的人。
 - **Personality**: 专业、克制、可信。像素小蓝宠只保留为视觉形象,不进文案;界面与 AI 对话都用书面、准确的表达,不用语气词、不拟人。UI 微文案简短、动词开头;AI 对话可完整说明理由,但不注水、不复述用户已见。完整规范见 `docs/specs/ui-copy-professional/spec.md`。

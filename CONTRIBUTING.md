@@ -25,17 +25,14 @@ For anything non-trivial, opening an issue first to discuss the approach saves e
 
 ## Local setup
 
-Magic Resume runs fully in the browser — no backend or database needed for most work.
+Magic Resume runs fully in the browser — no backend, database or `.env` file needed.
 
 ```bash
 # 1. Fork, then clone your fork
 git clone https://github.com/<you>/Magic-Resume.git
 cd Magic-Resume
 
-# 2. Configure self-hosted mode
-cp apps/web/.env.example apps/web/.env.local   # set NEXT_PUBLIC_APP_MODE=self-hosted
-
-# 3. Install and run
+# 2. Install and run
 pnpm install
 pnpm run dev
 ```

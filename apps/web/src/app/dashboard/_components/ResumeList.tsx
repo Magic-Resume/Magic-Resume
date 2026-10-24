@@ -13,7 +13,6 @@ import {
   Copy,
   Trash2,
   FlaskConical,
-  Cloud,
 } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { DropMenu } from '@/components/ui/drop-menu';
@@ -23,9 +22,6 @@ import {
   type HoverSurfaceBinding,
 } from '@/components/ui/hover-surface';
 import { Resume } from '@/types/frontend/resume';
-import { useSettingStore } from '@/store/useSettingStore';
-import { useAccountUiStore } from '@/store/useAccountUiStore';
-import { isCloudMode } from '@/lib/config/app';
 import { formatTime, cn } from '@/lib/utils';
 import { getMagicTemplateList } from '@magic-resume/resume-templates/config/magic-templates';
 import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
@@ -54,38 +50,14 @@ const cardVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
-/* ── Storage state (replaces the old cloud-sync banner with a quiet, always-on pill) ── */
+/* ── Storage state: resumes live in this browser (IndexedDB) ── */
 function StoragePill() {
   const { t } = useTranslation();
-  const cloudSync = useSettingStore((s) => s.cloudSync);
-  const openSettings = useAccountUiStore((s) => s.openSettings);
-
-  if (!isCloudMode) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-mr-line-soft bg-white/[0.02] px-2.5 py-1 text-mr-label text-neutral-500">
-        <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
-        {t('dashboard.library.storageLocal')}
-      </span>
-    );
-  }
-
-  // Cloud-sync-first: an active sync is the expected default, so stay quiet —
-  // no badge when synced. A badge only appears when data is local-only (below).
-  if (cloudSync) {
-    return null;
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => openSettings('cloudSync')}
-      className="group inline-flex items-center gap-1.5 rounded-full border border-mr-line-soft bg-white/[0.02] px-2.5 py-1 text-mr-label text-neutral-400 transition-colors hover:border-sky-400/25 hover:text-sky-200"
-    >
-      <Cloud size={12} className="text-neutral-500 transition-colors group-hover:text-sky-300" />
-      <span>{t('dashboard.library.storageLocal')}</span>
-      <span className="text-neutral-700 group-hover:text-sky-300/50">·</span>
-      <span className="text-sky-300/80">{t('dashboard.library.enableSync')}</span>
-    </button>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-mr-line-soft bg-white/[0.02] px-2.5 py-1 text-mr-label text-neutral-500">
+      <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
+      {t('dashboard.library.storageLocal')}
+    </span>
   );
 }
 
@@ -486,11 +458,7 @@ const ResumeList = React.memo(
             if (deleteId) onDelete(deleteId);
           }}
           title={t('common.confirmDeleteResume')}
-          description={
-            useSettingStore.getState().cloudSync
-              ? t('common.deleteDescriptionCloud')
-              : t('common.deleteDescriptionLocal')
-          }
+          description={t('common.deleteDescriptionLocal')}
         />
       </div>
     );

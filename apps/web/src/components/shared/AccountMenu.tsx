@@ -3,20 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  ChevronRight,
-  LogOut,
-  Settings,
-  Sparkles,
-  User as UserIcon,
-} from '@magic-resume/icons';
+import { Settings, User as UserIcon } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
-import { useAppAuth, useAppUser } from "@/lib/auth";
-import { isCloudMode } from "@/lib/config/app";
-import { useAccountUiStore } from "@/store/useAccountUiStore";
+import { useSettingsUiStore } from "@/store/useSettingsUiStore";
 import { setPreferredLanguage } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { getInitials } from "@/lib/utils/userDisplay";
 import { HelpSubmenu } from "./HelpSubmenu";
 
 import { EASE_ENTER } from '@magic-resume/utils';
@@ -37,21 +28,15 @@ const PANEL_WIDTH = 280;
 const GAP = 8;
 
 /**
- * GPT-style avatar dropdown replacing Clerk's UserButton. Click-to-open, rich
- * header + featured upgrade card, driving the global settings / account modals
- * via useAccountUiStore. The panel is portaled to <body> with fixed positioning
- * so `overflow-hidden` ancestors (the 256px sidebar, the 52px editor rail) can't
- * clip it. Cloud-aware: self-hosted shows only personalize / settings / language.
+ * Avatar dropdown: settings, help and the language switch. The panel is
+ * portaled to <body> with fixed positioning so `overflow-hidden` ancestors
+ * (the 256px sidebar, the 52px editor rail) can't clip it.
  */
 export default function AccountMenu({ placement = "up", label }: AccountMenuProps) {
-  /* 菜单行共用一块滑动的底。「升级到 Pro」和「退出登录」各自有自己的色调，
-     所以走 bind 的第二个参数让面跟着换色——参考那边高亮滑到「删除」行时
-     整块转红，也是这么做的，而不是让那一行自己另画一个底。 */
+  /* 菜单行共用一块滑动的底。 */
   const rowSurface = useHoverSurface();
   const { t, i18n } = useTranslation();
-  const { user } = useAppUser();
-  const { signOut } = useAppAuth();
-  const { openSettings, openAccount, openPricing } = useAccountUiStore();
+  const openSettings = useSettingsUiStore((s) => s.openSettings);
   const reduce = useReducedMotion();
 
   const [mounted, setMounted] = useState(false);
@@ -105,33 +90,8 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
     };
   }, [open, reposition]);
 
-  useEffect(() => {
-    if (!mounted || !user?.imageUrl) return;
-    const avatarUrl = user.imageUrl;
-    const warmAvatar = () => {
-      const img = new Image();
-      img.decoding = "async";
-      img.referrerPolicy = "no-referrer";
-      img.src = avatarUrl;
-      void img.decode?.().catch(() => {
-        /* best-effort decode warmup */
-      });
-    };
-    let idleId: number | undefined;
-    let timeoutId: number | undefined;
-    if (window.requestIdleCallback) idleId = window.requestIdleCallback(warmAvatar);
-    else timeoutId = window.setTimeout(warmAvatar, 120);
-    return () => {
-      if (idleId !== undefined) window.cancelIdleCallback?.(idleId);
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-    };
-  }, [mounted, user?.imageUrl]);
-
   if (!mounted) return null;
 
-  const name = user?.fullName ?? null;
-  const email = user?.primaryEmailAddress?.emailAddress ?? null;
-  const initials = getInitials(name, email);
   const currentLang = i18n.language.startsWith("en") ? "en" : "zh";
 
   const run = (fn: () => void) => {
@@ -178,62 +138,15 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
       {/* sky top-seam signature */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
 
-      {isCloudMode && (name || email) && (
-        <>
-          <div className="flex items-center gap-3 px-2.5 py-2.5">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
-              {user?.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.imageUrl} alt={name ?? ""} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-mr-label font-semibold text-neutral-300">
-                  {initials}
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              {name && <p className="truncate text-sm font-semibold text-neutral-100">{name}</p>}
-              {email && <p className="truncate text-mr-label text-neutral-500">{email}</p>}
-            </div>
-          </div>
-          <Divider />
-        </>
-      )}
-
       <HoverSurface
         {...rowSurface.surfaceProps}
         className="rounded-lg bg-mr-surface-soft data-[surface-variant=accent]:rounded-xl data-[surface-variant=accent]:bg-sky-400/10 data-[surface-variant=danger]:bg-red-500/10"
       />
-      {isCloudMode && (
-        <button
-          type="button"
-          role="menuitem"
-          {...rowSurface.bind('upgrade', 'accent')}
-          onClick={() => run(openPricing)}
-          className="relative z-[1] mb-1 flex w-full items-center gap-2.5 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2.5 text-left transition-colors hover:border-sky-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
-        >
-          <Sparkles size={16} className="shrink-0 text-sky-300" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-mr-caption font-medium text-sky-100">{t("account.menu.upgrade")}</p>
-            <p className="truncate text-mr-label text-sky-300/50">{t("account.menu.upgradeHint")}</p>
-          </div>
-          <ChevronRight size={16} className="shrink-0 text-sky-300/70" />
-        </button>
-      )}
-
-      {isCloudMode && (
-        <MenuRow
-          surface={rowSurface.bind('profile')}
-          icon={<UserIcon size={16} />}
-          label={t("account.menu.profile")}
-          onClick={() => run(openAccount)}
-        />
-      )}
       <MenuRow
         surface={rowSurface.bind('settings')}
         icon={<Settings size={16} />}
         label={t("account.menu.settings")}
-        onClick={() => run(() => openSettings())}
+        onClick={() => run(openSettings)}
       />
       <HelpSubmenu menuOpen={open} onNavigate={() => setOpen(false)} />
 
@@ -257,21 +170,6 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
         </div>
       </div>
 
-      {isCloudMode && (
-        <>
-          <Divider />
-          <button
-            type="button"
-            role="menuitem"
-            {...rowSurface.bind('signOut', 'danger')}
-            onClick={() => run(() => void signOut())}
-            className="group relative z-[1] flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-neutral-400 transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
-          >
-            <LogOut size={16} className="shrink-0 text-neutral-500 transition-colors group-hover:text-red-400" />
-            {t("account.menu.signOut")}
-          </button>
-        </>
-      )}
     </motion.div>
   );
 
@@ -303,18 +201,9 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
               open ? "ring-sky-400/40" : "ring-white/10 group-hover/acct:ring-white/20",
             )}
           >
-            {user?.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.imageUrl} alt={name ?? t("account.menu.title")} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
-            ) : isCloudMode && initials ? (
-              <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-mr-label font-semibold text-neutral-300">
-                {initials}
-              </span>
-            ) : (
-              <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-neutral-400">
-                <UserIcon size={16} />
-              </span>
-            )}
+            <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-neutral-400">
+              <UserIcon size={16} />
+            </span>
           </span>
         </span>
         {label}
@@ -347,8 +236,4 @@ function MenuRow({
       {label}
     </button>
   );
-}
-
-function Divider() {
-  return <div className="mx-1 my-1 h-px bg-mr-surface-soft" />;
 }

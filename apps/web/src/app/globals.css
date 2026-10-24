@@ -6,13 +6,10 @@
 @import "../styles/theme.css";
 @import "../styles/typography.css";
 @import "../styles/editor-motion.css";
-@import "../styles/ai-motion.css";
 
 /* Tailwind v4 从构建的 cwd(apps/web)自动探测源文件,workspace 包不在范围内——它们的
-   工具类只有在本 app 恰好也用了同一个类时才碰巧存在,少样式时不报错(同 postcss/
-   commercial-overlay-sources.cjs 记的那个失败模式)。扫 src 而非 dist:dist 被
+   工具类只有在本 app 恰好也用了同一个类时才碰巧存在,少样式时不报错。扫 src 而非 dist:dist 被
    gitignore,且不保证已构建。新增发布 UI 的 workspace 包时必须往这里加一行。 */
-@source "../../../../packages/genui/src";
 @source "../../../../packages/resume-templates/src";
 @source "../../../../packages/design-system/src";
 
@@ -909,37 +906,6 @@ button {
 }
 
 
-.polaris-fab {
-  --polaris-sky: 56, 189, 248;
-  --orb-speed: 1;
-  isolation: isolate;
-}
-
-/* 球外呼吸光晕:环境光落在深色画布上,hover / 生成中变亮 */
-.polaris-fab__halo {
-  position: absolute;
-  inset: -12px;
-  z-index: -1;
-  border-radius: 9999px;
-  background: radial-gradient(
-    circle at 50% 46%,
-    rgba(120, 150, 255, 0.5),
-    rgba(var(--polaris-sky), 0.22) 48%,
-    transparent 74%
-  );
-  filter: blur(11px);
-  opacity: 0.38;
-  transition: opacity 0.2s ease-out;
-  /* 心跳的两倍拍，而不是另取 5.5s——同屏呼吸元素周期互质会看着发飘。 */
-  animation: polaris-halo calc(var(--breath-duration) * 2 * var(--orb-speed, 1)) var(--breath-ease) infinite;
-  will-change: transform, opacity;
-}
-
-.polaris-fab:hover .polaris-fab__halo {
-  opacity: 0.62;
-}
-
-/* AI editor motion is kept in styles/ai-motion.css. */
 .editor-container {
   position: relative;
   min-height: 150px;

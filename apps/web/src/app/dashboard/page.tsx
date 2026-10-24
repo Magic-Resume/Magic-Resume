@@ -4,14 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Resume } from '@/types/frontend/resume';
 import { useResumeDocumentStore } from '@/store/resume/document';
-import { useSettingStore } from '@/store/useSettingStore';
 import ResumeList from './_components/ResumeList';
 import RenameResumeDialog from './_components/RenameResumeDialog';
 
 export default function Dashboard() {
   const router = useRouter();
   const { resumes, deleteResume, duplicateResume, loadResumes, renameResume } = useResumeDocumentStore();
-  const { loadSettings } = useSettingStore();
 
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [resumeToRename, setResumeToRename] = useState<Resume | null>(null);
@@ -27,7 +25,7 @@ export default function Dashboard() {
     const initializeDashboard = async () => {
       try {
         setIsLoading(true);
-        await Promise.all([loadResumes(), loadSettings()]);
+        await loadResumes();
       } catch (error) {
         console.error('Failed to initialize dashboard:', error);
       } finally {
@@ -36,7 +34,7 @@ export default function Dashboard() {
     };
 
     initializeDashboard();
-  }, [loadResumes, loadSettings]);
+  }, [loadResumes]);
 
   const handleOpenRenameDialog = useCallback((resume: Resume) => {
     setResumeToRename(resume);

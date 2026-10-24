@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  * in the source file (e.g. a 0.55-opacity twinkle) survive: the mask uses the
  * image's alpha channel.
  *
- * House rule: SVG markup lives in public/ (marks/, providers/), never in JSX.
+ * House rule: SVG markup lives in public/marks/, never in JSX.
  */
 export function MaskIcon({
   src,

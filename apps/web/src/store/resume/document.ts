@@ -26,8 +26,6 @@ export type ResumeDocumentStore = Pick<
   | 'updateCustomTemplate'
   | 'updateThemeColor'
   | 'updateTypography'
-  | 'applyFullResume'
-  | 'applyWorkspaceResolution'
 >;
 
 export const useResumeDocumentStore =
@@ -55,6 +53,4 @@ export const useResumeDocumentStore =
     updateCustomTemplate: state.updateCustomTemplate,
     updateThemeColor: state.updateThemeColor,
     updateTypography: state.updateTypography,
-    applyFullResume: state.applyFullResume,
-    applyWorkspaceResolution: state.applyWorkspaceResolution,
   }));

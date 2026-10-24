@@ -8,10 +8,7 @@ import { Resume } from '@/types/frontend/resume';
 import useMobile from '@/hooks/useMobile';
 import { Tools } from '../layout/Tools';
 import { EditorDock } from '../layout/EditorDock';
-import { AiFab } from '../layout/AiFab';
-import AiThinkingOverlay from '../modals/AiThinkingOverlay';
 import { useTranslation } from 'react-i18next';
-import { isCloudMode } from '@/lib/config/app';
 import { PaperSkeleton } from './PaperSkeleton';
 
 // The canvas preview is client-only: pdf.js needs window/devicePixelRatio and a
@@ -27,19 +24,11 @@ const PdfCanvasPreview = dynamic(
 
 interface ResumePreviewPanelProps {
   activeResume: Resume | null;
-  onShowAI: () => void;
-  isAiJobRunning: boolean;
-  onShareClick?: () => void;
-  onFeedbackClick?: () => void;
   onJsonClick: () => void;
 }
 
 const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
   activeResume,
-  onShowAI,
-  isAiJobRunning,
-  onShareClick,
-  onFeedbackClick,
   onJsonClick,
 }) => {
   const { isMobile } = useMobile();
@@ -54,15 +43,7 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
   }
 
   return (
-    <section
-      className="min-w-0 flex-1 flex items-center justify-center bg-desk relative overflow-hidden max-h-screen"
-      data-ai-running={isAiJobRunning ? "true" : "false"}
-    >
-      {isAiJobRunning && (
-        <div className="ai-canvas-edge-flow" aria-hidden>
-          <div className="ai-canvas-edge-flow__spin" />
-        </div>
-      )}
+    <section className="min-w-0 flex-1 flex items-center justify-center bg-desk relative overflow-hidden max-h-screen">
 
       <TransformWrapper
         initialScale={0.6}
@@ -81,10 +62,6 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
             >
               <div className="relative">
                 <PdfCanvasPreview resume={activeResume} locale={resolveDocumentLanguage(activeResume)} />
-                <AiThinkingOverlay
-                  isVisible={isAiJobRunning}
-                  themeColor={activeResume.themeColor || '#38bdf8'}
-                />
               </div>
             </TransformComponent>
 
@@ -95,9 +72,6 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
                 zoomOut={zoomOut}
                 resetTransform={resetTransform}
                 resume={activeResume}
-                onShowAI={onShowAI}
-                onShareClick={onShareClick}
-                onFeedbackClick={onFeedbackClick}
               />
             ) : (
               <EditorDock
@@ -105,7 +79,6 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
                 zoomOut={zoomOut}
                 resetTransform={resetTransform}
                 resume={activeResume}
-                onShareClick={onShareClick}
                 onJsonClick={onJsonClick}
               />
             )}
@@ -113,7 +86,6 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
         )}
       </TransformWrapper>
 
-      {!isMobile && isCloudMode && <AiFab onClick={onShowAI} isRunning={isAiJobRunning} />}
     </section>
   );
 };

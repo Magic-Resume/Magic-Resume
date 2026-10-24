@@ -27,29 +27,16 @@ related: [CONVENTIONS.md]
 
 | 文档 | 状态 | 更新 | 摘要 |
 |---|---|---:|---|
-| [AI Lab Canvas Real Actions](specs/ai-lab-canvas-real-actions/design.md) | Draft | 2026-07-04 | Frontend UX and service-boundary design for wiring canvas actions to real AI results. |
-| [AI Lab Guided Create](specs/ai-lab-guided-create/design.md) | Draft | 2026-07-04 | Frontend UX and interaction design for the AI Lab guided resume creation flow. |
-| [AI Lab Living Canvas](specs/ai-lab-living-canvas/design.md) | Draft | 2026-07-03 | UX design for element-scoped AI actions, proposals, review states, and microcopy in the editor canvas. |
-| [AI Lab Frontend Refactor](specs/ai-lab-refactor-and-backend/design.md) | Draft | 2026-07-04 | Frontend-only design for the AI Lab feature root, service layer, canvas integration, and migration away from mock-only flows. |
-| [GenUI Systematization](specs/genui-systematization/design.md) | Draft | 2026-07-04 | Frontend widget contract for rendering typed interactive assistant output. |
 | [GEO 方案](specs/geo/spec.md) | Draft | 2026-08-05 | 面向答案引擎的可引用性建设：清不实声明、统一实体定义、llms.txt 与对比表，站外痕迹与验证方法。 |
 | [Landing 优化方案](specs/landing-optimization/spec.md) | Proposed | 2026-08-05 | 死资产清理、首屏 JS 移出关键路径、结构化数据补齐，以及默认语言 / 价格展示 / 社会证明三项决策。 |
-| [Magic-Resume Analytics Frontend Boundary](specs/analytics-sdk/design.md) | Draft | 2026-07-04 | Frontend-only analytics event catalog, privacy rules, and SDK integration boundary for Magic-Resume. |
-| [Magic-Resume Frontend Backend Integration](specs/frontend-v2-backend-integration/design.md) | Draft | 2026-07-04 | Frontend-only integration boundary for API routing, auth forwarding, streaming events, and response normalization. |
 | [Stage-First Editor Relayout](specs/editor-relayout/design.md) | Draft | 2026-07-03 | Design brief for restructuring the editor around a stage-first workflow. |
-| [CodeBlock 重构](specs/code-block/design-brief.md) | Draft | 2026-09-04 | 把 genui 的 CodeBlock 拆成 snippet / document 两档形态，高亮改用 lowlight，并按「九成内容是中文句子而非代码」重定行号、折行与字体。 |
-| [搜索过程与引用来源](specs/search-and-citations/design-brief.md) | Draft | 2026-09-04 | AI Lab 的搜索过程行、行内引用浮层、消息底部来源栏与右舷来源面板四个面的重设计，外加行内代码 / 引用块的排版校正。 |
-| [GenUI 交互层收敛](specs/genui-ui/design.md) | Draft | 2026-08-12 | Agent 交互组件的数据驱动迁移、设计令牌接入，以及对话、任务、审批和输入交互的统一。 |
-| [引用片段递交动效「递纸条」](specs/ai-quote-handoff/design.md) | Accepted | 2026-09-13 | 「询问 Polaris」时选中片段从画布飞到输入框、小宠接住，以及发送 / 取消 / 替换三种退场与画布淡标记。 |
 | [前端文案规范：专业语气](specs/ui-copy-professional/spec.md) | Implemented | 2026-09-27 | 把 Web、Landing 与组件内硬编码文案从口语化改为专业、克制、可信的书面语气：语气与人称规则、句式模板、术语表、中英文排版与约 70 条样例。 |
 
 ## Reference
 
 | 文档 | 状态 | 更新 | 摘要 |
 |---|---|---:|---|
-| [Agent 工具授权前端速览](reference/agent-tool-approval-contract.md) | Living | 2026-07-04 | Frontend UX and state model for user approval before sensitive assistant actions. |
 | [Magic Resume MCP](reference/mcp.md) | Living | 2026-07-03 | Setup, exposed MCP tools/resources/prompts, editing rules, and runtime boundary notes. |
-| [Magic-Resume Tracking Plan](reference/tracking-plan.md) | Living | 2026-07-03 | Event tracking inventory for landing, dashboard, editor, settings, and AI Lab surfaces. |
 
 ## Empty Buckets
 

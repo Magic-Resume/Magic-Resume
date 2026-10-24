@@ -141,7 +141,6 @@ for (const [file, css, requiredSources] of [
     'apps/web/src/app/globals.css',
     fs.readFileSync(path.join(root, 'apps/web/src/app/globals.css'), 'utf8'),
     [
-      '@source "../../../../packages/genui/src"',
       '@source "../../../../packages/resume-templates/src"',
       '@source "../../../../packages/design-system/src"',
     ],

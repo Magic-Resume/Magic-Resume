@@ -4,13 +4,10 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useReducedMotion } from 'framer-motion';
-import { FileText, Bell, Milestone, FolderOpen, ChevronLeft } from '@magic-resume/icons';
+import { FileText, ChevronLeft } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import AccountMenu from '@/components/shared/AccountMenu';
-import { useAppUser } from '@/lib/auth';
-import { isCloudMode } from '@/lib/config/app';
-import { useNotifications } from '@/hooks/useNotifications';
 import { BrandMark, BrandWordmark } from './BrandMark';
 import {
   HoverSurface,
@@ -40,19 +37,9 @@ export default function DashboardSidebar() {
   const { t } = useTranslation();
   const pathname = usePathname();
 
-  /* 导航高亮：一块共享的面在四项之间滑动。activeKey 用 href，和 bind() 那边同一套值。 */
-  const navActiveKey =
-    pathname === '/dashboard'
-      ? '/dashboard'
-      : pathname.startsWith('/dashboard/assets')
-        ? '/dashboard/assets'
-        : pathname.startsWith('/dashboard/timelines')
-          ? '/dashboard/timelines'
-          : pathname === '/dashboard/notifications'
-            ? '/dashboard/notifications'
-            : null;
+  /* 导航高亮：一块共享的面在各项之间滑动。activeKey 用 href，和 bind() 那边同一套值。 */
+  const navActiveKey = pathname === '/dashboard' ? '/dashboard' : null;
   const navSurface = useHoverSurface({ activeKey: navActiveKey });
-  const { user } = useAppUser();
   const reduce = useReducedMotion();
 
   const [mounted, setMounted] = useState(false);
@@ -83,10 +70,9 @@ export default function DashboardSidebar() {
       return next;
     });
 
-  // 编辑器与面试页都自带全屏外壳。父级 dashboard/layout 是复合的，挡不住侧栏，
+  // 编辑器自带全屏外壳。父级 dashboard/layout 是复合的，挡不住侧栏，
   // 所以由侧栏自己按路由隐身——这是这个仓库既有的做法。
-  if (pathname.includes('/edit') || pathname.includes('/interview'))
-    return null;
+  if (pathname.includes('/edit')) return null;
 
   const anim = animReady && !reduce;
   const labelStyle: React.CSSProperties | undefined = anim
@@ -95,9 +81,6 @@ export default function DashboardSidebar() {
   // i18n labels resolve client-side; keep them empty until mount so SSR and the
   // first client render agree (icons are language-independent and render on both).
   const label = (key: string) => (mounted ? t(key) : undefined);
-
-  const name = user?.fullName ?? null;
-  const email = user?.primaryEmailAddress?.emailAddress ?? null;
 
   return (
     <aside
@@ -147,61 +130,14 @@ export default function DashboardSidebar() {
             collapsed={collapsed}
             labelStyle={labelStyle}
           />
-          {/* 放在简历和时间线之间：它属于求职资产，和时间线同族，而不是账号设置那一类。 */}
-          <NavItem
-            surface={navSurface.bind('/dashboard/assets')}
-            href="/dashboard/assets"
-            label={label('sidebar.assets')}
-            active={pathname.startsWith('/dashboard/assets')}
-            icon={<FolderOpen size={18} />}
-            collapsed={collapsed}
-            labelStyle={labelStyle}
-          />
-          <NavItem
-            surface={navSurface.bind('/dashboard/timelines')}
-            href="/dashboard/timelines"
-            label={label('sidebar.knowledge')}
-            active={pathname.startsWith('/dashboard/timelines')}
-            icon={<Milestone size={18} />}
-            collapsed={collapsed}
-            labelStyle={labelStyle}
-          />
-          {isCloudMode && (
-            <NavNotifications
-              surface={navSurface.bind('/dashboard/notifications')}
-              label={label('sidebar.notifications')}
-              active={pathname === '/dashboard/notifications'}
-              collapsed={collapsed}
-              labelStyle={labelStyle}
-            />
-          )}
         </nav>
 
         <div className="flex-1" />
 
-        {/* account — the whole row is the trigger (name/email live inside the button).
-            Cloud mode resolves the user async; show a skeleton row until it lands so
-            the footer never flashes a lone, unlabelled avatar icon. */}
+        {/* settings, help and language live behind the avatar menu */}
         <div className="h-px bg-mr-surface-soft" />
         <div className="mt-3">
-          {isCloudMode && !user ? (
-            <AccountRowSkeleton collapsed={collapsed} labelStyle={labelStyle} />
-          ) : (
-            <AccountMenu
-              placement={collapsed ? 'right' : 'up'}
-              label={
-                !collapsed && (name || email) ? (
-                  <span
-                    className="block max-w-[142px] overflow-hidden pl-1 text-left opacity-100"
-                    style={labelStyle}
-                  >
-                    {name && <span className="block truncate text-mr-caption font-medium text-neutral-100">{name}</span>}
-                    {email && <span className="block truncate text-mr-label text-neutral-500">{email}</span>}
-                  </span>
-                ) : undefined
-              }
-            />
-          )}
+          <AccountMenu placement={collapsed ? 'right' : 'up'} />
         </div>
       </div>
 
@@ -215,34 +151,6 @@ export default function DashboardSidebar() {
         <ChevronLeft className={cn('h-3.5 w-3.5 transition-transform duration-300', collapsed && 'rotate-180')} />
       </button>
     </aside>
-  );
-}
-
-/** Placeholder for the account footer while the user resolves. Mirrors the real
- *  row: avatar in a fixed 36px column + name/email lines that collapse with the panel. */
-function AccountRowSkeleton({
-  collapsed,
-  labelStyle,
-}: {
-  collapsed: boolean;
-  labelStyle?: React.CSSProperties;
-}) {
-  return (
-    <div className="flex h-11 items-center rounded-xl px-2">
-      <span className="grid w-9 shrink-0 place-items-center">
-        <span className="h-8 w-8 animate-pulse rounded-full bg-mr-surface-soft ring-1 ring-mr-line-soft" />
-      </span>
-      <span
-        className={cn(
-          'overflow-hidden pl-1',
-          collapsed ? 'max-w-0 opacity-0' : 'max-w-[142px] opacity-100',
-        )}
-        style={labelStyle}
-      >
-        <span className="block h-3 w-24 animate-pulse rounded bg-mr-surface-soft" />
-        <span className="mt-1.5 block h-2.5 w-28 animate-pulse rounded bg-mr-surface-subtle" />
-      </span>
-    </div>
   );
 }
 
@@ -298,9 +206,8 @@ function NavItem({
         style={labelStyle}
       >
         {/* 文案要等挂载后才由 i18n 解析出来（见 `label()`）。这段空窗里画一条骨架，
-            而不是留空：留空得到的正是账号页脚特意避免的那个形态——一个没有标签的
-            孤零零图标，和右侧主区域的骨架屏并排时更像渲染坏了而不是在加载。
-            条子与 `AccountRowSkeleton` 同构，整条侧边栏因此说同一句话。 */}
+            而不是留空：一个没有标签的孤零零图标，和右侧主区域的骨架屏并排时更像
+            渲染坏了而不是在加载。 */}
         {label ?? (
           <span
             aria-hidden
@@ -309,34 +216,5 @@ function NavItem({
         )}
       </span>
     </Link>
-  );
-}
-
-/** Cloud-only: isolates the Clerk-backed useNotifications hook behind an isCloudMode gate. */
-function NavNotifications({
-  label,
-  active,
-  collapsed,
-  labelStyle,
-  surface,
-}: {
-  label?: string;
-  active: boolean;
-  collapsed: boolean;
-  labelStyle?: React.CSSProperties;
-  surface?: React.ComponentProps<typeof NavItem>['surface'];
-}) {
-  const { unreadCount } = useNotifications();
-  return (
-    <NavItem
-      surface={surface}
-      href="/dashboard/notifications"
-      label={label}
-      active={active}
-      icon={<Bell size={18} />}
-      collapsed={collapsed}
-      dot={unreadCount > 0}
-      labelStyle={labelStyle}
-    />
   );
 }

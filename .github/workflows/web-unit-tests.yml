@@ -24,6 +24,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Release PR automation contracts
         run: node --test .github/release-pr/ensure-release-pr.test.cjs
+      - name: Local-only boundary
+        run: node scripts/check-local-only.mjs
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:

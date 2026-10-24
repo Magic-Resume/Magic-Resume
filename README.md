@@ -5,7 +5,7 @@
 
   <h1>Magic Resume</h1>
 
-  <p><strong>The open-source AI resume workbench.</strong><br/>The AI proposes edits in place; you accept or skip each one.</p>
+  <p><strong>The open-source resume editor.</strong><br/>Runs entirely in your browser; your resumes never leave it.</p>
 
   <p>
     <a href="https://magic-resume.cn"><strong>Get Started »</strong></a>
@@ -38,59 +38,36 @@
 
 > Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams.
 
-It pairs a real-time visual editor with multi-model AI — and goes one step further with a native **MCP server** that lets AI coding tools (Claude Code, Cursor, Windsurf) read and safely patch your resumes without ever guessing the data shape.
+This repository is the MIT-licensed core: a resume editor that runs entirely in your browser. No account, no backend, no database: resumes live in your browser's IndexedDB and never leave your machine. The AI modes and cloud sync are part of the hosted product at [magic-resume.cn](https://magic-resume.cn).
 
-## Self-hosted vs Cloud
+## Open source vs magic-resume.cn
 
-Same features either way. The difference is where your data lives and who supplies the AI.
+Same editor and templates; the hosted product adds an account, AI and sync.
 
-| | Self-hosted (this repo) | Cloud (magic-resume.cn) |
+| | Open source (this repo) | magic-resume.cn |
 |---|---|---|
 | License | MIT, free forever | Free tier + paid plans |
 | Account | Not required | Required |
 | Data storage | Your browser's IndexedDB only | Encrypted cloud storage, exportable anytime |
-| Multi-device sync | Not available | On by default |
-| Version history | Local snapshots | Kept in the cloud, restorable |
-| AI | Bring your own API key | Built in, works out of the box |
-| Backend | No backend or database needed | Hosted for you |
+| Multi-device sync | No | Yes |
+| AI (optimize, analyze, translate, interview) | Not yet, see [Roadmap](#roadmap) | Built in |
+| Backend | None | Hosted for you |
 | Templates | 20, identical | 20, identical |
 
 > [!NOTE]
-> The self-hosted build runs entirely in your browser; resume data never leaves your machine. The cloud build syncs across devices by default, with encrypted transport and storage, and a full export available at any time.
+> Version 3 removed the cloud mode and the AI features from this repository: both depended on a private backend, so a self-hosted copy could never use them. See the [CHANGELOG](./CHANGELOG.md) for what changed.
 
 ---
 
 ## Features
 
-**Build — visual editing that just works**
-
-- **Real-time preview** — see every change the instant you type.
-- **20 professional templates** — ATS-friendly, with full color, font, and layout control.
-- **Deep customization** — 22+ font styles, spacing, and layout controls.
-- **Version history** — snapshot and restore any previous version.
-- **Sharing** — share via a unique link with Viewer / Commenter / Editor permissions.
-
-**Analyze — Lighthouse-style resume health**
-
-- **Overall score** — a single, honest rating of your resume's impact.
-- **Detailed breakdown** — keyword matching, actionability, and readability.
-- **Actionable fixes** — specific, targeted suggestions, not vague advice.
-
-**Optimize — tailor to any job**
-
-- **JD matching** — AI reads a job description and rewrites content to fit.
-- **Bring your own model** — OpenAI, Google Gemini, Anthropic Claude, DeepSeek, or any OpenAI-compatible API.
-
-**AI Lab — beyond editing**
-
-- **Mock interviews** — practice with AI feedback on your answers.
-- **One-click translation** — translate a resume into any language, formatting preserved.
-
-**Privacy — your data stays yours**
-
-- **Local-first** — stored in IndexedDB by default, no account needed.
-- **Optional cloud sync** — securely sync across devices only if you choose.
-- **Export anywhere** — high-quality PDF or structured JSON.
+- **Real-time preview**: the page re-renders as you type, at print fidelity.
+- **20 templates**: ATS-friendly, each with color, font, spacing and layout controls.
+- **Custom sections**: add, rename, reorder and hide sections; edit rich text with Tiptap.
+- **JSON view**: inspect the resume's raw data and download it.
+- **Import and export**: import Magic Resume JSON; export to PDF, PNG or JSON.
+- **Local-first**: everything is stored in IndexedDB. Nothing is uploaded and no analytics are sent.
+- **Light and dark themes, English and Chinese UI.**
 
 ---
 
@@ -102,28 +79,58 @@ Twenty hand-crafted, ATS-friendly templates, each fully customizable (color, fon
 
 ---
 
-## MCP Integration
-
-Magic Resume ships a native **Model Context Protocol (MCP) server** (`@magic-resume/mcp`) — a first-class integration for AI coding tools.
-
-Configure it once with a personal access token, and your AI assistant can read and patch resumes safely, without touching the raw database:
+## Quick Start
 
 ```bash
-npx -y @magic-resume/mcp config set --api-url "https://your-api.example.com/api" --pat "mr_pat_xxx"
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+git clone https://github.com/Magic-Resume/Magic-Resume.git
+cd Magic-Resume
+pnpm install
+pnpm run dev
 ```
 
-| Tool | Description |
-|---|---|
-| `list_resumes` | List all resumes in your account |
-| `get_resume` | Fetch a resume's full content |
-| `get_resume_schema` | Get the JSON schema for validation |
-| `get_resume_editing_guide` | AI-readable guide on how to edit resumes |
-| `preview_resume_patch` | Preview a JSON Patch without applying it |
-| `update_resume_content` | Apply a JSON Patch to update resume content |
+Open [http://localhost:3000](http://localhost:3000). No `.env` file is needed; `apps/web/.env.example` lists the few optional settings.
 
-> [!TIP]
-> The server is schema-aware and patch-based — AI tools make surgical edits rather than risky full rewrites.
+---
+
+## Self-Hosting
+
+The app is a single Next.js server with no external services. Pick one:
+
+**Docker**
+
+```bash
+docker build -f apps/web/Dockerfile -t magic-resume .
+docker run -p 3000:3000 magic-resume
+```
+
+**Vercel**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
+
+<details>
+<summary><strong>Environment variables (all optional)</strong></summary>
+
+<br/>
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public origin, used for `robots.txt` and page metadata. |
+| `APP_PUBLIC_URL` | — | Same as above, read at request time, so one image can serve several domains. |
+| `NEXT_PUBLIC_DOCS_URL` | — | Target of the "Help center" menu item; the item is hidden when unset. |
+
+</details>
+
+---
+
+## MCP
+
+`packages/mcp` (`@magic-resume/mcp`) is a Model Context Protocol server that lets AI tools (Claude Code, Cursor, Windsurf) read and patch resumes through schema-aware JSON Patch. It talks to a Magic Resume account over its API, so it works with magic-resume.cn; the local editor in this repository has no server for it to reach. See [docs/reference/mcp.md](./docs/reference/mcp.md).
+
+---
+
+## Roadmap
+
+A small open-source backend is planned. It will be stateless and bring-your-own-key: you supply your own model API key, and the AI features come back to the self-hosted editor on top of it.
 
 ---
 
@@ -132,86 +139,39 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
 | Layer | Technology |
 |---|---|
 | Monorepo | [Turborepo](https://turbo.build/), [pnpm](https://pnpm.io/) |
-| Framework | [Next.js 15](https://nextjs.org/) (App Router) |
+| Framework | [Next.js 16](https://nextjs.org/) (App Router, Turbopack) |
 | Language | [TypeScript](https://www.typescriptlang.org/) |
-| AI / LLM | [LangChain](https://www.langchain.com/), [LangGraph](https://www.langchain.com/langgraph), [Google GenAI](https://ai.google.dev/), [Anthropic](https://www.anthropic.com/) |
-| Auth | [Clerk](https://clerk.com/) (cloud mode only) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) |
-| UI | [Radix UI](https://www.radix-ui.com/), [Lucide](https://lucide.dev/) |
-| Animation | [Framer Motion](https://www.framer.com/motion/), [GSAP](https://gsap.com/) |
+| UI | [Radix UI](https://www.radix-ui.com/), [React Aria](https://react-spectrum.adobe.com/react-aria/) |
+| Animation | [Framer Motion](https://www.framer.com/motion/) |
 | State | [Zustand](https://zustand-demo.pmnd.rs/) |
 | Storage | [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
-| Editor | [Tiptap](https://tiptap.dev/), [Monaco](https://microsoft.github.io/monaco-editor/) |
-| MCP | [@modelcontextprotocol/sdk](https://modelcontextprotocol.io/) |
+| Editor | [Tiptap](https://tiptap.dev/) |
+| PDF | [React-PDF](https://react-pdf.org/), [PDF.js](https://mozilla.github.io/pdf.js/) |
 | Schema | [Zod](https://zod.dev/) |
 | i18n | [i18next](https://www.i18next.com/) |
 
 ---
 
-## Quick Start
-
-Magic Resume runs fully in the browser — no backend, no database, no account.
-
-```bash
-git clone https://github.com/Magic-Resume/Magic-Resume.git
-cd Magic-Resume
-cp apps/web/.env.example apps/web/.env.local   # set NEXT_PUBLIC_APP_MODE=self-hosted
-pnpm install
-pnpm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) and start building.
-
----
-
-## Self-Hosting
-
-**Self-hosted mode** needs nothing but the browser — set `NEXT_PUBLIC_APP_MODE=self-hosted` (or leave it unset) and all data persists in IndexedDB. The open-source self-hosted build sends no product analytics.
-
-**Cloud mode** (auth, cloud sync, sharing) deploys in one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
-
-> [!TIP]
-> For cloud mode, set `NEXT_PUBLIC_APP_MODE=cloud`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `CLERK_SECRET_KEY` in your Vercel dashboard.
-
-<details>
-<summary><strong>Environment variables</strong></summary>
-
-<br/>
-
-All variables live in `apps/web/.env.local` (copy from `apps/web/.env.example`). Values prefixed with `NEXT_PUBLIC_` are inlined into the browser bundle — never put secrets behind that prefix.
-
-| Variable | Required in | Default | Purpose |
-|---|---|---|---|
-| `NEXT_PUBLIC_APP_MODE` | both | auto | `self-hosted` or `cloud`. Auto-detected: `cloud` when `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is set, else `self-hosted`. |
-| `NEXT_PUBLIC_APP_URL` | both | `https://magic-resume.cn` | Canonical base URL for OG tags / SEO. Set to your origin (e.g. `http://localhost:3000` in dev). |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | cloud | — | Clerk publishable key (`pk_...`). |
-| `CLERK_SECRET_KEY` | cloud | — | Clerk secret key (`sk_...`). |
-| `NEXT_PUBLIC_API_URL` | cloud | `http://localhost:3110` | Single NestJS Core gateway for all API and AI routes. |
-
-- **`self-hosted`** — pure browser. No Clerk, no Core API; only `NEXT_PUBLIC_APP_URL` matters.
-- **`cloud`** — requires the two Clerk keys plus `NEXT_PUBLIC_API_URL`; the gateway routes API and AI paths to the appropriate Core service.
-
-</details>
-
----
-
 ## Monorepo
 
-This repository is a Turborepo + pnpm monorepo.
-
-| Package | Description |
+| Workspace | Description |
 |---|---|
-| `apps/web` | Next.js frontend — editor, dashboard, AI Lab |
-| `packages/mcp` | `@magic-resume/mcp` — stdio MCP server and CLI |
-| `packages/resume-schema` | Shared Zod schemas, types, and sample data |
-| `packages/resume-templates` | Template DSL, renderer, and registry |
+| `apps/web` | The editor (Next.js) |
+| `apps/landing` | Marketing site for magic-resume.cn (Astro) |
+| `apps/docs` | Documentation site (Mintlify) |
+| `packages/resume-schema` | Shared Zod schemas, types and sample data |
+| `packages/resume-templates` | Template DSL, renderer and registry |
+| `packages/design-system` | Design tokens and shared styles |
+| `packages/icons` | Icon set |
+| `packages/utils` | Small helpers (`cn`, time, color) |
+| `packages/mcp` | `@magic-resume/mcp`, stdio MCP server and CLI |
+| `packages/tsconfig` | Shared TypeScript configs |
 
 ```bash
 pnpm install            # install everything
 pnpm run dev            # start all workspaces
-pnpm run lint           # lint
+pnpm run lint           # lint and architecture checks
 pnpm run test           # test
 
 # target a single workspace
