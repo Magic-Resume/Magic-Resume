@@ -40,7 +40,7 @@ export type ResumeState = {
   loadResumes: () => Promise<void>;
   createResume: (name: string) => Promise<string>;
   importResume: (resume: Resume) => Promise<string>;
-  addResume: (resume: Resume) => void;
+  addResume: (resume: Resume) => Promise<void>;
   updateResume: (id: string, updates: Partial<Resume>) => void;
   duplicateResume: (id: string) => Promise<void>;
   renameResume: (id: string, newName: string) => Promise<void>;
@@ -201,28 +201,31 @@ const useResumeStore = create<ResumeState>()(
         updatedAt: Date.now(),
       };
 
-      addResume(newResume);
+      await addResume(newResume);
       return newId;
     },
 
     importResume: async (resume) => {
       const { addResume } = get();
 
-      addResume(resume);
+      await addResume(resume);
       return resume.id;
     },
 
-    addResume: (resume) => {
-      const { resumes } = get();
-      if (resumes.some((r) => r.id === resume.id)) {
-        return; // Already exists
-      }
-      const newResumes = [resume, ...resumes]; // Add to beginning
-      set({ resumes: newResumes });
-      dbClient.setItem(
+    addResume: async (resume) => {
+      // Import/new routes can be opened before the dashboard hydrates the store.
+      // Read storage before writing the list, and propagate read/write failures.
+      const saved = await dbClient.getItem<Resume[]>(RESUMES_KEY) ?? [];
+      const byId = new Map(saved.map((item) => [item.id, item]));
+      for (const item of get().resumes) byId.set(item.id, item);
+      const newResumes = byId.has(resume.id)
+        ? Array.from(byId.values())
+        : [resume, ...byId.values()];
+      await dbClient.setItem(
         RESUMES_KEY,
-        newResumes.map((r) => getSanitizedResumeForLocal(r)),
+        newResumes.map((item) => getSanitizedResumeForLocal(item)),
       );
+      set({ resumes: newResumes, isStoreLoading: false });
     },
 
     updateResume: (id, updates) => {
@@ -266,7 +269,7 @@ const useResumeStore = create<ResumeState>()(
         shareRole: undefined,
         versions: undefined,
       };
-      get().addResume(newResume);
+      await get().addResume(newResume);
       toast.success(
         i18next.t('store.notifications.resumeDuplicatedLocally', {
           name: resumeToDuplicate.name,
