@@ -8,6 +8,8 @@ import { Resume } from '@/types/frontend/resume';
 import useMobile from '@/hooks/useMobile';
 import { Tools } from '../layout/Tools';
 import { EditorDock } from '../layout/EditorDock';
+import { AiFab } from '../layout/AiFab';
+import AiThinkingOverlay from '../modals/AiThinkingOverlay';
 import { useTranslation } from 'react-i18next';
 import { PaperSkeleton } from './PaperSkeleton';
 
@@ -25,11 +27,15 @@ const PdfCanvasPreview = dynamic(
 interface ResumePreviewPanelProps {
   activeResume: Resume | null;
   onJsonClick: () => void;
+  onShowAI: () => void;
+  isAiJobRunning: boolean;
 }
 
 const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
   activeResume,
   onJsonClick,
+  onShowAI,
+  isAiJobRunning,
 }) => {
   const { isMobile } = useMobile();
   const { t } = useTranslation();
@@ -62,6 +68,7 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
             >
               <div className="relative">
                 <PdfCanvasPreview resume={activeResume} locale={resolveDocumentLanguage(activeResume)} />
+                <AiThinkingOverlay isVisible={isAiJobRunning} themeColor={activeResume.themeColor} />
               </div>
             </TransformComponent>
 
@@ -72,6 +79,7 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
                 zoomOut={zoomOut}
                 resetTransform={resetTransform}
                 resume={activeResume}
+                onShowAI={onShowAI}
               />
             ) : (
               <EditorDock
@@ -85,6 +93,7 @@ const ResumePreviewPanel: React.FC<ResumePreviewPanelProps> = ({
           </>
         )}
       </TransformWrapper>
+      {!isMobile && <AiFab onClick={onShowAI} isRunning={isAiJobRunning} />}
 
     </section>
   );

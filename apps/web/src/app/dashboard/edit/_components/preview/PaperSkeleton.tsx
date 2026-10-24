@@ -18,15 +18,15 @@ export function PaperSkeletonBars() {
   return (
     <div className="mr-motion-breathe-soft space-y-6" style={{ animationDelay }}>
       <div className="space-y-3">
-        <div className="h-7 w-52 rounded bg-neutral-200" />
-        <div className="h-3.5 w-72 rounded bg-neutral-100" />
+        <div className="h-7 w-52 rounded bg-[#e5e5e5]" />
+        <div className="h-3.5 w-72 rounded bg-[#f5f5f5]" />
       </div>
       {[0, 1, 2].map((section) => (
         <div key={section} className="space-y-2.5 pt-6">
-          <div className="h-4 w-36 rounded bg-neutral-200" />
-          <div className="h-3 w-full rounded bg-neutral-100" />
-          <div className="h-3 w-11/12 rounded bg-neutral-100" />
-          <div className="h-3 w-4/5 rounded bg-neutral-100" />
+          <div className="h-4 w-36 rounded bg-[#e5e5e5]" />
+          <div className="h-3 w-full rounded bg-[#f5f5f5]" />
+          <div className="h-3 w-11/12 rounded bg-[#f5f5f5]" />
+          <div className="h-3 w-4/5 rounded bg-[#f5f5f5]" />
         </div>
       ))}
     </div>
@@ -39,7 +39,7 @@ export function PaperSheet({ className, children }: { className?: string; childr
   return (
     <div
       className={cn(
-        "relative min-h-[1123px] w-[794px] overflow-hidden rounded-lg bg-white shadow-2xl shadow-black/50",
+        "relative min-h-[1123px] w-[794px] overflow-hidden rounded-lg bg-paper shadow-[var(--elev-3)]",
         className,
       )}
     >

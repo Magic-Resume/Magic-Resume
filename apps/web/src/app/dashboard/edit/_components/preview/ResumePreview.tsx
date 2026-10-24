@@ -1,0 +1,128 @@
+"use client";
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { InfoType, Resume, Section, CustomTemplateConfig } from '@/types/frontend/resume';
+
+// 新的Magic DSL渲染器
+import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
+import { getMagicTemplateById, getDefaultMagicTemplate } from '@magic-resume/resume-templates/config/magic-templates';
+import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+
+import { TemplateErrorBoundary } from '@/components/shared/TemplateErrorBoundary';
+import { shallowEqualArray } from '@/lib/utils/array';
+import { mergeTemplateConfig } from '@/lib/utils/templateUtils';
+import { resolveDocumentLanguage, type DocumentLanguage, type SectionOrderItem } from '@magic-resume/resume-schema';
+
+interface Props {
+  info: InfoType;
+  sections: Section;
+  sectionOrder: (string | SectionOrderItem)[];
+  documentLanguage?: DocumentLanguage;
+  templateOverride?: unknown;
+  customStyle?: React.CSSProperties;
+  templateId: string;
+  customTemplate?: CustomTemplateConfig; // 新增：自定义模板配置差异
+}
+
+function ResumePreview({ info, sections, sectionOrder, templateId, customTemplate, documentLanguage, templateOverride }: Props) {
+  const [template, setTemplate] = useState<MagicTemplateDSL | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadTemplate = async () => {
+      try {
+        setLoading(true);
+        
+        // 从模板库加载基础模板
+        let baseTemplate: MagicTemplateDSL;
+        
+        if (templateId) {
+          try {
+            baseTemplate = await getMagicTemplateById(templateId);
+          } catch {
+            console.warn(`Template ${templateId} not found, using default`);
+            baseTemplate = await getDefaultMagicTemplate();
+          }
+        } else {
+          baseTemplate = await getDefaultMagicTemplate();
+        }
+        
+        // 如果有自定义配置，合并到基础模板中
+        const finalTemplate = mergeTemplateConfig(baseTemplate, customTemplate);
+        setTemplate(finalTemplate);
+      } catch (error) {
+        console.error('Failed to load template:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTemplate();
+  }, [templateId, customTemplate]);
+
+  const resumeData = useMemo<Resume>(() => ({
+    id: 'preview',
+    name: 'Preview Resume',
+    updatedAt: Date.now(),
+    info,
+    sections,
+    documentLanguage,
+    templateOverride,
+    sectionOrder: sectionOrder.map(section => typeof section === 'string' ? { key: section, label: section } : section),
+    template: templateId,
+    themeColor: '#3b82f6',
+    typography: 'Inter'
+  }), [info, sections, sectionOrder, templateId, documentLanguage, templateOverride]);
+
+  if (loading || !template) {
+    return (
+      // 呼吸挂在容器上跑全局心跳（2.4s），而不是每根条自己 animate-pulse（2s）：
+      // 后者既与心跳不同频，各条相位还互相独立，一屏骨架看起来是在各闪各的。
+      <div className="mr-motion-breathe-soft w-full max-w-4xl mx-auto bg-[#fff] shadow-lg rounded-lg overflow-hidden">
+        {/* 简化的头部骨架 */}
+        <div className="p-8 border-b border-gray-200">
+          <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
+          <div className="h-4 bg-gray-200 rounded w-32" />
+        </div>
+
+        {/* 简化的内容骨架 */}
+        <div className="p-8 space-y-6">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="space-y-3">
+              {/* 标题骨架 */}
+              <div className="h-5 bg-gray-200 rounded w-24" />
+
+              {/* 内容块骨架 */}
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  // 模板崩了不该让整个编辑器白屏——用户刚打的字还在 store 里，只是看不见了。
+  // resetKey 用模板 id：换个模板应当重试，而不是一直卡在错误态。
+  return (
+    <TemplateErrorBoundary resetKey={template.id}>
+      <MagicResumeRenderer template={template} data={resumeData} locale={resolveDocumentLanguage(resumeData)} />
+    </TemplateErrorBoundary>
+  );
+}
+
+// 导出 memo 化的预览组件，避开非核心数据导致的重渲染。
+// info / sections / customTemplate 均来自 zustand+immer store，未变更时引用保持不变，
+// 因此按引用比较即可精确判断内容是否变化，避免每次 keystroke 全量序列化整份简历。
+export default React.memo(ResumePreview, (prevProps, nextProps) => {
+  return (
+    prevProps.documentLanguage === nextProps.documentLanguage &&
+    prevProps.templateOverride === nextProps.templateOverride &&
+    prevProps.templateId === nextProps.templateId &&
+    prevProps.info === nextProps.info &&
+    prevProps.sections === nextProps.sections &&
+    prevProps.customTemplate === nextProps.customTemplate &&
+    shallowEqualArray(prevProps.sectionOrder, nextProps.sectionOrder)
+  );
+});

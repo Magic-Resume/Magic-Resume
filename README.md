@@ -5,7 +5,7 @@
 
   <h1>Magic Resume</h1>
 
-  <p><strong>The open-source resume editor.</strong><br/>Runs entirely in your browser; your resumes never leave it.</p>
+  <p><strong>The open-source resume editor.</strong><br/>Local resume storage, with an optional AI Lab using your own model key and backend.</p>
 
   <p>
     <a href="https://magic-resume.cn"><strong>Get Started »</strong></a>
@@ -38,11 +38,11 @@
 
 > Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams.
 
-This repository is the MIT-licensed core: a resume editor that runs entirely in your browser. No account, no backend, no database: resumes live in your browser's IndexedDB and never leave your machine. The AI modes and cloud sync are part of the hosted product at [magic-resume.cn](https://magic-resume.cn).
+This repository is the MIT-licensed local editor with an optional BYOK AI Lab. Editing and export need no account or backend. Resumes and one conversation per resume stay in IndexedDB. When you use AI, your messages, relevant resume content, attachments and model key are sent through the app to your own AI backend. Cloud sync and managed AI are part of [magic-resume.cn](https://magic-resume.cn).
 
 ## Open source vs magic-resume.cn
 
-Same editor and templates; the hosted product adds an account, AI and sync.
+Same editor and templates; the hosted product manages the AI backend and adds accounts and sync.
 
 | | Open source (this repo) | magic-resume.cn |
 |---|---|---|
@@ -50,12 +50,12 @@ Same editor and templates; the hosted product adds an account, AI and sync.
 | Account | Not required | Required |
 | Data storage | Your browser's IndexedDB only | Encrypted cloud storage, exportable anytime |
 | Multi-device sync | No | Yes |
-| AI (optimize, analyze, translate, interview) | Not yet, see [Roadmap](#roadmap) | Built in |
-| Backend | None | Hosted for you |
+| AI Lab | BYOK + your own compatible backend; no interviews or memory | Managed AI, interviews and memory |
+| Backend | Optional for AI; deploy separately | Hosted for you |
 | Templates | 20, identical | 20, identical |
 
 > [!NOTE]
-> Version 3 removed the cloud mode and the AI features from this repository: both depended on a private backend, so a self-hosted copy could never use them. See the [CHANGELOG](./CHANGELOG.md) for what changed.
+> Version 3 removes accounts, cloud sync and billing. AI Lab uses BYOK through a configurable backend; this repository provides the UI and proxy, not the backend implementation. See the [CHANGELOG](./CHANGELOG.md) for what changed.
 
 ---
 
@@ -65,8 +65,8 @@ Same editor and templates; the hosted product adds an account, AI and sync.
 - **20 templates**: ATS-friendly, each with color, font, spacing and layout controls.
 - **Custom sections**: add, rename, reorder and hide sections; edit rich text with Tiptap.
 - **JSON view**: inspect the resume's raw data and download it.
-- **Import and export**: import Magic Resume JSON; export to PDF, PNG or JSON.
-- **Local-first**: everything is stored in IndexedDB. Nothing is uploaded and no analytics are sent.
+- **Import and export**: import Magic Resume JSON locally; parse PDF, Word, images and Markdown with AI. Export to PDF, PNG or JSON.
+- **Local-first**: resumes and chat history persist in IndexedDB. Only explicit AI operations send content to your configured backend. No analytics are sent.
 - **Light and dark themes, English and Chinese UI.**
 
 ---
@@ -94,7 +94,7 @@ Open [http://localhost:3000](http://localhost:3000). No `.env` file is needed; `
 
 ## Self-Hosting
 
-The app is a single Next.js server with no external services. Pick one:
+Editing needs only a Next.js server. To enable AI, set `AI_BACKEND_URL` to your compatible backend and add a key in Settings → Model. See the [backend contract](./docs/reference/ai-backend.md). Pick one:
 
 **Docker**
 
@@ -116,6 +116,7 @@ docker run -p 3000:3000 magic-resume
 |---|---|---|
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public origin, used for `robots.txt` and page metadata. |
 | `APP_PUBLIC_URL` | — | Same as above, read at request time, so one image can serve several domains. |
+| `AI_BACKEND_URL` | — | Server-only origin of your own AI backend; missing configuration returns 503 for AI requests. |
 | `NEXT_PUBLIC_DOCS_URL` | — | Target of the "Help center" menu item; the item is hidden when unset. |
 
 </details>
@@ -130,7 +131,7 @@ docker run -p 3000:3000 magic-resume
 
 ## Roadmap
 
-A small open-source backend is planned. It will be stateless and bring-your-own-key: you supply your own model API key, and the AI features come back to the self-hosted editor on top of it.
+A small open-source backend implementation is planned separately. The BYOK UI and [HTTP/SSE contract](./docs/reference/ai-backend.md) are available now; pointing at an ordinary model API alone is insufficient because the backend must implement the agent protocol.
 
 ---
 
@@ -162,6 +163,7 @@ A small open-source backend is planned. It will be stateless and bring-your-own-
 | `apps/docs` | Documentation site (Mintlify) |
 | `packages/resume-schema` | Shared Zod schemas, types and sample data |
 | `packages/resume-templates` | Template DSL, renderer and registry |
+| `packages/genui` | AI Lab components and widgets |
 | `packages/design-system` | Design tokens and shared styles |
 | `packages/icons` | Icon set |
 | `packages/utils` | Small helpers (`cn`, time, color) |

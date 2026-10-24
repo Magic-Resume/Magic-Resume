@@ -216,7 +216,7 @@
     "title": "Settings",
     "llm": {
       "title": "Model configuration",
-      "description": "Select a provider and enter your API key to enable AI. The key is stored only in this browser and is never uploaded.",
+      "description": "Use your own model API key. It is encrypted in this browser and sent to your configured backend when you use AI; the backend calls your provider.",
       "providerLabel": "API provider",
       "region": {
         "global": "Global",
@@ -328,7 +328,8 @@
     "notifications": {
       "unsavedChanges": "Unsaved changes",
       "settingsSaved": "Settings saved",
-      "changesReset": "Changes reset"
+      "changesReset": "Changes reset",
+      "saveFailed": "Could not save settings. Please try again."
     },
     "buttons": {
       "reset": "Reset",
@@ -1617,5 +1618,882 @@
   "templateError": {
     "title": "The template could not be rendered",
     "description": "Your content is unaffected. Choose another template to continue. We have been alerted."
+  },
+  "aiLab": {
+    "configGate": {
+      "title": "Configure your model",
+      "description": "Configure a model and key. If your provider quota is exhausted, check your balance or use another key. Your key is stored encrypted in this browser and sent to your configured backend when you use AI.",
+      "later": "Later",
+      "saveAndContinue": "Save and continue"
+    },
+    "draft": {
+      "ready": "A resume draft has been generated from the conversation",
+      "apply": "Apply to resume",
+      "discard": "Discard draft",
+      "applied": "Draft applied to your resume",
+      "discarded": "Draft discarded. Describe what to adjust to generate a new one."
+    },
+    "run": {
+      "stop": "Stop generation"
+    },
+    "header": {
+      "title": "Polaris",
+      "liveCanvas": "Live canvas",
+      "liveCanvasTitle": "Edit directly on the resume with AI",
+      "newChat": "New chat",
+      "quota": "Credits",
+      "quotaTitle": "View remaining credits",
+      "quotaUnavailable": "Credit balance is temporarily unavailable",
+      "untitledResume": "Untitled resume"
+    },
+    "closeConfirm": {
+      "title": "Close the AI panel?",
+      "description": "The current generation will stop. Generated content stays in the conversation, and you can continue next time.",
+      "confirm": "Stop and close"
+    },
+    "reset": {
+      "title": "Start a new chat?",
+      "descriptionRunning": "The current generation will stop, and this resume's AI chat history, analysis, and canvas state will be cleared. This cannot be undone.",
+      "descriptionIdle": "This will clear this resume's AI chat history, analysis, and canvas state, then start a new session. This cannot be undone.",
+      "confirm": "Start new chat"
+    },
+    "reasoning": {
+      "done": "View reasoning",
+      "thought": "Thought for {{duration}}"
+    },
+    "activity": {
+      "thinking": "Thinking",
+      "reading": "Reading resume…",
+      "analyzing": "Evaluating…",
+      "working": "Processing…",
+      "subagent": "Subagent processing…",
+      "writing": "Writing…",
+      "awaiting": "Awaiting your reply"
+    },
+    "greeting": {
+      "title": "What would you like to improve in your resume today?"
+    },
+    "intent": {
+      "create": "I want to build a resume from scratch. Please guide me through it.",
+      "optimize": "Optimize my resume for my target job.",
+      "translate": "Translate my resume into the target language.",
+      "analyze": "Analyze how competitive this resume is.",
+      "interview": "Mock interview",
+      "fit": "Assess how well my resume matches this job."
+    },
+    "error": {
+      "serviceUnavailable": "The AI service is temporarily unavailable. Please try again later."
+    },
+    "artifact": {
+      "emptyAnalysis": "No analysis yet. Run a resume analysis to see results.",
+      "summary": "Combined assessment from three virtual interviewers (peer / hiring manager / HRBP)",
+      "strengths": "Strengths",
+      "improvements": "Improvements",
+      "exportReport": "Export report",
+      "applied": "Applied to resume",
+      "pendingChanges": "{{count}} changes pending",
+      "discard": "Discard",
+      "applyChanges": "Apply changes",
+      "personas": {
+        "peer": "Peer expert",
+        "leader": "Hiring manager",
+        "hrbp": "HRBP"
+      },
+      "scoreBand": {
+        "outstanding": "Outstanding overall competitiveness",
+        "strong": "Strong overall competitiveness",
+        "solid": "Solid overall competitiveness",
+        "rough": "Needs further revision",
+        "draft": "Draft stage"
+      },
+      "match": {
+        "empty": "No match report yet. Paste a target job description to see how well this resume matches.",
+        "dims": {
+          "technical": "Technical",
+          "experience": "Experience",
+          "behavioral": "Culture fit",
+          "career": "Career fit"
+        },
+        "band": {
+          "strong": "Strong fit for the role",
+          "good": "Good fit for the role",
+          "moderate": "Moderate fit for the role",
+          "weak": "Weak fit for the role",
+          "poor": "Poor fit for the role"
+        },
+        "locationPass": "Location matches",
+        "locationFail": "Location mismatch",
+        "matched": "Covered keywords",
+        "missing": "Missing keywords",
+        "gaps": "Suggested improvements",
+        "useKeyword": "Add \"{{keyword}}\" to resume",
+        "useKeywordPrompt": "I have experience related to \"{{keyword}}\". Please add it to my resume. If there is no basis for it, say so directly rather than inventing details.",
+        "closeGaps": "Optimize for these gaps",
+        "closeGapsPrompt": "Optimize my resume based on the gaps and suggestions in the match report above. Use only the facts I have provided, and ask me about anything missing."
+      },
+      "close": "Close",
+      "categories": "Scores by category",
+      "suggestions": "Suggestions",
+      "fixWeaknessPrompt": "Help me improve this: {{weakness}}",
+      "category": {
+        "ImpactAndActionability": "Impact and actionability",
+        "QuantifiableAchievements": "Quantified results",
+        "ClarityAndReadability": "Clarity and readability",
+        "AiCollaboration": "AI collaboration",
+        "CredibilityAndSpecificity": "Credibility and specificity"
+      },
+      "categoryShort": {
+        "ImpactAndActionability": "Impact",
+        "QuantifiableAchievements": "Quantified",
+        "ClarityAndReadability": "Clarity",
+        "AiCollaboration": "AI collaboration",
+        "CredibilityAndSpecificity": "Credibility"
+      },
+      "scoreBandShort": {
+        "outstanding": "Outstanding",
+        "strong": "Strong",
+        "solid": "Solid",
+        "rough": "Rough",
+        "draft": "Draft"
+      },
+      "radarLabel": "Five-dimension competitiveness radar",
+      "axisBreakdown": "{{axis}}: scores from each interviewer",
+      "personaPending": "Reviewing",
+      "personaFailed": "No result this round",
+      "improvementsHint": "Click any item to have AI revise it.",
+      "verdictFallback": {
+        "outstanding_0": "This resume is highly complete and ready to send.",
+        "outstanding_1": "This resume is highly complete, with no obvious priority for revision.",
+        "strong_0": "A solid foundation. Consider making the experience descriptions more concise.",
+        "strong_1": "Ready to send. Further quantifying results would make it more persuasive.",
+        "solid_0": "The content is complete but lacks verifiable quantified results.",
+        "solid_1": "Well written, but not yet distinctive.",
+        "rough_0": "The experience is genuine but lacks verifiable detail. Start by adding detail to the most recent role.",
+        "rough_1": "There is enough content, but the focus is unclear. Lead with your most competitive role.",
+        "draft_0": "This reads like an outline. Write one role out in full, then use it as a reference for the rest.",
+        "draft_1": "Start with the role you know best and fill in the process and results."
+      }
+    },
+    "chat": {
+      "done": "Done",
+      "running": "Running…",
+      "collapse": "Collapse",
+      "view": "View",
+      "subagent": "Subagent",
+      "taskList": "Task list",
+      "working": "Working",
+      "backToChange": "Go to this change",
+      "interruptExpired": "This card belongs to a conversation that has ended. Send your request again.",
+      "approval": {
+        "defaultMessage": "Requests access to your resume to provide suggestions",
+        "allow": "Allow",
+        "deny": "Deny",
+        "denied": "Denied",
+        "read": "Resume read",
+        "reading": "Reading resume…",
+        "allowed": "Read allowed",
+        "previous": "Previous",
+        "next": "Next",
+        "send": "Confirm",
+        "goTo": "Item {{n}}"
+      },
+      "tasks": "Tasks",
+      "completed": "Completed",
+      "elapsedUnits": {
+        "hour": "h",
+        "minute": "m",
+        "second": "s",
+        "separator": " "
+      },
+      "copy": "Copy",
+      "copied": "Copied",
+      "regenerate": "Regenerate",
+      "navigation": "Message navigation",
+      "navigationUser": "You",
+      "navigationItem": "Go to {{actor}} message {{index}} of {{count}}",
+      "readingResume": "Reading resume…",
+      "writeFailed": "The resume was not changed in this turn, and the canvas is unchanged. Please try again.",
+      "syncFailed": "The preview was generated, but the changes could not be applied to the resume. Please try again."
+    },
+    "sources": {
+      "count": "{{count}} sources",
+      "toggle": "Show or hide {{count}} external sources",
+      "missing": "Source {{id}} is not available yet",
+      "unavailable": "Source unavailable",
+      "open": "Open source",
+      "prev": "Previous source",
+      "next": "Next source",
+      "position": "{{index}}/{{total}}",
+      "panel": {
+        "title": "Sources",
+        "web": "Web · {{count}}",
+        "memory": "Memory · {{count}}",
+        "memoryHint": "From Magic Resume's internal interview and resume libraries. No public link is available.",
+        "close": "Close sources",
+        "toggle": "View the sources cited in this answer"
+      }
+    },
+    "composer": {
+      "skills": "Skills",
+      "switch": "Switch",
+      "select": "Select",
+      "exit": "Exit",
+      "placeholderQuoted": "Describe how to change the selected text…",
+      "placeholderSkill": "Add optional context, then press Enter to run \"{{skill}}\"…",
+      "attachPdf": "Attach an existing resume (PDF)",
+      "attachFile": "Add files",
+      "send": "Send",
+      "clearQuote": "Remove quote",
+      "quoteAdded": "Quoted \"{{label}}\". Enter your instructions.",
+      "quoteRemoved": "Quote removed",
+      "clearMode": "Leave {{skill}} mode",
+      "voice": {
+        "start": "Voice input",
+        "stop": "Stop recording",
+        "listening": "Listening…",
+        "denied": "Microphone access was denied. Enable it in your browser and try again.",
+        "failed": "Speech recognition could not start. Please try again later."
+      }
+    },
+    "mode": {
+      "cocreate": {
+        "name": "Cowork",
+        "ready": "Cowork mode ready",
+        "loading": "Entering cowork mode",
+        "hint": "Can edit your resume. Every change requires your confirmation.",
+        "placeholder": "Describe what to change, or type / to use a skill"
+      },
+      "plan": {
+        "name": "Plan",
+        "ready": "Plan mode ready",
+        "loading": "Entering plan mode",
+        "hint": "Provides plans and suggestions only. Your resume is not changed.",
+        "placeholder": "Describe your goal to plan an approach"
+      },
+      "ask": {
+        "name": "Ask",
+        "ready": "Ask mode ready",
+        "loading": "Entering ask mode",
+        "hint": "Answers questions only. Your resume is not read or changed.",
+        "placeholder": "Ask a question. Your resume will not be read or changed."
+      }
+    },
+    "pro": {
+      "regionLabel": "Upgrade notice",
+      "title": "Upgrade to Pro",
+      "benefits": "See Pro benefits",
+      "cta": "Upgrade",
+      "dismiss": "Dismiss upgrade notice"
+    },
+    "picker": {
+      "model": "Model",
+      "auto": "Auto",
+      "autoHint": "Uses internal models when credits are available, otherwise your custom model",
+      "internalGroup": "Internal credits",
+      "customGroup": "Custom model",
+      "needCredits": "Needs credits",
+      "loadingModels": "Loading internal models…",
+      "addCustom": "Add a custom model in Settings",
+      "noModel": "Configure a model in Settings first",
+      "strengthLabel": "Reasoning effort",
+      "strengthMapped": "This model doesn't support this level; {{level}} will be used.",
+      "strength": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "xhigh": "Max"
+      },
+      "catalogStale": "This list may be out of date. Some models may be unavailable.",
+      "byokModel": "Your model · BYOK"
+    },
+    "widgets": {
+      "unsupported": "(Unable to render card: {{kind}})",
+      "form": {
+        "defaultTitle": "Provide more information",
+        "submitted": "Submitted",
+        "cancelled": "Cancelled",
+        "submit": "Submit",
+        "expired": "Expired",
+        "pending": ""
+      },
+      "field": {
+        "other": "Other",
+        "present": "Present",
+        "noMatch": "No matches. You can type a value directly.",
+        "skip": "Skip this step",
+        "optional": "Optional",
+        "year": "Year",
+        "month": "Month"
+      },
+      "gallery": {
+        "template": "Select a layout. Click to apply it."
+      },
+      "verification": {
+        "title": "Sources not found for the following",
+        "body": "The following names were introduced in this edit and do not appear in your original resume or this conversation. Verify them before sending.",
+        "degradedTitle": "This edit was not fact-checked",
+        "degradedBody": "No usable original resume was available, so the edit could not be fact-checked. Load or reopen the resume before asking AI to edit it, to avoid adding unverified information."
+      },
+      "research": {
+        "title": "Job research",
+        "sourceBadge": "Web",
+        "followUp": "Explain \"{{item}}\" in more detail and tell me how to prepare.",
+        "groups": {
+          "must_have_skills": "Must-have skills",
+          "selling_points": "Selling points",
+          "mismatch_risks": "Mismatch risks",
+          "evidence_to_add": "Evidence to add (click to expand)",
+          "recruiter_questions": "Questions for the recruiter (click to expand)",
+          "preparation_plan": "Preparation plan"
+        }
+      },
+      "companyResearch": {
+        "title": "Company research",
+        "groups": {
+          "business_context": "Business context",
+          "hiring_signals": "Hiring signals",
+          "role_implications": "Role implications",
+          "compensation_leads": "Compensation leads",
+          "risks_unknowns": "Risks and unknowns",
+          "questions_to_verify": "Questions to verify (click to expand)"
+        }
+      },
+      "interviewResearch": {
+        "title": "Interview preparation",
+        "groups": {
+          "focus_areas": "Focus areas",
+          "likely_questions": "Likely questions (click to practice)",
+          "candidate_evidence": "Candidate evidence",
+          "practice_priorities": "Practice priorities (click to expand)",
+          "follow_up_questions": "Follow-up questions (click to practice)"
+        }
+      },
+      "applicationTracker": {
+        "title": "Application tracker",
+        "emptyTitle": "No applications yet",
+        "emptyDescription": "Provide a company and role to add the first application.",
+        "source": "Source",
+        "ariaLabel": "Applications filterable by status",
+        "filters": {
+          "all": "All"
+        },
+        "columns": {
+          "company": "Company",
+          "role": "Role",
+          "date": "Date",
+          "status": "Status",
+          "source": "Link",
+          "appliedAt": "Applied",
+          "nextActionAt": "Next step",
+          "sourceUrl": "Link",
+          "location": "Location",
+          "notes": "Notes"
+        },
+        "status": {
+          "SAVED": "Saved",
+          "APPLIED": "Applied",
+          "SCREENING": "Screening",
+          "INTERVIEW": "Interview",
+          "OFFER": "Offer",
+          "ACCEPTED": "Accepted",
+          "REJECTED": "Rejected",
+          "WITHDRAWN": "Withdrawn"
+        },
+        "footer": {
+          "count": " records",
+          "applied": "{{count}} applied",
+          "links": "{{count}} links",
+          "addCalculation": "Add calculation",
+          "filled": "{{count}} filled"
+        },
+        "table": {
+          "selectAll": "Select all applications",
+          "selectRow": "Select this application",
+          "sortBy": "Sort by {{label}}",
+          "resizeColumn": "Resize {{label}} column",
+          "tableOptions": "Table options",
+          "compactColumns": "Compact columns",
+          "resetColumnWidths": "Reset column widths",
+          "clearSelection": "Clear selection",
+          "type": "Type",
+          "propertyType": "Property type",
+          "tool": "Source",
+          "userInput": "Recorded manually",
+          "pin": "Pin",
+          "unpin": "Unpin",
+          "moreSettings": "More settings",
+          "behavior": "Behavior",
+          "requiredValue": "Required value",
+          "allowEmpty": "Allow empty values",
+          "showConfidence": "Show confidence",
+          "types": {
+            "Text": "Text",
+            "Date": "Date",
+            "Single select": "Single select",
+            "Multi select": "Multi select",
+            "URL": "URL"
+          },
+          "aiComputed": "AI computed"
+        },
+        "actions": {
+          "addColumn": "Add a {{type}} column to my application board. First confirm the column name and data source with me; if the values need to be looked up, fill in every row after looking them up.",
+          "calculate": "Fill in the \"{{column}}\" column on my application board with a verified value for each application. Leave it blank if no value can be found.",
+          "hideColumn": "Remove the \"{{column}}\" column from my application board."
+        }
+      },
+      "recommendation": {
+        "alternatives": "Alternatives",
+        "others": "Other options",
+        "accept": "Accept",
+        "accepted": "Chosen",
+        "confidence": {
+          "high": "High confidence",
+          "medium": "Needs confirmation",
+          "low": "Insufficient information",
+          "none": "Not specified"
+        }
+      },
+      "interviewRoom": {
+        "title": "Mock interview ready",
+        "enter": "Enter interview",
+        "reenter": "Return to this interview",
+        "duration": "~{{count}} min",
+        "style": {
+          "standard": "Standard",
+          "pressure": "Pressure",
+          "behavioral": "Behavioral"
+        },
+        "language": {
+          "zh": "Chinese",
+          "en": "English"
+        },
+        "difficulty": {
+          "entry": "Entry",
+          "standard": "Standard",
+          "hard": "Hard"
+        }
+      },
+      "templateReplica": {
+        "title": "Replicated layout preview",
+        "apply": "Apply to resume",
+        "applied": "Applied",
+        "previewFailed": "The template preview could not be rendered. Regenerating.",
+        "diagnostics": "{{count}} issues to adjust"
+      },
+      "companyLogos": {
+        "title": "Choose company logos",
+        "submitted": "Confirmed",
+        "skipped": "Skipped",
+        "candidateCount": "{{count}} candidates",
+        "noCandidates": "No candidates",
+        "version": "Version {{index}}",
+        "custom": "Custom",
+        "imageUrl": "Image URL",
+        "urlPlaceholder": "https://…/logo.svg",
+        "selected": "{{selected}}/{{total}} selected",
+        "skip": "Skip",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "type": {
+          "symbol": "Symbol",
+          "icon": "Icon",
+          "logo": "Full logo",
+          "image": "Image"
+        }
+      },
+      "trackerFields": {
+        "question": "What should this application board track?",
+        "freeText": "Other…",
+        "answered": "Columns selected",
+        "previous": "Previous",
+        "next": "Next",
+        "send": "Confirm",
+        "goTo": "Go to question {{n}}"
+      }
+    },
+    "interview": {
+      "title": "Mock interview",
+      "prompt": "\"Could you talk about your most challenging performance optimization project?\"",
+      "microphone": "Microphone",
+      "end": "End interview",
+      "timeRemaining": "{{time}} remaining",
+      "timeUp": "Time is up. Ending the interview…",
+      "timeUpRetry": "The interview could not end automatically. Select End interview to try again.",
+      "comingSoonBadge": "Coming soon",
+      "comingSoon": "Voice mock interviews are in development. They will ask questions based on your resume and target role, follow up in real time, and produce a review summary.",
+      "starting": "Preparing the interview…",
+      "connecting": "Connecting…",
+      "listening": "Listening",
+      "thinking": "Thinking",
+      "speaking": "Interviewer speaking",
+      "micHint": "Answer by speaking, and pause briefly when you have finished.",
+      "micDenied": "Microphone access was denied. You can grant it again from the browser's address bar.",
+      "startVoice": "Start voice interview",
+      "startText": "Use text instead",
+      "finished": "Interview finished",
+      "you": "You",
+      "interviewer": "Interviewer",
+      "inputPlaceholder": "Type your answer…",
+      "send": "Send",
+      "stageLabel": "Stage",
+      "stage": {
+        "introduction": "Introduction",
+        "experience": "Experience",
+        "technical": "Technical",
+        "behavioral": "Behavioral",
+        "closing": "Closing",
+        "finished": "Finished"
+      },
+      "report": {
+        "title": "Debrief",
+        "generating": "Generating debrief…",
+        "skippedTitle": "No debrief was generated",
+        "skippedBody": "The saved interview record does not provide enough evidence for specific feedback. This result reflects this session only and is not an assessment of your ability.",
+        "transcriptTitle": "Interview transcript",
+        "archivedWithoutReportTitle": "This interview has ended",
+        "archivedWithoutReportBody": "This interview has no saved debrief. You can still review the transcript.",
+        "overall": "Interview readiness",
+        "retry": "Regenerate",
+        "strengths": "Strengths",
+        "improvements": "Areas to improve",
+        "reviews": "Question-by-question review",
+        "yourAnswer": "Your answer",
+        "better": "Suggested answer",
+        "empty": "No answers to review in this session",
+        "dropped": "{{count}} review(s) were removed because the quoted answer did not match the original.",
+        "dims": {
+          "expression": "Clarity",
+          "depth": "Technical depth",
+          "jobFit": "Role fit",
+          "structure": "Structure"
+        },
+        "band": {
+          "ready": "Ready",
+          "nearly": "Nearly there",
+          "developing": "Developing",
+          "early": "Early stage"
+        },
+        "verdict": {
+          "ready": "Well prepared for a real interview",
+          "nearly": "Nearly ready. A few specific answers still need work.",
+          "developing": "The fundamentals are solid; answering technique needs more practice.",
+          "early": "Early stage. Work through the suggestions below one by one."
+        },
+        "emptyHint": "Answer more questions to see feedback for each one here.",
+        "questionIndex": "Question {{index}}",
+        "didNotStart": {
+          "title": "This interview did not formally start",
+          "body": "The session contained only small talk, so there is nothing to review. No score was given because there were no answers to assess, not because of answer quality.",
+          "exampleLabel": "Example opening",
+          "example": "My most recent frontend role was on an internal dashboard project, where I built tables and forms with React and TypeScript and reduced first paint from 3.2s to 1.1s."
+        },
+        "actions": {
+          "again": "New interview",
+          "editResume": "Edit resume",
+          "copy": "Copy",
+          "copied": "Copied"
+        }
+      },
+      "micDeniedHint": "Microphone access is unavailable. You can type your answers instead.",
+      "composerPlaceholder": "Type your answer…",
+      "transcriptEmpty": "The interview is about to start.",
+      "startFailed": "The interview could not start. Please try again later.",
+      "turnFailed": "Your answer could not be sent. Please answer again.",
+      "finishFailed": "The interview could not be ended. Please try again.",
+      "transcriptSaveFailed": "The interview transcript has not finished saving. End the interview again.",
+      "reportFailed": "The debrief could not be generated. Please try again.",
+      "reportRateLimited": "Too many requests. Wait a moment, then regenerate the debrief.",
+      "voiceError": {
+        "connection": "The voice connection was lost. You can continue by typing.",
+        "quota": "This week's interview time has been used up. Continue by typing, or upgrade your plan.",
+        "connection_limit": "The voice connection dropped too many times and this session has no reconnect attempts left. You can continue by typing."
+      },
+      "backToDashboard": "Back to dashboard",
+      "leaveTitle": "Leaving will end this interview",
+      "leaveHint": "Your answers so far are kept, but no debrief will be generated.",
+      "leaveCancel": "Continue interview",
+      "leaveConfirm": "End and leave",
+      "prep": {
+        "session": "Preparing the mock interview…",
+        "knowledge": "Reading your resume and target role…",
+        "opening": "Generating the opening question…",
+        "connecting": "Connecting audio…",
+        "stalled": "This is taking longer than usual. Please wait."
+      },
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "unavailable": "The mock interview could not start. Please try again later.",
+      "noLaunch": "This interview was not found. Return to the dashboard to start a new one.",
+      "showTranscript": "Show transcript",
+      "hideTranscript": "Hide transcript",
+      "voiceAgent": {
+        "muted": "Microphone muted"
+      },
+      "problem": {
+        "back": "Back to workspace",
+        "retry": "Try again",
+        "reconnect": "Reconnect",
+        "continueText": "Continue by typing",
+        "reference": "Reference: {{id}}",
+        "missing": {
+          "title": "This interview is unavailable",
+          "description": "The session may have ended or the link may have expired. Return to your workspace and open it from interview history."
+        },
+        "access": {
+          "title": "This interview cannot be accessed",
+          "description": "Check that you are signed in with an account that can access this interview, then open it from your workspace."
+        },
+        "quota": {
+          "title": "Voice interview is unavailable",
+          "description": "Return to your workspace to check your plan and available interview time."
+        },
+        "busy": {
+          "title": "The interview service is busy",
+          "description": "Try again shortly, or return to your workspace to view interview history."
+        },
+        "connection": {
+          "title": "Unable to connect to the interview service",
+          "description": "Check your connection and try again, or return to your workspace."
+        },
+        "report": {
+          "title": "The debrief could not be generated yet",
+          "description": "Try again shortly. You can also review this session’s transcript before returning to your workspace."
+        },
+        "start": {
+          "title": "Your interview is not ready yet",
+          "description": "This interview could not start. Try again, or return to your workspace and reopen it."
+        },
+        "restore": {
+          "title": "This interview could not be restored",
+          "description": "The interview service is not responding. Try again shortly or reopen the interview from your workspace."
+        },
+        "loading": {
+          "title": "Preparing your interview debrief",
+          "description": "We’re organizing feedback from this session’s answers. Please wait."
+        }
+      },
+      "setup": {
+        "title": "Meet your interview partner",
+        "voice": "Interviewer voice",
+        "systemVoice": "System voice",
+        "preview": "Listen",
+        "stopPreview": "Stop",
+        "previewLabel": "Preview {{voice}} voice",
+        "stopPreviewLabel": "Stop previewing {{voice}}",
+        "previewFailed": "The preview could not play. Try again.",
+        "default": "Default",
+        "loading": "Loading voices and models…",
+        "model": "Debrief model",
+        "autoModel": "Recommended automatically",
+        "catalogDegraded": "The model catalog is temporarily unavailable. You can use automatic selection.",
+        "selectionReset": "Your previous model is unavailable. Automatic selection has been restored.",
+        "failed": "Unable to load settings. Please try again.",
+        "enter": "Create and enter interview",
+        "edit": "Adjust Voice Agent"
+      }
+    },
+    "living": {
+      "askPolarisDetail": "Ask Polaris · get suggestions",
+      "askPolaris": "Ask Polaris",
+      "selectionLabel": "Selection · {{section}}",
+      "allChanges": "All changes",
+      "changeCountShort": "{{count}} changes",
+      "inserted": "New",
+      "emptyChanges": "No changes awaiting review",
+      "discardAll": "Discard all",
+      "accept": "Accept",
+      "discard": "Discard",
+      "acceptAll": "Accept all",
+      "pendingReviewCount": "{{count}} changes to review",
+      "previous": "Previous change",
+      "next": "Next change",
+      "addSectionContent": "Add content",
+      "reorder": "Reorder",
+      "acceptedChangesLog": "Accepted {{count}} changes",
+      "documentChanged": "Resume settings have changed. Please generate a new proposal.",
+      "sectionTitles": "Section headings and order",
+      "autoDetect": "Auto-detect"
+    },
+    "attach": {
+      "parsing": "Parsing PDF…",
+      "parsed": "Parsing complete. The draft is shown on the right.",
+      "failed": "PDF parsing failed",
+      "warningsTitle": "Some content could not be recognized with confidence",
+      "warningsBody": "The following parts of the PDF were recognized with low confidence. Review them before applying the draft.",
+      "parsingShort": "Uploading",
+      "remove": "Remove {{name}}",
+      "reject": {
+        "unsupported": "The file format of \"{{name}}\" is not supported.",
+        "too-large": "\"{{name}}\" is too large. Upload a smaller file.",
+        "too-many": "Up to {{max}} files can be uploaded at a time",
+        "duplicate": "\"{{name}}\" is already attached"
+      }
+    },
+    "tools": {
+      "count": "{{count}} tool calls",
+      "read": "Read",
+      "write": "Write",
+      "edit": "Edit",
+      "analyze": "Analyze",
+      "evaluate": "Evaluate",
+      "search": "Search",
+      "summary": {
+        "sections": "Read {{count}} sections",
+        "results": "{{count}} results"
+      },
+      "track": "Track",
+      "fallback": "Process",
+      "searchingWeb": "Searching the web",
+      "searchingSites": "Searching {{count}} sites",
+      "interview": "Interview",
+      "design": "Replicate layout",
+      "browse": "Browse",
+      "plan": "Plan",
+      "delegate": "Delegate",
+      "run": "Run",
+      "logo": "Fetch logo",
+      "verify": "Verify",
+      "show": "Show",
+      "explain": "Explain changes",
+      "ask": "Ask",
+      "searchedSites": "Searched {{count}} sites"
+    },
+    "canvas": {
+      "action": {
+        "quantify": "Quantify",
+        "concise": "Condense",
+        "verb": "Strengthen verbs",
+        "evidence": "Add evidence",
+        "rewrite": "Rewrite",
+        "tone": "Adjust tone",
+        "shorten": "Shorten",
+        "polish": "Polish this section",
+        "translate": "Translate"
+      }
+    },
+    "trajectory": {
+      "title": "Trajectory",
+      "run": "Run trajectory",
+      "conversation": "Conversation",
+      "turns": "{{count}} turns",
+      "steps": "{{count}} steps",
+      "calls": "{{count}} calls",
+      "turn": "Turn {{count}}",
+      "lanes": {
+        "input": "Input",
+        "model": "Model",
+        "tools": "Tools"
+      },
+      "actor": {
+        "user": "User",
+        "assistant": "Polaris",
+        "tool": "Tool"
+      },
+      "search": "Search trajectory",
+      "empty": "No trajectory has been recorded for this conversation",
+      "emptyHint": "Send another message to record model and tool calls in their actual order."
+    },
+    "history": {
+      "toggle": "Conversation history",
+      "untitled": "Untitled conversation",
+      "delete": "Delete",
+      "confirmDelete": "Delete this conversation?",
+      "loadFailed": "The conversation could not be opened. Please try again later.",
+      "checkpointMissing": "The run context has expired. You can start a new chat from the visible messages; previous tool state and attachments will not be restored.",
+      "continueVisible": "Start a new chat from visible messages",
+      "regenerateUnavailable": "This reply cannot be regenerated because its run record, attachments, or session state is unavailable. Start a new chat.",
+      "restoreFailed": "History could not be loaded, so a new conversation was started. Your history is intact and can be reopened later.",
+      "switchWhileBusy": "This reply is not finished. Switching now will interrupt generation.",
+      "switchAnyway": "Switch anyway",
+      "group": {
+        "today": "Today",
+        "week": "Last 7 days",
+        "earlier": "Earlier"
+      },
+      "search": "Search conversations",
+      "searchEmpty": "No matching conversations",
+      "empty": "No conversations for this resume yet"
+    },
+    "assets": {
+      "title": "Assets",
+      "searchPlaceholder": "Search titles",
+      "ariaList": "Asset list",
+      "types": {
+        "all": "All",
+        "JD_RESEARCH": "Job research",
+        "COMPANY_PROFILE": "Company profile",
+        "TEMPLATE": "Template",
+        "COVER_LETTER": "Cover letter",
+        "BOARD": "Applications",
+        "INTERVIEW": "Interviews"
+      },
+      "meta": "{{resume}} · {{time}} · v{{version}}",
+      "expiresIn": "Expires in {{count}} days",
+      "expiresTomorrow": "Expires tomorrow",
+      "expiresToday": "Expires today",
+      "keep": "Keep",
+      "kept": "Kept",
+      "keepFailed": "The asset could not be kept. Please try again later.",
+      "use": "Use to improve resume",
+      "copy": "Copy",
+      "copied": "Copied",
+      "archive": "Archive",
+      "archiveConfirm": "Archive this asset? Its content will no longer be kept.",
+      "archived": "Archived",
+      "emptyTitle": "No assets yet",
+      "filteredEmpty": "No assets match this filter",
+      "clearFilter": "Clear filter",
+      "loadFailed": "Assets could not be loaded",
+      "retry": "Retry",
+      "previewExpired": "This asset has expired",
+      "previewArchived": "Archived content is no longer kept",
+      "previewMissing": "This asset does not exist",
+      "previewUnsupported": "Preview is not available for this type of content",
+      "nearLimit": "Assets are nearing the limit ({{count}}/500). Consider archiving assets you no longer need.",
+      "usePrompt": "Use the asset \"{{title}}\" to improve this resume.",
+      "seeAll": "See all {{count}}",
+      "count": "{{count}} items",
+      "boardTitle": "Application board",
+      "interviewFallback": "Mock interview",
+      "interviewScore": "Score {{score}}",
+      "openInterview": "View interview report",
+      "interviewContent": "Interview content",
+      "interviewTranscript": "Conversation",
+      "interviewLoading": "Loading interview content",
+      "interviewLoadFailed": "Could not load this interview",
+      "interviewTranscriptEmpty": "No conversation was recorded for this interview",
+      "collapse": "Show less",
+      "showMore": "Show {{count}} more",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete this asset?",
+      "deleteConfirmBody": "The record will be permanently deleted and cannot be recovered. To hide it instead, use Archive.",
+      "deleteInterviewConfirmTitle": "Delete this interview?",
+      "deleteInterviewConfirmBody": "The transcript and debrief will both be deleted and cannot be recovered.",
+      "discussBoard": "Discuss this board with AI",
+      "clearBoard": "Clear board",
+      "clearBoardConfirmTitle": "Clear the application board?",
+      "clearBoardConfirmBody": "This deletes {{count}} applications and any custom columns, and cannot be undone. The board itself is kept for future applications."
+    },
+    "search": {
+      "empty": "No relevant web pages found",
+      "unavailable": "Search is temporarily unavailable",
+      "quota": "Today's search quota has been used up.",
+      "failed": "Search failed",
+      "deepDone": "Researched {{count}} sites",
+      "partial": "(partial results)",
+      "toggle": "Show or hide this search's sources",
+      "queryQuoted": "\"{{query}}\""
+    },
+    "backendNotConfigured": "The AI backend is not configured. Ask the deployment owner to set AI_BACKEND_URL.",
+    "welcomePrompts": [
+      "Tailor my resume to this job description",
+      "Analyze how competitive my resume is",
+      "Translate my resume into English",
+      "Create a resume from scratch",
+      "Improve my projects with measurable results",
+      "Find the main issues in my resume",
+      "Translate my resume into Japanese"
+    ],
+    "sessionSaveFailed": "The conversation could not be saved locally. Check your browser storage."
   }
 }

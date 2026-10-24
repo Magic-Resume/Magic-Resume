@@ -31,7 +31,7 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`.
 
 | Workspace | Package name | Purpose |
 |---|---|---|
-| `apps/web` | `@magic-resume/web` | Next.js 16 App Router editor (local-only) |
+| `apps/web` | `@magic-resume/web` | Next.js 16 local-first editor and BYOK AI Lab |
 | `apps/landing` | `@magic-resume/landing` | Marketing site for magic-resume.cn (Astro, Vercel) |
 | `apps/docs` | — | Docs site (Mintlify) |
 | `packages/design-system` | `@magic-resume/design-system` | Design tokens and shared styles |
@@ -46,9 +46,9 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`.
 
 ## Architecture
 
-### Local-only (`apps/web`)
+### Local storage and BYOK AI (`apps/web`)
 
-Since v3 the app runs entirely in the browser: no login, no backend, no billing, no AI. Resumes persist in IndexedDB. The cloud mode, Clerk, the Core API client and the AI features were removed because they depended on a private backend; a small open-source backend is planned, and AI will come back on top of it.
+Resume editing and export run locally without an account or backend. Resumes and a single conversation per resume persist in IndexedDB, without an expiry. AI Lab retains chat, skills, approvals, plans, tools, sources and GenUI cards, using only the user's model key. All AI requests go through Next.js routes to the separately deployed `AI_BACKEND_URL`. The backend implementation is not included; implement the contract in `docs/reference/ai-backend.md`. There is no cloud sync, billing, memory, interview or conversation-history browser.
 
 `pnpm check:local-only` (`scripts/check-local-only.mjs`, part of `pnpm lint` and CI) fails on markers of that code: `@clerk/`, `/api/billing`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_MODE`, `commercial`, and so on.
 
@@ -59,6 +59,8 @@ Since v3 the app runs entirely in the browser: no login, no backend, no billing,
 Zustand + Immer stores in `src/store/`:
 
 - **`useResumeStore`**: primary resume state, persisted to IndexedDB. `store/resume/*` are typed projections of it; see `store/resume/README.md`.
+- **`useSettingStore`**: BYOK provider, encrypted API key, model, URL, token limit and reasoning strength.
+- **`useAiSessionStore`**: one local conversation per resume, no expiry or cloud restore.
 - **`useSettingsUiStore`**: whether the settings modal is open. Theme and language persist on their own (`ThemeProvider`, `i18n.ts`).
 
 IndexedDB persistence is handled by `src/lib/api/IndexDBClient.ts` (db name: `MagicResumeDB`).
@@ -95,7 +97,7 @@ The MCP server (`src/server.ts`) exposes tools via `@modelcontextprotocol/sdk`. 
 
 ## Environment variables
 
-None are required. `apps/web/.env.example` lists the optional ones: `NEXT_PUBLIC_APP_URL` / `APP_PUBLIC_URL` (public origin for robots and metadata) and `NEXT_PUBLIC_DOCS_URL` (help menu link).
+None are required for editing. AI requires server-only `AI_BACKEND_URL` and a BYOK configuration in Settings → Model. `apps/web/.env.example` also lists `NEXT_PUBLIC_APP_URL` / `APP_PUBLIC_URL` (public origin for robots and metadata) and `NEXT_PUBLIC_DOCS_URL` (help menu link).
 
 ## Commit messages
 
@@ -105,7 +107,7 @@ Format: `<emoji> <type>(<scope>?): <subject>` — e.g. `:sparkles: feat(web): ad
 
 ## Guardrails
 
-- Keep `apps/web` local-only. Do not add accounts, a backend client, cloud sync, billing or a deployment-mode switch unless explicitly requested.
+- Keep resume storage local and AI BYOK-only. Route backend calls through `lib/ai/backend.ts`. Do not add accounts, cloud sync, billing, memory, interviews or a deployment-mode switch unless explicitly requested.
 - MCP tools must remain schema-aware and patch-based. The `@magic-resume/mcp` package must not import from Next.js, React components, browser APIs, or IndexedDB.
 - When adding shared schema or type changes, prefer `packages/resume-schema` over duplicating shapes in `apps/web`.
 - Keep template IDs aligned: any new `templateId` added to `packages/resume-schema` must have a corresponding entry in `packages/resume-templates/src/registry.ts`, and a thumbnail at `apps/web/public/templates/jpg/{id}.jpg`.

@@ -9,6 +9,7 @@ COPY patches ./patches
 COPY apps/web/package.json apps/web/package.json
 COPY packages/design-system/package.json packages/design-system/package.json
 COPY packages/icons/package.json packages/icons/package.json
+COPY packages/genui/package.json packages/genui/package.json
 COPY packages/mcp/package.json packages/mcp/package.json
 COPY packages/resume-schema/package.json packages/resume-schema/package.json
 COPY packages/resume-templates/package.json packages/resume-templates/package.json

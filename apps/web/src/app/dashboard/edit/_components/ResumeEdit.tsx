@@ -70,6 +70,7 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
 
   const { saveResume: saveActiveResumeToResumes } = useResumePersistenceStore();
   const {
+    isAiGenerating,
     rightCollapsed,
     setRightCollapsed,
     leftCollapsed,
@@ -92,6 +93,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
   const [currentTemplateId, setCurrentTemplateId] = useState(activeResume?.template || 'classic');
   const resumeNotFound = useResumeMissing(id);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const openAiLab = () => router.push(`/dashboard/edit/${id}/ai-lab`);
 
   const openJsonModal = () => router.push(`/dashboard/edit/${id}/json`);
 
@@ -434,6 +437,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
         handleSave={handleSave}
         onSelectTemplate={handleSelectTemplate}
         currentTemplateId={currentTemplateId}
+        onShowAI={openAiLab}
+        isAiJobRunning={isAiGenerating}
       />
     );
   }
@@ -477,6 +482,8 @@ export default function ResumeEdit({ id }: ResumeEditProps) {
           <ResumePreviewPanel
             activeResume={activeResume}
             onJsonClick={openJsonModal}
+            onShowAI={openAiLab}
+            isAiJobRunning={isAiGenerating}
           />
         </div>
       </main>

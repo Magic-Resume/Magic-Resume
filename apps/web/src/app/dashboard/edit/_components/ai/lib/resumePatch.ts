@@ -1,0 +1,368 @@
+import fastJsonPatch, { type Operation } from 'fast-json-patch';
+import type { Resume, Section } from '@/types/frontend/resume';
+import { pathOf } from './editableCanvas';
+import type { BatchKind, TargetedSelectionDiff } from './diffResume';
+import { parsePath } from './changeModel';
+
+const { applyPatch } = fastJsonPatch;
+
+type ResolvedResumePatch = {
+  resume: Resume;
+  targetedSelection?: TargetedSelectionDiff;
+};
+
+export type ResumePatchBatchContext = {
+  kind?: BatchKind;
+  lang?: string;
+  targetedSelection?: TargetedSelectionDiff;
+} | null;
+
+export type ResolvedResumePatchBatch = {
+  kind: BatchKind;
+  lang?: string;
+  proposedSections: Section;
+  proposedDocument: Resume;
+  targetedSelection?: TargetedSelectionDiff;
+};
+
+type TextPatchTarget = {
+  sectionKey: string;
+  itemId: string;
+  fieldKey: string;
+};
+
+const NON_TEXT_TARGET_FIELDS = new Set([
+  'id',
+  'visible',
+  'icon',
+  'customSectionKey',
+]);
+
+export function resolveResumePatchEvent(
+  current: Resume,
+  rawPayload: unknown,
+  targetedSelection?: TargetedSelectionDiff,
+): ResolvedResumePatch | null {
+  const payload = asRecord(rawPayload);
+  if (!payload) return null;
+
+  const jsonPatch = getJsonPatch(payload);
+  if (jsonPatch) return resolveJsonPatch(current, jsonPatch);
+
+  const oldString =
+    getString(payload, 'oldString') ?? getString(payload, 'old_string');
+  const newString =
+    getString(payload, 'newString') ?? getString(payload, 'new_string');
+  if (oldString == null || newString == null) return null;
+
+  const direct = resolveTextPatch(
+    current,
+    oldString,
+    newString,
+    targetedSelection,
+  );
+  if (direct) return direct;
+  // edit_file operates on serialized JSON; fields in the browser are decoded.
+  try {
+    const before: unknown = JSON.parse(oldString);
+    const after: unknown = JSON.parse(newString);
+    if (typeof before === 'string' && typeof after === 'string') {
+      return resolveTextPatch(current, before, after, targetedSelection);
+    }
+  } catch {
+    // Plain text patches are already decoded and keep the exact-match boundary.
+  }
+  const before = decodeProperty(oldString);
+  const after = decodeProperty(newString);
+  if (
+    !before ||
+    !after ||
+    before.key !== after.key ||
+    NON_TEXT_TARGET_FIELDS.has(before.key)
+  )
+    return null;
+  return resolveTextPatch(
+    current,
+    before.value,
+    after.value,
+    targetedSelection,
+    before.key,
+  );
+}
+
+function decodeProperty(
+  fragment: string,
+): { key: string; value: string } | null {
+  try {
+    const record = asRecord(
+      JSON.parse(`{${fragment.trim().replace(/,$/, '')}}`),
+    );
+    if (!record || Object.keys(record).length !== 1) return null;
+    const [key] = Object.keys(record);
+    return typeof record[key] === 'string' ? { key, value: record[key] } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** One stream projects consecutive edits onto its latest candidate, not its base. */
+export class ResumePatchProjection {
+  private candidate: Resume;
+
+  constructor(base: Resume) {
+    this.candidate = base;
+  }
+
+  accept(
+    rawPayload: unknown,
+    context?: ResumePatchBatchContext,
+  ): ResolvedResumePatchBatch | null {
+    const resolved = resolveResumePatchBatch(
+      this.candidate,
+      rawPayload,
+      context,
+    );
+    if (!resolved) return null;
+    this.candidate = resolved.proposedDocument;
+    // Only a user's selection scopes the review. A matched patch substring is
+    // transport data; restricting the diff to it hides preceding edits.
+    return { ...resolved, targetedSelection: context?.targetedSelection };
+  }
+
+  reconcile(resume: Resume): void {
+    this.candidate = resume;
+  }
+}
+
+export function resolveResumePatchBatch(
+  current: Resume,
+  rawPayload: unknown,
+  context?: ResumePatchBatchContext,
+): ResolvedResumePatchBatch | null {
+  const resolved = resolveResumePatchEvent(
+    current,
+    rawPayload,
+    context?.targetedSelection,
+  );
+  if (!resolved?.resume.sections) return null;
+
+  return {
+    kind: context?.kind ?? 'optimize',
+    lang: context?.lang,
+    proposedSections: resolved.resume.sections,
+    proposedDocument: resolved.resume,
+    targetedSelection: resolved.targetedSelection ?? context?.targetedSelection,
+  };
+}
+
+function resolveJsonPatch(
+  current: Resume,
+  patch: Operation[],
+): ResolvedResumePatch | null {
+  try {
+    const cloned = cloneResume(current);
+    const { newDocument } = applyPatch(cloned, patch, true, true);
+    return {
+      resume: newDocument as Resume,
+      targetedSelection: targetedSelectionFromJsonPatch(current, patch),
+    };
+  } catch (error) {
+    console.warn('[ai] failed to apply resume_patch JSON Patch', error);
+    return null;
+  }
+}
+
+function resolveTextPatch(
+  current: Resume,
+  oldString: string,
+  newString: string,
+  targetedSelection?: TargetedSelectionDiff,
+  fieldKey?: string,
+): ResolvedResumePatch | null {
+  if (!oldString) return null;
+
+  if (targetedSelection) {
+    const explicitTarget = targetFromSelectionPath(targetedSelection.path);
+    if (explicitTarget && (!fieldKey || explicitTarget.fieldKey === fieldKey)) {
+      const resolved = replaceTextAtTarget(
+        current,
+        explicitTarget,
+        oldString,
+        newString,
+      );
+      if (resolved) {
+        return {
+          resume: resolved.resume,
+          targetedSelection: {
+            path: targetedSelection.path,
+            selectionText: resolved.selectionText,
+          },
+        };
+      }
+    }
+    // A selection is an explicit boundary. Never move its edit to another item.
+    return null;
+  }
+
+  const fallbackTarget = findTextTarget(current.sections, oldString, fieldKey);
+  if (!fallbackTarget) return null;
+
+  const resolved = replaceTextAtTarget(
+    current,
+    fallbackTarget,
+    oldString,
+    newString,
+  );
+  if (!resolved) return null;
+
+  return {
+    resume: resolved.resume,
+    targetedSelection: {
+      path: pathOf(fallbackTarget),
+      selectionText: resolved.selectionText,
+    },
+  };
+}
+
+function replaceTextAtTarget(
+  current: Resume,
+  target: TextPatchTarget,
+  oldString: string,
+  newString: string,
+): { resume: Resume; selectionText: string } | null {
+  if (NON_TEXT_TARGET_FIELDS.has(target.fieldKey)) return null;
+  const items = current.sections[target.sectionKey];
+  if (!Array.isArray(items)) return null;
+  const index = items.findIndex((item) => String(item.id) === target.itemId);
+  if (index < 0) return null;
+
+  const value = items[index]?.[target.fieldKey];
+  if (typeof value !== 'string') return null;
+
+  const needle = oldString;
+  const matchIndex = value.indexOf(needle);
+  if (matchIndex < 0 || matchIndex !== value.lastIndexOf(needle)) return null;
+
+  const resume = cloneResume(current);
+  // Replace the first occurrence by index rather than value.replace(needle, …): a
+  // plain-string needle only replaces the first match anyway, but String.replace also
+  // interprets '$' sequences in newString (e.g. a salary like "$1,000" or "$&") as
+  // replacement patterns and mangles the output. Slicing keeps newString literal.
+  resume.sections[target.sectionKey][index][target.fieldKey] =
+    value.slice(0, matchIndex) +
+    newString +
+    value.slice(matchIndex + needle.length);
+  return { resume, selectionText: needle };
+}
+
+function targetFromSelectionPath(path: string): TextPatchTarget | null {
+  const parsed = parsePath(path);
+  if (!parsed || parsed.sectionKey === 'info') return null;
+  return {
+    sectionKey: parsed.sectionKey,
+    itemId: parsed.itemId,
+    fieldKey: parsed.fieldKey,
+  };
+}
+
+function findTextTarget(
+  sections: Section,
+  needle: string,
+  propertyKey?: string,
+): TextPatchTarget | null {
+  let matched: TextPatchTarget | null = null;
+  for (const [sectionKey, items] of Object.entries(sections)) {
+    if (!Array.isArray(items)) continue;
+    for (const item of items) {
+      if (!item?.id) continue;
+      for (const [fieldKey, value] of Object.entries(item)) {
+        if (propertyKey && (propertyKey !== fieldKey || value !== needle))
+          continue;
+        if (
+          NON_TEXT_TARGET_FIELDS.has(fieldKey) ||
+          typeof value !== 'string' ||
+          !value.includes(needle)
+        )
+          continue;
+        if (matched || value.indexOf(needle) !== value.lastIndexOf(needle))
+          return null;
+        matched = { sectionKey, itemId: String(item.id), fieldKey };
+      }
+    }
+  }
+  return matched;
+}
+
+function targetedSelectionFromJsonPatch(
+  current: Resume,
+  patch: Operation[],
+): TargetedSelectionDiff | undefined {
+  if (patch.length !== 1) return undefined;
+  const [op] = patch;
+  if (op.op !== 'replace' || typeof op.value !== 'string') return undefined;
+
+  const target = targetFromJsonPointer(current, op.path);
+  if (!target) return undefined;
+
+  const items = current.sections[target.sectionKey];
+  const item = items.find((entry) => String(entry.id) === target.itemId);
+  const before = item?.[target.fieldKey];
+  if (typeof before !== 'string' || !before.trim()) return undefined;
+
+  return {
+    path: pathOf(target),
+    selectionText: before,
+  };
+}
+
+function targetFromJsonPointer(
+  current: Resume,
+  pointer: string,
+): TextPatchTarget | null {
+  const segments = pointer
+    .split('/')
+    .slice(1)
+    .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+
+  if (segments.length !== 4 || segments[0] !== 'sections') return null;
+  const [, sectionKey, indexToken, fieldKey] = segments;
+  const index = Number(indexToken);
+  if (!Number.isInteger(index)) return null;
+
+  const item = current.sections[sectionKey]?.[index];
+  if (!item?.id) return null;
+
+  return { sectionKey, itemId: String(item.id), fieldKey };
+}
+
+function getJsonPatch(payload: Record<string, unknown>): Operation[] | null {
+  const candidate = payload.patch ?? payload.operations ?? payload.jsonPatch;
+  if (!Array.isArray(candidate)) return null;
+  if (!candidate.every(isJsonPatchOperation)) return null;
+  return candidate as Operation[];
+}
+
+function isJsonPatchOperation(value: unknown): value is Operation {
+  const record = asRecord(value);
+  return Boolean(
+    record && typeof record.op === 'string' && typeof record.path === 'string',
+  );
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function getString(
+  payload: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const value = payload[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function cloneResume(resume: Resume): Resume {
+  return JSON.parse(JSON.stringify(resume)) as Resume;
+}

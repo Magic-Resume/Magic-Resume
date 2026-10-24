@@ -264,7 +264,7 @@ function PdfCanvasPage({
 
   return (
     <figure
-      className="shrink-0 overflow-hidden rounded-lg bg-white shadow-2xl shadow-black/50"
+      className="shrink-0 overflow-hidden rounded-lg bg-paper shadow-[var(--elev-3)]"
       style={pageSize ?? { width: DEFAULT_PAGE_WIDTH, height: DEFAULT_PAGE_HEIGHT }}
     >
       <canvas ref={canvasRef} aria-label={`Resume PDF page ${pageNumber}`} />

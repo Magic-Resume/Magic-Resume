@@ -1,57 +1,252 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Loader2, X, FileJson } from '@magic-resume/icons';
+import { MODEL_IMAGE_SUPPORT_MAP } from '@/lib/constants/modals';
+import { Loader2, X, FileText, FileJson, AlertTriangle } from '@magic-resume/icons';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Resume } from '@/types/frontend/resume';
 import { useResumeDocumentStore } from '@/store/resume/document';
+import { useSettingsUiStore } from '@/store/useSettingsUiStore';
 import { toast } from 'sonner';
 import { FaFileUpload } from '@magic-resume/icons';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';
 import { getFileSizeBucket } from '@/lib/utils/fileSize';
+import { agentErrorMessage } from '@/lib/utils/agentErrorMessage';
 import {
   formatResumeImportError,
   validateAndNormalizeImportedResume,
 } from '@/lib/validation/importResume';
+import { streamPdfParse } from '@/app/dashboard/edit/_components/ai/lib/services/agentClient';
+import { resolveAiAccessConfig } from '@/app/dashboard/edit/_components/ai/lib/services/aiAccess';
+import {
+  getCompletePdfSectionSet,
+  PdfScanProgress,
+  PDF_SCAN_TIMING,
+  type PdfPhase,
+} from './PdfScanProgress';
+
+/**
+ * 每一种格式单列一项，而不是合成「简历文件（PDF / Word / 图片 / Markdown）」。
+ *
+ * 合起来读着简洁，代价是**支持哪些格式变成了要读完一整行小字才知道的事**——而"原来
+ * Word 也能导"恰恰是最该被看见的信息。四项分开，一眼扫过去就知道自己那份能不能进。
+ *
+ * `'pdf'` 之外的三个值都是新增的：它们同时是埋点的 source 维度，只增不改，既有指标
+ * 不会从中间断掉。
+ */
+type FileType = 'json' | 'pdf' | 'image' | 'docx' | 'markdown' | null;
+
+/** 拖放区那枚小徽章上的扩展名提示。 */
+const ACCEPT_EXT_HINT: Record<string, string> = {
+  json: '.json',
+  pdf: '.pdf',
+  image: '.png · .jpg · .webp',
+  docx: '.docx',
+  markdown: '.md · .txt',
+};
+
+/** 走 LLM 解析的格式（与 json 相对——那条是直接读结构化数据，不花 AI 额度）。 */
+const AI_TYPES = ['pdf', 'image', 'docx', 'markdown'] as const;
+
+/** 每种格式接受的 MIME → 扩展名。后端按 mimetype 自己分发，这里只管把闸门开对。 */
+const ACCEPT_BY_TYPE: Record<string, Record<string, string[]>> = {
+  json: { 'application/json': ['.json'] },
+  pdf: { 'application/pdf': ['.pdf'] },
+  image: {
+    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/webp': ['.webp'],
+  },
+  docx: {
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  },
+  markdown: { 'text/markdown': ['.md'], 'text/plain': ['.txt'] },
+};
 
 type ImportResumeDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-/** Imports a resume exported as Magic Resume JSON. Read in the browser; nothing is uploaded. */
 export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeDialogProps) {
   const { importResume } = useResumeDocumentStore();
+  const openSettings = useSettingsUiStore((s) => s.openSettings);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [llmConfigMissing, setLlmConfigMissing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<string>('');
+  const [fileType, setFileType] = useState<FileType>(null);
+  // PDF streaming progress: current phase, running char count, and the set of
+  // sections lit up so far. Decorative — the imported result still comes from the
+  // final `resume_update` + validation.
+  const [pdfPhase, setPdfPhase] = useState<PdfPhase>(null);
+  const [pdfCharCount, setPdfCharCount] = useState(0);
+  const [pdfLitFields, setPdfLitFields] = useState<Set<string>>(new Set());
+  const [pdfComplete, setPdfComplete] = useState(false);
+  // >0 when the PDF had no readable text and is being read as page images.
+  const [pdfVisionPages, setPdfVisionPages] = useState(0);
+  const pdfAbortRef = useRef<AbortController | null>(null);
   const { t, i18n } = useTranslation();
+  const resetPdfProgress = useCallback(() => {
+    setPdfPhase(null);
+    setPdfCharCount(0);
+    setPdfLitFields(new Set());
+    setPdfComplete(false);
+    setPdfVisionPages(0);
+  }, []);
 
   const handleClose = useCallback((open: boolean) => {
-    if (!open) setUploadError(null);
+    if (!open) {
+      // Cancel any in-flight parse so the backend stops generating (no orphaned
+      // token burn) when the user closes mid-import.
+      pdfAbortRef.current?.abort();
+      pdfAbortRef.current = null;
+      setFileType(null);
+      setUploadError(null);
+      setLlmConfigMissing(false);
+      setImportStatus('');
+      resetPdfProgress();
+    }
     onOpenChange(open);
-  }, [onOpenChange]);
+  }, [onOpenChange, resetPdfProgress]);
 
-  const readJsonFile = useCallback(async (file: File) => {
+  const handleSelectType = useCallback((value: string) => {
+    const type = value as FileType;
+    setUploadError(null);
+    setFileType(type);
+    setLlmConfigMissing(false);
+  }, []);
+
+  // ─── JSON 文件处理 ───
+  const handleJsonFile = useCallback(async (file: File) => {
     const reader = new FileReader();
-    const content = await new Promise<string>((resolve, reject) => {
+
+    const readFile = () => new Promise<string>((resolve, reject) => {
       reader.onabort = () => reject(new Error(t('importDialog.errors.fileReadAborted')));
       reader.onerror = () => reject(new Error(t('importDialog.errors.fileReadFailed')));
       reader.onload = () => resolve(reader.result as string);
       reader.readAsText(file);
     });
-    return validateAndNormalizeImportedResume(JSON.parse(content));
+
+    const content = await readFile();
+    const result = JSON.parse(content);
+    return validateAndNormalizeImportedResume(result);
   }, [t]);
 
+  // ─── PDF 文件处理（流式解析 + 逐板块点亮）───
+  const handlePdfFile = useCallback(async (file: File) => {
+    const access = resolveAiAccessConfig();
+    if (!access.ok) {
+      setLlmConfigMissing(true);
+      throw new Error(t('importDialog.errors.noApiKey'));
+    }
+    // 图片只能交给看得见的模型。文本模型不会因为收到图片而报错——它会**默默忽略**
+    // 然后凭空编一份简历，用户拿到的是一份看着像模像样、但和上传内容毫无关系的
+    // 数据。挡在上传前而不是等结果，因为那个结果无法被自动识别为错误。
+    //
+    // 判定放在前端：MODEL_IMAGE_SUPPORT_MAP 就在这一侧，后端再维护一份必然漂移。
+    if (file.type.startsWith('image/')) {
+      const model = access.config.modelName;
+      if (model && MODEL_IMAGE_SUPPORT_MAP[model] === false) {
+        throw new Error(t('importDialog.errors.modelNoVision', { model }));
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('config', JSON.stringify(access.config));
+
+    const controller = new AbortController();
+    pdfAbortRef.current = controller;
+
+    resetPdfProgress();
+    setPdfPhase('extracting');
+
+    let resume: unknown = null;
+
+    for await (const ev of streamPdfParse(formData, controller.signal)) {
+      if (ev.type === 'tool_result') {
+        const payload = ev.payload as
+          | {
+              kind?: string;
+              phase?: PdfPhase;
+              charCount?: number;
+              fields?: string[];
+              mode?: string;
+              pageCount?: number;
+            }
+          | undefined;
+        if (payload?.kind !== 'pdf_progress') continue;
+        if (payload.phase) setPdfPhase(payload.phase);
+        // The scan path reads page images instead of text, which takes long
+        // enough that not saying so reads as a hang.
+        if (payload.mode === 'vision' && payload.pageCount) {
+          setPdfVisionPages(payload.pageCount);
+        }
+        if (typeof payload.charCount === 'number') setPdfCharCount(payload.charCount);
+        if (payload.fields?.length) {
+          setPdfLitFields((prev) => {
+            const next = new Set(prev);
+            for (const f of payload.fields!) next.add(f);
+            return next;
+          });
+        }
+      } else if (ev.type === 'resume_update') {
+        // Final product: prefer `data`, fall back to the chat-shaped `payload.resume`.
+        resume = ev.data ?? (ev.payload as { resume?: unknown } | undefined)?.resume ?? null;
+      } else if (ev.type === 'error' || ev.type === 'run_failed') {
+        // `ev.error` is a machine code — it was going straight into the toast,
+        // so a failed parse read "agent_run_failed".
+        throw new Error(
+          agentErrorMessage(ev, t, t('importDialog.errors.parseFailed')),
+        );
+      }
+    }
+
+    if (!resume) {
+      throw new Error(t('importDialog.errors.parseFailed'));
+    }
+
+    // Completion beat: light every section, run the finishing sweep, and hold on
+    // "解析完成" briefly so the user sees the parse land before the dialog closes.
+    setPdfLitFields(getCompletePdfSectionSet());
+    setPdfComplete(true);
+    await new Promise((r) => setTimeout(r, PDF_SCAN_TIMING.completionHoldMs));
+
+    return validateAndNormalizeImportedResume(resume);
+  }, [t, resetPdfProgress]);
+
+  // ─── 统一文件处理 ───
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setUploadError(null);
+    setImportStatus('');
     const file = acceptedFiles[acceptedFiles.length - 1];
     if (!file) return;
+    if (!fileType) return;
     setIsImporting(true);
 
     try {
-      const result = await readJsonFile(file);
+      const result = fileType !== 'json'
+        ? await handlePdfFile(file)
+        : await handleJsonFile(file);
+
+      // 解析器对拿不准的地方会给 parse_warnings。它此前既没展示给用户,又跟着 spread
+      // 一路写进了简历记录——那是解析元数据,不是简历内容。取出来、从落库对象里摘掉。
       const rest = { ...(result as Record<string, unknown>) };
+      const warnings = Array.isArray(rest.parse_warnings)
+        ? (rest.parse_warnings as unknown[]).filter(
+            (w): w is string => typeof w === 'string' && Boolean(w.trim()),
+          )
+        : [];
+      delete rest.parse_warnings;
 
       const resumeName = result.info?.fullName
         ? (i18n.language.startsWith('zh') ? `${result.info.fullName}的简历` : `${result.info.fullName}'s Resume`)
@@ -62,19 +257,31 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
         id: Date.now().toString(),
         name: resumeName,
         updatedAt: Date.now(),
-        template: (rest.template as string) || 'classic',
-        themeColor: (rest.themeColor as string) || '#f97316',
-        typography: (rest.typography as string) || 'inter',
-        customTemplate: (rest.customTemplate as Resume['customTemplate']) || {},
+        template: ((result as Record<string, unknown>).template as string) || 'classic',
+        themeColor: ((result as Record<string, unknown>).themeColor as string) || '#f97316',
+        typography: ((result as Record<string, unknown>).typography as string) || 'inter',
+        customTemplate: ((result as Record<string, unknown>).customTemplate as Resume['customTemplate']) || {},
       } as Resume;
 
       await importResume(newResume);
       appLifecycle.resumeImportCompleted({
-        source: 'json',
+        source: fileType,
         sizeBucket: getFileSizeBucket(file.size),
       });
 
-      toast.success(t('importDialog.success'));
+      toast.success(
+        fileType !== 'json'
+          ? t('importDialog.pdf.success')
+          : t('importDialog.success')
+      );
+      // 解析器自己说不确定的地方,用户有权知道——不设自动消失,不然等于没说。
+      if (warnings.length) {
+        toast.warning(t('importDialog.pdf.warningsTitle'), {
+          description: warnings.join('\n'),
+          duration: Infinity,
+          closeButton: true,
+        });
+      }
       handleClose(false);
     } catch (e) {
       const message = formatResumeImportError(e, t('importDialog.errors.parseFailed'));
@@ -82,15 +289,21 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
       setUploadError(message);
     } finally {
       setIsImporting(false);
+      setImportStatus('');
+      pdfAbortRef.current = null;
     }
-  }, [importResume, handleClose, t, readJsonFile, i18n.language]);
+  }, [fileType, importResume, handleClose, t, handleJsonFile, handlePdfFile, i18n.language]);
+
+  const dropzoneAccept: Record<string, string[]> = ACCEPT_BY_TYPE[fileType ?? 'json'] ?? {};
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'application/json': ['.json'] },
+    accept: dropzoneAccept,
     multiple: false,
-    disabled: isImporting,
+    disabled: isImporting || fileType === null,
   });
+
+  const showUploadZone = fileType !== null && !llmConfigMissing;
 
   return (
     <AnimatePresence>
@@ -126,41 +339,136 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
 
               <p className="text-sm text-neutral-400 mb-6">{t('importDialog.description')}</p>
 
-              {/* 上传区域 */}
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300
-                  ${isDragActive ? 'border-sky-500 bg-sky-500/10 shadow-[0_0_20px_rgba(14,165,233,0.15)]' : 'border-neutral-700 bg-neutral-900/50 hover:border-sky-600 hover:bg-neutral-800/50'}
-                  ${isImporting ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
-                `}
-              >
-                <input {...getInputProps()} />
-                {isImporting ? (
-                  <div className="flex flex-col items-center justify-center text-sky-500">
-                    <Loader2 className="w-10 h-10 mb-3 animate-spin" />
-                    <p className="font-medium text-sm">{t('importDialog.importing')}</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-14 h-14 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-500 mb-3">
-                      <FaFileUpload size={24} />
-                    </div>
-                    {isDragActive ? (
-                      <p className="text-sky-400 font-medium text-sm">{t('importDialog.dropzone.active')}</p>
-                    ) : (
-                      <p className="text-neutral-300 font-medium text-sm">{t('importDialog.dropzone.default')}</p>
-                    )}
-                    <span className="inline-flex items-center gap-1 text-xs text-neutral-500 bg-neutral-800/60 px-2.5 py-1 rounded-full mt-2.5">
-                      <FileJson size={11} />
-                      {'.json'}
-                    </span>
-                  </div>
-                )}
+              {/* 类型选择 */}
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  {t('importDialog.typeLabel', { defaultValue: '文件类型' })}
+                </label>
+                <Select
+                  value={fileType ?? ''}
+                  onValueChange={handleSelectType}
+                  disabled={isImporting}
+                >
+                  <SelectTrigger className="w-full bg-neutral-900 border-neutral-700 text-neutral-200 hover:border-neutral-600 focus:border-sky-500 focus:ring-sky-500/20 h-10 rounded-xl">
+                    <SelectValue placeholder={t('importDialog.typePlaceholder', { defaultValue: '选择文件类型…' })} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-neutral-900 border-neutral-700 rounded-xl z-200">
+                    <SelectItem
+                      value="json"
+                      className="text-neutral-200 focus:bg-neutral-800 focus:text-white rounded-lg cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <FileJson size={15} className="text-sky-400 shrink-0" />
+                        {'Magic Resume JSON'}
+                      </span>
+                    </SelectItem>
+                    {AI_TYPES.map((type) => (
+                      <SelectItem
+                        key={type}
+                        value={type}
+                        className="text-neutral-200 focus:bg-neutral-800 focus:text-white rounded-lg cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText size={15} className="text-sky-400 shrink-0" />
+                          {t(`importDialog.types.${type}`)}
+                          {/* 每一项都标 AI：这四种都要花模型额度去解析，而 JSON 不用。
+                              标在每一行而不是标一次，是因为用户是逐项扫的，
+                              不会去推断"上面那个标签是不是也管我这一行"。 */}
+                          <span className="inline-flex items-center text-mr-micro font-semibold text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-full leading-none">
+                            {'AI'}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {uploadError && (
-                <p className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">{uploadError}</p>
-              )}
+              {/* API Key 未配置警告 */}
+              <AnimatePresence>
+                {llmConfigMissing && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden mb-5"
+                  >
+                    <div className="flex items-start gap-2 text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+                      <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                      <span>
+                        {t('importDialog.errors.noApiKey')}{' '}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleClose(false);
+                            openSettings('model');
+                          }}
+                          className="underline underline-offset-2 hover:text-amber-300 font-medium"
+                        >
+                          {t('importDialog.errors.noApiKeyLink')}
+                        </button>
+                        {' '}{t('importDialog.errors.noApiKeySuffix')}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 上传区域 */}
+              <AnimatePresence>
+                {showUploadZone && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300
+                        ${isDragActive ? 'border-sky-500 bg-sky-500/10 shadow-[0_0_20px_rgba(14,165,233,0.15)]' : 'border-neutral-700 bg-neutral-900/50 hover:border-sky-600 hover:bg-neutral-800/50'}
+                        ${isImporting ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
+                      `}
+                    >
+                      <input {...getInputProps()} />
+                      {isImporting && fileType !== 'json' ? (
+                        <PdfScanProgress
+                          phase={pdfPhase}
+                          charCount={pdfCharCount}
+                          litFields={pdfLitFields}
+                          complete={pdfComplete}
+                          visionPages={pdfVisionPages}
+                        />
+                      ) : isImporting ? (
+                        <div className="flex flex-col items-center justify-center text-sky-500">
+                          <Loader2 className="w-10 h-10 mb-3 animate-spin" />
+                          <p className="font-medium text-sm">{importStatus || t('importDialog.importing')}</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-14 h-14 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-500 mb-3">
+                            <FaFileUpload size={24} />
+                          </div>
+                          {isDragActive ? (
+                            <p className="text-sky-400 font-medium text-sm">{t('importDialog.dropzone.active')}</p>
+                          ) : (
+                            <p className="text-neutral-300 font-medium text-sm">{t('importDialog.dropzone.default')}</p>
+                          )}
+                          <span className="inline-flex items-center gap-1 text-xs text-neutral-500 bg-neutral-800/60 px-2.5 py-1 rounded-full mt-2.5">
+                            {fileType === 'json' ? <FileJson size={11} /> : <FileText size={11} />}
+                            {ACCEPT_EXT_HINT[fileType ?? 'json']}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {uploadError && (
+                      <p className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">{uploadError}</p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="mt-6 flex justify-end">
                 <Button

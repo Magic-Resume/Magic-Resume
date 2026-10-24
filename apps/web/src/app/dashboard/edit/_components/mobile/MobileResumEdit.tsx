@@ -28,6 +28,8 @@ interface MobileResumEditProps {
     handleCopyJson: () => void;
     renderSections: () => React.ReactNode;
     handleSave: () => void;
+    onShowAI: () => void;
+    isAiJobRunning: boolean;
     onSelectTemplate: (templateId: string) => void;
     currentTemplateId: string;
 }
@@ -44,6 +46,8 @@ export default function MobileResumEdit({
     handleCopyJson,
     renderSections,
     handleSave,
+    onShowAI,
+    isAiJobRunning,
     onSelectTemplate,
     currentTemplateId
 }: MobileResumEditProps) {
@@ -53,6 +57,8 @@ export default function MobileResumEdit({
         <div className='flex-1 flex items-center justify-center bg-desk relative'>
             <ResumePreviewPanel
                 activeResume={activeResume}
+                onShowAI={onShowAI}
+                isAiJobRunning={isAiJobRunning}
                 onJsonClick={openJsonModal}
             />
         </div>

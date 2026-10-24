@@ -3,6 +3,8 @@ import type { ResumeState } from '@/store/useResumeStore';
 
 export type ResumeDocumentStore = Pick<
   ResumeState,
+  | 'applyFullResume'
+  | 'applyWorkspaceResolution'
   | 'resumes'
   | 'activeResume'
   | 'isStoreLoading'
@@ -30,6 +32,8 @@ export type ResumeDocumentStore = Pick<
 
 export const useResumeDocumentStore =
   createResumeDomainStore<ResumeDocumentStore>((state) => ({
+    applyFullResume: state.applyFullResume,
+    applyWorkspaceResolution: state.applyWorkspaceResolution,
     resumes: state.resumes,
     activeResume: state.activeResume,
     isStoreLoading: state.isStoreLoading,

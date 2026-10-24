@@ -136,6 +136,7 @@ export function SliderField({
       <LabelRow label={label} value={display} />
       <input
         type="range"
+        aria-label={label}
         min={min}
         max={max}
         step={step}
@@ -143,7 +144,7 @@ export function SliderField({
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="range-sky"
         style={{
-          background: `linear-gradient(to right, #38bdf8 ${pct}%, rgba(255,255,255,0.08) ${pct}%)`,
+          background: `linear-gradient(to right, var(--fill-sky) ${pct}%, var(--border-hairline) ${pct}%)`,
         }}
       />
     </div>

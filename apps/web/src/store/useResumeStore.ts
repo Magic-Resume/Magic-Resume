@@ -1,4 +1,4 @@
-import { normalizeDocumentLanguage } from '@magic-resume/resume-schema';
+import { normalizeDocumentLanguage, resolveDocumentLanguage } from '@magic-resume/resume-schema';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import i18next from 'i18next';
@@ -27,6 +27,13 @@ export type ResumeState = {
   resumes: Resume[];
   activeResume: Resume | null;
   isStoreLoading: boolean;
+  isAiGenerating: boolean;
+  setIsAiGenerating: (generating: boolean) => void;
+  applyFullResume: (resume: Resume) => void;
+  applyWorkspaceResolution: (
+    document: Pick<Resume, 'info' | 'sections' | 'sectionOrder' | 'documentLanguage' | 'documentLanguageSource'>,
+    revision: number,
+  ) => void;
   rightCollapsed: boolean;
   leftCollapsed: boolean;
   activeSection: string;
@@ -129,6 +136,25 @@ const useResumeStore = create<ResumeState>()(
     resumes: [],
     activeResume: null,
     isStoreLoading: true,
+    isAiGenerating: false,
+    setIsAiGenerating: (isAiGenerating) => set({ isAiGenerating }),
+    applyFullResume: (resume) => {
+      const active = get().activeResume;
+      if (!active) return;
+      get().updateResume(active.id, {
+        info: resume.info,
+        sections: resume.sections,
+        sectionOrder: normalizeResumeSectionOrder(resume.sectionOrder, resume.sections),
+        documentLanguage: resume.documentLanguage ?? active.documentLanguage ?? resolveDocumentLanguage(resume),
+        documentLanguageSource: resume.documentLanguageSource ?? active.documentLanguageSource,
+      });
+    },
+    // Approved agent changes become ordinary local edits and persist to IndexedDB.
+    applyWorkspaceResolution: (document) => {
+      const active = get().activeResume;
+      if (!active) return;
+      get().applyFullResume({ ...active, ...document });
+    },
     rightCollapsed: false,
     leftCollapsed: false,
     activeSection: 'basics',

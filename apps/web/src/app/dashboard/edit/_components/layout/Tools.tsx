@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Resume } from '@/types/frontend/resume';
 import { DownloadIcon } from '@magic-resume/icons';
-import { ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume/icons';
+import { Bot, ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useState } from "react";
 import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
@@ -14,6 +14,7 @@ export type ToolsProps = {
   zoomOut: (step?: number) => void;
   resetTransform: (step?: number) => void;
   resume: Resume;
+  onShowAI: () => void;
   rightCollapsed?: boolean;
 };
 
@@ -45,7 +46,7 @@ function ToolButton({ title, children, onClick, onFocus, onPointerEnter, disable
   );
 }
 
-export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, rightCollapsed = false }: ToolsProps){
+export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, onShowAI, rightCollapsed = false }: ToolsProps){
   const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -84,6 +85,7 @@ export function Tools({ isMobile, zoomIn, zoomOut, resetTransform, resume, right
         )}
       >
         <>
+          <ToolButton title={t('tools.aiAssistant')} onClick={onShowAI}><Bot size={18} /></ToolButton>
           <ToolButton
             onClick={() => setExportOpen(true)}
             disabled={isExporting}

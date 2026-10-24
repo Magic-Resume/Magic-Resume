@@ -21,7 +21,7 @@ export const switchTrackVariants = cva(
 );
 
 export const switchThumbVariants = cva(
-  'pointer-events-none block rounded-full bg-white shadow-mr-control transition-transform duration-200 motion-reduce:transition-none',
+  'pointer-events-none block rounded-full bg-mr-control-thumb shadow-mr-control transition-transform duration-200 motion-reduce:transition-none',
   {
     variants: {
       size: {
