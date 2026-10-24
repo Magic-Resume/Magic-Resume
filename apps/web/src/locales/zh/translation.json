@@ -1,7 +1,7 @@
 {
   "account": {
     "menu": {
-      "title": "账户",
+      "title": "设置与帮助",
       "upgrade": "升级到 Pro",
       "upgradeHint": "解锁全部 AI 能力",
       "upgradeSoon": "即将推出",
@@ -1211,15 +1211,6 @@
     "empty": {
       "title": "暂无简历"
     }
-  },
-  "sidebar": {
-    "resumes": "简历",
-    "notifications": "通知中心",
-    "knowledge": "校招时间线",
-    "settings": "设置",
-    "open": "打开侧边栏",
-    "close": "关闭侧边栏",
-    "assets": "资产库"
   },
   "importDialog": {
     "title": "导入简历",

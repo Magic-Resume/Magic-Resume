@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { Settings, User as UserIcon } from '@magic-resume/icons';
+import { Settings } from '@magic-resume/icons';
 import { useTranslation } from "react-i18next";
 import { useSettingsUiStore } from "@/store/useSettingsUiStore";
 import { setPreferredLanguage } from "@/i18n";
@@ -17,8 +17,11 @@ import {
   type HoverSurfaceBinding,
 } from '@/components/ui/hover-surface';
 interface AccountMenuProps {
-  /** `up` → opens above (sidebar footer); `right` → opens to the right (editor rail). */
-  placement?: "up" | "right";
+  /**
+   * `down` → opens below, right-aligned (dashboard top bar); `up` → opens above;
+   * `right` → opens to the right (editor rail).
+   */
+  placement?: "down" | "up" | "right";
   /** Optional content (e.g. name / email) rendered inside the trigger, right of the
    *  avatar — makes the whole block the hit target. Omit for an avatar-only trigger. */
   label?: React.ReactNode;
@@ -28,9 +31,10 @@ const PANEL_WIDTH = 280;
 const GAP = 8;
 
 /**
- * Avatar dropdown: settings, help and the language switch. The panel is
- * portaled to <body> with fixed positioning so `overflow-hidden` ancestors
- * (the 256px sidebar, the 52px editor rail) can't clip it.
+ * Settings dropdown: settings, help and the language switch. There are no
+ * accounts in the local-only app, so the trigger is a gear rather than an
+ * avatar. The panel is portaled to <body> with fixed positioning so
+ * `overflow-hidden` ancestors (the 52px editor rail) can't clip it.
  */
 export default function AccountMenu({ placement = "up", label }: AccountMenuProps) {
   /* 菜单行共用一块滑动的底。 */
@@ -41,7 +45,7 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
 
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState<{ left: number; bottom: number }>({ left: 0, bottom: 0 });
+  const [coords, setCoords] = useState<React.CSSProperties>({ left: 0, bottom: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -49,12 +53,15 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
     const el = triggerRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const left =
-      placement === "right"
-        ? r.right + GAP
-        : Math.max(8, Math.min(r.left, window.innerWidth - PANEL_WIDTH - 8));
-    const bottom = placement === "right" ? window.innerHeight - r.bottom : window.innerHeight - r.top + GAP;
-    setCoords({ left, bottom });
+    const clampLeft = (left: number) =>
+      Math.max(8, Math.min(left, window.innerWidth - PANEL_WIDTH - 8));
+    if (placement === "down") {
+      setCoords({ left: clampLeft(r.right - PANEL_WIDTH), top: r.bottom + GAP });
+    } else if (placement === "right") {
+      setCoords({ left: r.right + GAP, bottom: window.innerHeight - r.bottom });
+    } else {
+      setCoords({ left: clampLeft(r.left), bottom: window.innerHeight - r.top + GAP });
+    }
   }, [placement]);
 
   useEffect(() => {
@@ -93,6 +100,8 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
   if (!mounted) return null;
 
   const currentLang = i18n.language.startsWith("en") ? "en" : "zh";
+  // Drops down from the top bar, rises from anything below it.
+  const offsetY = reduce ? 0 : placement === "down" ? -6 : 6;
 
   const run = (fn: () => void) => {
     fn();
@@ -112,25 +121,24 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
       onBlur={rowSurface.containerProps.onBlur}
       role="menu"
       aria-hidden={!open}
-      initial={{ opacity: 0, scale: reduce ? 1 : 0.96, y: reduce ? 0 : 6, visibility: "hidden" }}
+      initial={{ opacity: 0, scale: reduce ? 1 : 0.96, y: offsetY, visibility: "hidden" }}
       animate={
         open
           ? { opacity: 1, scale: 1, y: 0, visibility: "visible" }
           : {
               opacity: 0,
               scale: reduce ? 1 : 0.96,
-              y: reduce ? 0 : 6,
+              y: offsetY,
               transitionEnd: { visibility: "hidden" },
             }
       }
       transition={reduce ? { duration: 0.01 } : { duration: 0.14, ease: EASE_ENTER }}
       style={{
         position: "fixed",
-        left: coords.left,
-        bottom: coords.bottom,
+        ...coords,
         width: PANEL_WIDTH,
         zIndex: 9999,
-        transformOrigin: "bottom left",
+        transformOrigin: placement === "down" ? "top right" : "bottom left",
         pointerEvents: open ? "auto" : "none",
       }}
       className="rounded-2xl border border-mr-line-soft bg-desk/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl will-change-transform"
@@ -201,8 +209,13 @@ export default function AccountMenu({ placement = "up", label }: AccountMenuProp
               open ? "ring-sky-400/40" : "ring-white/10 group-hover/acct:ring-white/20",
             )}
           >
-            <span className="flex h-full w-full items-center justify-center bg-neutral-800 text-neutral-400">
-              <UserIcon size={16} />
+            <span
+              className={cn(
+                "flex h-full w-full items-center justify-center bg-neutral-800 transition-colors",
+                open ? "text-neutral-100" : "text-neutral-400 group-hover/acct:text-neutral-200",
+              )}
+            >
+              <Settings size={16} />
             </span>
           </span>
         </span>
