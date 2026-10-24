@@ -2784,6 +2784,15 @@ export default function AiChatShell({
     sessionIdRef.current = nextSession.sessionId;
     sessionUsedRef.current = false;
     historyViewOnlyRef.current = false;
+    pendingRunRef.current = null;
+    pendingInterruptRef.current = null;
+    activeSkillRef.current = null;
+    setConfigGateOpen(false);
+    setQuoted(null);
+    setComposerSeed(null);
+    setBatchRequest(null);
+    setFocusRequest(null);
+    setSourcesMessageId(null);
     quoteCountRef.current = 0;
     setAwaitingReply(false);
     setDraftReady(null);
@@ -2798,20 +2807,10 @@ export default function AiChatShell({
     controllerRef.current = null;
   }, [resetAiSession, resumeId, setIsAiJobRunning]);
 
-  /**
-   * 「新对话」。
-   *
-   * 上云后旧对话进历史、随时能翻回来，所以**空闲时直接开新的，不再问**——那句
-   * 「当前对话会丢失」曾经是真的，现在只是在拦一个没有代价的动作。
-   * 仍在跑时才问：那会中断生成，是真的要拍板。
-   */
+  // There is no history archive: replacing the one local session always needs consent.
   const requestResetSession = useCallback(() => {
-    if (running) {
-      setResetConfirmOpen(true);
-      return;
-    }
-    resetSession();
-  }, [running, resetSession]);
+    setResetConfirmOpen(true);
+  }, []);
 
   const stopRun = useCallback(() => {
     controllerRef.current?.abort();
@@ -2958,7 +2957,7 @@ export default function AiChatShell({
         onUploadAttachment={uploadAttachment}
         mode={agentMode}
         onModeChange={setAgentMode}
-        key={composerSeed ? `seed-${composerSeed.nonce}` : "composer"}
+        key={`${aiSession?.sessionId ?? "loading"}:${composerSeed?.nonce ?? "composer"}`}
         initialValue={composerSeed?.text}
       />
     </>
@@ -3069,7 +3068,7 @@ export default function AiChatShell({
             resetSession();
           }}
           title={t("aiLab.reset.title")}
-          description={t("aiLab.reset.descriptionRunning")}
+          description={t(running ? "aiLab.reset.descriptionRunning" : "aiLab.reset.descriptionIdle")}
           confirmText={t("aiLab.reset.confirm")}
           cancelText={t("common.cancel")}
           variant="danger"
