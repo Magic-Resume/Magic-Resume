@@ -21,8 +21,12 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 4000
-      AGENT_MODEL_TIMEOUT_MS: 120000
+      AGENT_IDLE_TIMEOUT_MS: 120000
+      AGENT_RUN_TIMEOUT_MS: 900000
+      AGENT_DATA_DIR: /app/data
       AGENT_BODY_LIMIT_BYTES: 2097152
+    volumes:
+      - agent-data:/app/data
     healthcheck:
       test:
         - CMD
@@ -33,3 +37,6 @@ services:
       timeout: 3s
       retries: 5
     restart: unless-stopped
+
+volumes:
+  agent-data:
