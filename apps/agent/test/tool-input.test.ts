@@ -113,3 +113,28 @@ test('ToolInput restores string-wrapped calls from model parsing failures and pr
   );
   assert.match(JSON.stringify(refused), /incomplete or invalid JSON/);
 });
+test('ToolInput copies messages by field, so repeated passes never nest serialized kwargs', () => {
+  const message = new AIMessage({
+    id: 'example-ai',
+    content: 'Calling a tool.',
+    additional_kwargs: { reasoning_content: 'Think.' },
+    tool_calls: [
+      {
+        id: 'call-1',
+        name: 'example_tool',
+        args: { value: 'x'.repeat(40_000) },
+      },
+    ],
+  });
+  const recovered = recoverToolCalls(message);
+  const [compacted] = compactInputs([
+    recovered,
+    new ToolMessage({ content: 'done', tool_call_id: 'call-1' }),
+  ]);
+  for (const copy of [recovered, compacted]) {
+    assert.doesNotMatch(JSON.stringify(copy), /lc_kwargs|lc_namespace/);
+    assert.equal(copy.id, 'example-ai');
+    assert.equal(copy.content, 'Calling a tool.');
+    assert.deepEqual(copy.additional_kwargs, { reasoning_content: 'Think.' });
+  }
+});

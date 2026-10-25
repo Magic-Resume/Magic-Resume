@@ -44,14 +44,27 @@ export function compactInputs(messages: BaseMessage[]): BaseMessage[] {
           }
         : call,
     );
-    // OpenAI adapters may prefer the wire representation in additional_kwargs.
-    const kwargs = { ...message.additional_kwargs };
-    delete kwargs.tool_calls;
-    return new AIMessage({
-      ...message,
-      additional_kwargs: kwargs,
-      tool_calls: calls,
-    });
+    return withToolCalls(message, calls);
+  });
+}
+/** Copy by field: spreading a message instance nests its `lc_kwargs` into the copy on every pass. */
+function withToolCalls(
+  message: AIMessage,
+  tool_calls: NonNullable<AIMessage['tool_calls']>,
+  invalid_tool_calls = message.invalid_tool_calls,
+): AIMessage {
+  // OpenAI adapters may prefer the wire representation in additional_kwargs.
+  const additional_kwargs = { ...message.additional_kwargs };
+  delete additional_kwargs.tool_calls;
+  return new AIMessage({
+    id: message.id,
+    name: message.name,
+    content: message.content,
+    additional_kwargs,
+    response_metadata: message.response_metadata,
+    usage_metadata: message.usage_metadata,
+    tool_calls,
+    invalid_tool_calls,
   });
 }
 interface InputSchema {
@@ -117,14 +130,7 @@ export function recoverToolCalls(
       type: 'tool_call' as const,
     };
   });
-  const kwargs = { ...message.additional_kwargs };
-  delete kwargs.tool_calls;
-  return new AIMessage({
-    ...message,
-    additional_kwargs: kwargs,
-    tool_calls: calls,
-    invalid_tool_calls: [],
-  });
+  return withToolCalls(message, calls, []);
 }
 export function createToolInput() {
   return createMiddleware({
