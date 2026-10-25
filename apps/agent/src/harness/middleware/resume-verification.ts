@@ -5,6 +5,13 @@ import { RESUME_PATH, toolPath } from '../workspace/files.js';
 import { proposedContent } from './resume-json.js';
 import { contentText } from './common.js';
 export const NAME = 'ResumeVerification';
+// Tool results that carry the user's own material: form and choice answers, and
+// attachments the user handed over. Facts found there are not new.
+const EVIDENCE_TOOLS = new Set([
+  'request_form',
+  'ask_choice',
+  'read_attachment',
+]);
 const factKeys =
   /company|employer|organization|school|institution|issuer|certificate|date|degree/i;
 function collect(
@@ -73,7 +80,7 @@ export function createResumeVerification(baseline: unknown) {
           (message) =>
             message.getType() === 'human' ||
             (message.getType() === 'tool' &&
-              ['request_form', 'ask_choice'].includes(message.name ?? '')),
+              EVIDENCE_TOOLS.has(message.name ?? '')),
         )
         .map((message) => contentText(message.content))
         .join('\n');
