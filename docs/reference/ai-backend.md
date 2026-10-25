@@ -133,7 +133,7 @@ Additional event families supported by the retained UI:
 
 Use the discriminated event types in `ai/lib/services/types.ts` and consumers in `AiChatShell.tsx` as the payload reference. For example, a final snapshot is `{ type: "resume_update", payload: { resume, final: true, mutation: { kind: "snapshot", authoritative: true, final: true, resume } } }`. A JSON patch-style event is a proposal, not permission to replace an entire document. Do not emit interview or memory flows into this edition.
 
-Before opening a stream, return an appropriate HTTP error with `{ errorCode, subCode?, params?, requestId?, retryable? }`. After opening it, send an `error` event with the same fields in `payload`. The frontend projects HTTP agent errors to this stable vocabulary and localizes them. Use provider quota/configuration errors to return the user to BYOK configuration; do not send subscription links or billing instructions.
+Before opening a stream, return an appropriate HTTP error with `{ errorCode, subCode?, params?, requestId?, retryable? }`. After opening it, send an `error` event with the same fields in `payload`. The frontend projects HTTP agent errors to this stable vocabulary and localizes them. Use provider quota/configuration errors to return the user to BYOK configuration; do not send subscription links or billing instructions. The editor reopens model settings for `quota_exceeded`, `plan_required`, `unauthenticated` (the provider rejected the key), `forbidden` (the key cannot use the model) and `misconfigured` with a `model_` subCode (for example `model_config_invalid` or `model_host_blocked`).
 
 ## Verify a backend
 
