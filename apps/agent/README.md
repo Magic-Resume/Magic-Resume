@@ -10,6 +10,7 @@ A self-hosted, single-user BYOK backend for the local resume editor. It runs a D
 - `src/engine`: per-turn execution, event translation, proposal accumulation, approval validation, session queries, release and regeneration forks.
 - `src/harness`: the sole `createDeepAgent` call, native planning, filesystem, skills and delegation; nine ordered policies enforce budgets, retries, recovery, permission modes, skill tool restrictions, read-only skill files, resume validation and fact verification.
 - `src/model`: OpenAI-compatible Chat Completions, reasoning deltas, one-time unsupported-effort negotiation, DNS-pinned outbound fetch, redirect rejection and per-connection idle timeouts. Retries occur only before output, for transient failures.
+- `src/document`: bounded upload/download readers and cancellable PDF/DOCX extraction workers. Import, snippet editing and connection tests call the model directly without constructing a harness or session.
 - `src/persistence`: SQLite graph checkpoints and `turns` / `approvals` metadata in the same database. Each run constructs a fresh harness and model; keys and provider configuration stay in request-local closures.
 
 The virtual filesystem mounts shipped skills at `/skills/` and uses graph state for the remaining paths. The browser's current snapshot seeds `/workspace/resume.json` at each new turn; existing drafts are not silently treated as accepted changes. Complete resume metadata omitted by the browser is filled from the public schema package's defaults. Writes are schema-validated before producing RFC 6902 preview `resume_patch` events and one final authoritative `resume_update` proposal, including when pausing for input. Preview compatibility is tested against the editor's actual patch projection.
@@ -43,12 +44,51 @@ Implemented endpoints:
 | GET    | `/api/chat/session?sessionId=…` | `{ data: { state, checkpointId?, pendingApproval? } }` |
 | POST   | `/api/chat/session/fork`        | `{ data: { checkpointId? } }`                          |
 | DELETE | `/api/chat/session`             | `{ data: { released: true } }`                         |
+| POST   | `/api/pdf/parse`                | SSE import progress and validated resume proposal      |
+| POST   | `/api/agent/edit`               | JSON `{ after, rationale, rationaleDetail? }`          |
+| POST   | `/api/chat/edit`                | Compatibility alias for the same snippet handler       |
+| POST   | `/api/test-llm`                 | JSON connection result and image capability hint       |
 
-Snippet editing, AI import, model connection testing, attachments and web search belong to later milestones. A one-shot request without `sessionId` has no checkpointer or blocking form/choice tools. When required evidence is missing it asks in text.
+Attachments and web search belong to a later milestone. A one-shot chat without `sessionId` has no checkpointer or blocking form/choice tools. When required evidence is missing it asks in text.
+
+## Import, snippet editing and connection tests
+
+All three interfaces use the same request-local model credentials and controlled transport as chat. They do not read or create a resume session, save an imported document or persist model configuration. Client disconnection cancels downloads, model requests and document workers.
+
+### Resume import
+
+`POST /api/pdf/parse` retains its historical name for all supported formats. Send multipart `file` and `config` (a JSON string), or `sourceUrl` and the same serialized `config`. JSON `{ "sourceUrl": "https://documents.example.com/resume.pdf", "config": "<serialized config>" }` is also accepted directly by the backend. Supply exactly one source.
+
+- PDF: `pdf-parse@2.4.5` extracts the text layer. Sparse, corrupted or scanned text triggers ordered page images for a vision model. A document with more than 20 pages, or more than five pages when vision is required, fails rather than being truncated.
+- DOCX: `mammoth@1.13.0` extracts raw text without HTML conversion or external file access. Empty documents fail explicitly.
+- PNG, JPEG and WebP: the original image is sent as image input. A model that rejects image input returns `misconfigured` / `model_vision_unsupported`; use a vision-capable model. Unreadable or empty results are never accepted as an empty resume.
+- Markdown and plain text: UTF-8 text is used directly. Invalid encoding, NUL bytes and empty text are rejected.
+
+Each upload or download is limited to **10 MiB while reading its stream**, including chunked bodies. Multipart overhead is limited to 64 KiB; `config` to 32 KiB; source URLs to 8 KiB. Text is capped at 200,000 characters. DOCX archives allow at most 2,048 entries, 10 MiB expanded per entry and 32 MiB expanded total. Rendered PDF images have a combined 10 MiB cap and bounded dimensions. PDF/DOCX work runs in a worker with a 60-second extraction deadline; the configured whole-run deadline still applies. Parsing fails explicitly at these limits.
+
+Source URLs require an allowed document `Content-Type`, public HTTP(S) addresses, DNS pinning and no redirects. Signed query strings are supported; credentials and fragments are rejected. `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` **never permits private document downloads**, including in development. Uploaded files may fall back to a supported extension when their MIME type is empty or `application/octet-stream`; file signatures are checked before binary extraction.
+
+The tool-free `resume-parse` skill receives the document and the public schema. A response must validate against `@magic-resume-kit/resume-schema` and contain extracted content. Invalid output is returned to the model with field-level errors for at most two repairs (three attempts total). No tools, browsing or agent checkpoint are involved.
+
+SSE begins with `run_started`. Progress uses `tool_result.payload` with `kind: "pdf_progress"`, phases `extracting` and `analyzing`, and actual `charCount` / `fields` as output arrives. Image input also includes `mode: "vision"` and `pageCount`. Success is `resume_update.payload.resume` followed by `done`; streaming failures use fixed `error` codes followed by `done`. Input or download rejection before SSE uses an HTTP error instead. The browser validates the proposal before importing it locally.
+
+### Snippet edits
+
+`POST /api/agent/edit` and its compatibility alias `/api/chat/edit` share one handler. Send `{ action, before, resumePath?, selectionText?, instruction?, lang?, locale?, config }`. Supported actions are `polish`, `shorten`, `translate`, `quantify`, `concise`, `verb`, `evidence`, `rewrite`, `tone`, `insert` and `free`.
+
+`before` is the complete field, limited to 100,000 characters. Optional `selectionText` (50,000 characters) must occur in it; `after` still contains the whole field with that selection changed. `instruction` is limited to 10,000 characters. `insert` permits an empty `before` with source facts in `instruction`; translation requires `lang` or a target-language instruction. Rationale text follows `locale`, defaulting to `zh`.
+
+One model invocation returns `{ after, rationale, rationaleDetail? }`. Empty or invalid output fails without another generation. The model receives only the supplied fragment and editing intent, with no document lookup, tools or session. Quantification may clarify existing evidence but cannot invent numbers. Errors use the same fixed vocabulary as chat. As in chat, an explicitly rejected reasoning-effort parameter may cause one transport-level negotiation request; no provider/model substitution occurs.
+
+### Connection tests
+
+`POST /api/test-llm` accepts `{ provider, apiKey, baseUrl, model }` (use `model`, not `modelName`). It tests text first and returns `{ ok: true, latencyMs, supportsImage }`. `latencyMs` measures the text request including connection setup. One tiny image request then checks image capability; a rejection, unreadable answer or five-second image deadline returns `supportsImage: false` while retaining text success. This is a capability hint rather than a guarantee of document readability.
+
+The entire test, including DNS and image probing, has a **28-second deadline** to fit the web proxy's 30-second cap. Text/configuration failures return non-2xx with `{ ok: false, status, message, errorCode, subCode, retryable }`. `message` comes from fixed service text; upstream bodies and credentials never appear in it. The provider label does not select a separate SDK: this service expects an OpenAI-compatible Chat Completions endpoint.
 
 ## Configuration
 
-All configuration comes from environment variables; `.env.example` lists the complete M1 set. Model keys, base URLs, names, token limits and reasoning effort are request fields rather than server defaults.
+All configuration comes from environment variables; `.env.example` lists the complete set. Model keys, base URLs, names, token limits and reasoning effort are request fields rather than server defaults. Document limits above are fixed service limits, independent of the chat JSON body limit.
 
 | Variable                          | Default              | Meaning                                                                 |
 | --------------------------------- | -------------------- | ----------------------------------------------------------------------- |
@@ -74,7 +114,9 @@ Docker Compose stores runtime state in the `agent-data` volume and does not publ
 
 Add `skills/<name>/SKILL.md` with YAML frontmatter containing `name`, `description` and `allowed-tools`. The name must match its directory. Include goal, appropriate and inappropriate uses, prerequisites, steps, completion criteria, failure handling and output constraints. Put concise supporting material under `references/` or `assets/`.
 
-The five shipped skills cover creation, optimization, analysis, fit and translation. DeepAgents discovers descriptions and reads full bodies on demand. Add a mode mapping in `src/harness/skills/catalog.ts` only when adding an explicit UI entry. User-defined skill IDs are ignored with a fixed warning in this release.
+The five conversational skills cover creation, optimization, analysis, fit and translation; the sixth, `resume-parse`, is invoked directly by import with no tools. DeepAgents discovers descriptions and reads full bodies on demand. Add a mode mapping in `src/harness/skills/catalog.ts` only when adding an explicit UI entry. User-defined skill IDs are ignored with a fixed warning in this release.
+
+Creation, optimization and translation register 3–5 user-facing todos before work and update them after every completed step. Simple answers and one-step edits do not need a plan. First plans emit both `agent_plan` and `plan_update` for the editor's checklist. Each skill emits `skill_loaded` once per run even when mode activation is followed by reading its file. Shipped references explain evidence, scoring, translation preservation and optional source collection.
 
 `read_file`, `ls`, `glob`, `grep` and `write_todos` are always available to a loaded skill. Other tools require its explicit `allowed-tools` declaration. Loading a different skill replaces the previous active permission set; analysis and fit cannot acquire write access from an earlier skill. The mode boundary remains stronger than a skill's declaration.
 
@@ -84,11 +126,13 @@ The Zod widget registry mirrors every frontend card name for compatibility. `pus
 
 1. Start a local OpenAI-compatible proxy that supports streamed Chat Completions and function tools. Record its `/v1` base URL, model name and key. Confirm the proxy is reachable from the agent process.
 2. Start the agent with `NODE_ENV=development AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true pnpm --filter @magic-resume/agent dev`. A local URL such as `http://127.0.0.1:8080/v1` is an example; use the proxy's actual address. Production intentionally refuses that private destination.
-3. Configure the web server with `AI_BACKEND_URL=http://127.0.0.1:4000`. In **Settings → Model**, save the proxy URL, model and key. The connection-test endpoint is M2 work; use an actual chat as the M1 check.
+3. Configure the web server with `AI_BACKEND_URL=http://127.0.0.1:4000`. In **Settings → Model**, enter the proxy URL, model and key, test the connection, then save. Check both text connectivity and the image capability result when importing scans or pictures.
 4. Open a fictional resume in AI Lab, select **Optimize**, and supply a short target JD. Expect a skill read, resume read, checklist, field reasons, preview patches and one final proposal. Check that IDs, custom fields and untouched sections survive. The saved document should change only after accepting the review.
 5. Repeat without a JD. Expect a `job_info` form and `awaiting_input` from the session endpoint. Stop and restart only the agent, retaining `AGENT_DATA_DIR`; submit the form and confirm continuation. Repeat with a skipped form and verify no invented JD or resume facts appear.
 6. Exercise Plan and Ask. Plan must not produce resume mutations. Ask must send no resume snapshot, resume ID or previous resume-derived context to the proxy. Stop an active generation and verify the proxy request is cancelled.
 7. Regenerate a second turn and verify the new thread begins after the first turn. Repeat an approval operation and verify HTTP 409. Check a rejected key, a transient provider failure and an idle stream; errors must contain fixed codes rather than provider text or credentials.
+8. Import the fictional files under `test/fixtures/`: text PDF, scanned PDF, DOCX, PNG/JPEG/WebP, Markdown and text. Scans and images need a vision model. Expect extraction/analysis progress and a valid imported document; cancel once and verify the upstream stops. Text-model image rejection must show a configuration failure, never an empty imported resume.
+9. Select a sentence for a quick edit and check that surrounding text survives and the difference requires review. Repeat with an empty/invalid model result or rejected key and verify a fixed error with no saved change.
 
 Keep real keys out of checked-in fixtures and shell command arguments. Long answers are bounded by idle gaps and the separate whole-run limit. Unsupported `reasoning_effort` is omitted after one explicit rejection; unsupported tools or malformed argument streams still require a capable proxy/model and may produce a partial result rather than a completed rewrite.
 
@@ -102,4 +146,4 @@ pnpm --filter @magic-resume/agent build
 docker build -f apps/agent/Dockerfile -t magic-resume-agent .
 ```
 
-Tests use a scripted local OpenAI-compatible server, not real provider credentials. They cover each policy and tool, frontend event and card-name contracts, transient errors and cancellation, and all ten HTTP scenarios with MemorySaver and SQLite. The SQLite approval test closes and rebuilds the server against the same real database file.
+Tests use a scripted local OpenAI-compatible server, not real provider credentials. They cover each policy and tool, frontend event and card-name contracts, transient errors and cancellation, and all ten HTTP scenarios with MemorySaver and SQLite. The SQLite approval test closes and rebuilds the server against the same real database file. Import tests use real document extraction and assert that the model receives the actual text or image payload. Additional checks cover multipart boundaries, streaming size rejection, source policy/pinning, schema repairs, both edit aliases, image probing and the real connection deadline. Committed document fixtures use fictional people and organizations; `test/fixtures/generate.py` can regenerate them with Pillow, reportlab and python-docx, which are not runtime dependencies.
