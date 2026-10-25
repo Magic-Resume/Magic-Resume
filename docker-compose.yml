@@ -25,6 +25,7 @@ services:
       AGENT_RUN_TIMEOUT_MS: 900000
       AGENT_DATA_DIR: /app/data
       AGENT_BODY_LIMIT_BYTES: 2097152
+      AGENT_RATE_LIMIT_PER_MINUTE: 300
     volumes:
       - agent-data:/app/data
     healthcheck:

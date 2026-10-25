@@ -17,6 +17,7 @@
     "test": "node --import tsx --test --test-concurrency=4 test/*.test.ts"
   },
   "dependencies": {
+    "@fastify/rate-limit": "^10.3.0",
     "@langchain/core": "1.2.14",
     "@langchain/langgraph": "1.5.2",
     "@langchain/langgraph-checkpoint-sqlite": "1.1.0",

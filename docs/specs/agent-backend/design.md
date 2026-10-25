@@ -83,7 +83,7 @@ apps/agent/
 
 | 选项 | 内容 |
 |---|---|
-| `model` | `model/` 工厂产出的 `ChatOpenAICompletions` 子类：受控 `fetch`、`maxRetries: 0`（重试由中间件按错误类型决定）、思考内容（`reasoning_content` / `reasoning`）转成 reasoning 块、effort 不被支持时去掉重试一次。 |
+| `model` | `model/` 工厂产出的 `ChatOpenAICompletions` 子类：受控 `fetch`、`maxRetries: 0`（重试由中间件按错误类型决定）、思考内容（`reasoning_content` / `reasoning`）统一留在 `additional_kwargs.reasoning_content`（不改写进 `content`：否则合并后的回复会按流式片段拆成多段文本发回提供方）、effort 不被支持时去掉重试一次。 |
 | `backend` | `CompositeBackend`：`/skills/` 路由到只读 `FilesystemBackend({ rootDir: skillsDir, virtualMode: true })`，其余（含 `/workspace/`、harness 自己的大结果卸载目录）走 `StateBackend`。路由 key 必须带尾斜杠。 |
 | `skills` | `['/skills/']`：DeepAgents 的技能中间件按 `SKILL.md` frontmatter 列目录、按需读正文（渐进披露）。 |
 | `memory` | `['/skills/AGENTS.md']`：常驻人格与红线。 |
@@ -211,6 +211,7 @@ DeepAgents 内置的 `write_todos`、`read_file`、`write_file`、`edit_file`、
 | `AGENT_FIRST_EVENT_WAIT_MS` | `15000` | 开流前最长缓冲（§3.7） |
 | `AGENT_SESSION_TTL_HOURS` | `168` | 会话过期回收 |
 | `AGENT_BODY_LIMIT_BYTES` | `2097152` | 请求体上限 |
+| `AGENT_RATE_LIMIT_PER_MINUTE` | `300` | 每个客户端地址每分钟的请求数，`0` 关闭限流 |
 | `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false` | 仅非生产环境生效 |
 | `SEARCH_PROVIDER` / `SEARCH_API_KEY` | 空 | 可选联网搜索（M3） |
 
