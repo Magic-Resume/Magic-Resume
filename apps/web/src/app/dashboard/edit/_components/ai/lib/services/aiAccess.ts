@@ -31,18 +31,29 @@ export function resolveAiAccessConfig(): AiAccessResult {
 }
 
 /**
- * Whether a failure means the key itself cannot run this request (the
- * provider's quota is spent, or the model needs a plan the key does not have),
- * so the model config card should come back.
+ * Whether a failure means the user's model config cannot run this request, so
+ * the model config card should come back: the provider's quota is spent, the
+ * model needs a plan the key does not have, the key is rejected or lacks access
+ * to the model, or the backend refused the config itself (`misconfigured` with a
+ * `model_*` subCode). A backend that is not deployed is not the user's config.
  *
  * Reads the error code where there is one; plain string errors fall back to
  * keywords, without depending on the wording of any one language.
  */
 export function isQuotaOrCustomConfigError(error: unknown) {
-  const appError = (error as { appError?: { errorCode?: unknown } } | null)
-    ?.appError;
+  const appError = (
+    error as { appError?: { errorCode?: unknown; subCode?: unknown } } | null
+  )?.appError;
   if (typeof appError?.errorCode === "string") {
-    return opensBillingGate(appError.errorCode as never);
+    const code = appError.errorCode;
+    return (
+      opensBillingGate(code as never) ||
+      code === "unauthenticated" ||
+      code === "forbidden" ||
+      (code === "misconfigured" &&
+        typeof appError.subCode === "string" &&
+        appError.subCode.startsWith("model_"))
+    );
   }
   const message = error instanceof Error ? error.message : String(error ?? "");
   return /quota_exceeded|plan_required|insufficient_quota|insufficient quota|quota|402/i.test(
