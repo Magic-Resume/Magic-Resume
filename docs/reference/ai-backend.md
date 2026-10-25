@@ -33,23 +33,23 @@ Without a backend, editing, JSON import and PDF/PNG/JSON export remain available
 
 Model settings are stored in the current browser; the API key is encrypted at rest using a browser-held key. This protects the stored representation, not against scripts running in the same origin. Using AI sends the model key, messages, selected attachments and, in resume-aware modes, the current resume snapshot to the configured backend. The backend then calls the user's provider. Do not log or persist raw keys.
 
-All browser requests use same-origin Next.js routes. `lib/ai/backend.ts` is the sole backend-origin reader. No Clerk identity, account token, cloud-sync call or billing entitlement accompanies requests. Protect a shared deployment at the network or reverse-proxy boundary as appropriate; these routes do not implement multi-user authentication. Validate file sizes, source URLs, model base URLs and redirects in the backend, and cancel model work on disconnect.
+All browser requests use same-origin Next.js routes. `lib/ai/backend.ts` is the sole backend-origin reader. No account identity or token, cloud-sync call or billing entitlement accompanies requests. Protect a shared deployment at the network or reverse-proxy boundary as appropriate; these routes do not implement multi-user authentication. Validate file sizes, source URLs, model base URLs and redirects in the backend, and cancel model work on disconnect.
 
 ## HTTP routes
 
 The left column is exposed by this Next.js app. The right column is required on the configured backend.
 
-| Browser route | Backend route | Contract |
-|---|---|---|
-| `POST /api/chat-agent` | `POST /api/chat` | JSON request, SSE response |
-| `POST /api/chat-agent/approve` | `POST /api/chat/approve` | JSON decision, SSE continuation |
-| `POST /api/chat-agent/edit` | `POST /api/chat/edit` | JSON snippet edit |
-| `GET /api/chat-agent/session?sessionId=…` | `GET /api/chat/session?sessionId=…` | Runtime state; not conversation history |
-| `POST /api/chat-agent/session` | `POST /api/chat/session/fork` | Regenerate from a checkpoint |
-| `DELETE /api/chat-agent/session` | `DELETE /api/chat/session` | Release runtime state; body `{ "sessionId": "…" }` |
-| `POST /api/pdf/parse` | `POST /api/pdf/parse` | Multipart input, SSE parse progress and result |
-| `POST /api/test-llm` | `POST /api/test-llm` | Model connection test |
-| `/api/backend/api/…` | `/api/…` | JSON or multipart endpoints listed below |
+| Browser route                             | Backend route                       | Contract                                                     |
+| ----------------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| `POST /api/chat-agent`                    | `POST /api/chat`                    | JSON request, SSE response                                   |
+| `POST /api/chat-agent/approve`            | `POST /api/chat/approve`            | JSON decision, SSE continuation                              |
+| `POST /api/chat-agent/edit`               | `POST /api/agent/edit`              | JSON snippet edit; `/api/chat/edit` is a compatibility alias |
+| `GET /api/chat-agent/session?sessionId=…` | `GET /api/chat/session?sessionId=…` | Runtime state; not conversation history                      |
+| `POST /api/chat-agent/session`            | `POST /api/chat/session/fork`       | Regenerate from a checkpoint                                 |
+| `DELETE /api/chat-agent/session`          | `DELETE /api/chat/session`          | Release runtime state; body `{ "sessionId": "…" }`           |
+| `POST /api/pdf/parse`                     | `POST /api/pdf/parse`               | Multipart input, SSE parse progress and result               |
+| `POST /api/test-llm`                      | `POST /api/test-llm`                | Model connection test                                        |
+| `/api/backend/api/…`                      | `/api/…`                            | JSON or multipart endpoints listed below                     |
 
 The general proxy forwards the method, path, query, body and content type. It does not forward browser cookies or authorization headers. The dedicated agent routes preserve streaming and cancellation signals.
 
@@ -70,7 +70,7 @@ Every chat, approval, snippet edit and AI import carries this `config` object:
 
 `effort` is `low`, `medium` or `high`. Adapt or omit unsupported provider parameters rather than assuming every model supports reasoning. No platform fallback is requested. Provider quota or authentication failures must be returned to the client; do not silently switch to a paid platform model.
 
-The connection test uses `{ provider, apiKey, baseUrl, model }`, with `model` rather than `modelName`. Return `{ ok, latencyMs?, supportsImage?, status?, message? }`; use a non-2xx HTTP status on failure. Next.js caps the test at 30 seconds.
+The connection test uses `{ provider, apiKey, baseUrl, model }`, with `model` rather than `modelName`. Return `{ ok, latencyMs?, supportsImage?, status?, message? }`; use a non-2xx HTTP status on failure. Next.js caps the test at 30 seconds. The supplied service uses the same DNS-pinned, redirect-blocking model transport, with a 28-second total deadline. After a successful text request it makes one tiny image request; an unsuccessful image probe returns `supportsImage: false` without changing `ok: true`. This is a capability hint, not a guarantee that every document can be read. Messages are fixed service text and never include upstream error bodies.
 
 ### Conversation and approval
 
@@ -86,14 +86,20 @@ Approval requests carry `sessionId`, `interruptId`, `operationId`, `expectedChec
 
 ### Snippet edits
 
-`POST /api/chat/edit` accepts `{ action, before, resumePath?, selectionText?, instruction?, lang?, locale, config }`. Return `{ after, rationale, rationaleDetail? }`, either directly or inside `{ data: … }`. `after` must be a non-empty string. The client presents the proposed difference before applying it locally.
+`POST /api/agent/edit` is the primary endpoint used by the Next.js proxy. `POST /api/chat/edit` is a compatibility alias to the same handler. Both accept `{ action, before, resumePath?, selectionText?, instruction?, lang?, locale, config }`. Return `{ after, rationale, rationaleDetail? }`, either directly or inside `{ data: … }`. `after` must be a non-empty string. The client presents the proposed difference before applying it locally.
+
+Actions are `polish`, `shorten`, `translate`, `quantify`, `concise`, `verb`, `evidence`, `rewrite`, `tone`, `insert` and `free`. `before` is the whole field (up to 100,000 characters); `selectionText`, when supplied, identifies the substring to change, and `after` still contains the whole field. `insert` may have an empty `before` but needs source facts in `instruction`. Translation needs `lang` or an instruction specifying the target. `locale` controls the rationale language and defaults to `zh`. The service makes one model invocation, with no resume lookup, tools, checkpoint or session. It validates the result without a model repair loop and uses the conversation error vocabulary on failure.
 
 ### Attachments and resume import
 
 - `POST /api/uploads/attachment`: multipart `file`; return `{ data: { key, filename, contentType } }`.
 - `POST /api/uploads/attachment/read-url`: JSON `{ key }`; return `{ data: { url, expiresAt } }`. This short-lived URL is passed to the backend, not stored in the transcript.
 - Chat attachments are `{ id, name, contentType, sourceUrl }` entries.
-- `POST /api/pdf/parse`: multipart `file` or `sourceUrl`, plus `config` serialized as JSON. Supported files: PDF, DOCX, PNG/JPEG/WebP, Markdown and plain text, up to 10 MiB per uploaded file. Next.js rejects oversized declared request bodies; the backend must enforce its own streaming limits and URL policy.
+- `POST /api/pdf/parse`: multipart `file` or `sourceUrl`, plus `config` serialized as JSON. The backend also accepts JSON `{ sourceUrl, config: "<serialized model configuration>" }`. Supply exactly one source. Supported files: PDF, DOCX, PNG/JPEG/WebP, UTF-8 Markdown and plain text, up to 10 MiB per uploaded or downloaded file. Next.js rejects oversized declared request bodies; the backend enforces its own limits while consuming the stream, including requests without `Content-Length`.
+
+Source URLs must resolve entirely to public HTTP(S) addresses. DNS is resolved once and connections use the fixed address; credentials, fragments and redirects are forbidden, while signed query strings are retained. A development opt-in for private model endpoints never enables private document downloads. Downloads require an allowed document MIME type and are bounded by both declared and actual size. File and model input remain in request memory, with no imported-document storage or session creation.
+
+The supplied service extracts PDF text with `pdf-parse` v2 and DOCX text with `mammoth`. PDF text extraction is limited to 20 pages. Sparse or unreadable PDF text triggers rendering of all pages, limited to five; larger scanned documents fail explicitly rather than being partially imported. Direct images use image input. Text is limited to 200,000 characters, DOCX expanded archives to 32 MiB (10 MiB per entry), and rendered page images to 10 MiB combined. Document workers have a 60-second extraction deadline and can be terminated on cancellation. Resume parsing uses the `resume-parse` skill in a tool-free model request; schema errors permit at most two repair requests. Unsupported image input returns `misconfigured` / `model_vision_unsupported`, and an empty or invalid resume is never returned as a successful import.
 
 The importer reads scan progress from `tool_result.payload` with `kind: "pdf_progress"`, `phase`, optional `charCount`, `fields`, `mode: "vision"` and `pageCount`. It reads errors from `error` or `run_failed`. Return the parsed resume in `resume_update.data` or `resume_update.payload.resume`, conforming to `@magic-resume-kit/resume-schema`, then close with `done`. The browser validates the result before creating a local resume. For scanning progress, see `ImportResumeDialog.tsx` and `PdfScanProgress.tsx`; the historical `/pdf/parse` name covers all these formats.
 
@@ -101,12 +107,12 @@ The importer reads scan progress from `tool_result.payload` with `kind: "pdf_pro
 
 Only required when the backend emits `workspace_proposal_ready`:
 
-| Backend route | Body / result |
-|---|---|
-| `GET /api/resumes/:resumeId/workspace/proposals/:proposalId` | `{ data: WorkspaceProposal }` |
-| `POST …/:proposalId/prepare` | `{ changes: WorkspacePreparedChange[] }` → `{ data: WorkspaceProposal }` |
-| `POST …/:proposalId/resolve` | `{ accept?: string[], reject?: string[] }` → `{ data: WorkspaceResolution }` |
-| `POST …/:proposalId/reject-all` | `{}` → `{ data: WorkspaceProposal }` |
+| Backend route                                                | Body / result                                                                |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `GET /api/resumes/:resumeId/workspace/proposals/:proposalId` | `{ data: WorkspaceProposal }`                                                |
+| `POST …/:proposalId/prepare`                                 | `{ changes: WorkspacePreparedChange[] }` → `{ data: WorkspaceProposal }`     |
+| `POST …/:proposalId/resolve`                                 | `{ accept?: string[], reject?: string[] }` → `{ data: WorkspaceResolution }` |
+| `POST …/:proposalId/reject-all`                              | `{}` → `{ data: WorkspaceProposal }`                                         |
 
 The precise target, hash, proposal and resolution types are in `apps/web/src/lib/api/workspace.ts`. A proposal carries its base and candidate snapshots. The backend validates decisions against that proposal and returns the resolved document and revision; the browser stores accepted results in IndexedDB. This protocol does not require an account or cloud synchronization.
 
@@ -132,6 +138,12 @@ Additional event families supported by the retained UI:
 - Resume results: `resume_patch`, `resume_update`, `workspace_proposal_ready`, `resume_analysis`, `fit_report`, `resume_verification`, `resume_change_notes`, `resume_write_failed`, `resume_sync_failed`, `translation_result`, `pdf_result`.
 
 Use the discriminated event types in `ai/lib/services/types.ts` and consumers in `AiChatShell.tsx` as the payload reference. For example, a final snapshot is `{ type: "resume_update", payload: { resume, final: true, mutation: { kind: "snapshot", authoritative: true, final: true, resume } } }`. A JSON patch-style event is a proposal, not permission to replace an entire document. Do not emit interview or memory flows into this edition.
+
+The following additive fields reflect the actual editor consumers:
+
+- `tool_approval_request.payload` includes `requestId`, `interruptId`, `operationId`, `expectedCheckpointId`, `toolName`, `reason`, `args` and `actions`. Preserve the three continuation identifiers unchanged when submitting the decision; they bind the answer to the pending interrupt and checkpoint.
+- The first successful `write_todos` emits both `agent_plan` and `plan_update` with the same `{ todos: [{ content, status }] }` payload. The visible checklist consumes `plan_update`; subsequent changes emit `plan_update` only. Statuses are `pending`, `in_progress` or `completed`. A skill emits `skill_loaded` once per run, including when explicit mode activation is followed by a read of its `SKILL.md`.
+- `resume_patch.payload.patch` is an RFC 6902 JSON Patch array with JSON Pointer paths, for example `[{ "op": "replace", "path": "/info/headline", "value": "Frontend Engineer" }]`. Apply it to the current preview in stream order; it does not authorize a saved-document write. The payload also retains `path`, optional `oldString` / `newString`, and the non-authoritative `mutation` envelope for compatibility. The final `resume_update` supplies the complete validated proposal.
 
 Before opening a stream, return an appropriate HTTP error with `{ errorCode, subCode?, params?, requestId?, retryable? }`. After opening it, send an `error` event with the same fields in `payload`. The frontend projects HTTP agent errors to this stable vocabulary and localizes them. Use provider quota/configuration errors to return the user to BYOK configuration; do not send subscription links or billing instructions. The editor reopens model settings for `quota_exceeded`, `plan_required`, `unauthenticated` (the provider rejected the key), `forbidden` (the key cannot use the model) and `misconfigured` with a `model_` subCode (for example `model_config_invalid` or `model_host_blocked`).
 
