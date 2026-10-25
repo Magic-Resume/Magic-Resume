@@ -19,6 +19,13 @@ const environmentSchema = z.object({
   AGENT_RUN_TIMEOUT_MS: milliseconds(900_000),
   AGENT_FIRST_EVENT_WAIT_MS: milliseconds(15_000),
   AGENT_SESSION_TTL_HOURS: z.coerce.number().positive().max(8760).default(168),
+  AGENT_ATTACHMENT_TTL_HOURS: z.coerce
+    .number()
+    .positive()
+    .max(8760)
+    .default(24),
+  AGENT_ATTACHMENT_SECRET: z.string().min(32).optional(),
+  AGENT_MAX_SEARCHES: z.coerce.number().int().positive().max(30).default(5),
   AGENT_BODY_LIMIT_BYTES: z.coerce
     .number()
     .int()
@@ -44,6 +51,10 @@ export function readSettings(env: NodeJS.ProcessEnv = process.env) {
     runTimeoutMs: data.AGENT_RUN_TIMEOUT_MS,
     firstEventWaitMs: data.AGENT_FIRST_EVENT_WAIT_MS,
     sessionTtlHours: data.AGENT_SESSION_TTL_HOURS,
+    attachmentTtlHours: data.AGENT_ATTACHMENT_TTL_HOURS,
+    attachmentSecret: data.AGENT_ATTACHMENT_SECRET,
+    maxSearches: data.AGENT_MAX_SEARCHES,
+    search: searchConfiguration(env),
     bodyLimitBytes: data.AGENT_BODY_LIMIT_BYTES,
     privateHostsRequested: data.AGENT_ALLOW_PRIVATE_MODEL_HOSTS === 'true',
     allowPrivateModelHosts:
@@ -53,3 +64,45 @@ export function readSettings(env: NodeJS.ProcessEnv = process.env) {
 }
 
 export type Settings = ReturnType<typeof readSettings>;
+
+export interface SearchConfiguration {
+  provider: 'tavily' | 'brave' | 'searxng';
+  baseUrl: string;
+  apiKey?: string;
+}
+function searchConfiguration(
+  env: NodeJS.ProcessEnv,
+): SearchConfiguration | undefined {
+  const provider = env.SEARCH_PROVIDER?.trim();
+  if (provider !== 'tavily' && provider !== 'brave' && provider !== 'searxng')
+    return undefined;
+  const apiKey = env.SEARCH_API_KEY?.trim();
+  if (provider !== 'searxng' && (!apiKey || /[\r\n]/.test(apiKey)))
+    return undefined;
+  const baseUrl =
+    env.SEARCH_BASE_URL?.trim() ||
+    (provider === 'tavily'
+      ? 'https://api.tavily.com'
+      : provider === 'brave'
+        ? 'https://api.search.brave.com/res/v1'
+        : undefined);
+  if (!baseUrl) return undefined;
+  try {
+    const url = new URL(baseUrl);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return undefined;
+    return {
+      provider,
+      baseUrl: url.href.replace(/\/+$/, ''),
+      ...(provider === 'searxng' ? {} : { apiKey }),
+    };
+  } catch {
+    return undefined;
+  }
+}

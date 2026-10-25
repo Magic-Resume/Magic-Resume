@@ -2,7 +2,14 @@ import { createMiddleware } from 'langchain';
 import { toolPath } from '../workspace/files.js';
 import { denied } from './common.js';
 export const NAME = 'SkillFirewall';
-const common = new Set(['read_file', 'ls', 'glob', 'grep', 'write_todos']);
+const common = new Set([
+  'read_file',
+  'ls',
+  'glob',
+  'grep',
+  'write_todos',
+  'read_attachment',
+]);
 export function createSkillFirewall(
   allowlists: Map<string, { allowedTools: string[] }>,
   initialSkill?: string,

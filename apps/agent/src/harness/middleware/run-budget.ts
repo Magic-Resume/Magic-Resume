@@ -12,11 +12,18 @@ const fallback =
 export function createRunBudget(limits: {
   modelCalls: number;
   toolCalls: number;
+  searches?: number;
 }) {
   let models = 0;
   let tools = 0;
+  let searches = 0;
   return {
-    counts: () => ({ models, tools }),
+    counts: () => ({ models, tools, searches }),
+    claimSearch() {
+      if (searches >= (limits.searches ?? 5)) return false;
+      searches++;
+      return true;
+    },
     claimInternal() {
       if (models >= limits.modelCalls - 1) return false;
       models++;

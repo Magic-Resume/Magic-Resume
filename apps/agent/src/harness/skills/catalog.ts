@@ -21,10 +21,12 @@ export function parseSkill(source: string) {
         : meta['allowed-tools'],
   };
 }
-export function loadSkillCatalog(directory: string) {
+export const SEARCH_SKILLS = new Set(['company-research', 'job-research']);
+export function loadSkillCatalog(directory: string, searchEnabled = false) {
   const catalog = new Map<string, ReturnType<typeof parseSkill>>();
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
+    if (!searchEnabled && SEARCH_SKILLS.has(entry.name)) continue;
     const meta = parseSkill(
       readFileSync(join(directory, entry.name, 'SKILL.md'), 'utf8'),
     );

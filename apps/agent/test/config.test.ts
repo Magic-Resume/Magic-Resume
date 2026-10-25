@@ -100,9 +100,9 @@ test('chat validates its text transcript and accepts unused contract fields', ()
     attachments: [
       {
         id: 'example-attachment',
-        name: 'example.txt',
-        contentType: 'text/plain',
-        sourceUrl: 'http://localhost/ignored',
+        name: 'example.pdf',
+        contentType: 'application/pdf',
+        sourceUrl: 'https://documents.example.com/example.pdf',
       },
     ],
     context: { example: true },

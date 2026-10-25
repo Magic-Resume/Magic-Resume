@@ -235,6 +235,9 @@ test('service startup disables inherited diagnostics so request keys never enter
         PORT: '0',
         NODE_ENV: 'development',
         AGENT_ALLOW_PRIVATE_MODEL_HOSTS: 'true',
+        SEARCH_PROVIDER: 'tavily',
+        SEARCH_API_KEY: 'example-search-secret',
+        AGENT_ATTACHMENT_SECRET: 'example-attachment-signing-secret-0001',
         LANGSMITH_TRACING: 'true',
         LANGCHAIN_TRACING_V2: 'true',
         LANGCHAIN_TRACING: 'true',
@@ -283,5 +286,10 @@ test('service startup disables inherited diagnostics so request keys never enter
   assert.equal(response.status, 401);
   await response.json();
   assert.doesNotMatch(logs, /example-test-key|Provider detail/);
+  assert.match(logs, /Web search enabled \(tavily\)/);
+  assert.doesNotMatch(
+    logs,
+    /example-search-secret|example-attachment-signing-secret/,
+  );
   assert.equal(fake.state.unexpected, 0, 'no diagnostic HTTP requests');
 });

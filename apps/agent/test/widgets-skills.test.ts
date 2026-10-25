@@ -60,7 +60,10 @@ test('workflow and import skills have valid metadata, explicit permissions and c
     [...catalog.keys()].sort(),
     [...Object.values(MODE_SKILL), 'resume-parse'].sort(),
   );
-  for (const [name, meta] of catalog) {
+  for (const [name, meta] of loadSkillCatalog(
+    readSettings({}).skillsDir,
+    true,
+  )) {
     assert.ok(meta.description);
     assert.equal(meta.allowedTools.length === 0, name === 'resume-parse');
     const source = await readFile(

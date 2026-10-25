@@ -37,7 +37,19 @@ const researchItem = z.union([
   text,
   z.object({
     text,
-    url: z.string().url().optional(),
+    url: z
+      .string()
+      .url()
+      .max(2048)
+      .refine((value) => {
+        const url = new URL(value);
+        return (
+          ['http:', 'https:'].includes(url.protocol) &&
+          !url.username &&
+          !url.password
+        );
+      }, 'Research sources must use HTTP(S) links without credentials')
+      .optional(),
     sourceName: optionalText,
     date: optionalText,
   }),

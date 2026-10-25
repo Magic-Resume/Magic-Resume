@@ -12,6 +12,7 @@ export class AgentChatModel extends ChatOpenAICompletions {
   emitted = 0;
   model_name?: string;
   systemSuffix?: string;
+  prepareMessages?: (messages: BaseMessage[]) => Promise<BaseMessage[]>;
   private finalInstructions(messages: BaseMessage[]): BaseMessage[] {
     if (!this.systemSuffix) return messages;
     const marker = '\n\nPermission boundary:';
@@ -64,7 +65,9 @@ export class AgentChatModel extends ChatOpenAICompletions {
   ) {
     try {
       for await (const chunk of super._streamResponseChunks(
-        this.finalInstructions(args[0]),
+        this.finalInstructions(
+          this.prepareMessages ? await this.prepareMessages(args[0]) : args[0],
+        ),
         args[1],
         args[2],
       )) {

@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import type { Settings } from '../config.js';
 import { AgentError } from '../contracts/errors.js';
+import { sniffAttachment } from './attachment-type.js';
 import { parseModelConfig } from '../contracts/model-config.js';
 import {
   createModelTransport,
@@ -14,6 +15,7 @@ export type DocumentFormat =
 export interface DocumentFile {
   bytes: Buffer;
   format: DocumentFormat;
+  filename?: string;
 }
 const contentTypes: Record<string, DocumentFormat> = {
   'application/pdf': 'pdf',
@@ -83,6 +85,28 @@ export async function readImportMultipart(
   type: string,
   signal: AbortSignal,
 ): Promise<MultipartValue> {
+  return readMultipart(stream, type, signal, false);
+}
+export async function readAttachmentMultipart(
+  stream: Readable,
+  type: string,
+  signal: AbortSignal,
+) {
+  const value = await readMultipart(stream, type, signal, true);
+  return value.file!;
+}
+async function readMultipart(
+  stream: Readable,
+  type: string,
+  signal: AbortSignal,
+  attachment: boolean,
+): Promise<MultipartValue> {
+  const invalid = () =>
+    new AgentError(
+      400,
+      'invalid_input',
+      attachment ? 'attachment_request_invalid' : 'import_request_invalid',
+    );
   const boundary = /(?:^|;)\s*boundary=(?:"([^"\r\n]+)"|([^;\s]+))/i.exec(type);
   const token = boundary?.[1] ?? boundary?.[2];
   if (!token || token.length > 70 || !/^[\w'()+,\-./:=? ]+$/.test(token))
@@ -97,6 +121,7 @@ export async function readImportMultipart(
   let current: {
     name: 'file' | 'config' | 'sourceUrl';
     format?: DocumentFormat;
+    filename?: string;
     size: number;
     chunks: Buffer[];
   };
@@ -115,7 +140,11 @@ export async function readImportMultipart(
   const finish = () => {
     const bytes = Buffer.concat(current.chunks, current.size);
     if (current.name === 'file')
-      result.file = { bytes, format: current.format! };
+      result.file = {
+        bytes,
+        format: attachment ? sniffAttachment(bytes) : current.format!,
+        filename: current.filename,
+      };
     else {
       try {
         result[current.name] = new TextDecoder('utf-8', { fatal: true }).decode(
@@ -161,10 +190,22 @@ export async function readImportMultipart(
         const filename = /(?:^|;)\s*filename="([^"\r\n]*)"/i.exec(
           disposition,
         )?.[1];
+        let displayName = filename;
+        if (attachment && filename !== undefined) {
+          try {
+            displayName = new TextDecoder('utf-8', { fatal: true }).decode(
+              Buffer.from(filename, 'latin1'),
+            );
+          } catch {
+            /* Older clients may send a Latin-1 display name. */
+          }
+        }
         if (
           !/^form-data\s*;/i.test(disposition) ||
           !name ||
-          !['file', 'config', 'sourceUrl'].includes(name) ||
+          !(attachment ? ['file'] : ['file', 'config', 'sourceUrl']).includes(
+            name,
+          ) ||
           seen.has(name) ||
           headers.has('content-transfer-encoding')
         )
@@ -175,12 +216,12 @@ export async function readImportMultipart(
           name: name as typeof current.name,
           size: 0,
           chunks: [],
+          filename: displayName,
           ...(name === 'file'
             ? {
-                format: documentFormat(
-                  headers.get('content-type') ?? '',
-                  filename,
-                ),
+                format: attachment
+                  ? undefined
+                  : documentFormat(headers.get('content-type') ?? '', filename),
               }
             : {}),
         };
@@ -224,7 +265,7 @@ export async function readImportMultipart(
   signal.throwIfAborted();
   if (
     state !== 'end' ||
-    !result.config ||
+    (!attachment && !result.config) ||
     Boolean(result.file) === Boolean(result.sourceUrl?.trim())
   )
     throw invalid();
