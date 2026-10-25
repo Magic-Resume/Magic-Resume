@@ -73,6 +73,27 @@ test('maxTokens, effort negotiation and both reasoning fields use the provider p
   );
 });
 
+test('a reasoning reply returns to the model as one string, not one part per streamed chunk', async (t) => {
+  const f = await fixture(t, 'memory', [
+    { reasoning: 'Weigh the options.', text: ['我先', '看一下', '附件', '。'] },
+    { text: 'Done.' },
+  ]);
+  await f.chat(f.body({ sessionId: 'history' }));
+  await f.chat(
+    f.body({
+      sessionId: 'history',
+      messages: [{ role: 'user', content: 'Continue.' }],
+    }),
+  );
+  const replies = f.fake.requests[1].messages.filter(
+    (message) => message.role === 'assistant',
+  );
+  assert.deepEqual(
+    replies.map((message) => message.content),
+    ['我先看一下附件。'],
+  );
+});
+
 test('upstream errors before output stay HTTP errors; transient failures alone retry', async (t) => {
   const f = await fixture(t);
   for (const [modelName, status, code] of [

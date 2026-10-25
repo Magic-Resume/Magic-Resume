@@ -60,30 +60,20 @@ export class AgentChatModel extends ChatOpenAICompletions {
     );
     return chunk;
   }
+  // Reasoning stays in `additional_kwargs.reasoning_content`. Moving it into `content` turns
+  // the merged reply into one text part per streamed chunk, which the next request sends back
+  // to the provider; some providers join those parts with line breaks and the model copies it.
   override async *_streamResponseChunks(
     ...args: Parameters<ChatOpenAICompletions['_streamResponseChunks']>
   ) {
     try {
-      for await (const chunk of super._streamResponseChunks(
+      yield* super._streamResponseChunks(
         this.finalInstructions(
           this.prepareMessages ? await this.prepareMessages(args[0]) : args[0],
         ),
         args[1],
         args[2],
-      )) {
-        const reasoning = chunk.message.additional_kwargs.reasoning_content;
-        if (typeof reasoning === 'string' && reasoning) {
-          chunk.message.content = [
-            ...(typeof chunk.message.content === 'string'
-              ? chunk.message.content
-                ? [{ type: 'text' as const, text: chunk.message.content }]
-                : []
-              : chunk.message.content),
-            { type: 'reasoning', reasoning },
-          ];
-        }
-        yield chunk;
-      }
+      );
     } catch (error) {
       throw safeModelFailure(error, args[1].signal);
     }
