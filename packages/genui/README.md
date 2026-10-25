@@ -52,13 +52,12 @@ Web 的 `apps/web/src/app/globals.css` 已包含这两项；Landing 不消费 Ge
 
 ## 新增后端 widget kind
 
-协议仍然只发送一个 `ui_widget` 事件。后端在
-`apps/agent/src/harness/tools/widgets.ts`
-登记 kind：
+协议仍然只发送一个 `ui_widget` 事件。本仓库的 agent（`apps/agent`）在
+`apps/agent/src/harness/tools/widgets.ts` 登记 kind：
 
-1. `exposure: 'push'` 的普通卡片可由 `push_ui` 发送，registry 同时生成模型描述并做最小 props 校验。
-2. `exposure: 'domain'` 的业务卡片填写 `ownerTool`，只能由真实业务工具查询/写入后发送，`push_ui` 会拒绝。
-3. 业务工具 dispatch `UI_WIDGET_EVENT`，现有 mapper 会自动投影成 `ui_widget`，无需新增 SSE event type 或改 relay。
+1. `WIDGET_SCHEMAS` 为每个 kind 定义 props 的 zod schema，与前端注册表的 kind 一一对应。
+2. 列入 `PUSHABLE_WIDGETS` 的普通卡片可由 `push_ui` 发送，发送前按 schema 校验；其余业务卡片只能由对应的业务工具发送，`push_ui` 会拒绝。
+3. 业务工具 dispatch `ui_widget` 自定义事件，事件映射会原样转成 SSE 的 `ui_widget`，无需新增事件类型。
 4. 新增阻塞交互优先扩展 `request_form` / `ask_choice`，只有新语义才新增事件类型。
 
 ## i18n 与动效

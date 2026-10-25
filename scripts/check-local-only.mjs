@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -53,12 +55,34 @@ const rules = [
   { pattern: /NEXT_PUBLIC_APP_MODE|isCloudMode/, reason: 'cloud mode switch' },
   { pattern: /livekit-client/, reason: 'voice interview runtime' },
   { pattern: /commercial/i, reason: 'commercial overlay' },
-  {
-    pattern:
-      /__private_reference__/i,
-    reason: 'private repository or reference source',
-  },
 ];
+
+/**
+ * Names of private repositories and reference sources, as SHA-256 digests of the
+ * lowercase name: this file is public, so it must not spell out what it guards.
+ * Checked across every tracked file, docs included.
+ */
+const privateNames = new Set([
+  '07bf36a9f7365faa0318b2305b077fb7c3d8743e173eeb8f246069e610d9174c',
+  '90705147dde942976c3f83006f435abd19cd144b03fda6a036e232ac944fa15d',
+  '28b3b516f67e7c6a1dbcb6dc457ebc1e634d46197125208c7cdc4993c0a63e85',
+  '6696a7047ec6c4f986f9e7cfb330189086fc762e43c84f52e66bdb100934d798',
+  '1e0c3b6b5ba2fe256f07c0c00569e7b218f935085c06aeace6796fbafb460b28',
+  'f236d274b7be60dfcff01ed9aef538fc3b9835c290459084e40e7dae174ebfbb',
+  '05cbdf65624a5f02d15c8183c1ccc74191dc01eea770c71c3f194738ce53b8e7',
+  '79ecd1d980a6220bdee81c3ee1b027a0108aa9237b21d75a5ced9eede796c32c',
+]);
+// The shared release helper selects behaviour by repository name.
+const privateNameExceptions = new Set([
+  '.github/release-pr/ensure-release-pr.cjs',
+  '.github/release-pr/ensure-release-pr.test.cjs',
+]);
+const digest = (token) =>
+  createHash('sha256').update(token.toLowerCase()).digest('hex');
+const namesPrivateSource = (line) =>
+  (line.match(/[\w.-]+/g) ?? []).some((token) =>
+    privateNames.has(digest(token)),
+  );
 
 const files = [];
 function collect(target) {
@@ -95,7 +119,36 @@ for (const file of files) {
   });
 }
 
-console.log(`Local-only files checked: ${files.length}`);
+const tracked = execFileSync('git', ['ls-files', '-z'], {
+  cwd: root,
+  encoding: 'utf8',
+  maxBuffer: 64 * 1024 * 1024,
+})
+  .split('\0')
+  .filter(
+    (file) =>
+      file &&
+      !privateNameExceptions.has(file) &&
+      file !== 'pnpm-lock.yaml' &&
+      fs.existsSync(path.join(root, file)),
+  );
+for (const file of tracked) {
+  const content = fs.readFileSync(path.join(root, file));
+  if (content.includes(0)) continue;
+  content
+    .toString('utf8')
+    .split('\n')
+    .forEach((line, index) => {
+      if (namesPrivateSource(line))
+        violations.push(
+          `${file}:${index + 1}: private repository or reference source`,
+        );
+    });
+}
+
+console.log(
+  `Local-only files checked: ${files.length}; private-name scan: ${tracked.length}`,
+);
 if (violations.length > 0) {
   console.error('Local storage + BYOK boundary violations:');
   for (const violation of violations) console.error(`- ${violation}`);

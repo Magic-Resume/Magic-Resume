@@ -45,7 +45,7 @@ related: [../../../apps/landing/design.md]
 | 可达性 | 无 skip link | 键盘用户每次需 Tab 过整个 nav |
 | i18n | `hero.pill` / `previewAlt` / `logoAlt` 定义未引用 | 死文案 |
 
-**架构事实（影响后续所有决策）：** landing 独占 apex `magic-resume.cn`（Vercel 静态部署），web 应用在 `app.magic-resume.cn`（`PUBLIC_WEB_ORIGIN`）。这与 `.plan/landing_astro_split.md` 的 D1（"Next 持有 apex + rewrite landing 路径"）**不一致**——实际走的是子域拆分。方案按实际架构写。
+**架构事实（影响后续所有决策）：** landing 独占 apex `magic-resume.cn`（Vercel 静态部署），web 应用在 `app.magic-resume.cn`（`PUBLIC_WEB_ORIGIN`）。这与早期设想的「Next 持有 apex、landing 路径用 rewrite 转发」**不一致**——实际走的是子域拆分。方案按实际架构写。
 
 ---
 
