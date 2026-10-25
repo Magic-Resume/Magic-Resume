@@ -46,7 +46,7 @@ export async function resolveModelAddresses(
   allowPrivate: boolean,
   signal: AbortSignal,
   resolver: ModelResolver = lookup,
-  purpose: 'model' | 'source' = 'model',
+  purpose: 'model' | 'source' | 'search' = 'model',
 ): Promise<Address[]> {
   const reject = (reason: string) =>
     new AgentError(
@@ -105,7 +105,7 @@ export async function createModelTransport(
   signal: AbortSignal,
   resolver?: ModelResolver,
   idleTimeoutMs = 120_000,
-  purpose: 'model' | 'source' = 'model',
+  purpose: 'model' | 'source' | 'search' = 'model',
 ) {
   const base = new URL(baseUrl);
   const addresses = await resolveModelAddresses(
@@ -138,7 +138,7 @@ export async function createModelTransport(
       timer = setTimeout(
         () =>
           idle.abort(
-            new AgentError(504, 'upstream_unavailable', 'model_timeout'),
+            new AgentError(504, 'upstream_unavailable', `${purpose}_timeout`),
           ),
         idleTimeoutMs,
       );

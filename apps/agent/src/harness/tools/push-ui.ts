@@ -21,6 +21,24 @@ export function createPushUi() {
       if (!validation?.success)
         return `Card rejected: ${validation?.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ') ?? 'unknown kind'}. Correct its props and retry.`;
       const complete = validation.data as Record<string, unknown>;
+      if (kind === 'job_research') {
+        // The job card projects items to text, so a separate URL field would disappear.
+        const groups = complete.groups as Array<{
+          items: Array<string | { text: string; url?: string }>;
+        }>;
+        complete.groups = groups.map((group) => ({
+          ...group,
+          items: group.items.map((item) =>
+            typeof item === 'string' ||
+            !item.url ||
+            item.text.includes(item.url)
+              ? item
+              : { ...item, text: `${item.text} [Source](${item.url})` },
+          ),
+        }));
+        if (!validateWidget(kind, complete)?.success)
+          return 'Card rejected: a job research item with its source link exceeds the text limit. Shorten the finding and retry.';
+      }
       cards.set(id, { kind, props: complete });
       await dispatchCustomEvent(
         'ui_widget',

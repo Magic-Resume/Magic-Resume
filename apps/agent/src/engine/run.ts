@@ -29,6 +29,13 @@ import {
 import { Sessions } from './sessions.js';
 import { EventMapper, type GraphEvent } from './event-mapper.js';
 import { ResumeAccumulator } from './resume-accumulator.js';
+import { AttachmentStore } from '../attachments/store.js';
+import {
+  prepareAttachments,
+  attachmentReferences,
+  createAttachmentContext,
+} from '../attachments/context.js';
+import type { BaseMessage } from '@langchain/core/messages';
 import {
   approvalEvent,
   assertValidDecisions,
@@ -45,6 +52,7 @@ export class RunEngine {
     readonly settings: Settings,
     readonly persistence: Persistence,
     private readonly resolver?: ModelResolver,
+    private readonly attachmentStore = new AttachmentStore(settings),
   ) {
     this.sessions = new Sessions(persistence);
   }
@@ -92,6 +100,37 @@ export class RunEngine {
         this.settings.idleTimeoutMs,
       );
       const model = createChatModel(request.config, transport.fetch);
+      const previousMessages = (head?.checkpoint.channel_values.messages ??
+        []) as BaseMessage[];
+      const currentAttachments = approving
+        ? attachmentReferences(
+            [...previousMessages]
+              .reverse()
+              .filter((message) => message.getType() === 'human')
+              .slice(0, 1),
+          )
+        : await prepareAttachments(
+            request.attachments,
+            this.attachmentStore,
+            this.settings,
+            signal,
+            this.resolver,
+          );
+      const references = [
+        ...(request.agentMode === 'ask'
+          ? []
+          : attachmentReferences(previousMessages)),
+        ...currentAttachments,
+      ];
+      const attachments = references.length
+        ? await createAttachmentContext(
+            this.attachmentStore,
+            references,
+            currentAttachments,
+            signal,
+          )
+        : undefined;
+      if (attachments) model.prepareMessages = attachments.hydrate;
       const restoredMode =
         approving &&
         typeof head?.checkpoint.channel_values.workflowMode === 'string'
@@ -134,9 +173,14 @@ export class RunEngine {
         sessionId: request.sessionId,
         checkpointer: request.sessionId ? this.persistence.saver : undefined,
         skillsDir: this.settings.skillsDir,
+        attachments,
+        search: this.settings.search
+          ? { settings: this.settings, signal, resolver: this.resolver }
+          : undefined,
         limits: {
           modelCalls: this.settings.maxModelCalls,
           toolCalls: this.settings.maxToolCalls,
+          searches: this.settings.maxSearches,
         },
       });
       const latestUser =
@@ -155,6 +199,16 @@ export class RunEngine {
                 : message.content,
             ),
       );
+      if (!approving && currentAttachments.length) {
+        const latest = [...messages]
+          .reverse()
+          .find((message) => message.getType() === 'human');
+        if (latest)
+          latest.additional_kwargs = {
+            ...latest.additional_kwargs,
+            attachments: currentAttachments,
+          };
+      }
       const oldFiles = head?.checkpoint.channel_values.files as
         Record<string, unknown> | undefined;
       const files =

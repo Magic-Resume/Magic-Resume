@@ -70,6 +70,7 @@ export type AgentEvent =
         toolCallId?: string;
         toolName: string;
         summary: Record<string, unknown>;
+        result?: unknown;
         isError?: boolean;
         error?: string;
       };

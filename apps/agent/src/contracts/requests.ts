@@ -47,6 +47,7 @@ export const requestSchema = z.object({
       'interview-prep',
       'cover-letter',
       'company-research',
+      'job-research',
       'applications',
       'general',
     ])
@@ -54,13 +55,18 @@ export const requestSchema = z.object({
   attachments: z
     .array(
       z.object({
-        id: z.string(),
-        name: z.string(),
-        contentType: z.string(),
-        sourceUrl: z.string(),
+        id: z.string().min(1).max(128),
+        name: z.string().min(1).max(512),
+        contentType: z.enum([
+          'application/pdf',
+          'image/png',
+          'image/jpeg',
+          'image/webp',
+        ]),
+        sourceUrl: z.string().url().max(8192),
       }),
     )
-    .max(20)
+    .max(3)
     .optional(),
   userSkillId: z.string().optional(),
   userSkillIds: z.array(z.string()).optional(),

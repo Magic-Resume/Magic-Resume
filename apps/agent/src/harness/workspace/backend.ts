@@ -17,8 +17,65 @@ import {
   normalizePath,
 } from './files.js';
 import type { AgentMode } from '../prompts/instructions.js';
+import { SEARCH_SKILLS } from '../skills/catalog.js';
 
 class ReadonlySkills extends FilesystemBackend {
+  constructor(
+    skillsDir: string,
+    private readonly searchEnabled: boolean,
+  ) {
+    super({ rootDir: skillsDir, virtualMode: true });
+  }
+  private visible(path: string) {
+    return (
+      this.searchEnabled ||
+      !SEARCH_SKILLS.has(normalizePath(path).split('/')[1])
+    );
+  }
+  override async ls(path: string) {
+    if (!this.visible(path)) return { error: 'Skill unavailable.' };
+    const result = await super.ls(path);
+    return {
+      ...result,
+      files: result.files?.filter((file) => this.visible(file.path)),
+    };
+  }
+  override async read(path: string, offset?: number, limit?: number) {
+    return this.visible(path)
+      ? super.read(path, offset, limit)
+      : { error: 'Skill unavailable.' };
+  }
+  override async readRaw(path: string) {
+    return this.visible(path)
+      ? super.readRaw(path)
+      : { error: 'Skill unavailable.' };
+  }
+  override async glob(pattern: string, path?: string) {
+    if (path && !this.visible(path)) return { error: 'Skill unavailable.' };
+    const result = await super.glob(pattern, path);
+    return {
+      ...result,
+      files: result.files?.filter((file) => this.visible(file.path)),
+    };
+  }
+  override async grep(...args: Parameters<FilesystemBackend['grep']>) {
+    if (args[1] && !this.visible(args[1]))
+      return { error: 'Skill unavailable.' };
+    const result = await super.grep(...args);
+    return {
+      ...result,
+      matches: result.matches?.filter((match) => this.visible(match.path)),
+    };
+  }
+  override async downloadFiles(paths: string[]) {
+    return Promise.all(
+      paths.map(async (path) =>
+        this.visible(path)
+          ? (await super.downloadFiles([path]))[0]
+          : { path, content: null, error: 'file_not_found' as const },
+      ),
+    );
+  }
   override async write(): Promise<WriteResult> {
     return { error: 'The skill mount is read-only.' };
   }
@@ -39,12 +96,10 @@ export class WorkspaceBackend extends CompositeBackend {
   constructor(
     skillsDir: string,
     private readonly mode: AgentMode,
+    searchEnabled = false,
   ) {
     super(new StateBackend(), {
-      [SKILLS_MOUNT]: new ReadonlySkills({
-        rootDir: skillsDir,
-        virtualMode: true,
-      }),
+      [SKILLS_MOUNT]: new ReadonlySkills(skillsDir, searchEnabled),
     });
   }
   override async delete(rawPath: string): Promise<DeleteResult> {

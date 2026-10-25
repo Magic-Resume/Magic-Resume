@@ -59,3 +59,15 @@ doc.core_properties.last_modified_by = 'Example Fixture Generator'
 for line in lines:
     doc.add_paragraph(line)
 doc.save(root / 'resume.docx')
+
+pdf = canvas.Canvas(str(root / 'attachment-pages.pdf'), pagesize=(600, 780), invariant=1)
+pdf.setTitle('Fictional attachment pagination fixture')
+pdf.setAuthor('Example Fixture Generator')
+for label in ['First page evidence', 'Second page evidence']:
+    for index, line in enumerate([label,
+        'Example Lantern Lab creates accessible demonstration forms.',
+        'The fictional team documents keyboard navigation and input validation.',
+        'These statements are test data for attachment pagination only.']):
+        pdf.drawString(34, 740 - index * 31, line)
+    pdf.showPage()
+pdf.save()

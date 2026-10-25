@@ -150,7 +150,7 @@ export class EventMapper {
         },
       ];
     }
-    if (child && name !== 'write_todos') return [];
+    if (child && name !== 'write_todos' && name !== 'web_search') return [];
     if (event.event === 'on_tool_start') {
       const args = record(data.input);
       this.toolInputs.set(id, args);
@@ -189,6 +189,14 @@ export class EventMapper {
       const output = record(data.output);
       const failed =
         event.event === 'on_tool_error' || output.status === 'error';
+      let searchOutput: Record<string, unknown> | undefined;
+      if (name === 'web_search' && typeof output.content === 'string') {
+        try {
+          searchOutput = record(JSON.parse(output.content));
+        } catch {
+          /* A failed tool has no sources. */
+        }
+      }
       const result: AgentEvent[] = child
         ? []
         : [
@@ -198,6 +206,7 @@ export class EventMapper {
                 toolCallId: id,
                 toolName: name,
                 summary: this.summary(name, args, failed, output),
+                ...(searchOutput ? { result: searchOutput } : {}),
                 ...(failed
                   ? {
                       isError: true,
@@ -229,8 +238,19 @@ export class EventMapper {
       )
         result.push(...this.skillLoaded(path.split('/')[2]));
       if (!failed && name === 'web_search') {
-        const sources = Array.isArray(output.sources) ? output.sources : [];
-        result.push({
+        const results = Array.isArray(searchOutput?.results)
+          ? searchOutput.results
+          : [];
+        const sources = results.map((item) => {
+          const source = record(item);
+          return {
+            ...source,
+            id: `external:${source.citationId}`,
+            kind: 'external',
+            visibility: 'visible',
+          };
+        });
+        result.unshift({
           type: 'source_update',
           payload: { toolCallId: id, sources },
         });
@@ -256,6 +276,14 @@ export class EventMapper {
       return { formKind: args.formKind, message: args.message };
     if (name === 'evaluate_fit')
       return { jdCharacters: typeof args.jd === 'string' ? args.jd.length : 0 };
+    if (name === 'web_search') return { query: args.query, count: args.count };
+    if (name === 'read_attachment')
+      return {
+        key: args.key,
+        page: args.page,
+        offset: args.offset,
+        limit: args.limit,
+      };
     return {};
   }
   private summary(
@@ -265,6 +293,20 @@ export class EventMapper {
     output: Record<string, unknown>,
   ): Record<string, unknown> {
     const display = TOOL_DISPLAY[name] ?? { verb: 'read', icon: 'tool' };
+    if (name === 'web_search')
+      return { ...display, kind: 'results', subject: args.query };
+    if (name === 'read_attachment' && typeof output.content === 'string') {
+      try {
+        const value = record(JSON.parse(output.content));
+        return {
+          ...display,
+          kind: 'file',
+          name: record(value.attachmentRead).name ?? 'Attachment',
+        };
+      } catch {
+        return display;
+      }
+    }
     const path = args.file_path ?? args.path;
     if (typeof path === 'string')
       return {

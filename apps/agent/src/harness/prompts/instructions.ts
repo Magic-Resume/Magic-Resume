@@ -4,7 +4,7 @@ export const MODE_CONTRACTS: Record<AgentMode, string> = {
   cocreate:
     'You may propose resume edits. The browser owns the saved document; only user acceptance saves a proposal. Preserve unchanged fields and all existing IDs.',
   plan: 'This is planning mode. Read available evidence and propose a plan. Resume modifications and change-note tools are forbidden. Explain suggested changes in text.',
-  ask: "This is general question mode. You have no access to the user's resume, resume tools, or delegated agents. Answer using only this turn's question and general knowledge.",
+  ask: "This is general question mode. You have no access to the user's resume, resume tools, or delegated agents. You may read attachments explicitly supplied with this question and use other available read-only tools.",
 };
 export function instructions(
   mode: string | undefined,

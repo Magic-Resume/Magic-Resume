@@ -8,7 +8,12 @@ export const MAX_TEXT_CHARS = 200_000;
 export const MAX_PDF_PAGES = 20;
 export const MAX_VISION_PAGES = 5;
 export type DocumentSource =
-  | { kind: 'text'; text: string }
+  | {
+      kind: 'text';
+      text: string;
+      pageCount?: number;
+      pages?: Array<{ number: number; text: string }>;
+    }
   | { kind: 'images'; images: string[]; pageCount: number };
 export function checkText(text: string): string {
   const cleaned = text.replace(/^\uFEFF/, '').trim();

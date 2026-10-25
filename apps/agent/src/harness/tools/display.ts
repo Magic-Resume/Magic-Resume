@@ -3,6 +3,8 @@ export const TOOL_DISPLAY: Readonly<
   Record<string, { verb: string; icon: string }>
 > = {
   read_resume: { verb: 'read', icon: 'read' },
+  read_attachment: { verb: 'read', icon: 'read' },
+  web_search: { verb: 'search', icon: 'search' },
   analyze_resume: { verb: 'analyze', icon: 'analyze' },
   evaluate_fit: { verb: 'evaluate', icon: 'analyze' },
   explain_changes: { verb: 'explain', icon: 'analyze' },

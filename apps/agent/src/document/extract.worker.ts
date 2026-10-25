@@ -92,10 +92,12 @@ async function extractPdf(bytes: Buffer): Promise<DocumentSource> {
     if (!info.total || info.total > MAX_PDF_PAGES)
       throw new AgentError(413, 'invalid_input', 'pdf_page_limit');
     let text = '';
+    const pages: Array<{ number: number; text: string }> = [];
     let needsVision = false;
     for (let number = 1; number <= info.total; number++) {
       const page = await parser.getText({ partial: [number], pageJoiner: '' });
       const content = page.pages[0]?.text ?? '';
+      pages.push({ number, text: content });
       const letters = content.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
       const unreadable =
         (content.match(/\uFFFD/g)?.length ?? 0) >
@@ -106,7 +108,13 @@ async function extractPdf(bytes: Buffer): Promise<DocumentSource> {
         throw new AgentError(413, 'invalid_input', 'document_text_too_large');
     }
     needsVision ||= (text.match(/[\p{L}\p{N}]/gu)?.length ?? 0) < 120;
-    if (!needsVision) return { kind: 'text', text: checkText(text) };
+    if (!needsVision)
+      return {
+        kind: 'text',
+        text: checkText(text),
+        pageCount: info.total,
+        pages,
+      };
     if (info.total > MAX_VISION_PAGES)
       throw new AgentError(413, 'invalid_input', 'pdf_vision_page_limit');
     const images: string[] = [];

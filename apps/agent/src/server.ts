@@ -11,6 +11,8 @@ import { sessionRoutes } from './http/session.route.js';
 import { editRoutes } from './http/edit.route.js';
 import { pdfRoute } from './http/pdf.route.js';
 import { testLlmRoute } from './http/test-llm.route.js';
+import { AttachmentStore } from './attachments/store.js';
+import { uploadsRoutes } from './http/uploads.route.js';
 
 interface ServerOptions {
   settings?: Settings;
@@ -39,7 +41,13 @@ export function buildServer({
     forceCloseConnections: true,
   });
   const persistence = new Persistence(settings.dataDir, checkpointer);
-  const engine = new RunEngine(settings, persistence, resolver);
+  const attachments = new AttachmentStore(settings);
+  const engine = new RunEngine(settings, persistence, resolver, attachments);
+  app.log.info(
+    settings.search
+      ? `Web search enabled (${settings.search.provider})`
+      : 'Web search disabled: configuration is absent or incomplete',
+  );
   if (settings.privateHostsRequested && !settings.allowPrivateModelHosts)
     app.log.warn('AGENT_ALLOW_PRIVATE_MODEL_HOSTS is ignored in production');
   app.setErrorHandler((error, _request, reply) => {
@@ -73,11 +81,24 @@ export function buildServer({
     Math.min(3_600_000, settings.sessionTtlHours * 3_600_000),
   );
   sweep.unref();
+  const attachmentSweep = setInterval(
+    () => {
+      void attachments
+        .collectExpired()
+        .catch(() =>
+          app.log.warn('Expired attachments could not be collected'),
+        );
+    },
+    Math.min(3_600_000, settings.attachmentTtlHours * 3_600_000),
+  );
+  attachmentSweep.unref();
   app.addHook('onReady', async () => {
     await persistence.collectExpired(settings.sessionTtlHours);
+    await attachments.collectExpired();
   });
   app.addHook('onClose', async () => {
     clearInterval(sweep);
+    clearInterval(attachmentSweep);
     persistence.close();
   });
   app.get('/health', async () => ({ ok: true }));
@@ -87,5 +108,6 @@ export function buildServer({
   editRoutes(app, settings, resolver);
   pdfRoute(app, settings, resolver);
   testLlmRoute(app, settings, resolver);
+  uploadsRoutes(app, settings, attachments);
   return app;
 }
