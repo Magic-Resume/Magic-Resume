@@ -27,20 +27,20 @@
 
 <br/>
 
-![AI Lab with Polaris: describe what to change, pick a skill, or choose the collaboration mode and model](./docs/images/readme/ai-lab.png)
+![Polaris, the AI resume assistant: describe what to change, pick a skill, or choose the collaboration mode and model](./docs/images/readme/ai-lab.png)
 
 **Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
 
 > Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams.
 
-This repository is the open-source edition. It contains the editor and **AI Lab**, together with the agent service that powers it. There is no account and no resume library on a server: resumes and one conversation per resume live in your browser's IndexedDB, and AI Lab calls the model provider you configure with your own key. Interviews and multi-device cloud sync are part of the hosted product at [magic-resume.cn](https://magic-resume.cn).
+This repository is the open-source edition. It contains the editor and **Polaris**, the AI resume assistant, together with the agent service that powers it. There is no account and no resume library on a server: resumes and one conversation per resume live in your browser's IndexedDB, and Polaris calls the model provider you configure with your own key. Interviews and multi-device cloud sync are part of the hosted product at [magic-resume.cn](https://magic-resume.cn).
 
 <details>
 <summary><strong>Table of contents</strong></summary>
 
 - [Features](#features)
 - [Quick start](#quick-start)
-- [How AI Lab works](#how-ai-lab-works)
+- [How Polaris works](#how-polaris-works)
 - [Configuration](#configuration)
 - [Open source and magic-resume.cn](#open-source-and-magic-resumecn)
 - [Repository layout](#repository-layout)
@@ -65,7 +65,7 @@ This repository is the open-source edition. It contains the editor and **AI Lab*
 - **Local-first.** Everything is stored in IndexedDB. Nothing leaves the browser unless you use AI.
 - **Light and dark themes, English and Chinese.**
 
-### AI Lab
+### Polaris
 
 - **Proposals, not overwrites.** Every change the AI makes appears as a diff on the canvas, with a reason for each edit. You accept or skip changes one by one; nothing is saved until you accept.
 - **Skills.** Create a resume from scratch, optimize it for a job description, analyze it, score its fit against a role, or translate it. Each skill is a plain Markdown file you can read and change.
@@ -87,7 +87,7 @@ cd Magic-Resume
 docker compose up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000), go to **Settings → Model**, choose a provider, enter your API key and model, test the connection and save. AI Lab is then ready.
+Open [http://localhost:3000](http://localhost:3000), go to **Settings → Model**, choose a provider, enter your API key and model, test the connection and save. Polaris is then ready.
 
 The editor listens on `127.0.0.1:3000`. The agent has no published port and is reachable only from the editor container; its sessions are kept in the `agent-data` volume.
 
@@ -103,7 +103,7 @@ cp apps/web/.env.example apps/web/.env.local   # then uncomment AI_BACKEND_URL=h
 pnpm dev
 ```
 
-`pnpm dev` starts the editor on [http://localhost:3000](http://localhost:3000) and the agent on `http://127.0.0.1:4000`. Editing works without the agent; only AI Lab needs it.
+`pnpm dev` starts the editor on [http://localhost:3000](http://localhost:3000) and the agent on `http://127.0.0.1:4000`. Editing works without the agent; only Polaris needs it.
 
 To point the agent at a model server on your own machine or network (for example a local OpenAI-compatible proxy), start it with `AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true`. This switch is ignored when `NODE_ENV=production`.
 
@@ -118,9 +118,9 @@ docker run -p 3000:3000 magic-resume-web
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
 
-To enable AI Lab later, run the agent somewhere the editor can reach and set `AI_BACKEND_URL` on the editor.
+To enable Polaris later, run the agent somewhere the editor can reach and set `AI_BACKEND_URL` on the editor.
 
-## How AI Lab works
+## How Polaris works
 
 ```mermaid
 flowchart LR
@@ -188,7 +188,7 @@ The editor and templates are the same; the hosted product runs the AI for you an
 | Account | Not required | Required |
 | Resume storage | Your browser (IndexedDB) | Encrypted cloud storage, exportable at any time |
 | Multi-device sync | — | Yes |
-| AI | AI Lab with your own model key, on the bundled agent | Managed models, mock interviews and memory |
+| AI | Polaris with your own model key, on the bundled agent | Managed models, mock interviews and memory |
 | Templates | 20 | 20 |
 
 ## Repository layout
@@ -197,12 +197,12 @@ A pnpm and Turborepo monorepo. The shared schema, templates, design system, icon
 
 | Path | Description |
 |---|---|
-| `apps/web` | The editor and AI Lab (Next.js) |
-| `apps/agent` | The AI Lab agent (Fastify, DeepAgents, SQLite) |
+| `apps/web` | The editor and Polaris (Next.js) |
+| `apps/agent` | The agent behind Polaris (Fastify, DeepAgents, SQLite) |
 | `apps/agent/skills` | Skills and the agent's standing instructions, as Markdown |
 | `apps/landing` | Marketing site for magic-resume.cn (Astro) |
 | `apps/docs` | Documentation site (Mintlify) |
-| `packages/genui` | AI Lab cards and widgets |
+| `packages/genui` | Polaris cards and widgets |
 | `packages/tsconfig` | Shared TypeScript configuration |
 
 ```bash
@@ -233,7 +233,7 @@ npx -y @magic-resume-kit/mcp@1.0.1 --help
 ## Roadmap
 
 - [x] Local-first editor with 20 templates
-- [x] AI Lab on your own model key, with a self-hosted agent
+- [x] Polaris on your own model key, with a self-hosted agent
 - [x] Resumable sessions, structured forms and approvals
 - [x] Import from PDF, Word, images and Markdown
 - [ ] Attachments in conversations

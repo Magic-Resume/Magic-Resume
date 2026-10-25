@@ -1,6 +1,6 @@
 # Contributing to Magic Resume
 
-Thanks for your interest in contributing! Contributions of every size are welcome — bug fixes, templates, AI Lab skills, docs, translations, or features.
+Thanks for your interest in contributing! Contributions of every size are welcome — bug fixes, templates, Polaris skills, docs, translations, or features.
 
 **English** · [简体中文](./CONTRIBUTING.zh-CN.md)
 
@@ -11,7 +11,7 @@ Thanks for your interest in contributing! Contributions of every size are welcom
 - **Report a bug** or request a feature — open an [issue](https://github.com/Magic-Resume/Magic-Resume/issues).
 - **Fix a bug** or **build a feature** — open a Pull Request.
 - **Add a template** — templates live in [`packages/resume-templates`](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/resume-templates) of magic-resume-kit.
-- **Write or improve an AI Lab skill** — see [AI Lab and the agent](#ai-lab-and-the-agent).
+- **Write or improve an Polaris skill** — see [Polaris and the agent](#polaris-and-the-agent).
 - **Improve translations** — see [Translations](#translations).
 - **Improve the docs** — including this file and the READMEs.
 
@@ -26,7 +26,7 @@ For anything non-trivial, opening an issue first to discuss the approach saves e
 
 ## Local setup
 
-The editor runs entirely in the browser and needs no database or `.env` file. Only AI Lab needs the agent in `apps/agent`, which `pnpm run dev` starts as well.
+The editor runs entirely in the browser and needs no database or `.env` file. Only Polaris needs the agent in `apps/agent`, which `pnpm run dev` starts as well.
 
 ```bash
 # 1. Fork, then clone your fork
@@ -38,7 +38,7 @@ pnpm install
 pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). To use AI Lab, copy `apps/web/.env.example` to `apps/web/.env.local`, uncomment `AI_BACKEND_URL=http://localhost:4000`, restart, and add your model key in **Settings → Model**. See the [README](./README.md#repository-layout) for the repository layout.
+Open [http://localhost:3000](http://localhost:3000). To use Polaris, copy `apps/web/.env.example` to `apps/web/.env.local`, uncomment `AI_BACKEND_URL=http://localhost:4000`, restart, and add your model key in **Settings → Model**. See the [README](./README.md#repository-layout) for the repository layout.
 
 ---
 
@@ -124,9 +124,9 @@ Exit `0` means it's valid; a non-zero exit prints the rule that failed.
 
 ---
 
-## AI Lab and the agent
+## Polaris and the agent
 
-`apps/agent` is the backend AI Lab talks to. Its architecture is described in [docs/specs/agent-backend/design.md](./docs/specs/agent-backend/design.md), and the protocol between the editor and the agent in [docs/reference/ai-backend.md](./docs/reference/ai-backend.md). Change the two sides together: a new event or field must work in the editor and be documented in the contract.
+`apps/agent` is the backend Polaris talks to. Its architecture is described in [docs/specs/agent-backend/design.md](./docs/specs/agent-backend/design.md), and the protocol between the editor and the agent in [docs/reference/ai-backend.md](./docs/reference/ai-backend.md). Change the two sides together: a new event or field must work in the editor and be documented in the contract.
 
 - **Skills** are Markdown in `apps/agent/skills/<name>/SKILL.md`, with optional `references/` and `assets/`. The frontmatter's `allowed-tools` is enforced, so list every tool the skill needs. Keep instructions general and never put real people's data in examples; use clearly fictional names and `example.com` addresses.
 - **Tests** use Node's test runner and a fake OpenAI-compatible server, so they need no API key: `pnpm --filter @magic-resume/agent test`. Add a scenario test for any change to what the agent streams or stores.

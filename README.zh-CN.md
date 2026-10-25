@@ -27,20 +27,20 @@
 
 <br/>
 
-![AI Lab 与 Polaris：描述想改的内容、调用技能，或切换协作模式与模型](./docs/images/readme/ai-lab.png)
+![Polaris AI 简历助手：描述想改的内容、调用技能，或切换协作模式与模型](./docs/images/readme/ai-lab.png)
 
 **Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。** MIT 协议内核，20 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
 
 > Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。
 
-本仓库是开源版，包含编辑器、**AI Lab** 和驱动 AI Lab 的 agent 服务。不需要账号，服务器上也没有简历库：简历和每份简历唯一的对话都保存在浏览器的 IndexedDB 里，AI Lab 用你自己的 Key 调用你配置的模型服务商。模拟面试和多设备云同步由托管版 [magic-resume.cn](https://magic-resume.cn) 提供。
+本仓库是开源版，包含编辑器、AI 简历助手 **Polaris**，以及驱动 Polaris 的 agent 服务。不需要账号，服务器上也没有简历库：简历和每份简历唯一的对话都保存在浏览器的 IndexedDB 里，Polaris 用你自己的 Key 调用你配置的模型服务商。模拟面试和多设备云同步由托管版 [magic-resume.cn](https://magic-resume.cn) 提供。
 
 <details>
 <summary><strong>目录</strong></summary>
 
 - [功能](#功能)
 - [快速开始](#快速开始)
-- [AI Lab 如何工作](#ai-lab-如何工作)
+- [Polaris 如何工作](#polaris-如何工作)
 - [配置](#配置)
 - [开源版与 magic-resume.cn](#开源版与-magic-resumecn)
 - [仓库结构](#仓库结构)
@@ -65,7 +65,7 @@
 - **本地优先。** 所有数据存在 IndexedDB，除非你使用 AI，任何内容都不会离开浏览器。
 - **深色与浅色主题，中文与英文界面。**
 
-### AI Lab
+### Polaris
 
 - **提议，而不是覆盖。** AI 的每一处修改都以差异的形式出现在画布上，并附带修改理由。你逐条采纳或跳过；采纳之前什么都不会保存。
 - **技能。** 从零创建简历、针对岗位描述优化、诊断分析、评估与岗位的匹配度、翻译。每个技能都是一份 Markdown 文件，可以直接阅读和修改。
@@ -87,7 +87,7 @@ cd Magic-Resume
 docker compose up --build
 ```
 
-打开 [http://localhost:3000](http://localhost:3000)，进入 **设置 → 模型**，选择服务商，填写 API Key 和模型，测试连接后保存，就可以使用 AI Lab 了。
+打开 [http://localhost:3000](http://localhost:3000)，进入 **设置 → 模型**，选择服务商，填写 API Key 和模型，测试连接后保存，就可以使用 Polaris 了。
 
 编辑器监听 `127.0.0.1:3000`。agent 不对外暴露端口，只有编辑器容器能访问它；会话数据保存在 `agent-data` 卷中。
 
@@ -103,7 +103,7 @@ cp apps/web/.env.example apps/web/.env.local   # 然后取消 AI_BACKEND_URL=htt
 pnpm dev
 ```
 
-`pnpm dev` 会在 [http://localhost:3000](http://localhost:3000) 启动编辑器，在 `http://127.0.0.1:4000` 启动 agent。编辑不依赖 agent，只有 AI Lab 需要它。
+`pnpm dev` 会在 [http://localhost:3000](http://localhost:3000) 启动编辑器，在 `http://127.0.0.1:4000` 启动 agent。编辑不依赖 agent，只有 Polaris 需要它。
 
 如果模型服务在你自己的电脑或内网里（例如本地的 OpenAI 兼容代理），启动 agent 时加上 `AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true`。`NODE_ENV=production` 时这个开关不生效。
 
@@ -118,9 +118,9 @@ docker run -p 3000:3000 magic-resume-web
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
 
-之后想启用 AI Lab，把 agent 部署在编辑器能访问到的地方，再给编辑器设置 `AI_BACKEND_URL` 即可。
+之后想启用 Polaris，把 agent 部署在编辑器能访问到的地方，再给编辑器设置 `AI_BACKEND_URL` 即可。
 
-## AI Lab 如何工作
+## Polaris 如何工作
 
 ```mermaid
 flowchart LR
@@ -188,7 +188,7 @@ flowchart LR
 | 账号 | 不需要 | 需要 |
 | 简历存储 | 你的浏览器（IndexedDB） | 加密云端存储，随时可完整导出 |
 | 多设备同步 | — | 支持 |
-| AI | AI Lab，使用自带的 agent 和你自己的模型 Key | 托管模型、模拟面试与记忆 |
+| AI | Polaris，使用自带的 agent 和你自己的模型 Key | 托管模型、模拟面试与记忆 |
 | 模板 | 20 套 | 20 套 |
 
 ## 仓库结构
@@ -197,12 +197,12 @@ pnpm + Turborepo 单仓。共享的 schema、模板、设计系统、图标、�
 
 | 路径 | 说明 |
 |---|---|
-| `apps/web` | 编辑器与 AI Lab（Next.js） |
-| `apps/agent` | AI Lab 的 agent（Fastify、DeepAgents、SQLite） |
+| `apps/web` | 编辑器与 Polaris（Next.js） |
+| `apps/agent` | Polaris 背后的 agent（Fastify、DeepAgents、SQLite） |
 | `apps/agent/skills` | 技能和 agent 的常驻规则，均为 Markdown |
 | `apps/landing` | magic-resume.cn 官网（Astro） |
 | `apps/docs` | 文档站（Mintlify） |
-| `packages/genui` | AI Lab 卡片与组件 |
+| `packages/genui` | Polaris 的卡片与组件 |
 | `packages/tsconfig` | 共享的 TypeScript 配置 |
 
 ```bash
@@ -233,7 +233,7 @@ npx -y @magic-resume-kit/mcp@1.0.1 --help
 ## 路线图
 
 - [x] 本地优先的编辑器与 20 套模板
-- [x] 使用自己模型 Key 的 AI Lab，以及可自部署的 agent
+- [x] 使用自己模型 Key 的 Polaris，以及可自部署的 agent
 - [x] 可续跑的会话、结构化表单与审批
 - [x] 从 PDF、Word、图片和 Markdown 导入
 - [ ] 对话附件
