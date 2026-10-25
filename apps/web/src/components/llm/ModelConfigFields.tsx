@@ -19,9 +19,9 @@ import {
   MODEL_PROVIDERS,
   getProvider,
   CUSTOM_PROVIDER_ID,
-  MODEL_IMAGE_SUPPORT_MAP,
 } from '@/lib/constants/modals';
 import { ProviderMark } from '@/components/llm/ProviderMark';
+import { connectionTestText, testImageSupportForModel } from './connectionTestResult';
 import { classifyLlmTestError } from '@/lib/utils/llmTestError';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/product-button';
@@ -112,7 +112,7 @@ export function ModelConfigFields() {
         setTestMsg(typeof data.latencyMs === 'number' ? `${data.latencyMs}ms` : '');
         // Probe result first; when the endpoint gives an inconclusive answer,
         // fall back to the known capability from the model catalog.
-        setTestImageSupport(data.supportsImage ?? MODEL_IMAGE_SUPPORT_MAP[model]);
+        setTestImageSupport(testImageSupportForModel(data.supportsImage, model));
       } else {
         setTestState('error');
         const missing = data.subCode === 'ai_backend_not_configured';
@@ -296,15 +296,7 @@ export function ModelConfigFields() {
             <span className="flex items-center gap-1 text-xs text-emerald-400">
               <CheckCircle2 size={14} className="shrink-0" />
               <span>
-                {testMsg || t('settings.llm.testConnected')}
-                {testImageSupport !== undefined && (
-                  <>
-                    {' · '}
-                    {testImageSupport
-                      ? t('settings.llm.imageSupported')
-                      : t('settings.llm.imageNotSupported')}
-                  </>
-                )}
+                {connectionTestText(testMsg, testImageSupport, t)}
               </span>
             </span>
           )}

@@ -12,6 +12,7 @@ import React, {
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { StagedAttachment } from "./lib/attachments";
+import { verificationWidget } from "./lib/verificationWidget";
 import {
   FileText,
   X,
@@ -382,7 +383,7 @@ export default function AiChatShell({
     origin?: QuoteRect | null;
     motion: "full" | "lite";
   } | null>(null);
-  /** 本会话引用过几次。只有第一次演完整的「递纸条」（docs/specs/ai-quote-handoff §5B）。 */
+  /** 只在本会话第一次引用时播放完整的递纸条动效。 */
   const quoteCountRef = useRef(0);
   const [perchCheer, setPerchCheer] = useState<PerchCheer | null>(null);
   const [batchRequest, setBatchRequest] = useState<BatchRequest | null>(null);
@@ -1143,41 +1144,8 @@ export default function AiChatShell({
               addAssistant(t("aiLab.chat.interruptExpired"));
             }
           } else if (ev.type === "resume_verification") {
-            // 反捏造闸门（确定性校验）的产出。后端一直在算，前端此前没有分支消费，
-            // 校验结果跑完就丢了。走 widget 通道落成一张提示卡，不拦截改动。
-            const verification = ev.payload as
-              | {
-                  suspectedFabrications?: unknown;
-                  status?: unknown;
-                  reason?: unknown;
-                }
-              | undefined;
-            const items = verification?.suspectedFabrications;
-            if (Array.isArray(items) && items.length) {
-              upsertWidget(`verification:${ev.runId ?? "run"}`, {
-                kind: "fabrication_notice",
-                props: { items },
-              });
-            } else if (verification?.status === "degraded") {
-              // 附件是扫描件或图片时读不出文字，没法核对；文案要说清是附件的原因，不是缺简历。
-              const attachment =
-                verification.reason === "attachment_unverifiable";
-              upsertWidget(`verification:${ev.runId ?? "run"}`, {
-                kind: "fabrication_notice",
-                props: {
-                  title: t(
-                    attachment
-                      ? "aiLab.widgets.verification.attachmentTitle"
-                      : "aiLab.widgets.verification.degradedTitle",
-                  ),
-                  body: t(
-                    attachment
-                      ? "aiLab.widgets.verification.attachmentBody"
-                      : "aiLab.widgets.verification.degradedBody",
-                  ),
-                },
-              });
-            }
+            const notice = verificationWidget(ev.payload, ev.runId, t);
+            if (notice) upsertWidget(notice.widgetId, notice.envelope);
           } else if (ev.type === "ui_widget") {
             // 非阻塞卡：不占中断槽,流继续跑。同 widgetId 二次推送是更新同一张卡。
             const envelope = (ev.payload ?? ev.data) as
