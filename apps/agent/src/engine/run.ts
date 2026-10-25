@@ -306,13 +306,20 @@ export class RunEngine {
           yield { event: { type: 'done' } };
         },
         async close() {
-          // A claim that never reached execution can be safely retried. Once a
-          // step might have run, the operation remains consumed across crashes.
-          if (approving && claimed && !started)
-            persistence.releaseClaim(request.operationId);
-          await transport?.close();
-          if (request.sessionId) persistence.touch(request.sessionId);
-          unlock();
+          try {
+            // A claim that never reached execution can be safely retried. Once a
+            // step might have run, the operation remains consumed across crashes.
+            if (approving && claimed && !started)
+              persistence.releaseClaim(request.operationId);
+            await transport?.close();
+            if (request.sessionId) {
+              persistence.touch(request.sessionId);
+              // Still under the session lock, so no other run is writing checkpoints.
+              persistence.compact(request.sessionId);
+            }
+          } finally {
+            unlock();
+          }
         },
       };
     } catch (error) {

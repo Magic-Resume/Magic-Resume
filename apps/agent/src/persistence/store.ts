@@ -16,12 +16,21 @@ export class Persistence {
   readonly db: Database.Database;
   readonly saver: BaseCheckpointSaver;
   private readonly locks = new Set<string>();
+  /** Compaction edits the SQLite saver's tables, so it applies only to the saver created here. */
+  private readonly ownsSaver: boolean;
   constructor(dataDir: string, saver?: BaseCheckpointSaver) {
     if (dataDir !== ':memory:')
       mkdirSync(dataDir, { recursive: true, mode: 0o700 });
     this.db = new Database(
       dataDir === ':memory:' ? ':memory:' : join(dataDir, 'checkpoints.sqlite'),
     );
+    // Without it, deleted sessions leave free pages and the file never shrinks.
+    // An existing file switches modes only through one VACUUM.
+    if (this.db.pragma('auto_vacuum', { simple: true }) !== 2) {
+      this.db.pragma('auto_vacuum = INCREMENTAL');
+      this.db.exec('VACUUM');
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
+    }
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('busy_timeout = 5000');
     this.db.exec(`
@@ -37,6 +46,37 @@ export class Persistence {
       );
     `);
     this.saver = saver ?? new SqliteSaver(this.db);
+    this.ownsSaver = !saver;
+  }
+  /**
+   * Every step stores the whole state, so a turn of many steps grows quadratically.
+   * Once a run ends, only the head and each turn's base checkpoint are read again
+   * (resume, approval and fork); version 4 checkpoints carry their own pending sends.
+   */
+  compact(session: string): void {
+    if (!this.ownsSaver) return;
+    const tables = this.db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name IN ('checkpoints', 'writes')",
+      )
+      .get() as { n: number };
+    if (tables.n !== 2) return;
+    this.db.transaction(() => {
+      const head = this.db
+        .prepare(
+          "SELECT checkpoint_id FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = '' ORDER BY checkpoint_id DESC LIMIT 1",
+        )
+        .get(session) as { checkpoint_id: string } | undefined;
+      if (!head) return;
+      const kept =
+        'SELECT base_checkpoint_id FROM turns WHERE session_id = ? AND base_checkpoint_id IS NOT NULL UNION SELECT ?';
+      for (const table of ['writes', 'checkpoints'])
+        this.db
+          .prepare(
+            `DELETE FROM ${table} WHERE thread_id = ? AND checkpoint_ns = '' AND checkpoint_id NOT IN (${kept})`,
+          )
+          .run(session, session, head.checkpoint_id);
+    })();
   }
   acquire(...sessions: string[]): () => void {
     if (sessions.some((session) => this.locks.has(session)))
@@ -130,6 +170,11 @@ export class Persistence {
       } finally {
         unlock();
       }
+    }
+    if (collected) {
+      this.db.pragma('incremental_vacuum');
+      // In WAL mode the file shrinks only once the log is checkpointed.
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
     }
     return collected;
   }

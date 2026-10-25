@@ -186,8 +186,9 @@ DeepAgents 内置的 `write_todos`、`read_file`、`write_file`、`edit_file`、
 - **会话状态**（`GET /api/chat/session`）：读最新检查点；有 `__interrupt__` 待写入则 `awaiting_input` 并给出 `pendingApproval`（`requestId`、`interruptId`、`operationId = sha256(thread:checkpoint:interrupt)`、`expectedCheckpointId`、`actions`）；有检查点则 `active`；`turns` 里有记录但检查点没了是 `checkpoint_missing`；都没有是 `not_found`。
 - **审批续跑**（`POST /api/chat/approve`）：校验 `expectedCheckpointId` 与当前检查点一致、`interruptId` 匹配、决策类型在允许范围内；同一 `operationId` 重复提交且决策相同时返回 409 并说明已处理，决策不同返回 409 冲突。通过后 `Command({ resume: { decisions }, update: 预算归零 })` 续跑，事件流与对话相同。
 - **分叉**（`POST /api/chat/session/fork`）：校验源会话最新检查点等于 `expectedCheckpointId`、目标会话不存在；取 `turns` 里 `sourceTurnId` 的 `base_checkpoint_id`，`copyCheckpoint` 到新线程；原轮次是会话第一轮则新线程为空。
+- **运行后整理**：每一步都存一份完整状态，一轮步数一多，体积按平方增长。运行结束、释放会话锁之前，只保留最新检查点和各轮的 `base_checkpoint_id`（续跑、审批、分叉只读这些），其余检查点及其 writes 一并删除。v4 检查点自带待发送任务，不依赖父检查点。外部传入的 saver（测试用的 `MemorySaver`）不整理。
 - **释放**（`DELETE /api/chat/session`）：删除线程的全部检查点和 `turns` 记录。
-- **过期回收**：后台定时删除超过 `AGENT_SESSION_TTL_HOURS`（默认 168）未活动的线程。
+- **过期回收**：后台定时删除超过 `AGENT_SESSION_TTL_HOURS`（默认 168）未活动的线程，随后执行 `incremental_vacuum` 把空闲页还给磁盘。库以 `auto_vacuum = INCREMENTAL` 打开；已有的库在首次启动时做一次 `VACUUM` 完成切换。
 - **检查点丢失**：浏览器仍持有对话记录。若请求带了 `sessionId` 但检查点不存在且 `turns` 也没有记录，用请求里的 `messages` 作为历史新建线程；`checkpoint_missing` 则返回 409，提示开始新对话（与前端约定一致）。
 
 ## 9. 简历提案
