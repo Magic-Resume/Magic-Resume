@@ -141,6 +141,28 @@ test('write_todos maps first plan and subsequent updates with statuses unchanged
   assert.equal(second.filter((item) => item.type === 'plan_update').length, 1);
 });
 
+test('mode activation and repeated skill reads share one notification per run', () => {
+  const m = mapper();
+  assert.equal(m.skillLoaded('resume-optimization').length, 1);
+  for (const [skill, count] of [
+    ['resume-optimization', 0],
+    ['resume-analysis', 1],
+    ['resume-analysis', 0],
+  ] as const) {
+    const events = m.map(
+      event('on_tool_end', 'read_file', {
+        input: { file_path: `/skills/${skill}/SKILL.md` },
+      }),
+    );
+    assert.equal(
+      events.filter((item) => item.type === 'skill_loaded').length,
+      count,
+    );
+  }
+  assert.deepEqual(m.skillLoaded('resume-analysis'), []);
+  assert.equal(mapper().skillLoaded('resume-optimization').length, 1);
+});
+
 test('subagent lifecycle is visible while nested model and tool output stays out of the conversation', () => {
   const m = mapper();
   assert.equal(

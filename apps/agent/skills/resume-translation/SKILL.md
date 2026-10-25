@@ -20,6 +20,8 @@ Read the exact JSON and identify the target language. Writes require cocreate mo
 
 ## Procedure
 
+First call `write_todos` with 3–5 user-facing steps: confirm the source and language, translate the sections, check terminology and preserved facts, and prepare the proposal. Use one in_progress step and call `write_todos` after completing each step with the full updated list. Keep unresolved language questions pending; never report a translation as completed before the write succeeds.
+
 1. Use `read_resume`. If the target language is absent, use `request_form(target_language)` once; read its submitted `lang` value.
 2. Translate user-visible prose section by section. Retain IDs, section keys, field keys, URLs, dates, numbers, names and custom fields.
 3. Set documentLanguage to the supported language identifier and documentLanguageSource to explicit. Do not add experience or improve the facts while translating.

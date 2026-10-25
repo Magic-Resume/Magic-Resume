@@ -20,6 +20,8 @@ Read the exact current JSON. Actual writes require cocreate mode. Read `referenc
 
 ## Procedure
 
+First call `write_todos` with 3–5 concrete, user-facing steps: review the source and target, rewrite supported claims, check facts and structure, and prepare the proposal with reasons. Set one step in_progress. Update the complete list with `write_todos` after each step; only successful work becomes completed. Register this plan before `read_resume` or any rewrite, even when a short answer might otherwise seem sufficient for the selected workflow.
+
 1. Use `read_resume` and retain the JSON's IDs and custom fields.
 2. Identify the target JD from the user's messages or submitted form. If absent and required for targeting, ask once with `request_form(job_info)`. If skipped, do general clarity improvements without guessing a target.
 3. Select concrete, supported improvements: clearer actions, ownership, scope and outcomes. A JD keyword is not proof of experience.

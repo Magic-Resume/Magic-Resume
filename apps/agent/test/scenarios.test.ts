@@ -45,10 +45,14 @@ for (const storage of ['memory', 'sqlite'] as const) {
   test(`${storage} 2: real optimization tools publish plans, reasons, patches and one final valid proposal`, async (t) => {
     const f = await fixture(t, storage, [
       call('read_file', { file_path: '/skills/resume-optimization/SKILL.md' }),
-      call('read_resume', {}),
       call('write_todos', {
-        todos: [{ content: 'Improve headline', status: 'in_progress' }],
+        todos: [
+          { content: 'Review resume and target', status: 'in_progress' },
+          { content: 'Improve supported wording', status: 'pending' },
+          { content: 'Check facts and prepare proposal', status: 'pending' },
+        ],
       }),
+      call('read_resume', {}),
       call('explain_changes', {
         notes: [
           {
@@ -64,7 +68,11 @@ for (const storage of ['memory', 'sqlite'] as const) {
         content: JSON.stringify(improved),
       }),
       call('write_todos', {
-        todos: [{ content: 'Improve headline', status: 'completed' }],
+        todos: [
+          { content: 'Review resume and target', status: 'completed' },
+          { content: 'Improve supported wording', status: 'completed' },
+          { content: 'Check facts and prepare proposal', status: 'completed' },
+        ],
       }),
       { text: 'The proposal is ready for review.' },
     ]);
@@ -84,6 +92,22 @@ for (const storage of ['memory', 'sqlite'] as const) {
         type,
       );
     const updates = events.filter((event) => event.type === 'resume_update');
+    assert.equal(
+      events.filter((event) => event.type === 'skill_loaded').length,
+      1,
+    );
+    assert.equal(
+      events.filter((event) => event.type === 'agent_plan').length,
+      1,
+    );
+    const plans = events.filter((event) => event.type === 'plan_update');
+    assert.equal(plans.length, 2);
+    assert.ok(plans[0].type === 'plan_update');
+    assert.equal((plans[0].payload.todos as unknown[]).length, 3);
+    assert.match(
+      JSON.stringify(f.fake.requests[1].messages),
+      /First call `write_todos`/,
+    );
     assert.equal(updates.length, 1);
     assert.equal(
       resumeSchema.safeParse(updates[0].payload.resume).success,
