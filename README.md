@@ -27,7 +27,7 @@
 
 <br/>
 
-![The Magic Resume editor: content on the left, a live print preview in the middle, template and layout controls on the right](./docs/images/readme/editor.png)
+![AI Lab with Polaris: describe what to change, pick a skill, or choose the collaboration mode and model](./docs/images/readme/ai-lab.png)
 
 **Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
 
@@ -56,6 +56,8 @@ This repository is the open-source edition. It contains the editor and **AI Lab*
 
 ### Editor
 
+![The editor: content on the left, a live print preview in the middle, template and layout controls on the right](./docs/images/readme/editor.png)
+
 - **Live preview at print fidelity.** The page re-renders as you type; exports match what you see.
 - **20 templates.** ATS-friendly, each with its own color, font, density, spacing and layout controls, on A4 or Letter.
 - **Flexible sections.** Add, rename, reorder and hide sections; rich text with Tiptap; custom fields.
@@ -64,8 +66,6 @@ This repository is the open-source edition. It contains the editor and **AI Lab*
 - **Light and dark themes, English and Chinese.**
 
 ### AI Lab
-
-![AI Lab: a conversation panel with skill shortcuts, the collaboration mode and the selected model](./docs/images/readme/ai-lab.png)
 
 - **Proposals, not overwrites.** Every change the AI makes appears as a diff on the canvas, with a reason for each edit. You accept or skip changes one by one; nothing is saved until you accept.
 - **Skills.** Create a resume from scratch, optimize it for a job description, analyze it, score its fit against a role, or translate it. Each skill is a plain Markdown file you can read and change.
