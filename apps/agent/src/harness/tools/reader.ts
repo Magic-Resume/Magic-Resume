@@ -1,4 +1,5 @@
 import type { RunnableConfig } from '@langchain/core/runnables';
+import { stripTags } from '../../text.js';
 export type ResumeReader = (
   config?: RunnableConfig,
 ) => Promise<Record<string, unknown>>;
@@ -29,8 +30,7 @@ export function resumeMarkdown(resume: Record<string, unknown>): string {
         .forEach(([key, item]) => visit(item, key, level + 1));
     } else if (value !== undefined && value !== null && String(value).trim()) {
       lines.push(
-        `${label}: ${String(value)
-          .replace(/<[^>]*>/g, ' ')
+        `${label}: ${stripTags(String(value), ' ')
           .replace(/&nbsp;/g, ' ')
           .replace(/&amp;/g, '&')
           .trim()}`,

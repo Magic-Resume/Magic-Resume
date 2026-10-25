@@ -13,6 +13,16 @@ const trajectory = {
   startedAt: 1,
   steps: [{ id: 'step', index: 1, status: 'done' as const, startedAt: 1, completedAt: 5 }],
 };
+// Reads rendered markup as text; repeats until no tag is left so nested markup cannot survive.
+const plainText = (html: string) => {
+  let previous: string;
+  let current = html;
+  do {
+    previous = current;
+    current = current.replace(/<[^>]*>/g, '');
+  } while (current !== previous);
+  return current;
+};
 const text = (id: string, value: string): MessageBeat => ({ id, kind: 'text', text: value });
 const tool: MessageBeat = { id: 'read', kind: 'tool', call: { toolCallId: 'read', toolName: 'read_resume', done: true } };
 const widget: MessageBeat = { id: 'notice', kind: 'widget', widget: { widgetId: 'notice', kind: 'fabrication_notice', props: { items: ['Example Lantern Lab'] }, status: 'pending' } };
@@ -69,10 +79,10 @@ test('a choice continuation renders chunked text as one paragraph in Markdown an
     const thread = renderToStaticMarkup(<ChatThread messages={[chosen, message]} onToggleCanvas={() => {}} openCanvasSkillId={null} />);
     for (const markup of [markdown, thread]) {
       const paragraphs = markup.match(/<p\b[^>]*>[\s\S]*?<\/p>/g) ?? [];
-      const answer = paragraphs.filter((paragraph) => paragraph.replace(/<[^>]*>/g, '').includes('根据你的选择'));
+      const answer = paragraphs.filter((paragraph) => plainText(paragraph).includes('根据你的选择'));
       assert.equal(answer.length, 1);
-      assert.equal(answer[0].replace(/<[^>]*>/g, '').replace(/⁣/g, ''), expected);
-      assert.equal(paragraphs.filter((paragraph) => fragments.some((fragment) => paragraph.replace(/<[^>]*>/g, '').includes(fragment))).length, 1);
+      assert.equal(plainText(answer[0]).replace(/⁣/g, ''), expected);
+      assert.equal(paragraphs.filter((paragraph) => fragments.some((fragment) => plainText(paragraph).includes(fragment))).length, 1);
     }
     assert.equal(visibleAssistantText(message), expected);
     assert.match(thread, /项目经历/);

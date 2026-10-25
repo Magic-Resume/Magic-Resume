@@ -6,6 +6,7 @@ import {
   createModelTransport,
   type ModelResolver,
 } from '../model/transport.js';
+import { stripTags } from '../text.js';
 
 export interface SearchResult {
   title: string;
@@ -19,12 +20,7 @@ const record = (value: unknown): Record<string, unknown> =>
     ? (value as Record<string, unknown>)
     : {};
 const text = (value: unknown, limit: number) =>
-  typeof value === 'string'
-    ? value
-        .replace(/<[^>]*>/g, '')
-        .trim()
-        .slice(0, limit)
-    : '';
+  typeof value === 'string' ? stripTags(value).trim().slice(0, limit) : '';
 
 export function normalizeSearchResults(
   provider: SearchConfiguration['provider'],

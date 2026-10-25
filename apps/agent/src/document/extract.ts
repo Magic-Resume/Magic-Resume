@@ -83,9 +83,16 @@ export async function extractDocument(
   );
   const worker = development
     ? new Worker(
-        `import(${JSON.stringify(pathToFileURL(createRequire(import.meta.url).resolve('tsx/esm/api')).href)}).then(({tsImport})=>tsImport(${JSON.stringify(url.href)},${JSON.stringify(import.meta.url)}));`,
+        // Constant source; the loader and target arrive as argv, never spliced into code.
+        'const [loader, target, parent] = process.argv.slice(-3); import(loader).then(({ tsImport }) => tsImport(target, parent));',
         {
           eval: true,
+          argv: [
+            pathToFileURL(createRequire(import.meta.url).resolve('tsx/esm/api'))
+              .href,
+            url.href,
+            import.meta.url,
+          ],
           execArgv,
           workerData: file,
           stdout: true,
