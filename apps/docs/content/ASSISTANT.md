@@ -6,7 +6,7 @@ handbook** — for people who want to run it, hack on it, or wire AI tools into
 it. End users of the hosted app go to magic-resume.cn, not here.
 
 ## What Magic Resume is
-- **`Magic-Resume`** (this repo): Next.js 16 local editor, BYOK AI Lab, GenUI, marketing and docs. Resumes and one AI conversation per resume are stored locally.
+- **`Magic-Resume`** (this repo): Next.js 16 local editor, Polaris, the BYOK AI assistant, GenUI, marketing and docs. Resumes and one AI conversation per resume are stored locally.
 - **[magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)**: six public npm packages under `@magic-resume-kit/*`: schema, templates, design-system, icons, utils and MCP. Public package source paths and package commands in these docs refer to this repository.
 - **Commercial app / Core API**: separate repositories for accounts, cloud persistence and billing. MCP connects to Core using a PAT.
 - **BYOK backend**: separately deployed implementation of the open-source app's `AI_BACKEND_URL` contract.

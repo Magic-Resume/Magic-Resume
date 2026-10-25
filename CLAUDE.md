@@ -31,7 +31,8 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`. 
 
 | Workspace | Package name | Purpose |
 |---|---|---|
-| `apps/web` | `@magic-resume/web` | Next.js 16 local-first editor and BYOK AI Lab |
+| `apps/web` | `@magic-resume/web` | Next.js 16 local-first editor and Polaris, the BYOK AI assistant |
+| `apps/agent` | `@magic-resume/agent` | Polaris agent: Fastify, DeepAgents, SQLite checkpoints, skills |
 | `apps/landing` | `@magic-resume/landing` | Marketing site for magic-resume.cn (Astro, Vercel) |
 | `apps/docs` | — | Docs site (Mintlify) |
 | npm (kit: `packages/design-system`) | `@magic-resume-kit/design-system` | Design tokens and shared styles |
@@ -39,7 +40,7 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`. 
 | npm (kit: `packages/mcp`) | `@magic-resume-kit/mcp` | stdio MCP server + CLI (Node ESM) |
 | npm (kit: `packages/resume-schema`) | `@magic-resume-kit/resume-schema` | Shared Zod schemas, types, sample data |
 | npm (kit: `packages/resume-templates`) | `@magic-resume-kit/resume-templates` | Template DSL, renderer, registry |
-| `packages/genui` | `@magic-resume/genui` | Local AI Lab components and widgets |
+| `packages/genui` | `@magic-resume/genui` | Local Polaris components and widgets |
 | `packages/tsconfig` | `@magic-resume/tsconfig` | Shared TypeScript configs |
 | npm (kit: `packages/utils`) | `@magic-resume-kit/utils` | Dependency-light helpers (`cn`, time, color) |
 
@@ -49,7 +50,7 @@ This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`. 
 
 ### Local storage and BYOK AI (`apps/web`)
 
-Resume editing and export run locally without an account or backend. Resumes and a single conversation per resume persist in IndexedDB, without an expiry. AI Lab retains chat, skills, approvals, plans, tools, sources and GenUI cards, using only the user's model key. All AI requests go through Next.js routes to the separately deployed `AI_BACKEND_URL`. The backend implementation is not included; implement the contract in `docs/reference/ai-backend.md`. There is no cloud sync, billing, memory, interview or conversation-history browser.
+Resume editing and export run locally without an account or backend. Resumes and a single conversation per resume persist in IndexedDB, without an expiry. Polaris retains chat, skills, approvals, plans, tools, sources and GenUI cards, using only the user's model key. All AI requests go through Next.js routes to `AI_BACKEND_URL`, normally the agent in `apps/agent`, which implements the contract in `docs/reference/ai-backend.md`. Its architecture is in `docs/specs/agent-backend/design.md`. There is no cloud sync, billing, memory, interview or conversation-history browser.
 
 `pnpm check:local-only` (`scripts/check-local-only.mjs`, part of `pnpm lint` and CI) fails on markers of that code: `@clerk/`, `/api/billing`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_MODE`, `commercial`, and so on.
 

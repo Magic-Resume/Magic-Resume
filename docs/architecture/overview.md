@@ -91,7 +91,7 @@ Magic-Resume/
 
 `apps/web` owns the existing Magic Resume web application.
 
-It contains the Next.js App Router application, dashboard, resume editor, sharing pages, AI Lab UI, localization files, frontend state stores, and browser-only persistence logic. Existing app-level assets and configuration files move here with the application.
+It contains the Next.js App Router application, dashboard, resume editor, sharing pages, Polaris UI, localization files, frontend state stores, and browser-only persistence logic. Existing app-level assets and configuration files move here with the application.
 
 The web app may depend on shared packages, especially `packages/resume-schema` and `packages/resume-templates`, but shared packages must not import from `apps/web`.
 
