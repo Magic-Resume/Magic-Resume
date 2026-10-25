@@ -2,6 +2,36 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v3.0.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.8.1...v3.0.0) (2026-10-25)
+
+## ✨ New Features
+- [`4c696a6`](https://github.com/Magic-Resume/Magic-Resume/commit/4c696a6)  feat(web): restore local BYOK AI Lab and fix light theme 
+- [`20fb7e4`](https://github.com/Magic-Resume/Magic-Resume/commit/20fb7e4)  feat(agent): stream chat through the user&#x27;s own model 
+- [`5da32e1`](https://github.com/Magic-Resume/Magic-Resume/commit/5da32e1)  feat(agent): run AI Lab on a resumable DeepAgents harness 
+- [`5955715`](https://github.com/Magic-Resume/Magic-Resume/commit/5955715)  feat(agent): import documents, edit snippets and test connections 
+- [`c3ffce6`](https://github.com/Magic-Resume/Magic-Resume/commit/c3ffce6)  feat(agent): add conversation attachments and optional web search 
+
+## 🐛 Bug Fixes
+- [`c684e70`](https://github.com/Magic-Resume/Magic-Resume/commit/c684e70)  fix(web): preserve local resumes on direct imports 
+- [`71c6b4f`](https://github.com/Magic-Resume/Magic-Resume/commit/71c6b4f)  fix(web): confirm replacing the single local AI session 
+- [`b9ef4f9`](https://github.com/Magic-Resume/Magic-Resume/commit/b9ef4f9)  fix(web): point model errors back at the user&#x27;s own key 
+- [`9f8418d`](https://github.com/Magic-Resume/Magic-Resume/commit/9f8418d)  fix(agent): show plans, emit each skill once and deepen the skill guides 
+- [`d4613e2`](https://github.com/Magic-Resume/Magic-Resume/commit/d4613e2)  fix(agent): keep streamed replies as one string in history 
+- [`7be5962`](https://github.com/Magic-Resume/Magic-Resume/commit/7be5962)  fix(agent): count attachment text as evidence for resume facts 
+- [`9add5c5`](https://github.com/Magic-Resume/Magic-Resume/commit/9add5c5)  fix(agent): pick the vision probe color at random 
+- [`0c327cc`](https://github.com/Magic-Resume/Magic-Resume/commit/0c327cc)  fix(agent): check resume facts against attachment text 
+- [`3aba9ba`](https://github.com/Magic-Resume/Magic-Resume/commit/3aba9ba)  fix(web): explain unverifiable attachments and fold long fact lists 
+- [`ba746b3`](https://github.com/Magic-Resume/Magic-Resume/commit/ba746b3)  fix(agent): copy tool-call messages by field instead of spreading them 
+- [`78d1304`](https://github.com/Magic-Resume/Magic-Resume/commit/78d1304)  fix(web): stop offering the deleted favicon proxy as a fallback 
+
+## 🔒 Security Issues
+- [`c7d9673`](https://github.com/Magic-Resume/Magic-Resume/commit/c7d9673)  chore: keep private repository references out of the public tree 
+- [`697c6f3`](https://github.com/Magic-Resume/Magic-Resume/commit/697c6f3)  fix(agent): limit requests per client address 
+- [`5330f79`](https://github.com/Magic-Resume/Magic-Resume/commit/5330f79)  fix: strip markup to a fixed point and keep worker code constant 
+
+## 💥 Breaking Changes
+- [`0307e95`](https://github.com/Magic-Resume/Magic-Resume/commit/0307e95)  feat(web): make the open-source app local-only
+
 # [v2.8.1](https://github.com/Magic-Resume/Magic-Resume/compare/v2.8.0...v2.8.1) (2026-10-24)
 
 ## 🐛 Bug Fixes
