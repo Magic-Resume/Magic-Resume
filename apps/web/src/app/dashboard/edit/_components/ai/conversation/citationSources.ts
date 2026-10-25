@@ -272,13 +272,10 @@ export function siteFaviconCandidates(
 ): string[] {
   const supplied = httpUrl(candidate);
   const direct = siteFaviconUrl(pageUrl);
-  const page = httpUrl(pageUrl);
-  const proxy = page
-    ? `/api/source-icon?domain=${encodeURIComponent(new URL(page).hostname)}`
-    : undefined;
+  // 本地编辑器没有图标代理；候选耗尽后由地球图标兜底，避免请求已删除的路由。
   return [
     ...new Set(
-      [supplied, direct, proxy].filter((url): url is string => Boolean(url)),
+      [supplied, direct].filter((url): url is string => Boolean(url)),
     ),
   ];
 }
