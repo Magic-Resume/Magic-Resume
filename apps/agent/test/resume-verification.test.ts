@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { HumanMessage } from '@langchain/core/messages';
+import { HumanMessage, ToolMessage } from '@langchain/core/messages';
 import {
   createResumeVerification,
   NAME,
@@ -48,4 +48,50 @@ test('ResumeVerification flags new organizations, credentials, dates and metrics
     captured.events.some((event) => event.name === 'resume_verification'),
   );
   assert.match(JSON.stringify(captured.result), /Confirm their source/);
+});
+
+test('ResumeVerification accepts facts the user supplied in an attachment', async () => {
+  const fromAttachment = {
+    ...resume,
+    sections: {
+      ...resume.sections,
+      experience: [
+        {
+          ...resume.sections.experience[0],
+          company: 'Example Harbor Studio',
+          date: '2024.05 - 2024.09',
+          summary: 'Cut page load time by 30%.',
+        },
+      ],
+    },
+  };
+  const attachmentText =
+    'Example Harbor Studio | Frontend Intern | 2024.05 - 2024.09\nCut page load time by 30%.';
+  const request = toolRequest(
+    'write_file',
+    {
+      file_path: '/workspace/resume.json',
+      content: JSON.stringify(fromAttachment),
+    },
+    {
+      state: {
+        files: seedResume(resume),
+        messages: [
+          new HumanMessage('Rewrite my resume from the attached PDF.'),
+          new ToolMessage({
+            content: attachmentText,
+            name: 'read_attachment',
+            tool_call_id: 'call-attachment',
+          }),
+        ],
+      },
+    },
+  );
+  const captured = await captureCustom(() =>
+    Promise.resolve(runTool(createResumeVerification(resume), request)),
+  );
+  assert.ok(
+    !captured.events.some((event) => event.name === 'resume_verification'),
+    JSON.stringify(captured.events),
+  );
 });
