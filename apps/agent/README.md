@@ -152,6 +152,7 @@ All configuration comes from environment variables; `.env.example` lists the com
 | `SEARCH_API_KEY`                  | unset                | Required for Tavily/Brave; unused for SearXNG                            |
 | `SEARCH_BASE_URL`                 | provider default     | Optional base override; required for SearXNG, no public-instance default |
 | `AGENT_BODY_LIMIT_BYTES`          | `2097152`            | HTTP JSON body limit                                                    |
+| `AGENT_RATE_LIMIT_PER_MINUTE`     | `300`                | Requests per client address per minute; `0` disables the limit          |
 | `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false`              | Allow private model/search endpoints only outside production           |
 
 The server logs a fixed warning and ignores private-host opt-in in production. Public outbound model endpoints are DNS-validated once per run and every connection is pinned to the validated address; redirects are rejected. Inherited tracing and verbose provider logging are disabled.

@@ -178,6 +178,7 @@ Model settings (provider, key, base URL, model, output limit, reasoning strength
 | `SEARCH_API_KEY` | — | Required for Tavily and Brave. |
 | `SEARCH_BASE_URL` | provider default | Optional API base override; required for SearXNG, with no default public instance. Private hosts follow the model opt-in rule. |
 | `AGENT_BODY_LIMIT_BYTES` | `2097152` | Largest accepted JSON request. |
+| `AGENT_RATE_LIMIT_PER_MINUTE` | `300` | Requests per client address per minute; `0` disables the limit. |
 | `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false` | Allow model servers on private networks. Ignored in production. |
 
 See [`apps/agent/README.md`](./apps/agent/README.md) for the full list, how to write a skill, and a smoke test against a real model.

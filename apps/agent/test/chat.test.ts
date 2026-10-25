@@ -230,6 +230,37 @@ test('no-session runs do not expose input tools, and invalid configuration or in
   assert.equal(oversized.status, 413);
 });
 
+test('requests beyond the per-address limit get a contract 429 while health checks stay open', async (t) => {
+  const f = await fixture(t, 'memory', [], {
+    AGENT_RATE_LIMIT_PER_MINUTE: '2',
+  });
+  const session = () =>
+    fetch(`${f.origin}/api/chat/session?sessionId=example-session`);
+  assert.equal((await session()).status, 200);
+  assert.equal((await session()).status, 200);
+  const limited = await session();
+  assert.equal(limited.status, 429);
+  assert.deepEqual(await limited.json(), {
+    errorCode: 'rate_limited',
+    subCode: 'agent_rate_limited',
+    retryable: true,
+  });
+  for (let i = 0; i < 3; i++)
+    assert.equal((await fetch(`${f.origin}/health`)).status, 200);
+  const unlimited = await fixture(t, 'memory', [], {
+    AGENT_RATE_LIMIT_PER_MINUTE: '0',
+  });
+  for (let i = 0; i < 4; i++)
+    assert.equal(
+      (
+        await fetch(
+          `${unlimited.origin}/api/chat/session?sessionId=example-session`,
+        )
+      ).status,
+      200,
+    );
+});
+
 test('disconnect before the first model byte cancels upstream without opening SSE', async (t) => {
   const f = await fixture(t, 'memory', [{ hang: true }]);
   const controller = new AbortController();

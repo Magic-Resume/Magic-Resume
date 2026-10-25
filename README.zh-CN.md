@@ -178,6 +178,7 @@ flowchart LR
 | `SEARCH_API_KEY` | — | Tavily 和 Brave 必填。 |
 | `SEARCH_BASE_URL` | 服务商默认地址 | 可覆盖 API 基址；SearXNG 必填，不默认使用公开实例。私网地址沿用模型的非生产显式放行规则。 |
 | `AGENT_BODY_LIMIT_BYTES` | `2097152` | 可接受的最大 JSON 请求体。 |
+| `AGENT_RATE_LIMIT_PER_MINUTE` | `300` | 每个客户端地址每分钟的请求数上限；`0` 表示不限。 |
 | `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false` | 允许连接内网的模型服务；生产环境下不生效。 |
 
 完整列表、如何编写技能，以及用真实模型做冒烟测试的步骤，见 [`apps/agent/README.md`](./apps/agent/README.md)。

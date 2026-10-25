@@ -32,6 +32,12 @@ const environmentSchema = z.object({
     .positive()
     .max(33_554_432)
     .default(2_097_152),
+  AGENT_RATE_LIMIT_PER_MINUTE: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(100_000)
+    .default(300),
   AGENT_ALLOW_PRIVATE_MODEL_HOSTS: z.enum(['true', 'false']).default('false'),
 });
 
@@ -56,6 +62,7 @@ export function readSettings(env: NodeJS.ProcessEnv = process.env) {
     maxSearches: data.AGENT_MAX_SEARCHES,
     search: searchConfiguration(env),
     bodyLimitBytes: data.AGENT_BODY_LIMIT_BYTES,
+    rateLimitPerMinute: data.AGENT_RATE_LIMIT_PER_MINUTE,
     privateHostsRequested: data.AGENT_ALLOW_PRIVATE_MODEL_HOSTS === 'true',
     allowPrivateModelHosts:
       data.NODE_ENV !== 'production' &&

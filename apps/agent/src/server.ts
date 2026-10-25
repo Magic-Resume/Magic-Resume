@@ -1,4 +1,5 @@
 import Fastify, { LogController } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import type { BaseCheckpointSaver } from '@langchain/langgraph';
 import { readSettings, type Settings } from './config.js';
 import { AgentError } from './contracts/errors.js';
@@ -101,13 +102,27 @@ export function buildServer({
     clearInterval(attachmentSweep);
     persistence.close();
   });
-  app.get('/health', async () => ({ ok: true }));
-  chatRoute(app, engine);
-  approveRoute(app, engine);
-  sessionRoutes(app, engine.sessions);
-  editRoutes(app, settings, resolver);
-  pdfRoute(app, settings, resolver);
-  testLlmRoute(app, settings, resolver);
-  uploadsRoutes(app, settings, attachments);
+  // The agent has no accounts. A per-address limit keeps one client from
+  // filling the disk or the model budget if the port is ever exposed.
+  if (settings.rateLimitPerMinute > 0)
+    void app.register(rateLimit, {
+      max: settings.rateLimitPerMinute,
+      timeWindow: '1 minute',
+      errorResponseBuilder: () =>
+        new AgentError(429, 'rate_limited', 'agent_rate_limited'),
+    });
+  // Routes load after the limiter, so its onRoute hook covers every one of them.
+  void app.register(async (routes) => {
+    routes.get('/health', { config: { rateLimit: false } }, async () => ({
+      ok: true,
+    }));
+    chatRoute(routes, engine);
+    approveRoute(routes, engine);
+    sessionRoutes(routes, engine.sessions);
+    editRoutes(routes, settings, resolver);
+    pdfRoute(routes, settings, resolver);
+    testLlmRoute(routes, settings, resolver);
+    uploadsRoutes(routes, settings, attachments);
+  });
   return app;
 }
