@@ -1,8 +1,7 @@
 name: Web unit tests
 
-# PRs to master and release branches had only Vercel previews, so these suites
-# never ran anywhere. src/app.test.ts still imports modules v3 removed and is
-# left out of test:unit until the web tests are reworked.
+# Run the restored app regressions and colocated v3 unit suites on PRs.
+# Web HTTP tests use ephemeral loopback backends, with no external AI service.
 on:
   pull_request:
     branches: ["master", "release-*"]

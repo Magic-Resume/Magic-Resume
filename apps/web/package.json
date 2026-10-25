@@ -14,7 +14,7 @@
     "build:prod": "NODE_ENV=production node scripts/next.mjs build",
     "i18n:check": "tsx scripts/i18n-check.ts",
     "privacy:scan": "node scripts/privacy-scan.mjs",
-    "test:unit": "node --import tsx scripts/test-chat-resume-update.ts && node --import tsx scripts/test-resume-patch-targets.ts",
+    "test:unit": "node --import tsx scripts/test-chat-resume-update.ts && node --import tsx scripts/test-resume-patch-targets.ts && node --import tsx --require ./scripts/register-test-assets.cjs --test src/app/api/chat-agent/route.test.ts src/app/dashboard/edit/_components/ai/lib/attachments.test.ts src/app/dashboard/edit/_components/ai/lib/documentChanges.test.ts src/app/dashboard/edit/_components/ai/lib/streamingBuffer.test.ts src/app/dashboard/edit/_components/ai/lib/verificationWidget.test.ts src/app/dashboard/edit/_components/templates/colorSchemes.test.ts src/app.test.ts src/components/llm/connectionTestResult.test.ts src/lib/ai/backend.test.ts src/lib/api/IndexDBClient.test.ts src/lib/api/attachmentUpload.test.ts src/lib/api/errorProjection.test.ts src/store/documentLanguage.test.ts src/store/useAiSessionStore.local.test.ts src/store/useResumeStore.import.test.ts src/store/useSettingStore.test.ts src/app/dashboard/edit/_components/ai/conversation/trajectory.test.tsx src/app/dashboard/edit/_components/ai/widgets/FabricationNotice.test.tsx",
     "verify:sections": "tsx scripts/verify-custom-sections.tsx",
     "test:api": "tsx scripts/test-api-boundaries.ts",
     "test": "npm run privacy:scan && npm run test:unit && npm run test:api && npm run verify:sections"

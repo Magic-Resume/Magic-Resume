@@ -69,7 +69,7 @@ IndexedDB persistence is handled by `src/lib/api/IndexDBClient.ts` (db name: `Ma
 
 ### Builds
 
-`apps/web/scripts/next.mjs` wraps `next <command>` only to drop the bare `--` pnpm passes through. Dev and build use Turbopack (Next 16 default). `next build` type-checks with `tsconfig.build.json`, which leaves out tests and `scripts/`: several tests still reference modules v3 removed and are due to be reworked with the test setup.
+`apps/web/scripts/next.mjs` wraps `next <command>` only to drop the bare `--` pnpm passes through. Dev and build use Turbopack (Next 16 default). `next build` type-checks production code with `tsconfig.build.json`, which excludes tests and `scripts/`. `pnpm --filter @magic-resume/web run test:unit` runs the resume-update and patch regression scripts, the restored `src/app.test.ts`, and colocated `node:test` suites for AI forwarding, streaming rendering, verification cards, attachments, BYOK settings and local persistence. HTTP tests use ephemeral loopback backends; they do not need a running agent or external model service. CI builds workspace packages before running this command.
 
 ### Resume schema (`packages/resume-schema`)
 
