@@ -4,35 +4,37 @@ type: reference
 status: Living
 owner: kaihuang
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-10-25
 summary: Setup, exposed MCP tools/resources/prompts, editing rules, and runtime boundary notes.
-scope: [packages/mcp]
+scope: ["@magic-resume-kit/mcp"]
 repos: [Magic-Resume]
 related: [architecture/overview]
 ---
 
 # Magic Resume MCP
 
-`@magic-resume/mcp` is a local stdio MCP package for Claude Code, Codex, and other MCP-compatible AI tools. It does not require Magic Resume to run a separate public MCP server port.
+`@magic-resume-kit/mcp` is a local stdio MCP package for Claude Code, Codex, and other MCP-compatible AI tools. It does not require Magic Resume to run a separate public MCP server port.
+
+Source and releases: [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/mcp). Install this package separately; the local editor has no account API for MCP to connect to.
 
 ## Setup
 
-Create a personal access token in the Magic Resume web app, then configure the CLI:
+Create a personal access token in the hosted Magic Resume app, then configure the CLI:
 
 ```bash
-npx -y @magic-resume/mcp config set --api-url "https://your-api.example.com/api" --pat "mr_pat_xxx"
+npx -y @magic-resume-kit/mcp config set --api-url "https://your-api.example.com/api" --pat "mr_pat_xxx"
 ```
 
 Add it to Claude Code:
 
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
 
-For local development:
+For a separately running Core API in local development:
 
 ```bash
-npx -y @magic-resume/mcp config set --api-url "http://localhost:<port>/api" --pat "mr_pat_xxx"
+npx -y @magic-resume-kit/mcp config set --api-url "http://localhost:<port>/api" --pat "mr_pat_xxx"
 ```
 
 ## Tools

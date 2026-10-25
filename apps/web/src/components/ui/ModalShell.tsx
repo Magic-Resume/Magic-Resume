@@ -3,11 +3,11 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { X } from '@magic-resume/icons';
+import { X } from '@magic-resume-kit/icons';
 import { cn } from '@/lib/utils';
-import { surfaceVariants } from '@magic-resume/design-system';
+import { surfaceVariants } from '@magic-resume-kit/design-system';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 interface ModalShellProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

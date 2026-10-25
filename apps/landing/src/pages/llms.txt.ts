@@ -17,7 +17,7 @@ import { articleHref, getArticles } from '@/lib/articles';
  * entity its credibility with answer engines.
  *
  * Everything below must be verifiable: template ids in
- * packages/resume-schema, six modes in the landing copy, MIT in LICENSE.
+ * @magic-resume-kit/resume-schema, six modes in the landing copy, MIT in LICENSE.
  */
 export const GET: APIRoute = async ({ site }) => {
   const base = (site ?? new URL('https://www.magic-resume.cn')).origin;

@@ -4,14 +4,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { InfoType, Resume, Section, CustomTemplateConfig } from '@/types/frontend/resume';
 
 // 新的Magic DSL渲染器
-import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
-import { getMagicTemplateById, getDefaultMagicTemplate } from '@magic-resume/resume-templates/config/magic-templates';
-import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import { MagicResumeRenderer } from '@magic-resume-kit/resume-templates/renderer/MagicResumeRenderer';
+import { getMagicTemplateById, getDefaultMagicTemplate } from '@magic-resume-kit/resume-templates/config/magic-templates';
+import { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 
 import { TemplateErrorBoundary } from '@/components/shared/TemplateErrorBoundary';
 import { shallowEqualArray } from '@/lib/utils/array';
 import { mergeTemplateConfig } from '@/lib/utils/templateUtils';
-import { resolveDocumentLanguage, type DocumentLanguage, type SectionOrderItem } from '@magic-resume/resume-schema';
+import { resolveDocumentLanguage, type DocumentLanguage, type SectionOrderItem } from '@magic-resume-kit/resume-schema';
 
 interface Props {
   info: InfoType;

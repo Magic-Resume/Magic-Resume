@@ -1,4 +1,4 @@
-import { Bot, MessageCircleQuestion, Route, type LucideIcon } from '@magic-resume/icons';
+import { Bot, MessageCircleQuestion, Route, type LucideIcon } from '@magic-resume-kit/icons';
 
 /**
  * 输入框的「模式」——与技能正交的一根轴。

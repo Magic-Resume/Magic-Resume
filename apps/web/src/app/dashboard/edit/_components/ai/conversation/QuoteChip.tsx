@@ -11,9 +11,9 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { CornerUpLeft, X } from '@magic-resume/icons';
+import { CornerUpLeft, X } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
-import { EASE_ENTER, EASE_EXIT } from '@magic-resume/utils';
+import { EASE_ENTER, EASE_EXIT } from '@magic-resume-kit/utils';
 import {
   findLatestQuoteBlock,
   flyTo,

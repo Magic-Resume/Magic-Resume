@@ -11,9 +11,9 @@ import {
   Certificate,
   Languages,
   Contact,
-} from '@magic-resume/icons';
+} from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
-import { sectionIconByName } from "@magic-resume/resume-templates";
+import { sectionIconByName } from "@magic-resume-kit/resume-templates";
 import { cn } from "@/lib/utils";
 import { MaskIcon } from "@/components/icons/MaskIcon";
 import AccountMenu from "@/components/shared/AccountMenu";

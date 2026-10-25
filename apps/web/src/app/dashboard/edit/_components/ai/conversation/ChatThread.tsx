@@ -19,7 +19,7 @@ import {
   EyeOff,
   CornerUpLeft,
   Files,
-} from "@magic-resume/icons";
+} from "@magic-resume-kit/icons";
 import { cn } from "@/lib/utils";
 import { SKILLS } from "../skills/registry";
 import Markdown from "./Markdown";
@@ -54,7 +54,7 @@ import SiteFavicon from "./SiteFavicon";
 import MessageNavigationRail from "./MessageNavigationRail";
 import ReasoningActivity from "./ReasoningActivity";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 /** 审批卡上的一页答完了。一次中断可以带多个动作，所以要带页号。 */
 type ApprovalDecision = (
   msgId: string,

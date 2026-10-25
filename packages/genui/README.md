@@ -27,7 +27,7 @@ import {
 workspace 源码：
 
 ```css
-@import '@magic-resume/design-system/styles/tokens.css';
+@import '@magic-resume-kit/design-system/styles/tokens.css';
 @source '<relative-path>/packages/genui/src';
 ```
 

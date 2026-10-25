@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { cx, modalOverlay, surfaceVariants } from '@magic-resume/design-system';
+import { cx, modalOverlay, surfaceVariants } from '@magic-resume-kit/design-system';
 
 type ModalProps = {
   isOpen: boolean;

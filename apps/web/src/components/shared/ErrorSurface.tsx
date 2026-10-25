@@ -3,11 +3,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { Check, Copy, Loader2, RotateCcw } from '@magic-resume/icons';
+import { Check, Copy, Loader2, RotateCcw } from '@magic-resume-kit/icons';
 import {
   Button as DesignButton,
   buttonVariants,
-} from '@magic-resume/design-system';
+} from '@magic-resume-kit/design-system';
 import { cn } from '@/lib/utils';
 import { ISSUES_URL } from '@/lib/constants/projectLinks';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { BriefcaseBusiness, ExternalLink } from '@magic-resume/icons';
+import { BriefcaseBusiness, ExternalLink } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetShell } from '@magic-resume/genui';
 import { RecordsTable } from '@magic-resume/genui';

@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { LayoutTemplate } from '@magic-resume/icons';
+import { LayoutTemplate } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { Gallery, WidgetItem, WidgetShell } from '@magic-resume/genui';
 import type { WidgetOption, WidgetProps } from '@magic-resume/genui';
-import { templateManifestList } from '@magic-resume/resume-templates';
+import { templateManifestList } from '@magic-resume-kit/resume-templates';
 import ResumeMiniPreview from '@/app/dashboard/_components/ResumeMiniPreview';
 import { useResumeDocumentStore } from '@/store/resume/document';
 

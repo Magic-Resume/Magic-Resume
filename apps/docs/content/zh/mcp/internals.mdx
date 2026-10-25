@@ -1,7 +1,9 @@
 ---
 title: 内部细节
-description: "本页说明 @magic-resume/mcp 的目录、入口、配置、工具注册和 Core API 契约，供修改 MCP 包的贡献者参考。"
+description: "本页说明 @magic-resume-kit/mcp 的目录、入口、配置、工具注册和 Core API 契约，供修改 MCP 包的贡献者参考。"
 ---
+
+公共包源码与发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)。本页中的 schema、模板、设计系统、图标、utils 和 MCP 源码路径及构建命令均相对此仓库；应用通过 npm 使用 `@magic-resume-kit/*`，不再包含这些工作区。
 
 本页供打算修改 MCP 包本身或 fork 的贡献者参考。CLI 和服务器共用 `config.ts`，服务器通过 `client.ts` 调用 API。CLI 负责一次性的配置命令，MCP 服务器是 AI 工具拉起的进程。
 
@@ -71,12 +73,12 @@ MCP 服务器是 Web 应用所用 NestJS Core API 的另一个客户端。相关
 ## 怎么构建和发布 MCP 包？
 
 ```bash
-pnpm --filter @magic-resume/mcp build      # tsc → dist/
-pnpm --filter @magic-resume/mcp test       # node --test test/*.test.mjs
-pnpm --filter @magic-resume/mcp lint       # tsc --noEmit
+pnpm --filter @magic-resume-kit/mcp build      # tsc → dist/
+pnpm --filter @magic-resume-kit/mcp test       # node --test test/*.test.mjs
+pnpm --filter @magic-resume-kit/mcp lint       # tsc --noEmit
 ```
 
-发布由 `publishConfig.access = "public"` 控制，pnpm 在打包时会把 `workspace:*` 重写为真实 semver，这样发出去的 `package.json` 里 `@magic-resume/resume-schema` 和 `@magic-resume/resume-templates` 都有合法版本号。
+发布由 `publishConfig.access = "public"` 控制，pnpm 在打包时会把 `workspace:*` 重写为真实 semver，这样发出去的 `package.json` 里 `@magic-resume-kit/resume-schema` 和 `@magic-resume-kit/resume-templates` 都有合法版本号。
 
 ## 怎么添加新的 MCP 工具？
 

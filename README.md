@@ -125,7 +125,7 @@ docker run -p 3000:3000 magic-resume
 
 ## MCP
 
-`packages/mcp` (`@magic-resume/mcp`) is a Model Context Protocol server that lets AI tools (Claude Code, Cursor, Windsurf) read and patch resumes through schema-aware JSON Patch. It talks to a Magic Resume account over its API, so it works with magic-resume.cn; the local editor in this repository has no server for it to reach. See [docs/reference/mcp.md](./docs/reference/mcp.md).
+`@magic-resume-kit/mcp` is a Model Context Protocol server that lets AI tools (Claude Code, Cursor, Windsurf) read and patch resumes through schema-aware JSON Patch. It talks to a Magic Resume account over its API, so it works with magic-resume.cn; the local editor in this repository has no server for it to reach. See [docs/reference/mcp.md](./docs/reference/mcp.md).
 
 ---
 
@@ -156,18 +156,20 @@ A small open-source backend implementation is planned separately. The BYOK UI an
 
 ## Monorepo
 
+Public package sources, tests and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit); this repository pins npm version 1.0.1. MCP is installed separately from the editor.
+
 | Workspace | Description |
 |---|---|
 | `apps/web` | The editor (Next.js) |
 | `apps/landing` | Marketing site for magic-resume.cn (Astro) |
 | `apps/docs` | Documentation site (Mintlify) |
-| `packages/resume-schema` | Shared Zod schemas, types and sample data |
-| `packages/resume-templates` | Template DSL, renderer and registry |
+| `@magic-resume-kit/resume-schema` (npm) | Shared Zod schemas, types and sample data |
+| `@magic-resume-kit/resume-templates` (npm) | Template DSL, renderer and registry |
 | `packages/genui` | AI Lab components and widgets |
-| `packages/design-system` | Design tokens and shared styles |
-| `packages/icons` | Icon set |
-| `packages/utils` | Small helpers (`cn`, time, color) |
-| `packages/mcp` | `@magic-resume/mcp`, stdio MCP server and CLI |
+| `@magic-resume-kit/design-system` (npm) | Design tokens and shared styles |
+| `@magic-resume-kit/icons` (npm) | Icon set |
+| `@magic-resume-kit/utils` (npm) | Small helpers (`cn`, time, color) |
+| `@magic-resume-kit/mcp` (npm) | `@magic-resume-kit/mcp`, stdio MCP server and CLI |
 | `packages/tsconfig` | Shared TypeScript configs |
 
 ```bash
@@ -178,7 +180,7 @@ pnpm run test           # test
 
 # target a single workspace
 pnpm --filter @magic-resume/web dev
-pnpm --filter @magic-resume/mcp build
+npx -y @magic-resume-kit/mcp@1.0.1 --help
 ```
 
 ---

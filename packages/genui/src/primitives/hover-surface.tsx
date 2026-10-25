@@ -5,4 +5,4 @@ export {
   HoverSurface,
   useHoverSurface,
   type HoverSurfaceBinding,
-} from '@magic-resume/design-system/react';
+} from '@magic-resume-kit/design-system/react';

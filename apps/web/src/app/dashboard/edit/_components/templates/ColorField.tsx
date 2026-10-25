@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, X } from "@magic-resume/icons";
+import { Check, X } from "@magic-resume-kit/icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { hexToRgb, rgbToHex } from "@/lib/utils/color";

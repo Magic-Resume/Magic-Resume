@@ -52,4 +52,4 @@ Store 不维护单独的"脏字段"map —— 同步的 diff 在 push 时计算�
 
 - **没有 Provider 模板代码。** Store 直接 import，没有 `<Provider>` 链。
 - **Selector 订阅。** 组件订阅切片，不订阅整个 store，改一个字段不会让整棵树重渲染。
-- **方便连接非 React 代码。** MCP 包、e2e helper、AI 流程都重用 `@magic-resume/resume-schema` 里的 `Resume` 类型，不需要把 React 拉进来。
+- **方便连接非 React 代码。** MCP 包、e2e helper、AI 流程都重用 `@magic-resume-kit/resume-schema` 里的 `Resume` 类型，不需要把 React 拉进来。

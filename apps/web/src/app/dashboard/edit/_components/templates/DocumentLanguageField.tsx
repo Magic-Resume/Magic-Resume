@@ -7,7 +7,7 @@ import {
   DOCUMENT_LANGUAGE_OPTIONS,
   resolveDocumentLanguage,
   type DocumentLanguage,
-} from '@magic-resume/resume-schema';
+} from '@magic-resume-kit/resume-schema';
 import type { Resume } from '@/types/frontend/resume';
 import {
   Select,

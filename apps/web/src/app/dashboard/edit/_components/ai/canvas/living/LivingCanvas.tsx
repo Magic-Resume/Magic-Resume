@@ -1,6 +1,6 @@
 "use client";
 
-import { normalizeDocumentLanguage } from '@magic-resume/resume-schema';
+import { normalizeDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import { coerceSectionOrder } from '@/lib/utils/resumeSectionOrder';
 import { applyDocumentChange, diffDocumentChanges, documentChangeToPending } from '../../lib/documentChanges';
 import React, {
@@ -12,11 +12,11 @@ import React, {
   useState,
 } from "react";
 import { nanoid } from "nanoid";
-import { EASE_EXIT } from "@magic-resume/utils";
+import { EASE_EXIT } from "@magic-resume-kit/utils";
 import { appLifecycle } from "@/lib/extensions/app-lifecycle";
 import { AnimatePresence, motion } from "framer-motion";
 import type { QuoteRect } from "../../conversation/quoteHandoff";
-import { ListChecks } from '@magic-resume/icons';
+import { ListChecks } from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
 import { InfoType, Resume, Section, SectionItem } from "@/types/frontend/resume";
 import {

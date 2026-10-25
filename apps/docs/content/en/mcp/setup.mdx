@@ -12,7 +12,7 @@ In the web app: **Settings → Personal Access Tokens → Create**. Copy the `mr
 
 <Step title="Configure the MCP server">
 ```bash
-npx -y @magic-resume/mcp config set \
+npx -y @magic-resume-kit/mcp config set \
   --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 ```
@@ -24,7 +24,7 @@ This writes `~/.magic-resume/mcp.json`. If you're running the Core gateway local
 <Tabs>
 <Tab title="Claude Code">
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
 This adds Magic Resume to the user-scoped MCP list. Restart Claude Code so it picks up the new server.
 </Tab>
@@ -36,7 +36,7 @@ Open `~/.cursor/mcp.json` (create if missing) and add:
   "mcpServers": {
     "magic-resume": {
       "command": "npx",
-      "args": ["-y", "@magic-resume/mcp", "mcp"]
+      "args": ["-y", "@magic-resume-kit/mcp", "mcp"]
     }
   }
 }
@@ -46,7 +46,7 @@ Open `~/.cursor/mcp.json` (create if missing) and add:
 Any MCP client that supports stdio servers can spawn it:
 
 ```bash
-npx -y @magic-resume/mcp mcp
+npx -y @magic-resume-kit/mcp mcp
 ```
 
 The server speaks the standard MCP protocol over stdin/stdout — no flags needed.
@@ -55,7 +55,7 @@ The server speaks the standard MCP protocol over stdin/stdout — no flags neede
 </Step>
 
 <Step title="Verify">
-In your AI tool, ask: *"List my Magic Resume resumes."* The model should call `list_resumes` and return your list. If it errors, run `npx -y @magic-resume/mcp config print` and confirm the API URL and PAT are correct.
+In your AI tool, ask: *"List my Magic Resume resumes."* The model should call `list_resumes` and return your list. If it errors, run `npx -y @magic-resume-kit/mcp config print` and confirm the API URL and PAT are correct.
 </Step>
 </Steps>
 
@@ -65,16 +65,16 @@ The MCP server communicates over **stdio** — it does not open a network port, 
 
 ## How do I update or pin the MCP version?
 
-Because the spawn command is `npx -y @magic-resume/mcp mcp`, your AI tool pulls the latest version every time it starts. To pin a version explicitly:
+Because the spawn command is `npx -y @magic-resume-kit/mcp mcp`, your AI tool pulls the latest version every time it starts. To pin a version explicitly:
 
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp@0.1.0 mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp@1.0.1 mcp
 ```
 
 ## How do I reset MCP credentials?
 
 ```bash
-npx -y @magic-resume/mcp config clear
+npx -y @magic-resume-kit/mcp config clear
 ```
 
 This removes `~/.magic-resume/mcp.json`. Revoke the PAT in the web app too if it leaked.

@@ -20,7 +20,7 @@ description: "MCP 让 Claude Code、Cursor 等 AI 编程工具读取简历并按
 
 <Step title="配置 MCP 服务器">
 ```bash
-npx -y @magic-resume/mcp config set \
+npx -y @magic-resume-kit/mcp config set \
   --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 ```
@@ -32,7 +32,7 @@ npx -y @magic-resume/mcp config set \
 <Tabs>
 <Tab title="Claude Code">
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
 这会把 Magic Resume 加进用户级 MCP 列表。重启 Claude Code 让它读到新服务器。
 </Tab>
@@ -44,7 +44,7 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
   "mcpServers": {
     "magic-resume": {
       "command": "npx",
-      "args": ["-y", "@magic-resume/mcp", "mcp"]
+      "args": ["-y", "@magic-resume-kit/mcp", "mcp"]
     }
   }
 }
@@ -54,7 +54,7 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
 任何支持 stdio MCP 服务器的客户端都可以拉起它：
 
 ```bash
-npx -y @magic-resume/mcp mcp
+npx -y @magic-resume-kit/mcp mcp
 ```
 
 服务器通过 stdin/stdout 说标准 MCP 协议 —— 不需要传任何标志。
@@ -63,7 +63,7 @@ npx -y @magic-resume/mcp mcp
 </Step>
 
 <Step title="试一下">
-在你的 AI 工具里问："列出我的 Magic Resume 简历。" 模型应该会调用工具、返回你的简历列表。报错的话，运行 `npx -y @magic-resume/mcp config print` 确认 API 地址和 PAT 对不对。
+在你的 AI 工具里问："列出我的 Magic Resume 简历。" 模型应该会调用工具、返回你的简历列表。报错的话，运行 `npx -y @magic-resume-kit/mcp config print` 确认 API 地址和 PAT 对不对。
 </Step>
 </Steps>
 

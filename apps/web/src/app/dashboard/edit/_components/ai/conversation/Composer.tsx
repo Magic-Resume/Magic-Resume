@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Plus, SendArrow, Square, X } from '@magic-resume/icons';
+import { Mic, Plus, SendArrow, Square, X } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ import {
   type AgentMode,
 } from './modes';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 /**
  * 文本区的高度区间。
  *

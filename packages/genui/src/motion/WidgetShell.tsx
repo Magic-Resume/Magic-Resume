@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { cn } from '@magic-resume/utils';
+import { cn } from '@magic-resume-kit/utils';
 import { DURATION, EASE_ENTER } from './tokens';
 import { cardVariants, itemVariants } from './variants';
 

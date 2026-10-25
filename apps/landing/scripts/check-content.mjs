@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
-import { templateIds } from '@magic-resume/resume-schema';
+import { templateIds } from '@magic-resume-kit/resume-schema';
 import { campusPages, guidePages } from '../src/lib/public-knowledge.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));

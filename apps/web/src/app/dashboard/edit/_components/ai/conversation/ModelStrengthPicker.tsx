@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronUp } from '@magic-resume/icons';
+import { ChevronRight, ChevronUp } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useSettingStore, type Strength } from '@/store/useSettingStore';
 import { useSettingsUiStore } from '@/store/useSettingsUiStore';
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 import ModelMark from './ModelMark';
 import { effectiveEffort } from '../lib/reasoningEffort';
 

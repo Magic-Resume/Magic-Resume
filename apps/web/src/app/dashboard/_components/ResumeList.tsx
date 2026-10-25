@@ -13,7 +13,7 @@ import {
   Copy,
   Trash2,
   FlaskConical,
-} from '@magic-resume/icons';
+} from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { DropMenu } from '@/components/ui/drop-menu';
 import {
@@ -23,8 +23,8 @@ import {
 } from '@/components/ui/hover-surface';
 import { Resume } from '@/types/frontend/resume';
 import { formatTime, cn } from '@/lib/utils';
-import { getMagicTemplateList } from '@magic-resume/resume-templates/config/magic-templates';
-import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import { getMagicTemplateList } from '@magic-resume-kit/resume-templates/config/magic-templates';
+import { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import ResumeMiniPreview from './ResumeMiniPreview';
 

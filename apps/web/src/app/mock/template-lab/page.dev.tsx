@@ -2,15 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { magicTemplates } from '@magic-resume/resume-templates/config/magic-templates';
-import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
+import { magicTemplates } from '@magic-resume-kit/resume-templates/config/magic-templates';
+import { MagicResumeRenderer } from '@magic-resume-kit/resume-templates/renderer/MagicResumeRenderer';
 import {
   EditableCanvasProvider,
   pathOf,
   type EditableCanvasContextValue,
   type EditableTarget,
   type PendingChangeView,
-} from '@magic-resume/resume-templates/renderer/EditableCanvas';
+} from '@magic-resume-kit/resume-templates/renderer/EditableCanvas';
 import {
   compile,
   critiqueTemplate,
@@ -26,10 +26,10 @@ import {
   type CritiqueReport,
   type OutlineEntry,
   type TemplateDocument,
-} from '@magic-resume/resume-templates/core';
+} from '@magic-resume-kit/resume-templates/core';
 // 走窄子路径而不是主 index：主 index 会把 TemplateCustomizer / registry 整套拉进来，
 // 而这里只需要「把 IR 画成 HTML」这一件事。
-import { renderNode as renderTreeNodeDom } from '@magic-resume/resume-templates/dom';
+import { renderNode as renderTreeNodeDom } from '@magic-resume-kit/resume-templates/dom';
 
 /**
  * 模板原语层的实验室。**仅开发环境**（生产返回 404），与 `/genui` 同一个定位。
@@ -121,7 +121,7 @@ const buildWholeResume = (): TemplateDocument => {
 };
 
 /**
- * 内联样例。**不引 `@magic-resume/resume-schema`**——web 本来不依赖它，
+ * 内联样例。**不引 `@magic-resume-kit/resume-schema`**——web 本来不依赖它，
  * 为一个调试页加依赖不值。而且内联的好处是我能塞一个「获奖经历」这样的
  * **自建分区**进去：它不在内建的七个 key 里，正好用来验证兜底节点真的接住了它。
  */

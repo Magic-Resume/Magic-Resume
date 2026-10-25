@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { CornerDownLeft, MessageCircleQuestion } from '@magic-resume/icons';
+import { CornerDownLeft, MessageCircleQuestion } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@magic-resume/utils';
+import { cn } from '@magic-resume-kit/utils';
 import { WidgetItem, WidgetShell } from '../motion';
 import { CHIP_BASE, CHIP_IDLE, FIELD_SURFACE } from '../primitives';
 import type { WidgetOption, WidgetProps } from '../contract';

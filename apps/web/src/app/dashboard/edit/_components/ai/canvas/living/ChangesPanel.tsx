@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Check, CornerDownRight } from '@magic-resume/icons';
+import { X, Check, CornerDownRight } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 
 export type ChangeRow = {

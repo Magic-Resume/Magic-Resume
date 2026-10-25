@@ -1,7 +1,7 @@
-import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { resolveDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import type { Resume } from '@/types/frontend/resume';
-import { getDefaultMagicTemplate, getMagicTemplateById } from '@magic-resume/resume-templates/config/magic-templates';
-import type { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import { getDefaultMagicTemplate, getMagicTemplateById } from '@magic-resume-kit/resume-templates/config/magic-templates';
+import type { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 import { mergeTemplateConfig } from '@/lib/utils/templateUtils';
 
 type PdfBrowserModule = {
@@ -48,7 +48,7 @@ const pdfBlobPromiseCache = new WeakMap<Resume, Map<string, Promise<Blob>>>();
 const PDF_RENDERER_VERSION = 'pdf-document-language-v17';
 
 const loadPdfBrowserModule = () => {
-  pdfBrowserModulePromise ??= import('@magic-resume/resume-templates/pdf/browser') as Promise<PdfBrowserModule>;
+  pdfBrowserModulePromise ??= import('@magic-resume-kit/resume-templates/pdf/browser') as Promise<PdfBrowserModule>;
   return pdfBrowserModulePromise;
 };
 

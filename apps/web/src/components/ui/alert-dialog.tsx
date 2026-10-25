@@ -3,11 +3,11 @@
 import * as React from 'react';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
-import { cx } from '@magic-resume/design-system/cx';
+import { cx } from '@magic-resume-kit/design-system/cx';
 import {
   modalContent,
   modalOverlay,
-} from '@magic-resume/design-system/recipes';
+} from '@magic-resume-kit/design-system/recipes';
 import { buttonVariants } from './button';
 
 function AlertDialog({

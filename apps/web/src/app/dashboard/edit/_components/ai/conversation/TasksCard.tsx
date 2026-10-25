@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check } from '@magic-resume/icons';
+import { Check } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import {
   AgentProgress,

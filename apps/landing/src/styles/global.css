@@ -1,9 +1,9 @@
 @import "tailwindcss";
-@import "@magic-resume/design-system/styles/tokens.css";
-@import "@magic-resume/design-system/styles/utilities.css";
-@import "@magic-resume/design-system/styles/motion.css";
-@source "../../../../packages/design-system/src";
-@source "../../../../packages/resume-templates/src";
+@import "@magic-resume-kit/design-system/styles/tokens.css";
+@import "@magic-resume-kit/design-system/styles/utilities.css";
+@import "@magic-resume-kit/design-system/styles/motion.css";
+@source "../../node_modules/@magic-resume-kit/design-system/dist";
+@source "../../node_modules/@magic-resume-kit/resume-templates/dist";
 
 /* Self-hosted brand face. Latin only — CJK falls back to the system stack. */
 @import "@fontsource-variable/inter";
@@ -653,7 +653,7 @@ body {
 .reveal {
   opacity: 0;
   transform: translateY(18px);
-  /* 主曲线。与 `@magic-resume/utils` 的 EASE_ENTER / apps/web 的 --narrate-ease
+  /* 主曲线。与 `@magic-resume-kit/utils` 的 EASE_ENTER / apps/web 的 --narrate-ease
      同一条。快起长落。 */
   transition:
     opacity 0.62s cubic-bezier(0.16, 1, 0.3, 1),

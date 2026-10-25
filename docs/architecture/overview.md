@@ -13,6 +13,8 @@ related: []
 
 # Magic Resume Frontend Monorepo & MCP Architecture
 
+> Public packages moved to [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) on 2026-10-25. The `packages/resume-schema`, `packages/resume-templates`, `packages/design-system`, `packages/icons`, `packages/utils` and `packages/mcp` source paths and package build commands below refer to that repository. The editor consumes published `@magic-resume-kit/*` packages; its local workspaces are listed in the root README.
+
 ## Summary
 
 Magic Resume's frontend repository will evolve from a single Next.js application into a Turborepo monorepo. The first version keeps the existing product behavior intact while creating clear workspace boundaries for the web app, the official MCP/CLI package, shared resume schemas, and shared TypeScript configuration.
@@ -211,7 +213,7 @@ pnpm --filter @magic-resume/web dev
 To run a single package build:
 
 ```bash
-pnpm --filter @magic-resume/mcp build
+pnpm --filter @magic-resume-kit/mcp build
 ```
 
 ## MCP and Core API Boundary

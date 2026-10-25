@@ -2,12 +2,12 @@ import React from 'react';
 import { EditorComponents } from "@/lib/utils/componentOptimization";
 import { Resume } from '@/types/frontend/resume';
 import { getSanitizedResume } from "@/store/useResumeStore";
-import { Download, X } from '@magic-resume/icons';
+import { Download, X } from '@magic-resume-kit/icons';
 import { motion, AnimatePresence } from "framer-motion";
 import { workbenchJsonTheme, workbenchJsonThemeLight } from "./jsonTheme";
 import { useTheme } from "@/components/providers/ThemeProvider";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 const ReactJsonView = EditorComponents.JsonViewer;
 
 interface JsonModalProps {

@@ -12,8 +12,8 @@ import {
   CheckCircle2,
   XCircle,
   Image as ImageGlyph,
-} from '@magic-resume/icons';
-import { LockClosedIcon } from '@magic-resume/icons';
+} from '@magic-resume-kit/icons';
+import { LockClosedIcon } from '@magic-resume-kit/icons';
 import { useSettingStore } from '@/store/useSettingStore';
 import {
   MODEL_PROVIDERS,

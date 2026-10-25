@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Bug, ChevronRight, HelpCircle, LifeBuoy } from '@magic-resume/icons';
+import { Bug, ChevronRight, HelpCircle, LifeBuoy } from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
 import { ISSUES_URL } from "@/lib/constants/projectLinks";
 import { cn } from "@/lib/utils";

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { GlobeIcon } from '@magic-resume/icons';
+import { GlobeIcon } from '@magic-resume-kit/icons';
 import type { CitationSource } from '../types';
 import { siteFaviconCandidates } from './citationSources';
 

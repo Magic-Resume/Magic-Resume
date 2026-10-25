@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Plus } from '@magic-resume/icons';
+import { Plus } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@magic-resume/utils';
+import { cn } from '@magic-resume-kit/utils';
 import { DURATION, EASE_ENTER } from '../motion';
 import type { WidgetOption } from '../contract';
 import { CHIP_BASE, CHIP_IDLE, CHIP_SELECTED, FIELD_SURFACE } from './styles';

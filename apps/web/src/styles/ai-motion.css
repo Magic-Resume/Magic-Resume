@@ -355,7 +355,7 @@
   --breath-ease: ease-in-out;
   --narrate-duration: 180ms;
   /* 交互曲线。取自 animated-dropdown-recreation（CDP 逐帧拟合），JS 侧的同一份在
-     `@magic-resume/utils` 的 motion.ts——改一处必须改另一处。
+     `@magic-resume-kit/utils` 的 motion.ts——改一处必须改另一处。
      主曲线：进入 / 展开 / 位移，凡是「东西出现」都用它。 */
   --narrate-ease: cubic-bezier(0.16, 1, 0.3, 1);
   /* brief §4 定义了却一直没落到 CSS：贴块扫光一次行程 */

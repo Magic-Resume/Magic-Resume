@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { magicTemplates } from '@magic-resume/resume-templates/config/magic-templates';
-import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
-import { defaultResume } from '@magic-resume/resume-schema';
+import { magicTemplates } from '@magic-resume-kit/resume-templates/config/magic-templates';
+import { MagicResumeRenderer } from '@magic-resume-kit/resume-templates/renderer/MagicResumeRenderer';
+import { defaultResume } from '@magic-resume-kit/resume-schema';
 import type { Resume } from '@/types/frontend/resume';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import i18n from '@/i18n';

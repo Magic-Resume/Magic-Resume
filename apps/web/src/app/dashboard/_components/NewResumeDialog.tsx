@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, X } from '@magic-resume/icons';
+import { Loader2, X } from '@magic-resume-kit/icons';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';

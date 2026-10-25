@@ -1,1 +1,1 @@
-export { MagicDebugger } from '@magic-resume/utils';
+export { MagicDebugger } from '@magic-resume-kit/utils';

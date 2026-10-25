@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Clock, Search } from "@magic-resume/icons";
+import { Clock, Search } from "@magic-resume-kit/icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ChatMessage, MessageBeat } from "../types";

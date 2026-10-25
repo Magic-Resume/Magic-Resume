@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { resolveDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";

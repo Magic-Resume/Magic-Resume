@@ -1,3 +1,16 @@
+---
+title: BYOK AI backend contract
+type: reference
+status: Living
+owner: kaihuang
+created: 2026-10-25
+updated: 2026-10-25
+summary: What a self-hosted AI backend must implement for AI Lab — the AI_BACKEND_URL entry, proxied routes, request config and stream events.
+scope: [apps/web, AI_BACKEND_URL]
+repos: [Magic-Resume]
+related: [reference/public-packages-integration]
+---
+
 # BYOK AI backend contract
 
 The open-source editor stores resumes and one conversation per resume in IndexedDB. AI Lab retains chat, skills, plans, approvals, tools, sources and GenUI cards. It has no accounts, cloud history, memory, interviews or platform billing. This repository supplies the UI and Next.js proxy routes; a compatible AI backend must be deployed separately.
@@ -82,7 +95,7 @@ Approval requests carry `sessionId`, `interruptId`, `operationId`, `expectedChec
 - Chat attachments are `{ id, name, contentType, sourceUrl }` entries.
 - `POST /api/pdf/parse`: multipart `file` or `sourceUrl`, plus `config` serialized as JSON. Supported files: PDF, DOCX, PNG/JPEG/WebP, Markdown and plain text, up to 10 MiB per uploaded file. Next.js rejects oversized declared request bodies; the backend must enforce its own streaming limits and URL policy.
 
-The importer reads scan progress from `tool_result.payload` with `kind: "pdf_progress"`, `phase`, optional `charCount`, `fields`, `mode: "vision"` and `pageCount`. It reads errors from `error` or `run_failed`. Return the parsed resume in `resume_update.data` or `resume_update.payload.resume`, conforming to `packages/resume-schema`, then close with `done`. The browser validates the result before creating a local resume. For scanning progress, see `ImportResumeDialog.tsx` and `PdfScanProgress.tsx`; the historical `/pdf/parse` name covers all these formats.
+The importer reads scan progress from `tool_result.payload` with `kind: "pdf_progress"`, `phase`, optional `charCount`, `fields`, `mode: "vision"` and `pageCount`. It reads errors from `error` or `run_failed`. Return the parsed resume in `resume_update.data` or `resume_update.payload.resume`, conforming to `@magic-resume-kit/resume-schema`, then close with `done`. The browser validates the result before creating a local resume. For scanning progress, see `ImportResumeDialog.tsx` and `PdfScanProgress.tsx`; the historical `/pdf/parse` name covers all these formats.
 
 ### Workspace proposals
 

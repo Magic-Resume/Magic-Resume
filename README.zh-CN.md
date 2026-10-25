@@ -125,7 +125,7 @@ docker run -p 3000:3000 magic-resume
 
 ## MCP
 
-`packages/mcp`（`@magic-resume/mcp`）是一个 Model Context Protocol 服务，让 AI 工具（Claude Code、Cursor、Windsurf）通过感知 schema 的 JSON Patch 读取和修改简历。它通过 API 连接 Magic Resume 账号，所以配合 magic-resume.cn 使用；本仓库的本地编辑器没有可供它连接的服务端。用法见 [docs/reference/mcp.md](./docs/reference/mcp.md)。
+`@magic-resume-kit/mcp`是一个 Model Context Protocol 服务，让 AI 工具（Claude Code、Cursor、Windsurf）通过感知 schema 的 JSON Patch 读取和修改简历。它通过 API 连接 Magic Resume 账号，所以配合 magic-resume.cn 使用；本仓库的本地编辑器没有可供它连接的服务端。用法见 [docs/reference/mcp.md](./docs/reference/mcp.md)。
 
 ---
 
@@ -156,18 +156,20 @@ docker run -p 3000:3000 magic-resume
 
 ## 单仓结构
 
+公共包源码、测试和发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)；本仓库固定依赖 npm 的 1.0.1。MCP 独立安装，不加入编辑器运行时。
+
 | 工作区 | 说明 |
 |---|---|
 | `apps/web` | 编辑器（Next.js） |
 | `apps/landing` | magic-resume.cn 官网（Astro） |
 | `apps/docs` | 文档站（Mintlify） |
-| `packages/resume-schema` | 共享的 Zod schema、类型与示例数据 |
-| `packages/resume-templates` | 模板 DSL、渲染器与注册表 |
+| `@magic-resume-kit/resume-schema` (npm) | 共享的 Zod schema、类型与示例数据 |
+| `@magic-resume-kit/resume-templates` (npm) | 模板 DSL、渲染器与注册表 |
 | `packages/genui` | AI Lab 组件与卡片 |
-| `packages/design-system` | 设计 token 与共享样式 |
-| `packages/icons` | 图标集 |
-| `packages/utils` | 小工具函数（`cn`、时间、颜色） |
-| `packages/mcp` | `@magic-resume/mcp`，stdio MCP 服务与 CLI |
+| `@magic-resume-kit/design-system` (npm) | 设计 token 与共享样式 |
+| `@magic-resume-kit/icons` (npm) | 图标集 |
+| `@magic-resume-kit/utils` (npm) | 小工具函数（`cn`、时间、颜色） |
+| `@magic-resume-kit/mcp` (npm) | `@magic-resume-kit/mcp`，stdio MCP 服务与 CLI |
 | `packages/tsconfig` | 共享 TypeScript 配置 |
 
 ```bash
@@ -178,7 +180,7 @@ pnpm run test           # 测试
 
 # 只操作单个工作区
 pnpm --filter @magic-resume/web dev
-pnpm --filter @magic-resume/mcp build
+npx -y @magic-resume-kit/mcp@1.0.1 --help
 ```
 
 ---

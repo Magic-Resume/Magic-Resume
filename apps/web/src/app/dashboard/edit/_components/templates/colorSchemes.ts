@@ -1,4 +1,4 @@
-import type { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import type { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 
 export type TemplateColors = MagicTemplateDSL['designTokens']['colors'];
 

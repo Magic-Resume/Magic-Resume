@@ -19,39 +19,43 @@ pnpm run test     # turbo test
 
 ```bash
 pnpm --filter @magic-resume/web dev
-pnpm --filter @magic-resume/web dev:turbo       # Turbopack 变体
 pnpm --filter @magic-resume/web build
 pnpm --filter @magic-resume/web lint
 pnpm --filter @magic-resume/web i18n:check
 
 cd apps/docs/content && npx mint dev            # 文档站点（Mintlify 本地预览）
 
-pnpm --filter @magic-resume/resume-schema build
-pnpm --filter @magic-resume/resume-schema test  # node --test
+```
 
-pnpm --filter @magic-resume/resume-templates build
+以下公共包命令在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) 根目录执行：
 
-pnpm --filter @magic-resume/mcp build
-pnpm --filter @magic-resume/mcp test
-pnpm --filter @magic-resume/mcp lint            # tsc --noEmit
+```bash
+pnpm --filter @magic-resume-kit/resume-schema build
+pnpm --filter @magic-resume-kit/resume-schema test  # node --test
+
+pnpm --filter @magic-resume-kit/resume-templates build
+
+pnpm --filter @magic-resume-kit/mcp build
+pnpm --filter @magic-resume-kit/mcp test
+pnpm --filter @magic-resume-kit/mcp lint            # tsc --noEmit
 ```
 
 ## 安装后有哪些 MCP CLI 命令？
 
 ```bash
-npx -y @magic-resume/mcp config set --api-url <url> --pat <token>
-npx -y @magic-resume/mcp config print
-npx -y @magic-resume/mcp config clear
-npx -y @magic-resume/mcp mcp                    # 启动 stdio 服务器
+npx -y @magic-resume-kit/mcp config set --api-url <url> --pat <token>
+npx -y @magic-resume-kit/mcp config print
+npx -y @magic-resume-kit/mcp config clear
+npx -y @magic-resume-kit/mcp mcp                    # 启动 stdio 服务器
 ```
 
 ## 有哪些偶尔会用的命令？
 
 ```bash
-# 只重新生成 JSON Schema 产物
-pnpm --filter @magic-resume/resume-schema build
+# 在 magic-resume-kit 中：只重新生成 JSON Schema 产物
+pnpm --filter @magic-resume-kit/resume-schema build
 
-# Web 应用的 bundle 分析
+# 回到 Magic-Resume：Web 应用的 bundle 分析
 pnpm --filter @magic-resume/web analyze
 
 # Web 应用的生产构建

@@ -23,9 +23,9 @@
     "storybook:typecheck": "tsc -p .storybook/tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@magic-resume/design-system": "workspace:*",
-    "@magic-resume/icons": "workspace:*",
-    "@magic-resume/utils": "workspace:*",
+    "@magic-resume-kit/design-system": "1.0.1",
+    "@magic-resume-kit/icons": "1.0.1",
+    "@magic-resume-kit/utils": "1.0.1",
     "highlight.js": "11.11.2",
     "lowlight": "3.3.0"
   },

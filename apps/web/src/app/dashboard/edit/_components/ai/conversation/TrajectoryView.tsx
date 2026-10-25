@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Clock } from "@magic-resume/icons";
+import { Clock } from "@magic-resume-kit/icons";
 import { cn } from "@/lib/utils";
 import type {
   AgentTrajectory,

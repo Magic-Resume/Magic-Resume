@@ -4,10 +4,10 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, GripVertical } from '@magic-resume/icons';
+import { ChevronDown, GripVertical } from '@magic-resume-kit/icons';
 import { cn } from "@/lib/utils";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 /**
  * 左侧表单的折叠分区 —— 与右侧 AccordionSection 视觉一致,
  * 但把拖拽手柄(useSortable)并进分区头,避免「点头展开」与「拖拽排序」冲突。

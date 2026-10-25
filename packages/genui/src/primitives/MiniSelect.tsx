@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from '@magic-resume/icons';
-import { cn } from '@magic-resume/utils';
+import { ChevronDown } from '@magic-resume-kit/icons';
+import { cn } from '@magic-resume-kit/utils';
 import { Popover } from './Popover';
 import { FIELD_SURFACE } from './styles';
 

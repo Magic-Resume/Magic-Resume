@@ -10,7 +10,7 @@
 
 - **反馈 Bug 或提功能建议** —— 开一个 [Issue](https://github.com/Magic-Resume/Magic-Resume/issues)。
 - **修复 Bug** 或 **开发功能** —— 提交 Pull Request。
-- **新增模板** —— 参见 [`packages/resume-templates`](./packages/resume-templates)。
+- **新增模板** —— 参见 [`packages/resume-templates`](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/resume-templates)。
 - **完善翻译** —— 参见 [翻译](#翻译)。
 - **改进文档** —— 包括本文件与 README。
 

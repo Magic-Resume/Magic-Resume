@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, GlobeIcon } from "@magic-resume/icons";
+import { ChevronDown, GlobeIcon } from "@magic-resume-kit/icons";
 import { Icon } from "@magic-resume/genui";
 import type { CitationSource, ToolCall } from "../types";
 import { toToolChipRows } from "./toolTrace";

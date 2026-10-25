@@ -30,7 +30,7 @@ import {
   Check,
   ExternalLink,
   Unlink,
-} from '@magic-resume/icons';
+} from '@magic-resume-kit/icons';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';

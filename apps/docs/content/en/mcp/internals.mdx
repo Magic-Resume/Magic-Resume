@@ -1,7 +1,9 @@
 ---
 title: Internals
-description: "This page explains @magic-resume/mcp’s layout, entry points, configuration, tool registration, and Core API contract for contributors changing the package."
+description: "This page explains @magic-resume-kit/mcp’s layout, entry points, configuration, tool registration, and Core API contract for contributors changing the package."
 ---
+
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
 
 This page is for contributors changing the MCP package itself or building a fork. The CLI and server share `config.ts`, and the server talks to the API through `client.ts`. The CLI handles one-shot config commands, while the MCP server is the process AI tools spawn.
 
@@ -16,7 +18,7 @@ packages/mcp/
 │   ├── config.ts        # ~/.magic-resume/mcp.json reader/writer
 │   ├── client.ts        # thin fetch client that sends the PAT
 │   └── index.ts         # library exports
-├── scripts/bundle.mjs   # esbuild: bundles the private workspace packages for npm
+├── scripts/bundle.mjs   # esbuild: bundles the MCP CLI for npm
 ├── test/                # node --test suites
 └── package.json         # type: "module", bin: magic-resume
 ```
@@ -71,12 +73,12 @@ The MCP server is a client of the same NestJS Core API the web app talks to. Rel
 ## How do I build and publish the MCP package?
 
 ```bash
-pnpm --filter @magic-resume/mcp build      # tsc → dist/
-pnpm --filter @magic-resume/mcp test       # node --test test/*.test.mjs
-pnpm --filter @magic-resume/mcp lint       # tsc --noEmit
+pnpm --filter @magic-resume-kit/mcp build      # tsc → dist/
+pnpm --filter @magic-resume-kit/mcp test       # node --test test/*.test.mjs
+pnpm --filter @magic-resume-kit/mcp lint       # tsc --noEmit
 ```
 
-Publishing is gated by `publishConfig.access = "public"` and uses pnpm's `workspace:*` rewriting so the published `package.json` has real semver versions for `@magic-resume/resume-schema` and `@magic-resume/resume-templates`.
+Publishing is gated by `publishConfig.access = "public"` and uses pnpm's `workspace:*` rewriting so the published `package.json` has real semver versions for `@magic-resume-kit/resume-schema` and `@magic-resume-kit/resume-templates`.
 
 ## How do I add a new MCP tool?
 

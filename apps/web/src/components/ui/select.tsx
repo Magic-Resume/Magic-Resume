@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '@magic-resume/icons';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '@magic-resume-kit/icons';
 
-import { cx } from '@magic-resume/design-system/cx';
+import { cx } from '@magic-resume-kit/design-system/cx';
 import {
   selectContent,
   selectItemIndicator,
@@ -14,7 +14,7 @@ import {
   selectSeparator,
   selectTriggerVariants,
   selectViewport,
-} from '@magic-resume/design-system/recipes';
+} from '@magic-resume-kit/design-system/recipes';
 
 function Select({
   ...props

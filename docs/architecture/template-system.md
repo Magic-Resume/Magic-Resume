@@ -13,6 +13,8 @@ related: [architecture/schema]
 
 # Magic Resume Template System
 
+> Public packages moved to [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) on 2026-10-25. The `packages/resume-schema`, `packages/resume-templates`, `packages/design-system`, `packages/icons`, `packages/utils` and `packages/mcp` source paths and package build commands below refer to that repository. The editor consumes published `@magic-resume-kit/*` packages; its local workspaces are listed in the root README.
+
 Magic Resume templates live in `packages/resume-templates`. The package keeps the current DSL rendering system, but the public template list is now derived from a single registry.
 
 ## Registry
@@ -60,9 +62,9 @@ apps/web/public/templates/pdf/{templateId}.pdf
 5. Run:
 
 ```bash
-pnpm --filter @magic-resume/resume-schema test
-pnpm --filter @magic-resume/resume-templates build
-pnpm --filter @magic-resume/resume-templates lint
+pnpm --filter @magic-resume-kit/resume-schema test
+pnpm --filter @magic-resume-kit/resume-templates build
+pnpm --filter @magic-resume-kit/resume-templates lint
 ```
 
 6. Open the web template panel and confirm the name, tags, thumbnail, and switching behavior.

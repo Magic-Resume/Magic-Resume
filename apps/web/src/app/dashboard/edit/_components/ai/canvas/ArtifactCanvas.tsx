@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowUpRight, Check, MapPin } from '@magic-resume/icons';
+import { ArrowUpRight, Check, MapPin } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { RingGauge } from '@/components/ui/ring-gauge';
 import { ScoreRadar } from '@/components/ui/score-radar';

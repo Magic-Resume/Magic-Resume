@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronUp } from '@magic-resume/icons';
+import { Check, ChevronUp } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
@@ -13,7 +13,7 @@ import {
   type AgentMode,
 } from './modes';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 /**
  * 模式控件只借当前模式的 accent 着色文字——「AI 现在能不能动我的简历」
  * 是这一行里唯一有后果的选择，但不需要靠背景色抢占注意力。

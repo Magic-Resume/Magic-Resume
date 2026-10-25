@@ -1,7 +1,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { ComponentType } from 'react';
-import { Loader2 } from '@magic-resume/icons';
+import { Loader2 } from '@magic-resume-kit/icons';
 
 /**
  * 创建优化的动态导入组件

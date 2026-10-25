@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { Check, ChevronDown, RotateCcw } from '@magic-resume/icons';
+import { Check, ChevronDown, RotateCcw } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ColorField } from './ColorField';

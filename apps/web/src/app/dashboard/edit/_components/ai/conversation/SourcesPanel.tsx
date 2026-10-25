@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ExternalLink, Files, X } from "@magic-resume/icons";
+import { ExternalLink, Files, X } from "@magic-resume-kit/icons";
 import type { ChatMessage, CitationSource } from "../types";
 import {
   internalCitationSources,

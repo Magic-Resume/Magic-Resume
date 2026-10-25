@@ -1,7 +1,7 @@
 @import "tailwindcss";
-@import "@magic-resume/design-system/styles/tokens.css";
-@import "@magic-resume/design-system/styles/utilities.css";
-@import "@magic-resume/design-system/styles/motion.css";
+@import "@magic-resume-kit/design-system/styles/tokens.css";
+@import "@magic-resume-kit/design-system/styles/utilities.css";
+@import "@magic-resume-kit/design-system/styles/motion.css";
 @import "@fontsource-variable/inter";
 @import "../styles/theme.css";
 @import "../styles/typography.css";
@@ -12,8 +12,8 @@
    工具类只有在本 app 恰好也用了同一个类时才碰巧存在,少样式时不报错。扫 src 而非 dist:dist 被
    gitignore,且不保证已构建。新增发布 UI 的 workspace 包时必须往这里加一行。 */
 @source "../../../../packages/genui/src";
-@source "../../../../packages/resume-templates/src";
-@source "../../../../packages/design-system/src";
+@source "../../node_modules/@magic-resume-kit/resume-templates/dist";
+@source "../../node_modules/@magic-resume-kit/design-system/dist";
 
 /* 让 Tailwind 的 `dark:` 变体跟随 <html> 上的 .dark class(由 ThemeProvider / 内联脚本控制),
    而非默认的 prefers-color-scheme。深色为产品默认。 */

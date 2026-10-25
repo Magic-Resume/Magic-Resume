@@ -10,7 +10,7 @@ Thanks for your interest in contributing! Contributions of every size are welcom
 
 - **Report a bug** or request a feature — open an [issue](https://github.com/Magic-Resume/Magic-Resume/issues).
 - **Fix a bug** or **build a feature** — open a Pull Request.
-- **Add a template** — see [`packages/resume-templates`](./packages/resume-templates).
+- **Add a template** — see [`packages/resume-templates`](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/resume-templates).
 - **Improve translations** — see [Translations](#translations).
 - **Improve the docs** — including this file and the READMEs.
 

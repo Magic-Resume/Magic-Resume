@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { MODEL_IMAGE_SUPPORT_MAP } from '@/lib/constants/modals';
-import { Loader2, X, FileText, FileJson, AlertTriangle } from '@magic-resume/icons';
+import { Loader2, X, FileText, FileJson, AlertTriangle } from '@magic-resume-kit/icons';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -14,7 +14,7 @@ import { Resume } from '@/types/frontend/resume';
 import { useResumeDocumentStore } from '@/store/resume/document';
 import { useSettingsUiStore } from '@/store/useSettingsUiStore';
 import { toast } from 'sonner';
-import { FaFileUpload } from '@magic-resume/icons';
+import { FaFileUpload } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';

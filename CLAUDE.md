@@ -17,9 +17,9 @@ pnpm run test
 # Target a single workspace
 pnpm --filter @magic-resume/web dev
 pnpm --filter @magic-resume/web lint
-pnpm --filter @magic-resume/resume-schema test
-pnpm --filter @magic-resume/resume-templates build
-pnpm --filter @magic-resume/mcp test
+pnpm --filter @magic-resume/genui build
+pnpm check:tailwind
+pnpm check:local-only
 
 # i18n validation (runs automatically on staged files via lint-staged)
 pnpm --filter @magic-resume/web i18n:check
@@ -27,22 +27,23 @@ pnpm --filter @magic-resume/web i18n:check
 
 ## Monorepo Structure
 
-This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`.
+This is a **pnpm + Turborepo** monorepo. The package manager is `pnpm@10.28.1`. The six public `@magic-resume-kit/*` packages are maintained in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) and consumed at exact npm versions. Package source paths below refer to that repository; public package builds and tests run there.
 
 | Workspace | Package name | Purpose |
 |---|---|---|
 | `apps/web` | `@magic-resume/web` | Next.js 16 local-first editor and BYOK AI Lab |
 | `apps/landing` | `@magic-resume/landing` | Marketing site for magic-resume.cn (Astro, Vercel) |
 | `apps/docs` | — | Docs site (Mintlify) |
-| `packages/design-system` | `@magic-resume/design-system` | Design tokens and shared styles |
-| `packages/icons` | `@magic-resume/icons` | Icon set |
-| `packages/mcp` | `@magic-resume/mcp` | stdio MCP server + CLI (Node ESM) |
-| `packages/resume-schema` | `@magic-resume/resume-schema` | Shared Zod schemas, types, sample data |
-| `packages/resume-templates` | `@magic-resume/resume-templates` | Template DSL, renderer, registry |
+| npm (kit: `packages/design-system`) | `@magic-resume-kit/design-system` | Design tokens and shared styles |
+| npm (kit: `packages/icons`) | `@magic-resume-kit/icons` | Icon set |
+| npm (kit: `packages/mcp`) | `@magic-resume-kit/mcp` | stdio MCP server + CLI (Node ESM) |
+| npm (kit: `packages/resume-schema`) | `@magic-resume-kit/resume-schema` | Shared Zod schemas, types, sample data |
+| npm (kit: `packages/resume-templates`) | `@magic-resume-kit/resume-templates` | Template DSL, renderer, registry |
+| `packages/genui` | `@magic-resume/genui` | Local AI Lab components and widgets |
 | `packages/tsconfig` | `@magic-resume/tsconfig` | Shared TypeScript configs |
-| `packages/utils` | `@magic-resume/utils` | Dependency-light helpers (`cn`, time, color) |
+| npm (kit: `packages/utils`) | `@magic-resume-kit/utils` | Dependency-light helpers (`cn`, time, color) |
 
-**A workspace package that ships Tailwind classes must be declared with `@source` in `apps/web/src/app/globals.css`.** Tailwind v4 auto-detects sources from the build's cwd (`apps/web`) and never scans `packages/` — a missing entry emits no error, it just silently drops any utility the app itself doesn't also use.
+**Declare Tailwind sources in `apps/web/src/app/globals.css`: local `packages/genui/src`, plus the installed `@magic-resume-kit/resume-templates/dist` and `@magic-resume-kit/design-system/dist` directories.** The landing app also scans the installed design-system. Tailwind does not scan dependencies automatically.
 
 ## Architecture
 
@@ -87,7 +88,7 @@ Templates are defined using the `MagicTemplateDSL` interface, which includes `de
 
 Preview thumbnails are static assets at `apps/web/public/templates/jpg/{templateId}.jpg`.
 
-### MCP package (`packages/mcp`)
+### MCP package (`@magic-resume-kit/mcp`, maintained in the kit repository)
 
 A **Node.js ESM** package — no React, no browser APIs, no IndexedDB. It communicates with the Magic Resume API (magic-resume.cn) using Personal Access Tokens (PATs).
 
@@ -108,7 +109,7 @@ Format: `<emoji> <type>(<scope>?): <subject>` — e.g. `:sparkles: feat(web): ad
 ## Guardrails
 
 - Keep resume storage local and AI BYOK-only. Route backend calls through `lib/ai/backend.ts`. Do not add accounts, cloud sync, billing, memory, interviews or a deployment-mode switch unless explicitly requested.
-- MCP tools must remain schema-aware and patch-based. The `@magic-resume/mcp` package must not import from Next.js, React components, browser APIs, or IndexedDB.
+- MCP tools must remain schema-aware and patch-based. The `@magic-resume-kit/mcp` package must not import from Next.js, React components, browser APIs, or IndexedDB.
 - When adding shared schema or type changes, prefer `packages/resume-schema` over duplicating shapes in `apps/web`.
 - Keep template IDs aligned: any new `templateId` added to `packages/resume-schema` must have a corresponding entry in `packages/resume-templates/src/registry.ts`, and a thumbnail at `apps/web/public/templates/jpg/{id}.jpg`.
 

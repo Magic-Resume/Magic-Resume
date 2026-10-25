@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, X, ClipboardList } from '@magic-resume/icons';
+import { Check, X, ClipboardList } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@magic-resume/utils';
+import { cn } from '@magic-resume-kit/utils';
 import { WidgetItem, WidgetShell } from '../motion';
 import {
   Chips,

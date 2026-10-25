@@ -3,13 +3,15 @@ title: 简介
 description: "Magic Resume 是开源、AI 原生的简历平台，本页介绍其系统架构、部署模式和技术栈。"
 ---
 
+公共包源码与发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)。本页中的 schema、模板、设计系统、图标、utils 和 MCP 源码路径及构建命令均相对此仓库；应用通过 npm 使用 `@magic-resume-kit/*`，不再包含这些工作区。
+
 Magic Resume 文档站是贡献者与集成者手册。`Magic-Resume` 仓库包含前端、MCP 与共享 schema，后端是**独立部署**的一套服务。
 
 **Magic Resume** 是一个开源、AI 原生的简历平台，围绕三个理念：
 
 - **默认本地优先** —— 所有简历数据存在 IndexedDB。跑起来不需要账户或后端，云同步是可选项。
 - **Schema 优先的模板** —— 每份简历都是一个带类型的 Zod 值。模板从共享 schema 渲染，AI 工具通过 JSON Patch 对着 schema 改（不靠猜）。
-- **AI 工具是一等公民** —— 原生 MCP 服务器（`@magic-resume/mcp`）让 Claude Code、Cursor、Windsurf 通过和网页版同一套数据层读改你的简历。
+- **AI 工具是一等公民** —— 原生 MCP 服务器（`@magic-resume-kit/mcp`）让 Claude Code、Cursor、Windsurf 通过和网页版同一套数据层读改你的简历。
 
 本站是贡献者与集成者手册。想用托管版，去 [magic-resume.cn](https://magic-resume.cn)；想**跑它、改它、把 AI 工具接进去**，你来对地方了。
 
@@ -27,7 +29,7 @@ Magic Resume 文档站是贡献者与集成者手册。`Magic-Resume` 仓库包�
 |---|---|
 | `apps/web` | Next.js 15 前端 —— 编辑器、模板预览、AI Lab UI、导出 PDF |
 | `apps/docs/content` | 你正在看的文档（Mintlify） |
-| `packages/mcp` | 发到 npm 的 `@magic-resume/mcp` —— stdio MCP 服务器 + CLI |
+| `packages/mcp` | 发到 npm 的 `@magic-resume-kit/mcp` —— stdio MCP 服务器 + CLI |
 | `packages/resume-schema` | Zod schema、类型、样例数据 —— 前后端共享的简历真源 |
 | `packages/resume-templates` | 模板 DSL、渲染器、注册表 |
 | `packages/env` / `packages/utils` / `packages/tsconfig` | 共享工具与配置 |
@@ -49,11 +51,11 @@ Magic Resume 文档站是贡献者与集成者手册。`Magic-Resume` 仓库包�
 | 从 → 到 | 协议 | 鉴权 |
 |---|---|---|
 | 浏览器 → 网关 | HTTP (Axios) + SSE | Clerk JWT（拦截器附加） |
-| `@magic-resume/mcp` → platform-api | HTTP | PAT（`~/.magic-resume/mcp.json`） |
+| `@magic-resume-kit/mcp` → platform-api | HTTP | PAT（`~/.magic-resume/mcp.json`） |
 | 网关 → platform-api / agent-service | HTTP（按路径前缀路由） | 来自边缘的可信身份 |
 | agent-service → LLM 提供商 | HTTP | 用户自带或平台托管的 Key |
 
-Schema 一致性靠 `@magic-resume/resume-schema` —— 发到 npm、被后端作为依赖消费。**定义一次，处处校验。**
+Schema 一致性靠 `@magic-resume-kit/resume-schema` —— 发到 npm、被后端作为依赖消费。**定义一次，处处校验。**
 
 ## 有哪些部署模式？
 
@@ -68,12 +70,12 @@ Schema 一致性靠 `@magic-resume/resume-schema` —— 发到 npm、被后端�
 | Web 应用 | **Next.js 15**（App Router）+ React 19 | `apps/web` |
 | 状态 | **Zustand** + Immer | 通过 `idb-keyval` 持久化到 IndexedDB |
 | 鉴权（云端） | **Clerk** | 仅在 `NEXT_PUBLIC_APP_MODE=cloud` 时加载 |
-| Schema | **Zod 4** | 真源在 `@magic-resume/resume-schema` |
+| Schema | **Zod 4** | 真源在 `@magic-resume-kit/resume-schema` |
 | 编辑器 | **Tiptap** | 简历字段的富文本 |
-| 模板 | 自定义 DSL → React 渲染器 | `@magic-resume/resume-templates` |
+| 模板 | 自定义 DSL → React 渲染器 | `@magic-resume-kit/resume-templates` |
 | 后端 | **NestJS** + **PostgreSQL** | gateway / platform-api / agent-service |
 | Agent | **DeepAgents** + **LangGraph** | `agent-service`，SSE 流式 |
-| MCP 服务器 | **`@modelcontextprotocol/sdk`** + `fast-json-patch` | `@magic-resume/mcp`（stdio，Node ESM） |
+| MCP 服务器 | **`@modelcontextprotocol/sdk`** + `fast-json-patch` | `@magic-resume-kit/mcp`（stdio，Node ESM） |
 | 文档 | **Mintlify** | `apps/docs/content`（即本站） |
 
 ## 接下来读什么？

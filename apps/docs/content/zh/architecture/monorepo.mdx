@@ -3,18 +3,22 @@ title: 单仓结构
 description: "本页列出各 workspace 的职责、包之间的依赖边界，以及 Turborepo 和 workspace 协议的用法。"
 ---
 
+公共包源码与发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)。本页中的 schema、模板、设计系统、图标、utils 和 MCP 源码路径及构建命令均相对此仓库；应用通过 npm 使用 `@magic-resume-kit/*`，不再包含这些工作区。
+
 Magic Resume 是一个 **pnpm + Turborepo** monorepo。根 `package.json` 将包管理器钉死为 `pnpm@10.28.1`，让 CI 和本地安装行为保持一致。
 
 ## 有哪些 workspace？
 
 | 路径 | 包名 | 角色 |
 |---|---|---|
-| `apps/web` | `@magic-resume/web` | Next.js 15 App Router 前端，实际产品。 |
+| `apps/web` | `@magic-resume/web` | Next.js 16 App Router 前端，实际产品。 |
 | `apps/docs/content` | — | 本站，Mintlify（Markdown/MDX，无需构建）。 |
-| `packages/mcp` | `@magic-resume/mcp` | stdio MCP 服务器 + CLI，Node ESM，发到 npm。 |
-| `packages/resume-schema` | `@magic-resume/resume-schema` | Zod Schema、类型、样例数据、JSON Schema 导出。 |
-| `packages/resume-templates` | `@magic-resume/resume-templates` | 模板 DSL、渲染器、注册表。 |
-| `packages/utils` | `@magic-resume/utils` | 跨 workspace 的工具函数（cn、color、logger、time）。 |
+| kit: `packages/mcp` | `@magic-resume-kit/mcp` | stdio MCP 服务器 + CLI，Node ESM，发到 npm。 |
+| kit: `packages/resume-schema` | `@magic-resume-kit/resume-schema` | Zod Schema、类型、样例数据、JSON Schema 导出。 |
+| kit: `packages/resume-templates` | `@magic-resume-kit/resume-templates` | 模板 DSL、渲染器、注册表。 |
+| kit: `packages/utils` | `@magic-resume-kit/utils` | 跨 workspace 的工具函数（cn、color、logger、time）。 |
+| `apps/landing` | `@magic-resume/landing` | Astro |
+| `packages/genui` | `@magic-resume/genui` | AI Lab widgets |
 | `packages/tsconfig` | `@magic-resume/tsconfig` | 共享 TypeScript 配置。 |
 
 ## 包之间有哪些依赖边界？
@@ -22,7 +26,7 @@ Magic Resume 是一个 **pnpm + Turborepo** monorepo。根 `package.json` 将包
 这些规则靠 code review 来执行，工具不强约束。请遵守：
 
 <Warning>
-**`@magic-resume/mcp` 不能引入：**
+**`@magic-resume-kit/mcp` 不能引入：**
 - Next.js 或任何 React 组件库
 - 浏览器 API（`window`、`localStorage`、`IndexedDB`）
 - `apps/web` 里的任何东西
@@ -50,12 +54,13 @@ pnpm run test    # turbo test
 
 ```bash
 pnpm --filter @magic-resume/web dev
-pnpm --filter @magic-resume/resume-schema test
-pnpm --filter @magic-resume/mcp build
+pnpm --filter @magic-resume/genui build
 ```
 
 ## `workspace:*` 协议怎么用？
 
-所有跨 workspace 依赖在 `package.json` 里都写成 `workspace:*`。这意味着 **必须从仓库根目录运行 `pnpm install`**，不能在 workspace 内部跑，否则 pnpm 解析不出 link。
+本仓库内部的跨 workspace 依赖在 `package.json` 里都写成 `workspace:*`。这意味着 **必须从仓库根目录运行 `pnpm install`**，不能在 workspace 内部跑，否则 pnpm 解析不出 link。
 
-发布 `@magic-resume/mcp` 时，pnpm 会在打包时把 `workspace:*` 改写成真实的 semver 版本 —— 不用手动 bump。
+发布 `@magic-resume-kit/mcp` 时，pnpm 会在打包时把 `workspace:*` 改写成真实的 semver 版本 —— 不用手动 bump。
+
+应用对 `@magic-resume-kit/*` 使用固定的 npm 版本；只有同仓包（如 GenUI）继续使用 `workspace:*`。公共包发布由 magic-resume-kit 的 GitHub Actions 处理。

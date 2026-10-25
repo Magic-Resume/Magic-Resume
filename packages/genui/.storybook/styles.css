@@ -1,7 +1,7 @@
 @import 'tailwindcss';
-@import '@magic-resume/design-system/styles/tokens.css';
-@import '@magic-resume/design-system/styles/utilities.css';
-@import '@magic-resume/design-system/styles/motion.css';
+@import '@magic-resume-kit/design-system/styles/tokens.css';
+@import '@magic-resume-kit/design-system/styles/utilities.css';
+@import '@magic-resume-kit/design-system/styles/motion.css';
 @import './genui-components.css';
 
 @source '../src';

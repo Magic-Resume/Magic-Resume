@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Image as ImageIcon, Link, X } from '@magic-resume/icons';
+import { Check, Image as ImageIcon, Link, X } from '@magic-resume-kit/icons';
 import { WidgetItem, WidgetShell } from '@magic-resume/genui';
 import type { WidgetProps } from '@magic-resume/genui';
 import { cn } from '@/lib/utils';

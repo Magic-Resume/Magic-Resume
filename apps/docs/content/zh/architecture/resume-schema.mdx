@@ -1,9 +1,11 @@
 ---
 title: 简历 Schema
-description: "@magic-resume/resume-schema 用 Zod 定义共享简历数据形状，供 Web、MCP、模板和 AI 工具遵循。"
+description: "@magic-resume-kit/resume-schema 用 Zod 定义共享简历数据形状，供 Web、MCP、模板和 AI 工具遵循。"
 ---
 
-`@magic-resume/resume-schema` 是简历数据形状的唯一真源。Web 应用、MCP 服务器、每一套模板、每一个 AI 工具都遵循这份 Schema。Schema 里没有的字段，就是不存在的字段。
+公共包源码与发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)。本页中的 schema、模板、设计系统、图标、utils 和 MCP 源码路径及构建命令均相对此仓库；应用通过 npm 使用 `@magic-resume-kit/*`，不再包含这些工作区。
+
+`@magic-resume-kit/resume-schema` 是简历数据形状的唯一真源。Web 应用、MCP 服务器、每一套模板、每一个 AI 工具都遵循这份 Schema。Schema 里没有的字段，就是不存在的字段。
 
 ![一套 schema，处处校验](/images/resume-schema.png)
 
@@ -18,7 +20,7 @@ import {
   templateIds,       // 合法模板 ID 的只读元组
   templateSchema,    // 由 templateIds 派生的 Zod enum
   resumeJsonSchema,  // JSON Schema（MCP resource 用）
-} from '@magic-resume/resume-schema'
+} from '@magic-resume-kit/resume-schema'
 ```
 
 所有子 Schema（`basicsSchema`、`experienceSchema` 等）也单独导出，以便调用方单独校验某一节。
@@ -54,7 +56,7 @@ MCP 服务器里有 `preview_resume_patch` 工具，就是给你做这种"校验
 
 1. 把它加到 `packages/resume-schema/src/` 里合适的子 Schema。
 2. 如果是必需字段，更新 `defaultResume` 和 `sampleResume`。
-3. 重新构建：`pnpm --filter @magic-resume/resume-schema build`。
+3. 重新构建：`pnpm --filter @magic-resume-kit/resume-schema build`。
 4. 更新 `packages/resume-templates` 里使用该字段的模板，以及 `apps/web/src/components/editor/` 里的编辑表单。
 5. 如果字段影响 AI 编辑，在 `packages/mcp/src/resume-tools.ts` 的 `get_resume_editing_guide` 里加上对应指引。
 

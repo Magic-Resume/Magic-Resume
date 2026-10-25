@@ -1,10 +1,10 @@
-import { ChevronLeft } from '@magic-resume/icons';
+import { ChevronLeft } from '@magic-resume-kit/icons';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import ResumeSwitcher from './ResumeSwitcher';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 
 /**
  * 工作台顶栏 —— 不做盒子,做"舞台的边"。一层从画布顶部淡出的 scrim 托起标题,

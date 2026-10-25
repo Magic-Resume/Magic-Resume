@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Upload, Loader2, X } from '@magic-resume/icons';
+import { Upload, Loader2, X } from '@magic-resume-kit/icons';
 import { cn } from "@/lib/utils";
 import { processAndStoreAvatar, AvatarError } from "@/lib/avatar/processAvatar";
 import { ACCEPTED_IMAGE_ACCEPT_ATTR } from "@/lib/utils/image";

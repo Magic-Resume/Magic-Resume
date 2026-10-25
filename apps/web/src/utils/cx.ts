@@ -1,1 +1,1 @@
-export { cn, cx, cxJoin, sortCx } from '@magic-resume/design-system/cx';
+export { cn, cx, cxJoin, sortCx } from '@magic-resume-kit/design-system/cx';

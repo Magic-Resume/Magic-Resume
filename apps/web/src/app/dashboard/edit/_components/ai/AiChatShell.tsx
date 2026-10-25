@@ -1,6 +1,6 @@
 "use client";
 
-import { normalizeDocumentLanguage } from '@magic-resume/resume-schema';
+import { normalizeDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import React, {
   startTransition,
   useCallback,
@@ -20,7 +20,7 @@ import {
   ChevronLeft,
   KeyRound,
   Gauge,
-} from "@magic-resume/icons";
+} from "@magic-resume-kit/icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
@@ -147,7 +147,7 @@ import {
   type WorkspaceResolution,
 } from "@/lib/api/workspace";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
 type AiChatShellProps = {
   resumeData: Resume;

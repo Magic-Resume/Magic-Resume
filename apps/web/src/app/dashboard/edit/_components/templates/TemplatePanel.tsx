@@ -8,12 +8,12 @@ import {
   Palette,
   RotateCcw,
   ChevronRight,
-} from '@magic-resume/icons';
+} from '@magic-resume-kit/icons';
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
-import { getTemplateManifestList } from "@magic-resume/resume-templates/config/magic-templates";
-import { MagicTemplateDSL } from "@magic-resume/resume-templates/types/magic-dsl";
+import { getTemplateManifestList } from "@magic-resume-kit/resume-templates/config/magic-templates";
+import { MagicTemplateDSL } from "@magic-resume-kit/resume-templates/types/magic-dsl";
 
 import { useResumeDocumentStore } from "@/store/resume/document";
 import { extractCustomConfig, mergeTemplateConfig } from "@/lib/utils/templateUtils";
@@ -24,7 +24,7 @@ import ResumeMiniPreview from "../../../_components/ResumeMiniPreview";
 import TemplateStoreModal from "./TemplateStoreModal";
 import ColorSettings from './ColorSettings';
 import { DocumentLanguageField } from './DocumentLanguageField';
-import { resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { resolveDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import { haveSameColors, resetTemplateColors } from './colorSchemes';
 import {
   HoverSurface,

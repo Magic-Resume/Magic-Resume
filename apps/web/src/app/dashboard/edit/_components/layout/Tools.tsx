@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Resume } from '@/types/frontend/resume';
-import { DownloadIcon } from '@magic-resume/icons';
-import { Bot, ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume/icons';
+import { DownloadIcon } from '@magic-resume-kit/icons';
+import { Bot, ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut, RotateCcw } from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useState } from "react";
 import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
