@@ -1,38 +1,4 @@
-export type ErrorCode =
-  | 'unauthenticated'
-  | 'forbidden'
-  | 'plan_required'
-  | 'invalid_input'
-  | 'quota_exceeded'
-  | 'rate_limited'
-  | 'upstream_unavailable'
-  | 'misconfigured'
-  | 'internal_error';
-
-export interface ErrorPayload {
-  errorCode: ErrorCode;
-  subCode: string;
-  retryable: boolean;
-}
-
-export class AgentError extends Error {
-  readonly payload: ErrorPayload;
-
-  constructor(
-    readonly status: number,
-    errorCode: ErrorCode,
-    subCode: string,
-  ) {
-    super(subCode);
-    this.name = 'AgentError';
-    this.payload = {
-      errorCode,
-      subCode,
-      retryable:
-        errorCode === 'rate_limited' || errorCode === 'upstream_unavailable',
-    };
-  }
-}
+import { AgentError } from '../contracts/errors.js';
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object'
@@ -43,7 +9,7 @@ function record(value: unknown): Record<string, unknown> {
 function providerCause(error: unknown): unknown {
   let current = error;
   const seen = new Set<unknown>();
-  for (let depth = 0; depth < 8 && current && !seen.has(current); depth += 1) {
+  for (let depth = 0; depth < 64 && current && !seen.has(current); depth += 1) {
     seen.add(current);
     const candidate = record(current);
     if (
@@ -135,4 +101,20 @@ export function modelError(error: unknown, signal?: AbortSignal): AgentError {
     return new AgentError(400, 'invalid_input', 'model_request_rejected');
   }
   return new AgentError(502, 'upstream_unavailable', 'model_unavailable');
+}
+
+/** Strip SDK objects before LangGraph can serialize an error into pending writes. */
+export function safeModelFailure(
+  error: unknown,
+  signal?: AbortSignal,
+): AgentError {
+  const failure = modelError(error, signal);
+  const details = providerDetails(error);
+  if (error instanceof AgentError || signal?.aborted) return failure;
+  failure.upstreamRetryable =
+    failure.payload.errorCode === 'rate_limited' ||
+    (failure.payload.errorCode === 'upstream_unavailable' &&
+      ((details.status !== undefined && details.status >= 500) ||
+        details.name === 'APIConnectionError'));
+  return failure;
 }

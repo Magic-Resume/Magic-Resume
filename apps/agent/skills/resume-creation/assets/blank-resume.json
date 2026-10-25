@@ -1,0 +1,56 @@
+{
+  "name": "Untitled Resume",
+  "info": {
+    "fullName": "",
+    "headline": "",
+    "email": "",
+    "phoneNumber": "",
+    "address": "",
+    "website": "",
+    "avatar": "",
+    "customFields": []
+  },
+  "sections": {
+    "experience": [],
+    "education": [],
+    "projects": [],
+    "skills": [],
+    "languages": [],
+    "certificates": [],
+    "profiles": []
+  },
+  "sectionOrder": [
+    {
+      "key": "experience",
+      "label": "Experience"
+    },
+    {
+      "key": "education",
+      "label": "Education"
+    },
+    {
+      "key": "projects",
+      "label": "Projects"
+    },
+    {
+      "key": "skills",
+      "label": "Skills"
+    },
+    {
+      "key": "languages",
+      "label": "Languages"
+    },
+    {
+      "key": "certificates",
+      "label": "Certificates"
+    },
+    {
+      "key": "profiles",
+      "label": "Profiles"
+    }
+  ],
+  "template": "classic",
+  "customTemplate": {},
+  "themeColor": "#f97316",
+  "typography": "inter"
+}

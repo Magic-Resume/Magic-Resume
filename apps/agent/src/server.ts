@@ -1,45 +1,53 @@
-import { randomUUID } from 'node:crypto';
 import Fastify, { LogController } from 'fastify';
+import type { BaseCheckpointSaver } from '@langchain/langgraph';
 import { readSettings, type Settings } from './config.js';
-import { AgentError, modelError } from './errors.js';
-import { createModelTransport, type ModelResolver } from './model-fetch.js';
-import { streamChatModel } from './model.js';
-import { parseChatRequest } from './request.js';
-import { openEventStream } from './sse.js';
+import { AgentError } from './contracts/errors.js';
+import type { ModelResolver } from './model/transport.js';
+import { RunEngine } from './engine/run.js';
+import { Persistence } from './persistence/store.js';
+import { chatRoute } from './http/chat.route.js';
+import { approveRoute } from './http/approve.route.js';
+import { sessionRoutes } from './http/session.route.js';
 
 interface ServerOptions {
   settings?: Settings;
   resolver?: ModelResolver;
   logger?: boolean;
+  checkpointer?: BaseCheckpointSaver;
 }
-
 export function buildServer({
   settings = readSettings(),
   resolver,
   logger = false,
+  checkpointer,
 }: ServerOptions = {}) {
+  // Request bodies and provider failures contain private documents and keys.
+  for (const variable of [
+    'LANGSMITH_TRACING',
+    'LANGCHAIN_TRACING_V2',
+    'LANGCHAIN_TRACING',
+    'LANGCHAIN_VERBOSE',
+  ])
+    delete process.env[variable];
   const app = Fastify({
     logger,
     logController: new LogController({ disableRequestLogging: true }),
     bodyLimit: settings.bodyLimitBytes,
     forceCloseConnections: true,
   });
-  if (settings.privateHostsRequested && !settings.allowPrivateModelHosts) {
+  const persistence = new Persistence(settings.dataDir, checkpointer);
+  const engine = new RunEngine(settings, persistence, resolver);
+  if (settings.privateHostsRequested && !settings.allowPrivateModelHosts)
     app.log.warn('AGENT_ALLOW_PRIVATE_MODEL_HOSTS is ignored in production');
-  }
-
-  // Framework errors can contain submitted data, so return only authored codes.
   app.setErrorHandler((error, _request, reply) => {
     const known = error instanceof AgentError ? error : undefined;
-    const errorStatus =
+    const candidate =
       error && typeof error === 'object' && 'statusCode' in error
         ? error.statusCode
         : undefined;
     const status =
       known?.status ??
-      (typeof errorStatus === 'number' && errorStatus < 500
-        ? errorStatus
-        : 500);
+      (typeof candidate === 'number' && candidate < 500 ? candidate : 500);
     return reply.code(status).send(
       known?.payload ?? {
         errorCode: status < 500 ? 'invalid_input' : 'internal_error',
@@ -53,57 +61,25 @@ export function buildServer({
       },
     );
   });
-
-  app.get('/health', async () => ({ ok: true }));
-
-  app.post('/api/chat', async (request, reply) => {
-    const disconnected = new AbortController();
-    const signal = AbortSignal.any([
-      disconnected.signal,
-      AbortSignal.timeout(settings.modelTimeoutMs),
-    ]);
-    const onDisconnect = () => {
-      if (!reply.raw.writableFinished) disconnected.abort();
-    };
-    request.raw.once('aborted', onDisconnect);
-    reply.raw.once('close', onDisconnect);
-    let transport: Awaited<ReturnType<typeof createModelTransport>> | undefined;
-    let stream: ReturnType<typeof streamChatModel> | undefined;
-    let send: ReturnType<typeof openEventStream> | undefined;
-    try {
-      const body = parseChatRequest(request.body);
-      transport = await createModelTransport(
-        body.config.baseUrl,
-        settings.allowPrivateModelHosts,
-        signal,
-        resolver,
-      );
-      stream = streamChatModel(body, transport.fetch, signal);
-      // The first read catches provider HTTP/configuration failures before committing SSE headers.
-      const first = await stream.next();
-      signal.throwIfAborted();
-      reply.hijack();
-      send = openEventStream(reply.raw, randomUUID(), disconnected.signal);
-      await send({ type: 'run_started' });
-      if (!first.done) await send(first.value);
-      for await (const event of stream) await send(event);
-      await send({ type: 'done' });
-    } catch (error) {
-      if (disconnected.signal.aborted) return;
-      const failure = modelError(error, signal);
-      if (send) {
-        await send({ type: 'error', payload: failure.payload }).catch(() => {});
-      } else {
-        return reply.code(failure.status).send(failure.payload);
-      }
-    } finally {
-      disconnected.abort();
-      await transport?.close();
-      await stream?.return(undefined);
-      request.raw.removeListener('aborted', onDisconnect);
-      reply.raw.removeListener('close', onDisconnect);
-      if (send && !reply.raw.destroyed) reply.raw.end();
-    }
+  const sweep = setInterval(
+    () => {
+      void persistence
+        .collectExpired(settings.sessionTtlHours)
+        .catch(() => app.log.warn('Expired sessions could not be collected'));
+    },
+    Math.min(3_600_000, settings.sessionTtlHours * 3_600_000),
+  );
+  sweep.unref();
+  app.addHook('onReady', async () => {
+    await persistence.collectExpired(settings.sessionTtlHours);
   });
+  app.addHook('onClose', async () => {
+    clearInterval(sweep);
+    persistence.close();
+  });
+  app.get('/health', async () => ({ ok: true }));
+  chatRoute(app, engine);
+  approveRoute(app, engine);
+  sessionRoutes(app, engine.sessions);
   return app;
 }

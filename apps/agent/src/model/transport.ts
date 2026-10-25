@@ -2,7 +2,7 @@ import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import ipaddr from 'ipaddr.js';
 import { Agent, fetch as fetchWithDispatcher } from 'undici';
-import { AgentError } from './errors.js';
+import { AgentError } from '../contracts/errors.js';
 
 interface Address {
   address: string;
@@ -97,6 +97,7 @@ export async function createModelTransport(
   allowPrivate: boolean,
   signal: AbortSignal,
   resolver?: ModelResolver,
+  idleTimeoutMs = 120_000,
 ) {
   const base = new URL(baseUrl);
   const addresses = await resolveModelAddresses(
@@ -117,7 +118,28 @@ export async function createModelTransport(
     if (target.origin !== base.origin || target.username || target.password) {
       throw new AgentError(400, 'misconfigured', 'model_origin_changed');
     }
+    const idle = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const touch = () => {
+      clearTimeout(timer);
+      timer = setTimeout(
+        () =>
+          idle.abort(
+            new AgentError(504, 'upstream_unavailable', 'model_timeout'),
+          ),
+        idleTimeoutMs,
+      );
+      timer.unref();
+    };
+    touch();
+    const requestSignal = AbortSignal.any([
+      signal,
+      idle.signal,
+      ...(init?.signal ? [init.signal] : []),
+    ]);
     const dispatcher = new Agent({
+      headersTimeout: 0,
+      bodyTimeout: 0,
       connect: {
         lookup(requested, options, callback) {
           if (requested.toLowerCase() !== hostname) {
@@ -137,9 +159,7 @@ export async function createModelTransport(
         {
           ...(init as Parameters<typeof fetchWithDispatcher>[1]),
           dispatcher,
-          signal: init?.signal
-            ? AbortSignal.any([signal, init.signal])
-            : signal,
+          signal: requestSignal,
           // Never follow a Location header, including one pointing back to this origin.
           redirect: 'manual',
         },
@@ -154,11 +174,42 @@ export async function createModelTransport(
         .finally(() => {
           dispatchers.delete(dispatcher);
         });
-      return response as unknown as Response;
+      if (!response.body) {
+        clearTimeout(timer);
+        return response as unknown as Response;
+      }
+      const reader = response.body.getReader();
+      const body = new ReadableStream<Uint8Array>({
+        async pull(controller) {
+          try {
+            const part = await reader.read();
+            if (part.done) {
+              clearTimeout(timer);
+              controller.close();
+            } else {
+              touch();
+              controller.enqueue(part.value);
+            }
+          } catch (error) {
+            clearTimeout(timer);
+            controller.error(idle.signal.aborted ? idle.signal.reason : error);
+          }
+        },
+        async cancel(reason) {
+          clearTimeout(timer);
+          await reader.cancel(reason);
+        },
+      });
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
     } catch (error) {
+      clearTimeout(timer);
       await dispatcher.destroy();
       dispatchers.delete(dispatcher);
-      throw error;
+      throw idle.signal.aborted ? idle.signal.reason : error;
     }
   };
 
