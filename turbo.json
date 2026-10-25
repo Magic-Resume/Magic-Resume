@@ -17,8 +17,23 @@
       "cache": false,
       "persistent": true
     },
+    "@magic-resume/agent#dev": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "NODE_ENV",
+        "HOST",
+        "PORT",
+        "AGENT_MODEL_TIMEOUT_MS",
+        "AGENT_BODY_LIMIT_BYTES",
+        "AGENT_ALLOW_PRIVATE_MODEL_HOSTS"
+      ]
+    },
     "lint": {
       "dependsOn": ["^lint"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     },
     "test": {
       "dependsOn": ["^build"],

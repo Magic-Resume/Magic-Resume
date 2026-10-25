@@ -1,0 +1,35 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      AI_BACKEND_URL: http://agent:4000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      agent:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: .
+      dockerfile: apps/agent/Dockerfile
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      AGENT_MODEL_TIMEOUT_MS: 120000
+      AGENT_BODY_LIMIT_BYTES: 2097152
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped

@@ -12,8 +12,8 @@ import process from 'node:process';
  * site and docs (`apps/landing`, `apps/docs`) describe the hosted product and are
  * out of scope.
  *
- * Test files are skipped for now: several still reference modules v3 removed and
- * are due to be reworked together with the test setup.
+ * Legacy web tests are skipped while their fixtures are updated. Agent tests
+ * and documentation are checked along with its runtime code.
  */
 
 const root = process.cwd();
@@ -25,22 +25,39 @@ const scanRoots = [
   'apps/web/package.json',
   'apps/web/Dockerfile',
   'apps/web/.env.example',
+  'apps/agent',
   'packages',
 ];
 
-const skipDirectories = new Set(['node_modules', 'dist', '.next', '.next-verify', '.turbo', 'storybook-static']);
-const sourceFile = /\.(?:[cm]?[jt]sx?|json|css|ya?ml)$|(?:^|\/)(?:Dockerfile|\.env\.example)$/;
+const skipDirectories = new Set([
+  'node_modules',
+  'dist',
+  '.next',
+  '.next-verify',
+  '.turbo',
+  'storybook-static',
+]);
+const sourceFile =
+  /\.(?:[cm]?[jt]sx?|json|css|ya?ml)$|(?:^|\/)(?:Dockerfile|\.env\.example)$/;
 const testFile = /\.test\.[cm]?[jt]sx?$|(?:^|\/)scripts\/test-[^/]+$/;
 
 const rules = [
   { pattern: /@clerk\//, reason: 'Clerk authentication' },
   { pattern: /\/api\/billing/, reason: 'billing routes' },
   { pattern: /serverFetchBackend/, reason: 'legacy hosted backend client' },
-  { pattern: /extensions\/billing-client|api\/memoryApi|api\/conversationApi/, reason: 'hosted billing, memory or history client' },
+  {
+    pattern: /extensions\/billing-client|api\/memoryApi|api\/conversationApi/,
+    reason: 'hosted billing, memory or history client',
+  },
   { pattern: /NEXT_PUBLIC_API_URL/, reason: 'hosted backend URL' },
   { pattern: /NEXT_PUBLIC_APP_MODE|isCloudMode/, reason: 'cloud mode switch' },
   { pattern: /livekit-client/, reason: 'voice interview runtime' },
   { pattern: /commercial/i, reason: 'commercial overlay' },
+  {
+    pattern:
+      /__private_reference__/i,
+    reason: 'private repository or reference source',
+  },
 ];
 
 const files = [];
@@ -53,7 +70,8 @@ function collect(target) {
   }
   for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (!skipDirectories.has(entry.name)) collect(path.join(target, entry.name));
+      if (!skipDirectories.has(entry.name))
+        collect(path.join(target, entry.name));
     } else {
       files.push(path.join(target, entry.name));
     }
@@ -64,11 +82,15 @@ scanRoots.forEach(collect);
 const violations = [];
 for (const file of files) {
   const relative = file.split(path.sep).join('/');
-  if (!sourceFile.test(relative) || testFile.test(relative)) continue;
+  const isAgent = relative.startsWith('apps/agent/');
+  if (!sourceFile.test(relative) && !(isAgent && /\.md$/.test(relative)))
+    continue;
+  if (!isAgent && testFile.test(relative)) continue;
   const lines = fs.readFileSync(path.join(root, file), 'utf8').split('\n');
   lines.forEach((line, index) => {
     for (const { pattern, reason } of rules) {
-      if (pattern.test(line)) violations.push(`${relative}:${index + 1}: ${reason} (${pattern})`);
+      if (pattern.test(line))
+        violations.push(`${relative}:${index + 1}: ${reason} (${pattern})`);
     }
   });
 }

@@ -21,6 +21,7 @@
     "lint": "turbo lint && pnpm check:tailwind && pnpm check:turbo && pnpm check:entity && pnpm check:local-only",
     "check:ui": "node scripts/check-ui-architecture.mjs",
     "test": "turbo test",
+    "typecheck": "turbo typecheck",
     "check:tailwind": "node scripts/check-tailwind-architecture.mjs",
     "check:turbo": "node scripts/check-turbo-architecture.mjs",
     "check:entity": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/check-entity.mjs",
