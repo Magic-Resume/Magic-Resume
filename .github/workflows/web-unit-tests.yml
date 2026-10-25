@@ -1,7 +1,8 @@
 name: Web unit tests
 
-# PRs to master and release branches had only Vercel previews: the web unit
-# suite (apps/web test:unit, incl. src/app.test.ts) never ran anywhere.
+# PRs to master and release branches had only Vercel previews, so these suites
+# never ran anywhere. src/app.test.ts still imports modules v3 removed and is
+# left out of test:unit until the web tests are reworked.
 on:
   pull_request:
     branches: ["master", "release-*"]
@@ -35,3 +36,18 @@ jobs:
       # The web tests import workspace packages from their built dist.
       - run: pnpm turbo run build --filter="./packages/*"
       - run: pnpm --filter @magic-resume/web run test:unit
+
+  agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @magic-resume/agent run typecheck
+      - run: pnpm --filter @magic-resume/agent run lint
+      - run: pnpm --filter @magic-resume/agent run test
