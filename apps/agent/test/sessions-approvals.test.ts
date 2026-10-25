@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import Database from 'better-sqlite3';
 import { emptyCheckpoint } from '@langchain/langgraph';
 import { parseApprovalRequest } from '../src/contracts/requests.js';
 import { AgentError } from '../src/contracts/errors.js';
@@ -122,6 +123,33 @@ test('session state distinguishes absent and lost checkpoints and expiry skips b
   assert.equal(store.approval('operation'), undefined);
   assert.equal(pendingApproval('missing', undefined), undefined);
 });
+test('storage opens in incremental vacuum mode and expiry returns freed pages to the disk', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'resume-agent-storage-'));
+  const file = join(directory, 'checkpoints.sqlite');
+  const legacy = new Database(file);
+  legacy.exec('CREATE TABLE legacy (value TEXT)');
+  legacy.close();
+  const store = new Persistence(directory);
+  t.after(async () => {
+    store.close();
+    await rm(directory, { recursive: true, force: true });
+  });
+  assert.equal(store.db.pragma('auto_vacuum', { simple: true }), 2);
+  const checkpoint = emptyCheckpoint();
+  checkpoint.channel_values = { messages: 'x'.repeat(2_000_000) };
+  await store.saver.put(
+    { configurable: { thread_id: 'expired', checkpoint_ns: '' } },
+    checkpoint,
+    { source: 'input', step: -1, parents: {} },
+    {},
+  );
+  store.recordTurn('expired', 'one');
+  store.db.pragma('wal_checkpoint(TRUNCATE)');
+  const before = (await stat(file)).size;
+  assert.equal(await store.collectExpired(1, Date.now() + 7_200_000), 1);
+  assert.equal(store.db.pragma('freelist_count', { simple: true }), 0);
+  assert.ok((await stat(file)).size < before / 2);
+});
 test('session HTTP release removes state and first-turn regeneration creates an empty destination', async (t) => {
   const f = await fixture(t, 'sqlite', [
     { text: 'First answer' },
@@ -160,6 +188,73 @@ test('session HTTP release removes state and first-turn regeneration creates an 
     (await fetch(`${f.origin}/api/chat/session?sessionId=invalid%20id`)).status,
     400,
   );
+});
+test('finished runs keep only the head and turn bases, and history and forks still work', async (t) => {
+  const todo = (content: string) => ({
+    calls: [
+      {
+        name: 'write_todos',
+        args: { todos: [{ content, status: 'in_progress' }] },
+      },
+    ],
+  });
+  const f = await fixture(t, 'sqlite', [
+    todo('First step'),
+    { text: 'First answer' },
+    todo('Second step'),
+    { text: 'Second answer' },
+    { text: 'Forked answer' },
+  ]);
+  const db = new Database(join(f.dataDir, 'checkpoints.sqlite'), {
+    readonly: true,
+  });
+  t.after(() => db.close());
+  const stored = (table: string) =>
+    (
+      db
+        .prepare(
+          `SELECT DISTINCT checkpoint_id FROM ${table} WHERE thread_id = ?`,
+        )
+        .all('compact') as { checkpoint_id: string }[]
+    )
+      .map((row) => row.checkpoint_id)
+      .sort();
+  await f.chat(f.body({ sessionId: 'compact', turnId: 'first' }));
+  const afterFirst = (await f.state('compact')).checkpointId;
+  assert.deepEqual(stored('checkpoints'), [afterFirst]);
+  await f.chat(
+    f.body({
+      sessionId: 'compact',
+      turnId: 'second',
+      messages: [{ role: 'user', content: 'Continue.' }],
+    }),
+  );
+  const head = (await f.state('compact')).checkpointId;
+  assert.deepEqual(stored('checkpoints'), [afterFirst, head].sort());
+  assert.ok(
+    stored('writes').every((id) => [afterFirst, head].includes(id)),
+    JSON.stringify(stored('writes')),
+  );
+  assert.match(
+    JSON.stringify(f.fake.requests.at(-1)?.messages),
+    /First answer/,
+  );
+  const fork = await f.post('/api/chat/session/fork', {
+    sourceSessionId: 'compact',
+    sourceTurnId: 'second',
+    expectedCheckpointId: head,
+    newSessionId: 'compact-fork',
+  });
+  assert.equal(fork.status, 200, await fork.clone().text());
+  await f.chat(
+    f.body({
+      sessionId: 'compact-fork',
+      messages: [{ role: 'user', content: 'Try again.' }],
+    }),
+  );
+  const forked = JSON.stringify(f.fake.requests.at(-1)?.messages);
+  assert.match(forked, /First answer/);
+  assert.doesNotMatch(forked, /Second answer/);
 });
 test('all pending actions require a decision; a stale or forbidden approval never calls the model', async (t) => {
   const f = await fixture(t, 'sqlite', [
