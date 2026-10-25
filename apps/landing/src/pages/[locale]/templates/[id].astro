@@ -1,9 +1,9 @@
 ---
 import ContentLayout from '@/layouts/ContentLayout.astro';
-import { MagicResumeRenderer } from '@magic-resume/resume-templates/renderer/MagicResumeRenderer';
+import { MagicResumeRenderer } from '@magic-resume-kit/resume-templates/renderer/MagicResumeRenderer';
 import { templateIds, templateFacts, previewResume } from '@/data/templates';
 import { LOCALES } from '@/i18n/ui';
-import { dashboardLink, GITHUB } from '@/consts';
+import { dashboardLink } from '@/consts';
 
 export function getStaticPaths() {
   return LOCALES.flatMap((locale) => templateIds.map((id) => ({ params: { locale, id }, props: { locale, id } })));
@@ -36,7 +36,7 @@ const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : loc, h
         <MagicResumeRenderer template={facts.template} data={previewResume(id, locale)} locale={locale} />
       </div>
     </figure>
-    <p class="mt-5 text-mr-caption text-muted"><a class="underline" href={`${GITHUB.repo}/blob/master/packages/resume-templates/src/config/${id}-template.ts`}>{zh ? '模板源代码' : 'Template source'}</a> · <a class="underline" href={`${GITHUB.repo}/blob/master/packages/resume-templates/src/pdf/MagicResumePdfDocument.tsx`}>{zh ? 'PDF 渲染实现' : 'PDF renderer'}</a></p>
+    <p class="mt-5 text-mr-caption text-muted"><a class="underline" href={`https://github.com/Magic-Resume/magic-resume-kit/blob/main/packages/resume-templates/src/config/${id}-template.ts`}>{zh ? '模板源代码' : 'Template source'}</a> · <a class="underline" href="https://github.com/Magic-Resume/magic-resume-kit/blob/main/packages/resume-templates/src/pdf/MagicResumePdfDocument.tsx">{zh ? 'PDF 渲染实现' : 'PDF renderer'}</a></p>
     <nav class="mt-12 border-t border-hair pt-8" aria-label={zh ? '其他模板' : 'More templates'}>
       <h2 class="type-heading text-ink">{zh ? '浏览全部模板' : 'Explore all templates'} ({templateIds.length})</h2>
       <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-3">{templateIds.map((other) => <li><a class="text-muted underline hover:text-ink" href={`/${locale}/templates/${other}`}>{templateFacts(other, locale).name}</a></li>)}</ul>

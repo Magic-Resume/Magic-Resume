@@ -1,0 +1,82 @@
+name: Update public packages
+on:
+  repository_dispatch:
+    types: [magic-packages-published]
+  schedule:
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: Existing release-YYYY-MM-DD integration branch; defaults to today in Taipei
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: public-package-updates
+  cancel-in-progress: false
+jobs:
+  update:
+    if: vars.PUBLIC_PACKAGES_UPDATES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Select integration branch
+        id: target
+        env:
+          REQUESTED_BRANCH: ${{ inputs.release_branch }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          const today = new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Taipei'}).format(new Date());
+          const branch = process.env.REQUESTED_BRANCH || `release-${today}`;
+          if (!/^release-\d{4}-\d{2}-\d{2}$/.test(branch)) throw new Error('Expected an existing release-YYYY-MM-DD branch');
+          appendFileSync(process.env.GITHUB_OUTPUT, `branch=${branch}\n`);
+          JS
+      - name: Release bot token
+        id: bot
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.branch }}
+          token: ${{ steps.bot.outputs.token }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply exact published versions
+        id: update
+        env:
+          PUBLISHED_PACKAGES: ${{ github.event_name == 'repository_dispatch' && toJSON(github.event.client_payload.packages) || '' }}
+        run: node .github/magic-packages/update.mjs
+      - name: Open or update dependency PR
+        if: steps.update.outputs.changed == 'true'
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.bot.outputs.token }}
+          base: ${{ steps.target.outputs.branch }}
+          branch: deps/magic-packages-${{ steps.target.outputs.branch }}
+          commit-message: ':arrow_up: chore(deps): update public resume packages'
+          title: 'chore(deps): update public resume packages'
+          body: |
+            Updates only public Magic Resume Kit dependencies to exact published versions.
+            Major version change: ${{ steps.update.outputs.major }}.
+            Application CI must pass before merging into the integration branch.
+      - name: Flag breaking changes
+        if: steps.pr.outputs.pull-request-number && steps.update.outputs.major == 'true'
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: |
+          gh label create breaking --color B60205 --description 'Major dependency update requires review' --force
+          gh pr edit "$PR_NUMBER" --add-label breaking
+      - name: Enable auto merge for compatible updates
+        if: steps.pr.outputs.pull-request-number && steps.update.outputs.major == 'false'
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: gh pr merge "$PR_NUMBER" --auto --squash

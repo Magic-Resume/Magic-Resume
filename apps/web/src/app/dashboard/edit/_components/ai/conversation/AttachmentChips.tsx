@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Image as ImageIcon, X } from '@magic-resume/icons';
+import { FileText, Image as ImageIcon, X } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { type StagedAttachment } from '../lib/attachments';

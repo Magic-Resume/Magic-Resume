@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles } from '@magic-resume/icons';
+import { Sparkles } from '@magic-resume-kit/icons';
 import { cn } from '@/lib/utils';
 import { getProvider, resolveProviderIdFromModel } from '@/lib/constants/modals';
 import { ProviderMark } from '@/components/llm/ProviderMark';

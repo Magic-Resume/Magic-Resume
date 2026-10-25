@@ -1,4 +1,4 @@
-import { Wand2, BarChart3, BotMessageSquare, Languages, Target } from '@magic-resume/icons';
+import { Wand2, BarChart3, BotMessageSquare, Languages, Target } from '@magic-resume-kit/icons';
 import i18n from '@/i18n';
 import type { AiSkill, SkillId } from '../types';
 

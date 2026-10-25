@@ -1,5 +1,5 @@
 import { ChoiceCard, FormCard } from '@magic-resume/genui';
-import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume/resume-schema';
+import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume-kit/resume-schema';
 import TemplateGalleryCard from './TemplateGalleryCard';
 import TemplateReplicaCard from './TemplateReplicaCard';
 import FabricationNotice from './FabricationNotice';

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Check, Search } from '@magic-resume/icons';
+import { Check, Search } from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { MagicTemplateDSL } from "@magic-resume/resume-templates/types/magic-dsl";
+import { MagicTemplateDSL } from "@magic-resume-kit/resume-templates/types/magic-dsl";
 import ResumeMiniPreview from "../../../_components/ResumeMiniPreview";
 import { cn } from "@/lib/utils";
 

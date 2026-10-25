@@ -63,7 +63,7 @@ const metaConfig: { [key: string]: Metadata } = {
     // 实际抓取地址处理，比设错好；要精确的话应由各页自行设置。
   },
   // 'Templates' 的草稿配置已删除：它写着「50+精美模板」，而实际是 19 套
-  // （packages/resume-schema 的 templateIds）。注释掉的假数字迟早会被人取消
+  // （@magic-resume-kit/resume-schema 的 templateIds）。注释掉的假数字迟早会被人取消
   // 注释直接发出去，删掉比留着安全。真要加这个页面时，数字从 templateIds
   // 取长度，不要手写。
   'Dashboard': {

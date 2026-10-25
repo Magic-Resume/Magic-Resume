@@ -9,14 +9,14 @@
  */
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { TemplateId } from '@magic-resume/resume-schema';
+import type { TemplateId } from '@magic-resume-kit/resume-schema';
 import { Font, renderToBuffer } from '@react-pdf/renderer';
 import type { DocumentProps } from '@react-pdf/renderer';
 import { join } from 'node:path';
 
-import { templateRegistry } from '../../../packages/resume-templates/src/registry';
-import { MagicResumeRenderer } from '../../../packages/resume-templates/src/renderer/MagicResumeRenderer';
-import { MagicResumePdfDocument } from '../../../packages/resume-templates/src/pdf/MagicResumePdfDocument';
+import { templateRegistry } from '@magic-resume-kit/resume-templates/registry';
+import { MagicResumeRenderer } from '@magic-resume-kit/resume-templates/renderer/MagicResumeRenderer';
+import { MagicResumePdfDocument } from '@magic-resume-kit/resume-templates/server';
 
 const CUSTOM_HEADING = '个人优势';
 const LEGACY_ITEM_NAME = '综合能力';

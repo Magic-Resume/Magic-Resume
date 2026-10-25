@@ -3,14 +3,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { Settings } from '@magic-resume/icons';
+import { Settings } from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
 import { useSettingsUiStore } from "@/store/useSettingsUiStore";
 import { setPreferredLanguage } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { HelpSubmenu } from "./HelpSubmenu";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 import {
   HoverSurface,
   useHoverSurface,

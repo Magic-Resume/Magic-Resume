@@ -3,6 +3,8 @@ title: Template system
 description: "Templates define appearance and layout as MagicTemplateDSL data, with one renderer shared by the web preview and PDF export."
 ---
 
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
+
 Templates live in `packages/resume-templates`, where each `MagicTemplateDSL` value describes design tokens, layout, and per-section rendering. The package’s renderer turns one DSL value and one `Resume` into JSX, and the web app and PDF exporter share that renderer.
 
 This means templates are **data**, not components. The web app and the PDF exporter share one renderer.
@@ -10,7 +12,7 @@ This means templates are **data**, not components. The web app and the PDF expor
 ## What does a template look like?
 
 ```ts
-import type { MagicTemplateDSL } from '@magic-resume/resume-templates'
+import type { MagicTemplateDSL } from '@magic-resume-kit/resume-templates'
 
 const myTemplate: MagicTemplateDSL = {
   id: 'my-template',
@@ -83,8 +85,8 @@ The gallery picks it up by ID; the filename must match the template ID exactly.
 
 <Step title="Rebuild">
 ```bash
-pnpm --filter @magic-resume/resume-schema build
-pnpm --filter @magic-resume/resume-templates build
+pnpm --filter @magic-resume-kit/resume-schema build
+pnpm --filter @magic-resume-kit/resume-templates build
 ```
 </Step>
 </Steps>
@@ -95,7 +97,7 @@ Three places must stay aligned: `templateIds` in the schema, `templateRegistry` 
 
 ## What does TemplateCustomizer do?
 
-`@magic-resume/resume-templates/TemplateCustomizer` is a sub-export — a React component the web app embeds to let users tweak a template's design tokens without forking the DSL. If you're adding new tokens, also add a control for them here.
+`@magic-resume-kit/resume-templates/TemplateCustomizer` is a sub-export — a React component the web app embeds to let users tweak a template's design tokens without forking the DSL. If you're adding new tokens, also add a control for them here.
 
 ## How are templates rendered into previews and PDFs?
 

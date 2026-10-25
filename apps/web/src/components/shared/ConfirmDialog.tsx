@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useTranslation } from 'react-i18next';
-import { cx, modalContent, modalOverlay } from '@magic-resume/design-system';
+import { cx, modalContent, modalOverlay } from '@magic-resume-kit/design-system';
 
 interface ConfirmDialogProps {
   isOpen: boolean;

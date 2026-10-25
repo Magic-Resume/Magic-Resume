@@ -1,5 +1,5 @@
 "use client";
-import { documentSectionTitle, isDefaultSectionLabel, resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { documentSectionTitle, isDefaultSectionLabel, resolveDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Section, SectionItem } from '@/types/frontend/resume';
 import { getSanitizedResume } from '@/store/useResumeStore';
@@ -16,7 +16,7 @@ import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
 import CustomSectionDialog from './forms/CustomSectionDialog';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import ResumeMissing, { useResumeMissing } from './ResumeMissing';
-import { Plus, SquarePen, Trash2 } from '@magic-resume/icons';
+import { Plus, SquarePen, Trash2 } from '@magic-resume-kit/icons';
 import {
   DndContext,
   closestCenter,

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { magicTemplates } from '@magic-resume/resume-templates/config/magic-templates';
+import { magicTemplates } from '@magic-resume-kit/resume-templates/config/magic-templates';
 import { extractCustomConfig, mergeTemplateConfig } from '@/lib/utils/templateUtils';
 import { COLOR_SCHEMES, colorsForScheme, haveSameColors, isDarkPaper, matchesColorScheme, resetTemplateColors } from './colorSchemes';
 

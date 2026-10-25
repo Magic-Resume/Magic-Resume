@@ -2,17 +2,17 @@
 
 ## Project
 
-Magic Resume is a Turborepo monorepo for a local-first resume editor with an optional BYOK AI Lab, the shared resume schema and templates, the MCP package, and the marketing and docs sites.
+Magic Resume is a Turborepo monorepo for a local-first resume editor with an optional BYOK AI Lab and the marketing and docs sites. Shared resume packages and MCP are maintained in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) and published on npm as `@magic-resume-kit/*`.
 
 ## Workspaces
 
 - `apps/web`: Next.js app. No login or billing; resumes and one AI conversation per resume stay in IndexedDB. Optional AI requests go through server routes to `AI_BACKEND_URL`, a separately deployed BYOK backend. See `docs/reference/ai-backend.md`.
 - `apps/landing`, `apps/docs`: marketing site (Astro, on Vercel) and docs (Mintlify) for magic-resume.cn.
-- `packages/resume-schema`: shared resume data contracts. Prefer adding shared schema/type changes here instead of duplicating shapes in apps.
-- `packages/resume-templates`: template DSL, renderer, registry, manifests, and template assets convention.
+- `@magic-resume-kit/resume-schema`: shared resume data contracts. Make shared schema/type changes in the kit repository instead of duplicating shapes in apps.
+- `@magic-resume-kit/resume-templates`: template DSL, renderer, registry, manifests, and template assets convention. Consumed from npm with an exact version.
 - `packages/genui`: shared components and widgets for AI Lab. Keep its Tailwind `@source` and Docker dependency entry.
-- `packages/design-system`, `packages/icons`, `packages/utils`: tokens and styles, icons, small helpers.
-- `packages/mcp`: local stdio MCP CLI/server. It talks to the Magic Resume API through PATs and must not depend on Next.js runtime, React components, browser APIs, or IndexedDB.
+- `@magic-resume-kit/design-system`, `@magic-resume-kit/icons`, `@magic-resume-kit/utils`: npm dependencies for tokens and styles, icons, and small helpers. Keep Tailwind scanning the installed package `dist` directories.
+- `@magic-resume-kit/mcp`: independently installed stdio MCP CLI/server, maintained in the kit repository. It talks to the Magic Resume API through PATs, not the local editor's IndexedDB; it is not a Web dependency.
 - `packages/tsconfig`: shared TypeScript configs.
 
 ## Commands
@@ -28,10 +28,10 @@ pnpm run test
 Targeted checks:
 
 ```bash
-pnpm --filter @magic-resume/resume-schema test
-pnpm --filter @magic-resume/resume-templates build
-pnpm --filter @magic-resume/mcp test
+pnpm --filter @magic-resume/genui build
 pnpm --filter @magic-resume/web lint
+pnpm check:tailwind
+pnpm check:local-only
 ```
 
 ## Guardrails

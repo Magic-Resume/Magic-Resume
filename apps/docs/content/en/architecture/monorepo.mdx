@@ -3,18 +3,22 @@ title: Monorepo layout
 description: "This page lists workspace responsibilities, package dependency boundaries, and how to use Turborepo and the workspace protocol."
 ---
 
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
+
 Magic Resume is a **pnpm + Turborepo** monorepo. The root `package.json` pins the package manager to `pnpm@10.28.1` so CI and local installs stay aligned.
 
 ## What workspaces are available?
 
 | Path | Package name | Role |
 |---|---|---|
-| `apps/web` | `@magic-resume/web` | Next.js 15 App Router frontend. The actual product. |
+| `apps/web` | `@magic-resume/web` | Next.js 16 App Router frontend. The actual product. |
 | `apps/docs/content` | — | This site. Mintlify (Markdown/MDX, no build step). |
-| `packages/mcp` | `@magic-resume/mcp` | stdio MCP server + CLI. Node ESM, published to npm. |
-| `packages/resume-schema` | `@magic-resume/resume-schema` | Zod schema, types, sample data, JSON Schema export. |
-| `packages/resume-templates` | `@magic-resume/resume-templates` | Template DSL, renderer, registry. |
-| `packages/utils` | `@magic-resume/utils` | Cross-workspace utilities (cn, color, logger, time). |
+| kit: `packages/mcp` | `@magic-resume-kit/mcp` | stdio MCP server + CLI. Node ESM, published to npm. |
+| kit: `packages/resume-schema` | `@magic-resume-kit/resume-schema` | Zod schema, types, sample data, JSON Schema export. |
+| kit: `packages/resume-templates` | `@magic-resume-kit/resume-templates` | Template DSL, renderer, registry. |
+| kit: `packages/utils` | `@magic-resume-kit/utils` | Cross-workspace utilities (cn, color, logger, time). |
+| `apps/landing` | `@magic-resume/landing` | Astro |
+| `packages/genui` | `@magic-resume/genui` | AI Lab widgets |
 | `packages/tsconfig` | `@magic-resume/tsconfig` | Shared TypeScript configs. |
 
 ## What are the package dependency boundaries?
@@ -22,7 +26,7 @@ Magic Resume is a **pnpm + Turborepo** monorepo. The root `package.json` pins th
 These are enforced by code review rather than tooling. Keep them honest:
 
 <Warning>
-**`@magic-resume/mcp` must not import from:**
+**`@magic-resume-kit/mcp` must not import from:**
 - Next.js or React component packages
 - Browser APIs (`window`, `localStorage`, `IndexedDB`)
 - Anything in `apps/web`
@@ -50,12 +54,13 @@ To target one workspace, skip Turbo and use a pnpm filter:
 
 ```bash
 pnpm --filter @magic-resume/web dev
-pnpm --filter @magic-resume/resume-schema test
-pnpm --filter @magic-resume/mcp build
+pnpm --filter @magic-resume/genui build
 ```
 
 ## How does the `workspace:*` protocol work?
 
-All cross-workspace deps use the `workspace:*` protocol in `package.json`. This means **you must run `pnpm install` from the repo root**, not from inside a workspace, or pnpm can't resolve the link.
+Local cross-workspace deps use the `workspace:*` protocol in `package.json`. This means **you must run `pnpm install` from the repo root**, not from inside a workspace, or pnpm can't resolve the link.
 
-When you publish `@magic-resume/mcp`, pnpm rewrites `workspace:*` to the real version at pack time — no manual bumping needed.
+When you publish `@magic-resume-kit/mcp`, pnpm rewrites `workspace:*` to the real version at pack time — no manual bumping needed.
+
+Applications pin exact npm versions for `@magic-resume-kit/*`; only local packages such as GenUI use `workspace:*`. Public package releases are handled by GitHub Actions in magic-resume-kit.

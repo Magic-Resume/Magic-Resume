@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "@magic-resume/icons";
+import { ChevronDown } from "@magic-resume-kit/icons";
 import {
   AnimatePresence,
   motion,

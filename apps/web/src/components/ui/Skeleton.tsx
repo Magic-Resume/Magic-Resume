@@ -1,1 +1,1 @@
-export { Skeleton } from '@magic-resume/design-system/react';
+export { Skeleton } from '@magic-resume-kit/design-system/react';

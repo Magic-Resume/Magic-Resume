@@ -3,6 +3,8 @@ title: 模板系统
 description: "模板以 MagicTemplateDSL 数据定义外观和布局，Web 预览与 PDF 导出共用同一套渲染器。"
 ---
 
+公共包源码与发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)。本页中的 schema、模板、设计系统、图标、utils 和 MCP 源码路径及构建命令均相对此仓库；应用通过 npm 使用 `@magic-resume-kit/*`，不再包含这些工作区。
+
 模板住在 `packages/resume-templates` 里，一个模板是描述 design token、布局和按 section 渲染规则的 `MagicTemplateDSL` 值。本包里的渲染器把一个 DSL 值和一份 `Resume` 渲染成 JSX，Web 应用和 PDF 导出共用一套渲染器。
 
 也就是说，模板是 **数据**，不是组件。Web 应用和 PDF 导出共用一套渲染器。
@@ -10,7 +12,7 @@ description: "模板以 MagicTemplateDSL 数据定义外观和布局，Web 预�
 ## 一个模板长什么样？
 
 ```ts
-import type { MagicTemplateDSL } from '@magic-resume/resume-templates'
+import type { MagicTemplateDSL } from '@magic-resume-kit/resume-templates'
 
 const myTemplate: MagicTemplateDSL = {
   id: 'my-template',
@@ -83,8 +85,8 @@ apps/web/public/templates/jpg/my-template.jpg
 
 <Step title="重新构建">
 ```bash
-pnpm --filter @magic-resume/resume-schema build
-pnpm --filter @magic-resume/resume-templates build
+pnpm --filter @magic-resume-kit/resume-schema build
+pnpm --filter @magic-resume-kit/resume-templates build
 ```
 </Step>
 </Steps>
@@ -95,7 +97,7 @@ pnpm --filter @magic-resume/resume-templates build
 
 ## TemplateCustomizer 有什么用？
 
-`@magic-resume/resume-templates/TemplateCustomizer` 是一个子导出 —— Web 应用嵌入它，让用户在不 fork DSL 的前提下调整模板的 design token。如果你新增了 token，也要在这里加对应的控件。
+`@magic-resume-kit/resume-templates/TemplateCustomizer` 是一个子导出 —— Web 应用嵌入它，让用户在不 fork DSL 的前提下调整模板的 design token。如果你新增了 token，也要在这里加对应的控件。
 
 ## 模板如何渲染成预览和 PDF？
 

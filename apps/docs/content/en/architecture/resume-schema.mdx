@@ -1,9 +1,11 @@
 ---
 title: Resume schema
-description: "@magic-resume/resume-schema defines the shared resume data shape with Zod for the web app, MCP, templates, and AI tools."
+description: "@magic-resume-kit/resume-schema defines the shared resume data shape with Zod for the web app, MCP, templates, and AI tools."
 ---
 
-`@magic-resume/resume-schema` is the single source of truth for the resume data shape. The web app, MCP server, every template, and every AI tool all conform to this schema. If a field is not in the schema, it does not exist.
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
+
+`@magic-resume-kit/resume-schema` is the single source of truth for the resume data shape. The web app, MCP server, every template, and every AI tool all conform to this schema. If a field is not in the schema, it does not exist.
 
 ![One schema, validated everywhere](/images/resume-schema.png)
 
@@ -18,7 +20,7 @@ import {
   templateIds,       // readonly tuple of valid template IDs
   templateSchema,    // Zod enum derived from templateIds
   resumeJsonSchema,  // JSON Schema (used by MCP resources)
-} from '@magic-resume/resume-schema'
+} from '@magic-resume-kit/resume-schema'
 ```
 
 All sub-schemas (`basicsSchema`, `experienceSchema`, etc.) are also exported individually so callers can validate one section in isolation.
@@ -54,7 +56,7 @@ The MCP server has `preview_resume_patch` for exactly this validation loop witho
 
 1. Add it to the right sub-schema in `packages/resume-schema/src/`.
 2. Update `defaultResume` and `sampleResume` if it's required.
-3. Rebuild: `pnpm --filter @magic-resume/resume-schema build`.
+3. Rebuild: `pnpm --filter @magic-resume-kit/resume-schema build`.
 4. Update consuming templates in `packages/resume-templates` and the editor form in `apps/web/src/components/editor/`.
 5. If the field affects AI editing, add guidance to `get_resume_editing_guide` in `packages/mcp/src/resume-tools.ts`.
 

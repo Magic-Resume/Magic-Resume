@@ -38,8 +38,8 @@ Core must also enforce D7=a server-side; landing filters both route generation
 and the example renderer, with a regression test for user-derived content.
 No admin endpoint or token is used for knowledge requests.
 
-Templates derive IDs from `@magic-resume/resume-schema` and layout facts from
-`@magic-resume/resume-templates/registry`. React renders the actual template at
+Templates derive IDs from `@magic-resume-kit/resume-schema` and layout facts from
+`@magic-resume-kit/resume-templates/registry`. React renders the actual template at
 build time using synthetic data, with no client hydration. The shared rich-text
 SSR fallback renders an allowlisted, attribute-free React tree. Suggested roles
 are editorial recommendations, not ATS compatibility claims.

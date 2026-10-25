@@ -1,16 +1,16 @@
 ---
 title: MCP server overview
-description: "@magic-resume/mcp gives AI coding tools structured resume access through schemas, JSON Patch validation, and atomic application."
+description: "@magic-resume-kit/mcp gives AI coding tools structured resume access through schemas, JSON Patch validation, and atomic application."
 ---
 
-`@magic-resume/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes your resumes to AI coding tools — Claude Code, Cursor, Windsurf, anything that speaks MCP — as typed, patch-editable resources. MCP gives the model structured access through schemas, sample data, JSON Patch validation, and atomic application.
+`@magic-resume-kit/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes your resumes to AI coding tools — Claude Code, Cursor, Windsurf, anything that speaks MCP — as typed, patch-editable resources. MCP gives the model structured access through schemas, sample data, JSON Patch validation, and atomic application.
 
 Why this exists: pasting a resume JSON blob into an AI prompt is unreliable. The model has to guess the schema, doesn't know which fields are required, and can't validate its own edits. MCP gives the model **structured access** — schema, sample data, JSON Patch validation, atomic apply.
 
 ## What design principles does the MCP server follow?
 
 - **Patch-based, not rewrite-based.** Every mutation is a JSON Patch (RFC 6902) applied with `fast-json-patch`. Models don't echo the full resume back to apply a one-line change.
-- **Schema-aware.** Patches are validated against `@magic-resume/resume-schema` *before* they touch storage. Invalid patches are rejected with a structured error the model can read.
+- **Schema-aware.** Patches are validated against `@magic-resume-kit/resume-schema` *before* they touch storage. Invalid patches are rejected with a structured error the model can read.
 - **No browser dependencies.** The package runs as a Node ESM process and talks to the Core API over HTTP. It has no React, no IndexedDB, no Next.js imports.
 - **PAT auth, not Clerk.** Users issue a Personal Access Token from the web app's Settings page; the MCP server presents that PAT to the Core API. Clerk's JWT flow is browser-only.
 

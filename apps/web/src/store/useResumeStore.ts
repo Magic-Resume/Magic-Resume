@@ -1,4 +1,4 @@
-import { normalizeDocumentLanguage, resolveDocumentLanguage } from '@magic-resume/resume-schema';
+import { normalizeDocumentLanguage, resolveDocumentLanguage } from '@magic-resume-kit/resume-schema';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import i18next from 'i18next';

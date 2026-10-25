@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Input as DesignInput } from '@magic-resume/design-system/react';
+import { Input as DesignInput } from '@magic-resume-kit/design-system/react';
 
 /** Compatibility export. New code should import Input from the design-system package. */
 const Input = React.forwardRef<

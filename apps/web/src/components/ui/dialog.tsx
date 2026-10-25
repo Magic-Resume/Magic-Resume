@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { cx, modalContent, modalOverlay } from '@magic-resume/design-system';
+import { cx, modalContent, modalOverlay } from '@magic-resume-kit/design-system';
 
 const Dialog = DialogPrimitive.Root;
 

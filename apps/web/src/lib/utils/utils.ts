@@ -1,6 +1,6 @@
 import { MagicDebugger } from "./debuggger";
-export { cn } from '@magic-resume/utils';
-export { formatTime, formatRelativeTime } from '@magic-resume/utils';
+export { cn } from '@magic-resume-kit/utils';
+export { formatTime, formatRelativeTime } from '@magic-resume-kit/utils';
 
 
 // 简历快照

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { defaultResume } from '@magic-resume/resume-schema';
+import { defaultResume } from '@magic-resume-kit/resume-schema';
 import type { Resume } from '@/types/frontend/resume';
 import { getSanitizedResume, useResumeStore } from './useResumeStore';
 import { useSettingStore } from './useSettingStore';

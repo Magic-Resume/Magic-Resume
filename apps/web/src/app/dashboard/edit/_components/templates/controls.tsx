@@ -3,12 +3,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { ChevronDown, ChevronUp, Check, Download } from '@magic-resume/icons';
+import { ChevronDown, ChevronUp, Check, Download } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from "@/lib/utils";
 import { inspectResumeFontPack, downloadResumeFontPack } from '@/lib/utils/pdf-export';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 /* ------------------------------------------------------------------ *
  * 右侧自定义面板的统一控件原语 —— 深色工作台 + sky 点缀、少 border。
  * 仅用 transform / opacity 动效,克制不抢戏(对齐 .impeccable.md)。

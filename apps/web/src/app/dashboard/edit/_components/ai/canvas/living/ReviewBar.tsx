@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ChevronUp, ChevronDown, Check, X } from '@magic-resume/icons';
+import { ChevronUp, ChevronDown, Check, X } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 type ReviewBarProps = {
   count: number;
   onPrev: () => void;

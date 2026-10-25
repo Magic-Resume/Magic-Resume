@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Telescope } from "@magic-resume/icons";
+import { Telescope } from "@magic-resume-kit/icons";
 import { useTranslation } from "react-i18next";
 import { WidgetItem, WidgetShell } from "@magic-resume/genui";
 import type { WidgetProps } from "@magic-resume/genui";

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { hexToRgb } from '@/lib/utils/color';
 import PolarisMark from '../ai/PolarisMark';
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 interface AiThinkingOverlayProps {
   isVisible: boolean;
   themeColor?: string;

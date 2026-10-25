@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
-import { EASE_ENTER, EASE_EXIT } from '@magic-resume/utils';
+import { EASE_ENTER, EASE_EXIT } from '@magic-resume-kit/utils';
 export interface DropMenuItem {
   label: string;
   icon?: React.ReactNode;

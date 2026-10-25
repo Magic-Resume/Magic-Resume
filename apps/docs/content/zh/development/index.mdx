@@ -3,6 +3,8 @@ title: 本地开发
 description: "本页介绍安装依赖后的日常开发流程，包括编辑器配置、跨 workspace 热更新、检查和分支约定。"
 ---
 
+公共包源码与发包流程在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit)。本页中的 schema、模板、设计系统、图标、utils 和 MCP 源码路径及构建命令均相对此仓库；应用通过 npm 使用 `@magic-resume-kit/*`，不再包含这些工作区。
+
 克隆 Magic Resume 仓库并运行 `pnpm install` 后，在仓库根目录跑 `pnpm run dev` 会通过 Turbo 并行启动每个 workspace 的 `dev`。完整的质量检查使用 `pnpm run lint` 和 `pnpm run test`。
 
 还没装好的话，从 [自托管](/zh/getting-started/self-hosted) 开始。
@@ -12,18 +14,16 @@ description: "本页介绍安装依赖后的日常开发流程，包括编辑器
 ```
 Magic-Resume/
 ├── apps/
-│   ├── web/         # @magic-resume/web   —— Next.js 15 前端
-│   └── docs/        # Mintlify 文档站点 —— 仅 content/，无需构建
+│   ├── web/         # Next.js 16 editor + BYOK AI Lab
+│   ├── landing/     # Astro marketing site
+│   └── docs/        # Mintlify content
 ├── packages/
-│   ├── mcp/             # @magic-resume/mcp
-│   ├── resume-schema/   # @magic-resume/resume-schema
-│   ├── resume-templates/# @magic-resume/resume-templates
-│   ├── utils/           # @magic-resume/utils
-│   └── tsconfig/        # @magic-resume/tsconfig
-├── patches/         # pnpm patches
+│   ├── genui/       # Local AI Lab components
+│   └── tsconfig/    # Shared TypeScript configs
+├── patches/         # Host PDF patches
 ├── turbo.json
 ├── pnpm-workspace.yaml
-└── CLAUDE.md        # 给 AI 编程 agent 看的精简上下文
+└── CLAUDE.md
 ```
 
 ## 怎么配置开发编辑器？
@@ -43,15 +43,12 @@ Magic-Resume/
 |---|---|
 | `apps/web` | 在 `:3000` 跑 `next dev` |
 | `apps/docs/content` | Mintlify —— 用 `npx mint dev` 预览（不在 `turbo dev` 内） |
-| `packages/resume-schema` | `tsc --watch` |
-| `packages/resume-templates` | `tsc --watch` |
-| `packages/mcp` | `tsc --watch` |
+| `packages/genui` | `tsc --watch` |
+| `apps/landing` | `astro dev` on `:3002` |
 
-所以改 `packages/resume-schema/src/index.ts` 会触发一次重建，Web 应用通过 workspace link 自动拿到。
+公共包改动需要在 magic-resume-kit 构建、发布后更新本仓库的固定版本；不再通过本地 workspace link 自动更新。
 
-<Info>
-Web 应用支持 Turbopack：`pnpm --filter @magic-resume/web dev:turbo`。更快，但偶尔比 Next.js minor 版本落后一拍 —— 撞上 Turbopack 特有的 bug 时回退到 `dev`。
-</Info>
+<Info>Next.js 16 的 `dev` 默认使用 Turbopack；需要 Webpack 时运行 `pnpm --filter @magic-resume/web dev:webpack`。</Info>
 
 ## 提交前怎么运行 lint 和测试？
 

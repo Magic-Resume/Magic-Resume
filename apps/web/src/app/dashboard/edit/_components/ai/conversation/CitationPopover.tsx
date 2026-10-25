@@ -4,7 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, ExternalLink } from "@magic-resume/icons";
+import { ArrowLeft, ArrowRight, ExternalLink } from "@magic-resume-kit/icons";
 import type { CitationSource } from "../types";
 import { sourceDomain } from "./citationSources";
 import SiteFavicon from "./SiteFavicon";

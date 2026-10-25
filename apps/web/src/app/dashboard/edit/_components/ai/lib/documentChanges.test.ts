@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { defaultResume } from '@magic-resume/resume-schema';
+import { defaultResume } from '@magic-resume-kit/resume-schema';
 import { applyDocumentChange, diffDocumentChanges } from './documentChanges';
 import { diffInfoToChanges } from './diffResume';
 import { normalizeResumeSectionOrder } from '@/lib/utils/resumeSectionOrder';

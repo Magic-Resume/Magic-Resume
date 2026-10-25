@@ -1,5 +1,5 @@
 import { cubicBezier, easeIn, easeOut } from 'framer-motion';
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 import { FLIGHT_APEX_AT, FLIGHT_ARC_PX } from './polarisFlight';
 
 /**

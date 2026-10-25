@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { X } from '@magic-resume/icons';
+import { X } from '@magic-resume-kit/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';

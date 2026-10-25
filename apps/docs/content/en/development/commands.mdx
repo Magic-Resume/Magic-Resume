@@ -19,39 +19,43 @@ pnpm run test     # turbo test
 
 ```bash
 pnpm --filter @magic-resume/web dev
-pnpm --filter @magic-resume/web dev:turbo       # Turbopack variant
 pnpm --filter @magic-resume/web build
 pnpm --filter @magic-resume/web lint
 pnpm --filter @magic-resume/web i18n:check
 
 cd apps/docs/content && npx mint dev            # this docs site (Mintlify local preview)
 
-pnpm --filter @magic-resume/resume-schema build
-pnpm --filter @magic-resume/resume-schema test  # node --test
+```
 
-pnpm --filter @magic-resume/resume-templates build
+Run these public-package commands from the [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) repository root:
 
-pnpm --filter @magic-resume/mcp build
-pnpm --filter @magic-resume/mcp test
-pnpm --filter @magic-resume/mcp lint            # tsc --noEmit
+```bash
+pnpm --filter @magic-resume-kit/resume-schema build
+pnpm --filter @magic-resume-kit/resume-schema test  # node --test
+
+pnpm --filter @magic-resume-kit/resume-templates build
+
+pnpm --filter @magic-resume-kit/mcp build
+pnpm --filter @magic-resume-kit/mcp test
+pnpm --filter @magic-resume-kit/mcp lint            # tsc --noEmit
 ```
 
 ## What MCP CLI commands are available after installation?
 
 ```bash
-npx -y @magic-resume/mcp config set --api-url <url> --pat <token>
-npx -y @magic-resume/mcp config print
-npx -y @magic-resume/mcp config clear
-npx -y @magic-resume/mcp mcp                    # boot stdio server
+npx -y @magic-resume-kit/mcp config set --api-url <url> --pat <token>
+npx -y @magic-resume-kit/mcp config print
+npx -y @magic-resume-kit/mcp config clear
+npx -y @magic-resume-kit/mcp mcp                    # boot stdio server
 ```
 
 ## What one-off commands are useful?
 
 ```bash
-# Rebuild the JSON Schema artifact only
-pnpm --filter @magic-resume/resume-schema build
+# Run in magic-resume-kit: rebuild the JSON Schema artifact only
+pnpm --filter @magic-resume-kit/resume-schema build
 
-# Bundle analyzer for the web app
+# Return to Magic-Resume for the web app bundle analyzer
 pnpm --filter @magic-resume/web analyze
 
 # Production build of the web app

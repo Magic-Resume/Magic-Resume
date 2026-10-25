@@ -1,13 +1,13 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Loader2 } from '@magic-resume/icons';
+import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Loader2 } from '@magic-resume-kit/icons';
 import { useTranslation } from "react-i18next";
 import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
 import ExportModal from "../modals/ExportModal";
 import { useResumeExport } from "../modals/useResumeExport";
 import { Resume } from "@/types/frontend/resume";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
 type EditorDockProps = {
   zoomIn: (step?: number) => void;

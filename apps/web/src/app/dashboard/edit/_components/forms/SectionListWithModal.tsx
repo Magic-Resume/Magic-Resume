@@ -19,15 +19,15 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FaPlus, FaGripVertical } from '@magic-resume/icons';
+import { FaPlus, FaGripVertical } from '@magic-resume-kit/icons';
 import { toast } from 'sonner';
 import { DropMenu } from '@/components/ui/drop-menu';
-import { DotsHorizontalIcon, Pencil2Icon, CopyIcon, TrashIcon } from '@magic-resume/icons';
+import { DotsHorizontalIcon, Pencil2Icon, CopyIcon, TrashIcon } from '@magic-resume-kit/icons';
 import { UniqueIdentifier } from '@dnd-kit/core';
 
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff } from '@magic-resume/icons';
+import { Eye, EyeOff } from '@magic-resume-kit/icons';
 
 import { useResumeDocumentStore } from '@/store/resume/document';
 import { appLifecycle } from '@/lib/extensions/app-lifecycle';

@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import subsetFont from 'subset-font';
+import { CJK_SUBSET_CHARSET } from '@magic-resume-kit/resume-templates/pdf/charset';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(__dirname, '..');
@@ -43,15 +44,19 @@ const charset = fs.readFileSync(path.join(__dirname, 'charset.txt'), 'utf8');
 const mb = (n) => (n / 1024 / 1024).toFixed(2) + 'MB';
 
 const REPO_ROOT = path.resolve(WEB, '../..');
-const RUNTIME_CHARSET_MODULE = path.join(
-  REPO_ROOT,
-  'packages/resume-templates/src/pdf/cjk-subset-charset.ts',
-);
+const RUNTIME_CHARSET_MODULE = process.env.MAGIC_RESUME_TEMPLATES_SRC
+  ? path.join(path.resolve(process.env.MAGIC_RESUME_TEMPLATES_SRC), 'pdf/cjk-subset-charset.ts')
+  : null;
+const subsetChars = [...new Set([...charset].filter((c) => !/\s/.test(c)))].join('');
+if (!RUNTIME_CHARSET_MODULE && subsetChars !== CJK_SUBSET_CHARSET) {
+  throw new Error('Charset differs from the published renderer. Set MAGIC_RESUME_TEMPLATES_SRC to the kit resume-templates/src directory, regenerate and release the matching package before using these fonts.');
+}
 
 // Emit the exact subset character set as a runtime module so pdf/browser.tsx can
 // detect rare (unsubsetted) ideographs and load the full fonts on demand. Kept in
 // lockstep with the fonts by regenerating here on every subset run.
 const writeRuntimeCharsetModule = () => {
+  if (!RUNTIME_CHARSET_MODULE) { console.log('Font charset matches the published renderer.'); return; }
   const chars = [...new Set([...charset].filter((c) => !/\s/.test(c)))];
   const body = `// AUTO-GENERATED from apps/web/scripts/charset.txt by scripts/subset-fonts.mjs.
 // Do not edit by hand. This is the exact character set the CJK subset fonts in

@@ -3,7 +3,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume/resume-schema';
+import { DOCUMENT_LANGUAGE_OPTIONS } from '@magic-resume-kit/resume-schema';
 import { SELECTION_ACTIONS, type SelectionActionId } from '../../lib/changeModel';
 import { PolarisGlyph } from '../../PolarisMark';
 

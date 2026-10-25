@@ -13,11 +13,11 @@
  */
 
 /**
- * 曲线本身已经不住在这里了——它们是全项目共用的，收在 `@magic-resume/utils`
+ * 曲线本身已经不住在这里了——它们是全项目共用的，收在 `@magic-resume-kit/utils`
  * （`motion.ts`），CSS 侧对应 `--narrate-ease` / `--exit-ease`。这里转出去，
  * 是为了让 genui 已有的引用点不用改。
  */
-export { EASE_ENTER, EASE_EXIT, EASE_STATE, EASE_OVERSHOOT } from '@magic-resume/utils';
+export { EASE_ENTER, EASE_EXIT, EASE_STATE, EASE_OVERSHOOT } from '@magic-resume-kit/utils';
 
 /** Seconds, because that is what framer-motion wants. */
 export const DURATION = {

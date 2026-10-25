@@ -4,7 +4,7 @@ import {
   documentSectionTitle,
   normalizeDocumentLanguage,
   resolveDocumentLanguage,
-} from '@magic-resume/resume-schema';
+} from '@magic-resume-kit/resume-schema';
 import type { Resume } from '@/types/frontend/resume';
 import type { PendingChange, DocumentChange } from './changeModel';
 import type { BatchKind, TargetedSelectionDiff } from './diffResume';

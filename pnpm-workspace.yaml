@@ -1,20 +1,21 @@
 packages:
   - apps/*
   - packages/*
-
 allowBuilds:
-  '@clerk/shared': set this to true or false
   esbuild: set this to true or false
   sharp: set this to true or false
   unrs-resolver: set this to true or false
-
 onlyBuiltDependencies:
-  - '@clerk/shared'
   - esbuild
   - sharp
   - unrs-resolver
-
 patchedDependencies:
-  '@react-pdf/layout@4.6.1': patches/@react-pdf__layout@4.6.1.patch
-  '@react-pdf/render@4.5.1': patches/@react-pdf__render@4.5.1.patch
-  '@react-pdf/textkit@6.3.0': patches/@react-pdf__textkit@6.3.0.patch
+  "@react-pdf/layout@4.6.1": patches/@react-pdf__layout@4.6.1.patch
+  "@react-pdf/render@4.5.1": patches/@react-pdf__render@4.5.1.patch
+  "@react-pdf/textkit@6.3.0": patches/@react-pdf__textkit@6.3.0.patch
+overrides:
+  "@react-pdf/layout": 4.6.1
+  "@react-pdf/render": 4.5.1
+  "@react-pdf/textkit": 6.3.0
+minimumReleaseAgeExclude:
+  - "@magic-resume-kit/*"

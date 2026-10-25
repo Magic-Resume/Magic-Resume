@@ -36,7 +36,9 @@ related: [CONVENTIONS.md]
 
 | 文档 | 状态 | 更新 | 摘要 |
 |---|---|---:|---|
-| [Magic Resume MCP](reference/mcp.md) | Living | 2026-07-03 | Setup, exposed MCP tools/resources/prompts, editing rules, and runtime boundary notes. |
+| [Magic Resume MCP](reference/mcp.md) | Living | 2026-10-25 | Setup, exposed MCP tools/resources/prompts, editing rules, and runtime boundary notes. |
+| [BYOK AI backend contract](reference/ai-backend.md) | Living | 2026-10-25 | What a self-hosted AI backend must implement for AI Lab — the AI_BACKEND_URL entry, proxied routes, request config and stream events. |
+| [公共包接入](reference/public-packages-integration.md) | Living | 2026-10-25 | 本仓库依赖 magic-resume-kit 的哪些公共包、版本怎么固定与升级、怎么对着本地 kit 联调。 |
 
 ## Empty Buckets
 

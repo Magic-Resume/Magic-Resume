@@ -12,7 +12,7 @@ MCP 服务器以 stdio 子进程形式由你的 AI 工具拉起。先一次性�
 
 <Step title="配置 MCP 服务器">
 ```bash
-npx -y @magic-resume/mcp config set \
+npx -y @magic-resume-kit/mcp config set \
   --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 ```
@@ -24,7 +24,7 @@ npx -y @magic-resume/mcp config set \
 <Tabs>
 <Tab title="Claude Code">
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
 这会把 Magic Resume 加进用户级 MCP 列表。重启 Claude Code 让它读到新服务器。
 </Tab>
@@ -36,7 +36,7 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
   "mcpServers": {
     "magic-resume": {
       "command": "npx",
-      "args": ["-y", "@magic-resume/mcp", "mcp"]
+      "args": ["-y", "@magic-resume-kit/mcp", "mcp"]
     }
   }
 }
@@ -46,7 +46,7 @@ claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
 任何支持 stdio MCP 服务器的客户端都可以拉起它：
 
 ```bash
-npx -y @magic-resume/mcp mcp
+npx -y @magic-resume-kit/mcp mcp
 ```
 
 服务器通过 stdin/stdout 说标准 MCP 协议 —— 不需要传任何标志。
@@ -55,7 +55,7 @@ npx -y @magic-resume/mcp mcp
 </Step>
 
 <Step title="验证">
-在 AI 工具里问一句：*"列一下我的 Magic Resume 简历。"* 模型应该调 `list_resumes` 并返回你的列表。如果报错，跑 `npx -y @magic-resume/mcp config print` 确认 API URL 和 PAT 没填错。
+在 AI 工具里问一句：*"列一下我的 Magic Resume 简历。"* 模型应该调 `list_resumes` 并返回你的列表。如果报错，跑 `npx -y @magic-resume-kit/mcp config print` 确认 API URL 和 PAT 没填错。
 </Step>
 </Steps>
 
@@ -65,16 +65,16 @@ MCP 服务器通过 **stdio** 通信 —— 它不开端口、不监听 socket�
 
 ## 怎么更新或固定 MCP 版本？
 
-因为命令是 `npx -y @magic-resume/mcp mcp`，每次 AI 工具启动都会拉最新版。要钉死某个版本：
+因为命令是 `npx -y @magic-resume-kit/mcp mcp`，每次 AI 工具启动都会拉最新版。要钉死某个版本：
 
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp@0.1.0 mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp@1.0.1 mcp
 ```
 
 ## 怎么重置 MCP 凭据？
 
 ```bash
-npx -y @magic-resume/mcp config clear
+npx -y @magic-resume-kit/mcp config clear
 ```
 
 这会删掉 `~/.magic-resume/mcp.json`。如果 PAT 泄漏了，记得也在 Web 应用里吊销那个 PAT。

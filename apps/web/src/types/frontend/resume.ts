@@ -1,6 +1,6 @@
 /**
  * Compatibility facade for the web app's historical import path.
- * Canonical document fields live in @magic-resume/resume-schema; only client
+ * Canonical document fields live in @magic-resume-kit/resume-schema; only client
  * lifecycle metadata (versions and required local identifiers) is added here.
  */
 import type {
@@ -11,7 +11,7 @@ import type {
   Section,
   SectionItem,
   SectionOrderItem,
-} from '@magic-resume/resume-schema';
+} from '@magic-resume-kit/resume-schema';
 
 export type { CustomInfoField, CustomTemplateConfig, Section, SectionItem };
 export type InfoType = Info;

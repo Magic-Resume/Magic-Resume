@@ -1,4 +1,4 @@
-import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 import { CustomTemplateConfig } from '@/types/frontend/resume';
 
 

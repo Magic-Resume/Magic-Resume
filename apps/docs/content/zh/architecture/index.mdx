@@ -3,11 +3,11 @@ title: 架构总览
 description: "Magic Resume 使用共享 Zod Schema 定义简历，通过 JSON Patch 编辑，并以 IndexedDB 持久化浏览器数据。"
 ---
 
-一份 Zod Schema（在 `@magic-resume/resume-schema` 里）定义了简历的形状，Web 应用、MCP 服务器、AI agent 全都读写这个统一形状。MCP 工具通过 JSON Patch 来改简历，写入存储前会先用 Schema 校验，Web 编辑器产生的也是 Patch。
+一份 Zod Schema（在 `@magic-resume-kit/resume-schema` 里）定义了简历的形状，Web 应用、MCP 服务器、AI agent 全都读写这个统一形状。MCP 工具通过 JSON Patch 来改简历，写入存储前会先用 Schema 校验，Web 编辑器产生的也是 Patch。
 
 Magic Resume 围绕四个反复出现的核心思想构建：
 
-1. **简历是一个带类型的值。** 一份 Zod Schema（在 `@magic-resume/resume-schema` 里）定义了简历的形状。Web 应用、MCP 服务器、AI agent 全都读写这个统一形状。
+1. **简历是一个带类型的值。** 一份 Zod Schema（在 `@magic-resume-kit/resume-schema` 里）定义了简历的形状。Web 应用、MCP 服务器、AI agent 全都读写这个统一形状。
 2. **浏览器即数据库。** 自托管模式下没有服务端持久化。IndexedDB（`MagicResumeDB`）就是真源。云端同步只是一个可选的、单向推送到 Core API 的过程。
 3. **鉴权由 feature flag 控制。** `NEXT_PUBLIC_APP_MODE` 在构建时决定 Clerk middleware 和云端同步层是否加载。两种模式跑的是同一套 UI。
 4. **编辑就是 Patch。** MCP 工具通过 JSON Patch（`fast-json-patch`）来改简历，写入存储前会先用 Schema 校验。Web 编辑器产生的也是 Patch —— 同一条代码路径。
@@ -29,7 +29,7 @@ Magic Resume 围绕四个反复出现的核心思想构建：
                 │  httpClient   ├──────────▶│  Core API  │
                 └───────────────┘            └────────────┘
 
-   AI 工具 ────▶ @magic-resume/mcp ──▶ Core API（用 PAT 鉴权）
+   AI 工具 ────▶ @magic-resume-kit/mcp ──▶ Core API（用 PAT 鉴权）
 ```
 
 ## 修改不同功能该去哪里看？

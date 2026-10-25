@@ -1,5 +1,5 @@
 import React from 'react';
-import { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 
 interface ResumeMiniPreviewProps {
   template: MagicTemplateDSL;

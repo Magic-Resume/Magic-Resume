@@ -1,4 +1,4 @@
-import type { LucideIcon } from '@magic-resume/icons';
+import type { LucideIcon } from '@magic-resume-kit/icons';
 import type { WidgetInstance } from "@magic-resume/genui";
 import type { HitlDecision } from "./lib/services/agentClient";
 import type { AgentActivity } from "./conversation/agentActivity";

@@ -1,12 +1,12 @@
 ---
 name: magic-resume
-description: How AI agents integrate with Magic Resume — read and safely edit a user's resumes through the native MCP server (@magic-resume/mcp). Covers install, auth (PAT), and the patch-based editing contract.
+description: How AI agents integrate with Magic Resume — read and safely edit a user's resumes through the native MCP server (@magic-resume-kit/mcp). Covers install, auth (PAT), and the patch-based editing contract.
 ---
 
 # Magic Resume integration skill
 
 Magic Resume is an open-source, AI-native resume platform. AI tools integrate
-through its **native MCP server** (`@magic-resume/mcp`), a stdio process your
+through its **native MCP server** (`@magic-resume-kit/mcp`), a stdio process your
 tool spawns — the same data layer the web app uses. These docs are for
 **developers/integrators**, not end users of the hosted product.
 
@@ -16,13 +16,13 @@ tool spawns — the same data layer the web app uses. These docs are for
 # 1. Create a Personal Access Token in the web app:
 #    Settings → Personal Access Tokens → Create  (value shown once, starts with mr_pat_)
 # 2. Configure the MCP server once:
-npx -y @magic-resume/mcp config set \
+npx -y @magic-resume-kit/mcp config set \
   --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 # writes ~/.magic-resume/mcp.json  (point --api-url at http://localhost:3110/api for local Core gateway)
 
 # 3. Register with your tool, e.g. Claude Code:
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
 
 Cursor / Windsurf and any stdio MCP client work too — see `mcp/setup`.
@@ -37,7 +37,7 @@ Cursor / Windsurf and any stdio MCP client work too — see `mcp/setup`.
 
 ## Editing contract — this is the important part
 
-- Resumes are a **typed Zod value** (`@magic-resume/resume-schema`). Every field
+- Resumes are a **typed Zod value** (`@magic-resume-kit/resume-schema`). Every field
   has a known shape; don't guess.
 - Mutations are **JSON Patch only** — the MCP tools apply RFC-6902 patches
   against the schema and the server re-validates. Never do full-document

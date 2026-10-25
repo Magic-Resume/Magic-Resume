@@ -13,7 +13,7 @@
  * 没有 `Image`/`document`，所以 browser.tsx 的转码走 createImageBitmap + OffscreenCanvas
  * 那条分支——两条分支语义一致，含 JPEG 铺白底。
  */
-import type { MagicTemplateDSL } from '@magic-resume/resume-templates/types/magic-dsl';
+import type { MagicTemplateDSL } from '@magic-resume-kit/resume-templates/types/magic-dsl';
 import type { Resume } from '@/types/frontend/resume';
 
 export interface PdfWorkerRequest {
@@ -36,7 +36,7 @@ ctx.addEventListener('message', (event: MessageEvent<PdfWorkerRequest>) => {
     try {
       // 动态 import：worker 启动本身要快，重包等第一条消息到了再拉。
       const { createMagicResumePdfBlob } = await import(
-        '@magic-resume/resume-templates/pdf/browser'
+        '@magic-resume-kit/resume-templates/pdf/browser'
       );
       const blob = await createMagicResumePdfBlob({ data: resume, template, locale });
       const buffer = await blob.arrayBuffer();

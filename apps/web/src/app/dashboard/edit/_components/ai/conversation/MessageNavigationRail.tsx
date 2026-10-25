@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "../types";
 
-import { EASE_ENTER } from '@magic-resume/utils';
+import { EASE_ENTER } from '@magic-resume-kit/utils';
 const PREVIEW_TITLE_LENGTH = 46;
 const PREVIEW_DESCRIPTION_LENGTH = 82;
 

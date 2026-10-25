@@ -1,1 +1,1 @@
-export { oklchToRgb } from '@magic-resume/utils';
+export { oklchToRgb } from '@magic-resume-kit/utils';

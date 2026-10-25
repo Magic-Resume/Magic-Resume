@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Textarea as DesignTextarea } from '@magic-resume/design-system/react';
+import { Textarea as DesignTextarea } from '@magic-resume-kit/design-system/react';
 
 /** Compatibility export. New code should import Textarea from the design-system package. */
 const Textarea = React.forwardRef<

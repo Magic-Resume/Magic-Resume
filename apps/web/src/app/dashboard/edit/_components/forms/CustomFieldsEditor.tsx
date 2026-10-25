@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { CircleDot, Plus, Trash2 } from '@magic-resume/icons';
+import { CircleDot, Plus, Trash2 } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'nanoid';
-import { SECTION_ICON_NAMES, sectionIconByName } from '@magic-resume/resume-templates';
+import { SECTION_ICON_NAMES, sectionIconByName } from '@magic-resume-kit/resume-templates';
 import type { CustomInfoField } from '@/types/frontend/resume';
 import { FieldLabel, fieldInputClass } from './fields';
 

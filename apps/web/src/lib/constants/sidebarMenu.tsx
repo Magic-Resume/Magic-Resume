@@ -8,7 +8,7 @@ import {
   Certificate,
   Languages,
   BriefcaseBusiness
-} from '@magic-resume/icons';
+} from '@magic-resume-kit/icons';
 
 export type SidebarMenuItem = {
   key: string;

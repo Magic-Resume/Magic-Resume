@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import ResumePreviewPanel from "../preview/ResumePreviewPanel";
 import Link from "next/link";
-import { FiEdit, FiLayout } from '@magic-resume/icons';
+import { FiEdit, FiLayout } from '@magic-resume-kit/icons';
 import { AnimatePresence, motion } from "framer-motion";
-import { FaCopy } from '@magic-resume/icons';
+import { FaCopy } from '@magic-resume-kit/icons';
 import ResumeContent from "../layout/ResumeContent";
 import TemplatePanel from "../templates/TemplatePanel";
 import Modal from "@/components/ui/Modal";

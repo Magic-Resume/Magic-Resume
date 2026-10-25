@@ -17,7 +17,7 @@ const roots = [
   path.join(root, 'apps/landing/src'),
   path.join(root, 'apps/docs'),
   path.join(root, 'packages/genui/src'),
-  path.join(root, 'packages/design-system/src'),
+  path.join(root, 'node_modules/@magic-resume-kit/design-system/dist'),
   path.join(root, 'docs'),
   path.join(root, 'README.md'),
   path.join(root, 'README.zh-CN.md'),
@@ -39,14 +39,16 @@ const oldGenUiImport = new RegExp(
 const sourceExtensions = /\.(?:[cm]?[jt]sx?|astro|css|md|mdx|json)$/i;
 const violations = [];
 
-function walk(entry) {
+function walk(entry, explicitRoot = false) {
   if (!fs.existsSync(entry)) return;
   const stat = fs.statSync(entry);
   if (stat.isFile()) {
     if (sourceExtensions.test(entry)) inspect(entry);
     return;
   }
-  if (ignoredDirectories.has(path.basename(entry))) return;
+  // Published packages are explicit dist roots; only skip generated directories
+  // encountered while recursively scanning application sources.
+  if (!explicitRoot && ignoredDirectories.has(path.basename(entry))) return;
   for (const child of fs.readdirSync(entry)) walk(path.join(entry, child));
 }
 
@@ -80,7 +82,7 @@ function inspect(file) {
     violations.push(`${relative}: landing imports Web or GenUI`);
   }
 
-  if (relative.startsWith('packages/design-system/src/') && /apps\/web|apps\/landing|@magic-resume\/genui/.test(content)) {
+  if (relative.startsWith('node_modules/@magic-resume-kit/design-system/dist/') && /apps\/web|apps\/landing|@magic-resume\/genui/.test(content)) {
     violations.push(`${relative}: design-system imports an application package`);
   }
 
@@ -89,13 +91,13 @@ function inspect(file) {
   }
 }
 
-for (const entry of roots) walk(entry);
+for (const entry of roots) walk(entry, true);
 
 const webCss = path.join(root, 'apps/web/src/app/globals.css');
 const landingCss = path.join(root, 'apps/landing/src/styles/global.css');
 for (const [file, required] of [
-  [webCss, ['@magic-resume/design-system/styles/tokens.css', '@source "../../../../packages/genui/src"', '@source "../../../../packages/design-system/src"']],
-  [landingCss, ['@magic-resume/design-system/styles/tokens.css', '@source "../../../../packages/design-system/src"']],
+  [webCss, ['@magic-resume-kit/design-system/styles/tokens.css', '@source "../../../../packages/genui/src"', '@source "../../node_modules/@magic-resume-kit/design-system/dist"']],
+  [landingCss, ['@magic-resume-kit/design-system/styles/tokens.css', '@source "../../node_modules/@magic-resume-kit/design-system/dist"']],
 ]) {
   if (!fs.existsSync(file)) continue;
   const css = fs.readFileSync(file, 'utf8');

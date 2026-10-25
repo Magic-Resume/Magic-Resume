@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Check, LayoutTemplate, TriangleAlert } from '@magic-resume/icons';
+import { Check, LayoutTemplate, TriangleAlert } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { WidgetItem, WidgetPanel, WidgetShell } from '@magic-resume/genui';
 import type { WidgetProps } from '@magic-resume/genui';
@@ -10,7 +10,7 @@ import {
   renderTreeNodeDom,
   validateTemplate,
   type TemplateDocument,
-} from '@magic-resume/resume-templates';
+} from '@magic-resume-kit/resume-templates';
 import { useResumeDocumentStore } from '@/store/resume/document';
 
 type ReplicaProps = {

@@ -1,4 +1,4 @@
-import type { DocumentLanguage, SectionOrderItem } from '@magic-resume/resume-schema';
+import type { DocumentLanguage, SectionOrderItem } from '@magic-resume-kit/resume-schema';
 import { nanoid } from "nanoid";
 import type { EditableTarget } from "./editableCanvas";
 import type { Section } from "@/types/frontend/resume";

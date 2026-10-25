@@ -4,7 +4,7 @@ import {
   getTemplateManifestList,
   magicTemplateList,
   magicTemplates,
-} from '@magic-resume/resume-templates/config/magic-templates';
+} from '@magic-resume-kit/resume-templates/config/magic-templates';
 
 export async function GET(request: Request) {
   try {

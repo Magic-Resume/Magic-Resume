@@ -7,7 +7,7 @@ const root = process.cwd();
 const roots = [
   path.join(root, 'apps/web/src'),
   path.join(root, 'apps/landing/src'),
-  path.join(root, 'packages/design-system/src'),
+  path.join(root, 'node_modules/@magic-resume-kit/design-system/dist'),
 ];
 
 const sourceFiles = [];
@@ -47,7 +47,7 @@ function collectUntrackedSourceFiles() {
 
 const designSystemCssPath = path.join(
   root,
-  'packages/design-system/styles/tokens.css',
+  'node_modules/@magic-resume-kit/design-system/styles/tokens.css',
 );
 const designSystemCss = fs.readFileSync(designSystemCssPath, 'utf8');
 const definedTokens = new Set(
@@ -67,7 +67,7 @@ for (const match of designSystemCss.matchAll(
   for (const ref of refs) {
     if (!definedTokens.has(ref)) {
       violations.push(
-        `packages/design-system/styles/tokens.css: undefined token ${ref} referenced by ${token}`,
+        `node_modules/@magic-resume-kit/design-system/styles/tokens.css: undefined token ${ref} referenced by ${token}`,
       );
     }
   }
@@ -79,7 +79,7 @@ function visitToken(token, trail = []) {
   if (visiting.has(token)) {
     const cycle = [...trail, token].join(' -> ');
     violations.push(
-      `packages/design-system/styles/tokens.css: circular token reference ${cycle}`,
+      `node_modules/@magic-resume-kit/design-system/styles/tokens.css: circular token reference ${cycle}`,
     );
     return;
   }
@@ -125,13 +125,13 @@ for (const file of sourceFiles) {
 }
 
 // Compatibility primitives remain available during migration, but newly-created
-// source files must enter through @magic-resume/design-system. Existing files are
+// source files must enter through @magic-resume-kit/design-system. Existing files are
 // intentionally excluded so the migration can proceed incrementally.
 for (const file of collectUntrackedSourceFiles()) {
   const content = fs.readFileSync(file, 'utf8');
   if (legacyPrimitiveImportPattern.test(content)) {
     violations.push(
-      `${path.relative(root, file)}: new source must import @magic-resume/design-system instead of legacy ui/base primitives`,
+      `${path.relative(root, file)}: new source must import @magic-resume-kit/design-system instead of legacy ui/base primitives`,
     );
   }
 }
@@ -142,8 +142,8 @@ for (const [file, css, requiredSources] of [
     fs.readFileSync(path.join(root, 'apps/web/src/app/globals.css'), 'utf8'),
     [
       '@source "../../../../packages/genui/src"',
-      '@source "../../../../packages/resume-templates/src"',
-      '@source "../../../../packages/design-system/src"',
+      '@source "../../node_modules/@magic-resume-kit/resume-templates/dist"',
+      '@source "../../node_modules/@magic-resume-kit/design-system/dist"',
     ],
   ],
   [
@@ -152,10 +152,10 @@ for (const [file, css, requiredSources] of [
       path.join(root, 'apps/landing/src/styles/global.css'),
       'utf8',
     ),
-    ['@source "../../../../packages/design-system/src"'],
+    ['@source "../../node_modules/@magic-resume-kit/design-system/dist"'],
   ],
 ]) {
-  if (!css.includes('@magic-resume/design-system/styles/tokens.css')) {
+  if (!css.includes('@magic-resume-kit/design-system/styles/tokens.css')) {
     violations.push(`${file}: missing design-system token import`);
   }
   for (const source of requiredSources) {
@@ -166,7 +166,7 @@ for (const [file, css, requiredSources] of [
 }
 
 for (const file of sourceFiles.filter((candidate) =>
-  candidate.startsWith(path.join(root, 'packages/design-system/src')),
+  candidate.startsWith(path.join(root, 'node_modules/@magic-resume-kit/design-system/dist')),
 )) {
   const content = fs.readFileSync(file, 'utf8');
   if (/#(?:[0-9a-f]{3,8})\b/i.test(content)) {

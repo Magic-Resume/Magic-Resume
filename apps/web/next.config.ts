@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
   },
 
   output: "standalone",
-  transpilePackages: ['@magic-resume/resume-templates'],
+  transpilePackages: ['@magic-resume-kit/resume-templates'],
 
   async headers() {
     return [
@@ -115,7 +115,7 @@ const nextConfig: NextConfig = {
     /** 大型 compilation 下少留内存。webpack 模式（`--webpack`）专用，默认 false。 */
     webpackMemoryOptimizations: true,
     // 优化包导入。只列真的装了的——`react-icons` 与 `@radix-ui/react-icons` 都不在
-    // 依赖里，列着是死配置（图标现在走 @magic-resume/icons → @hugeicons）。
+    // 依赖里，列着是死配置（图标现在走 @magic-resume-kit/icons → @hugeicons）。
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',

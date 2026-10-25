@@ -2,8 +2,8 @@ import * as React from 'react';
 import {
   buttonVariants as designButtonVariants,
   cx,
-} from '@magic-resume/design-system';
-import { Loader2 } from '@magic-resume/icons';
+} from '@magic-resume-kit/design-system';
+import { Loader2 } from '@magic-resume-kit/icons';
 
 type LegacyVariant = 'default' | 'outline' | 'ghost' | 'link';
 type LegacySize = 'default' | 'sm' | 'lg' | 'icon';

@@ -3,6 +3,8 @@ title: Contributing
 description: "This page explains the workflow, required boundaries, and MIT licensing terms for code, documentation, and template contributions."
 ---
 
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
+
 Magic Resume is MIT-licensed and accepts contributions. PRs that come with reproductions, tests, and a clear `why` tend to land fast.
 
 ## What should I do before contributing?
@@ -31,7 +33,7 @@ Magic Resume is MIT-licensed and accepts contributions. PRs that come with repro
 </Warning>
 
 <Warning>
-**`@magic-resume/mcp` must stay browser-free.** No React, no Next.js, no `window`, no IndexedDB. If you import one of those by accident, `node --test` will catch you, but please catch yourself first.
+**`@magic-resume-kit/mcp` must stay browser-free.** No React, no Next.js, no `window`, no IndexedDB. If you import one of those by accident, `node --test` will catch you, but please catch yourself first.
 </Warning>
 
 ## Which workspace should a change go in?

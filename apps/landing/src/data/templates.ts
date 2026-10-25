@@ -1,5 +1,5 @@
-import { templateIds, sampleResume, type Resume, type TemplateId } from '@magic-resume/resume-schema';
-import { templateRegistry } from '@magic-resume/resume-templates/registry';
+import { templateIds, sampleResume, type Resume, type TemplateId } from '@magic-resume-kit/resume-schema';
+import { templateRegistry } from '@magic-resume-kit/resume-templates/registry';
 import type { Locale } from '@/i18n/ui';
 
 export { templateIds };

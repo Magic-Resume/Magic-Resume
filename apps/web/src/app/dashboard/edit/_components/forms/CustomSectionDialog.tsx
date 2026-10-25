@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
-import { SECTION_ICON_NAMES, sectionIconByName } from '@magic-resume/resume-templates';
+import { SECTION_ICON_NAMES, sectionIconByName } from '@magic-resume-kit/resume-templates';
 import { cn } from '@/lib/utils';
 
 type Props = {

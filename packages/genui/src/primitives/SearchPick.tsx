@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@magic-resume/utils';
+import { cn } from '@magic-resume-kit/utils';
 import { useGenUISource } from '../host/GenUIProvider';
 import type { WidgetOption } from '../contract';
 import { FIELD_SURFACE } from './styles';

@@ -20,7 +20,7 @@ In the web app, **Settings → Personal Access Tokens → Create**, and copy the
 
 <Step title="Configure the MCP server">
 ```bash
-npx -y @magic-resume/mcp config set \
+npx -y @magic-resume-kit/mcp config set \
   --api-url "https://api.magic-resume.cn/api" \
   --pat "mr_pat_xxx"
 ```
@@ -32,7 +32,7 @@ This writes `~/.magic-resume/mcp.json`. If you run the backend locally, point `-
 <Tabs>
 <Tab title="Claude Code">
 ```bash
-claude mcp add magic-resume -- npx -y @magic-resume/mcp mcp
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
 This adds Magic Resume to the user-scoped MCP list. Restart Claude Code so it picks up the new server.
 </Tab>
@@ -44,7 +44,7 @@ Open `~/.cursor/mcp.json` (create if missing) and add:
   "mcpServers": {
     "magic-resume": {
       "command": "npx",
-      "args": ["-y", "@magic-resume/mcp", "mcp"]
+      "args": ["-y", "@magic-resume-kit/mcp", "mcp"]
     }
   }
 }
@@ -54,7 +54,7 @@ Open `~/.cursor/mcp.json` (create if missing) and add:
 Any MCP client that supports stdio servers can spawn it:
 
 ```bash
-npx -y @magic-resume/mcp mcp
+npx -y @magic-resume-kit/mcp mcp
 ```
 
 The server speaks the standard MCP protocol over stdin/stdout — no flags needed.
@@ -63,7 +63,7 @@ The server speaks the standard MCP protocol over stdin/stdout — no flags neede
 </Step>
 
 <Step title="Try it">
-In your AI tool, ask: "List my Magic Resume resumes." The model should call the tool and return your list. If it errors, run `npx -y @magic-resume/mcp config print` and check the API URL and PAT.
+In your AI tool, ask: "List my Magic Resume resumes." The model should call the tool and return your list. If it errors, run `npx -y @magic-resume-kit/mcp config print` and check the API URL and PAT.
 </Step>
 </Steps>
 

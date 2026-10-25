@@ -49,8 +49,7 @@ if (!ORGANIZATION_ID || docsOrganization !== ORGANIZATION_ID)
   violations.push(`apps/docs/content/docs.json: seo.organization.id must equal ORGANIZATION_ID in apps/landing/src/consts.ts (${ORGANIZATION_ID})`);
 
 // The definition makes a countable claim; keep it true as templates come and go.
-const schema = read('packages/resume-schema/src/index.ts');
-const templateIds = schema.match(/export const templateIds = \[([\s\S]*?)\]/)?.[1].match(/['"][^'"]+['"]/g) ?? [];
+const { templateIds } = await import('@magic-resume-kit/resume-schema');
 for (const [locale, forms] of Object.entries(ENTITY)) {
   for (const [form, text] of Object.entries(forms)) {
     const claimed = text.match(/(\d+) (?:templates|套模板)/)?.[1];

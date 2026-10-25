@@ -13,6 +13,8 @@ related: [architecture/template-system]
 
 # Magic Resume Schema
 
+> Public packages moved to [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) on 2026-10-25. The `packages/resume-schema`, `packages/resume-templates`, `packages/design-system`, `packages/icons`, `packages/utils` and `packages/mcp` source paths and package build commands below refer to that repository. The editor consumes published `@magic-resume-kit/*` packages; its local workspaces are listed in the root README.
+
 `packages/resume-schema` is the shared source of truth for structured resume content across the web app, template package, MCP package, and tests.
 
 ## Exports
@@ -60,7 +62,7 @@ No database migration is required for this schema package change.
 ## Generate JSON Schema
 
 ```bash
-pnpm --filter @magic-resume/resume-schema build
+pnpm --filter @magic-resume-kit/resume-schema build
 ```
 
 The build emits:
@@ -72,5 +74,5 @@ packages/resume-schema/dist/schema.json
 Run tests:
 
 ```bash
-pnpm --filter @magic-resume/resume-schema test
+pnpm --filter @magic-resume-kit/resume-schema test
 ```
