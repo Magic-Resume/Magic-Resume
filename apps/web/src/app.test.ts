@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
+import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import type { ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { GET as getSourceIcon } from "@/app/api/source-icon/route";
 import {
   FilterTable,
   RecordsTable,
@@ -66,10 +66,6 @@ import {
   fillDecision,
 } from "@/app/dashboard/edit/_components/ai/lib/interruptPlan";
 import {
-  createStreamingTextBuffer,
-  STREAM_RENDER_INTERVAL_MS,
-} from "@/app/dashboard/edit/_components/ai/lib/streamingBuffer";
-import {
   FORM_DEFS,
   WIDGETS,
   askChoiceKind,
@@ -104,13 +100,6 @@ import {
   resolveResumePatchBatch,
   resolveResumePatchEvent,
 } from "@/app/dashboard/edit/_components/ai/lib/resumePatch";
-import {
-  getApiErrorMessage,
-  getMcpApiUrl,
-  normalizeCloudResumes,
-  shellQuote,
-} from "@/lib/settings/mcpAccess";
-import { afterAuthUrl } from "@/components/auth/afterAuthUrl";
 import { migrateResume } from "@/lib/utils/resumeMigrations";
 import {
   coerceSectionOrder,
@@ -130,76 +119,12 @@ import {
 } from "@/lib/utils/dateTime";
 import { getFileSizeBucket } from "@/lib/utils/fileSize";
 import { generateShortHash } from "@/lib/utils/hash";
-import { getInitials } from "@/lib/utils/userDisplay";
 import {
   formatResumeImportValidationError,
   validateAndNormalizeImportedResume,
 } from "@/lib/validation/importResume";
-import {
-  AI_SESSION_TTL_MS,
-  createAiSessionStore,
-  getAiSessionStorageKey,
-  type AiSessionSnapshot,
-} from "@/store/useAiSessionStore";
 import type { Resume, Section } from "@/types/frontend/resume";
-import { restoreConversationMessages } from "@/lib/api/conversationHistory";
-import { mergeInterviewTurns } from "@/app/dashboard/interview/_components/mergeTurns";
-import {
-  classifyVoiceFailure,
-  phaseAfterDisconnect,
-} from "@/app/dashboard/interview/_components/voiceOutcome";
-import { DisconnectReason } from "livekit-client";
-import {
-  CHARS_PER_SECOND,
-  nextShownChars,
-  nextStage,
-} from "@/app/dashboard/interview/_components/useCaptionPacing";
 import { packTrajectoryRanges } from "@/app/dashboard/edit/_components/ai/conversation/trajectory";
-
-class MemoryDb {
-  items = new Map<string, unknown>();
-
-  async setItem<T>(key: string, value: T): Promise<void> {
-    this.items.set(key, structuredClone(value));
-  }
-
-  async getItem<T>(key: string): Promise<T | null> {
-    return (structuredClone(this.items.get(key)) as T | undefined) ?? null;
-  }
-
-  async removeItem(key: string): Promise<void> {
-    this.items.delete(key);
-  }
-
-  async getAllKeys(): Promise<string[]> {
-    return Array.from(this.items.keys());
-  }
-}
-
-const baseSession = (
-  overrides: Partial<AiSessionSnapshot> = {},
-): Partial<AiSessionSnapshot> => ({
-  started: true,
-  sessionId: "session-a",
-  sessionUsed: true,
-  messages: [
-    { id: "m1", role: "user", content: "帮我优化简历" },
-    { id: "m2", role: "assistant", content: "当然可以。" },
-  ],
-  ...overrides,
-});
-
-/** 记录投递了什么。默认端口会去打网络，单测里必须换掉。 */
-class RecordingSync {
-  pushed: Array<{ conversationId: string; seq: number; role: string;
-    content?: string;
-    payload?: Record<string, unknown>; }> = [];
-  push(input: { conversationId: string; seq: number; role: string;
-    content?: string;
-    payload?: Record<string, unknown>; }): void {
-    this.pushed.push(input);
-  }
-}
 
 const oldSentence =
   "Refactored critical resource-monitoring dashboards using Angular and RxJS, reducing memory leaks by 25% and improving data refresh intervals for massive clusters.";
@@ -209,7 +134,7 @@ const rewrittenSentence =
   "Redesigned critical resource-monitoring dashboards with Angular and RxJS, cutting memory leaks by 25% and accelerating data refresh rates for massive clusters.";
 
 const beforeSummary = [
-  "<p>Google Cloud Console UI Optimization</p>",
+  "<p>Example Lantern Console UI Optimization</p>",
   "<ul>",
   `<li>${oldSentence}</li>`,
   "<li>Developed a specialized Web Worker layer to handle multi-threaded telemetry data processing, preventing main-thread blocking during peak load.</li>",
@@ -217,7 +142,7 @@ const beforeSummary = [
 ].join("");
 
 const rewrittenSummary = [
-  "<p>Google Cloud Console UI Optimization</p>",
+  "<p>Example Lantern Console UI Optimization</p>",
   "<ul>",
   `<li>${rewrittenSentence}</li>`,
   "<li>Developed a specialized Web Worker layer to handle multi-threaded telemetry data processing, preventing main-thread blocking during peak load.</li>",
@@ -225,16 +150,16 @@ const rewrittenSummary = [
 ].join("");
 
 const targetSelection = {
-  path: "sections.experience[google].summary",
+  path: "sections.experience[lantern].summary",
   selectionText: oldSentence,
 };
 
 const resume: Resume = {
   id: "resume-1",
-  name: "Kairo Resume",
+  name: "Example Resume",
   updatedAt: 1,
   info: {
-    fullName: "Kairo Chen",
+    fullName: "Alex Chen",
     headline: "",
     email: "",
     phoneNumber: "",
@@ -245,15 +170,15 @@ const resume: Resume = {
   sections: {
     experience: [
       {
-        id: "google",
+        id: "lantern",
         visible: true,
-        company: "Google",
+        company: "Example Lantern Lab",
         summary: beforeSummary,
       },
       {
-        id: "bytedance",
+        id: "cedar",
         visible: true,
-        company: "ByteDance",
+        company: "Example Cedar Studio",
         summary: "<p>Unchanged</p>",
       },
     ],
@@ -264,346 +189,6 @@ const resume: Resume = {
   typography: "inter",
 };
 
-async function testAiSessionStore() {
-  {
-    const now = 1_000;
-    const db = new MemoryDb();
-    const store = createAiSessionStore({
-      db,
-      now: () => now,
-      idFactory: () => "fresh-session",
-      persistDelayMs: 0,
-      sync: new RecordingSync(),
-    });
-
-    await store.getState().patchSession("resume-a", baseSession());
-    await store.getState().patchSession("resume-a", {
-      analysis: {
-        overall_score: 83,
-        category_averages: { impact: 80 },
-        peer_analysis: {
-          persona: "peer_developer",
-          score: 82,
-          categories_scores: { impact: 80 },
-          strengths: ["技术栈扎实"],
-          weaknesses: ["结果量化不足"],
-          suggestions: ["补充性能数据"],
-        },
-        leader_analysis: {
-          persona: "tech_lead",
-          score: 84,
-          categories_scores: { impact: 84 },
-          strengths: ["项目复杂度不错"],
-          weaknesses: ["业务影响表达弱"],
-          suggestions: ["突出负责范围"],
-        },
-        hrbp_analysis: {
-          persona: "hrbp",
-          score: 83,
-          categories_scores: { impact: 82 },
-          strengths: ["经历完整"],
-          weaknesses: ["关键词覆盖不足"],
-          suggestions: ["补充岗位关键词"],
-        },
-      },
-    });
-    await store.getState().flushSession("resume-a");
-
-    const reloaded = createAiSessionStore({
-      db,
-      now: () => now,
-      idFactory: () => "unused",
-      persistDelayMs: 0,
-      sync: new RecordingSync(),
-    });
-    const { session, cold } = await reloaded.getState().loadSession("resume-a");
-
-    assert.equal(session.sessionId, "session-a");
-    assert.equal(session.sessionUsed, true);
-    assert.equal(session.messages.length, 2);
-    assert.equal(session.messages[0].content, "帮我优化简历");
-    assert.equal(session.analysis?.overall_score, 83);
-    // 本地读到了就不该回源。
-    assert.equal(cold, false);
-  }
-
-  {
-    const db = new MemoryDb();
-    const store = createAiSessionStore({
-      db,
-      now: () => 2_000,
-      idFactory: () => "new-session",
-      persistDelayMs: 0,
-      sync: new RecordingSync(),
-    });
-
-    await store
-      .getState()
-      .patchSession("resume-a", baseSession({ sessionId: "session-a" }));
-    await store
-      .getState()
-      .patchSession(
-        "resume-b",
-        baseSession({ sessionId: "session-b", messages: [] }),
-      );
-    await store.getState().flushSession("resume-a");
-    await store.getState().flushSession("resume-b");
-
-    const a = await store.getState().loadSession("resume-a");
-    const b = await store.getState().loadSession("resume-b");
-
-    assert.equal(a.session.sessionId, "session-a");
-    assert.equal(a.session.messages.length, 2);
-    assert.equal(b.session.sessionId, "session-b");
-    // 空会话不等于冷启动：用户主动清空过，回源会把他刚丢掉的那场又拉回来。
-    assert.equal(b.session.messages.length, 0);
-    assert.equal(b.cold, false);
-  }
-
-  {
-    // 换台机器/清了站点数据：本地从没存过。这正是「聊天记录丢了」的那条路径——
-    // 必须报 cold，调用方才会去云端把记录捞回来，而不是默默开一场空对话。
-    const db = new MemoryDb();
-    const store = createAiSessionStore({
-      db,
-      now: () => 1_000,
-      idFactory: () => "fresh-cold-start",
-      persistDelayMs: 0,
-      sync: new RecordingSync(),
-    });
-
-    const { session, cold } = await store.getState().loadSession("resume-never-seen");
-
-    assert.equal(session.sessionId, "fresh-cold-start");
-    assert.equal(session.messages.length, 0);
-    assert.equal(cold, true);
-  }
-
-  {
-    const now = 10_000 + AI_SESSION_TTL_MS;
-    const db = new MemoryDb();
-    await db.setItem(getAiSessionStorageKey("resume-a"), {
-      ...baseSession(),
-      updatedAt: 9_999,
-    });
-    const store = createAiSessionStore({
-      db,
-      now: () => now,
-      idFactory: () => "fresh-after-expiry",
-      persistDelayMs: 0,
-      sync: new RecordingSync(),
-    });
-
-    const { session, cold } = await store.getState().loadSession("resume-a");
-
-    assert.equal(session.sessionId, "fresh-after-expiry");
-    assert.equal(session.started, false);
-    assert.equal(session.messages.length, 0);
-    assert.equal(db.items.has(getAiSessionStorageKey("resume-a")), false);
-    // 过期是缓存失效而非数据失效：必须报 cold，调用方才会去云端把记录捞回来。
-    assert.equal(cold, true);
-  }
-
-  {
-    const db = new MemoryDb();
-    const ids = ["first-session", "second-session"];
-    const store = createAiSessionStore({
-      db,
-      now: () => 3_000,
-      idFactory: () => ids.shift() ?? "fallback-session",
-      persistDelayMs: 0,
-      sync: new RecordingSync(),
-    });
-
-    await store.getState().patchSession("resume-a", baseSession());
-    const reset = store.getState().resetSession("resume-a");
-    await store.getState().flushSession("resume-a");
-
-    assert.equal(reset.sessionId, "second-session");
-    assert.equal(reset.sessionUsed, false);
-    assert.equal(reset.started, false);
-    assert.equal(reset.messages.length, 0);
-    assert.equal(reset.analysis, null);
-  }
-
-  // 投递边界：seq 必须是消息下标、同一条不重复投、后续新增接着上一次投。
-  // 投重了服务端会覆盖同一行（无害），但**投漏了就是历史里少一条消息**，且没人会发现。
-  {
-    const sync = new RecordingSync();
-    const store = createAiSessionStore({
-      db: new MemoryDb(),
-      now: () => 4_000,
-      idFactory: () => "seal-session",
-      persistDelayMs: 0,
-      sync,
-    });
-
-    store.getState().patchSession("resume-a", baseSession());
-    store.getState().sealSession("resume-a");
-    assert.deepEqual(
-      sync.pushed.map((m) => [m.conversationId, m.seq, m.role]),
-      [
-        ["session-a", 0, "user"],
-        ["session-a", 1, "assistant"],
-      ],
-    );
-
-    // 再收一次不该重投——否则每轮都会把整条时间线重发一遍。
-    store.getState().sealSession("resume-a");
-    assert.equal(sync.pushed.length, 2);
-
-    // 新增的消息接着上一次的 seq。
-    store.getState().patchSession("resume-a", {
-      messages: [
-        ...(baseSession().messages ?? []),
-        { id: "m3", role: "user", content: "再改改" },
-      ],
-    });
-    store.getState().sealSession("resume-a");
-    assert.equal(sync.pushed.length, 3);
-    assert.equal(sync.pushed[2].seq, 2);
-
-    // 换新对话前必须先收干净：换完 sessionId 就再也认不出这些消息属于谁了。
-    store.getState().patchSession("resume-a", {
-      messages: [
-        ...(baseSession().messages ?? []),
-        { id: "m3", role: "user", content: "再改改" },
-        { id: "m4", role: "assistant", content: "好的。" },
-      ],
-    });
-    store.getState().resetSession("resume-a");
-    assert.equal(sync.pushed.length, 4);
-    assert.equal(sync.pushed[3].conversationId, "session-a");
-
-    // 新会话从 seq 0 重新开始，不接着旧的数。
-    store.getState().patchSession("resume-a", {
-      messages: [{ id: "n1", role: "user", content: "新的一场" }],
-    });
-    store.getState().sealSession("resume-a");
-    assert.equal(sync.pushed[4].seq, 0);
-    assert.equal(sync.pushed[4].conversationId, "seal-session");
-  }
-
-  // A submitted AI form must replace its already uploaded pending row.
-  {
-    const db = new MemoryDb();
-    const sync = new RecordingSync();
-    const store = createAiSessionStore({ db, persistDelayMs: 0, sync });
-    const pending: ChatMessage = {
-      id: 'education-card',
-      role: 'widget',
-      widget: {
-        widgetId: 'education',
-        kind: 'request_form',
-        props: {},
-        status: 'pending',
-      },
-    };
-    store
-      .getState()
-      .patchSession('resume-a', baseSession({ messages: [pending] }));
-    store.getState().sealSession('resume-a');
-    const submitted = settleWidgetInMessages(
-      [pending],
-      'education',
-      'submitted',
-      { school: 'Human university' },
-    );
-    store.getState().patchSession('resume-a', { messages: submitted });
-    await store.getState().flushSession('resume-a');
-    assert.equal(sync.pushed.length, 2);
-    assert.equal(sync.pushed[1].seq, 0);
-    assert.equal(
-      (sync.pushed[1].payload?.widget as typeof pending.widget)?.status,
-      'submitted',
-    );
-    assert.deepEqual(
-      (sync.pushed[1].payload?.widget as typeof pending.widget)
-        ?.submittedValues,
-      { school: 'Human university' },
-    );
-    store.getState().sealSession('resume-a');
-    assert.equal(
-      sync.pushed.length,
-      2,
-      'unchanged cards should not be uploaded again',
-    );
-
-    // Pending uploads survive a local reload, retaining their original cloud key.
-    store.getState().patchSession('resume-a', {
-      messages: submitted.map((message) => ({
-        ...message,
-        content: 'Updated summary',
-      })),
-    });
-    await db.setItem(
-      getAiSessionStorageKey('resume-a'),
-      store.getState().sessions['resume-a'],
-    );
-    const reloaded = createAiSessionStore({ db, persistDelayMs: 0, sync });
-    await reloaded.getState().loadSession('resume-a');
-    reloaded.getState().sealSession('resume-a');
-    assert.equal(sync.pushed[2].seq, 0);
-    assert.equal(sync.pushed[2].content, 'Updated summary');
-    await reloaded.getState().flushSession('resume-a');
-  }
-
-  // A regenerated/continued conversation owns fresh cloud rows, even when its
-  // visible messages were copied from a previously synced history.
-  {
-    const sync = new RecordingSync();
-    const store = createAiSessionStore({
-      db: new MemoryDb(),
-      persistDelayMs: 0,
-      sync,
-    });
-    store.getState().adoptSession(
-      'resume-a',
-      {
-        ...store.getState().resetSession('resume-a'),
-        ...baseSession({
-        sessionId: 'forked-session',
-        syncedCount: 0,
-        syncedMessageKeys: { copied: 7 },
-        messages: [
-          {
-            id: 'copied',
-            role: 'user',
-            content: 'Keep my question',
-            conversationSeq: 7,
-          },
-        ],
-        }),
-      },
-    );
-    await store.getState().flushSession('resume-a');
-    assert.equal(
-      sync.pushed.length,
-      1,
-      'copied questions must be uploaded to the new conversation',
-    );
-    assert.equal(sync.pushed[0].conversationId, 'forked-session');
-    assert.equal(sync.pushed[0].seq, 0);
-  }
-
-  // Recovering a sparse history must not compress its cloud keys and overwrite a card.
-  {
-    const sync = new RecordingSync();
-    const store = createAiSessionStore({ db: new MemoryDb(), persistDelayMs: 0, sync });
-    const messages = restoreConversationMessages([
-      { seq: 3, role: 'plan', content: 'tasks', payload: { id: 'plan' }, createdAt: '2026-10-10T15:11:55Z' },
-      { seq: 7, role: 'user', content: 'original question', payload: { id: 'recovered-user', historyAt: '2026-10-10T15:10:44Z' }, createdAt: '2026-10-10T15:40:00Z' },
-    ]);
-    assert.deepEqual(messages.map(message => message.role), ['user', 'plan']);
-    store.getState().patchSession('resume-a', baseSession({ messages, syncedCount: messages.length }));
-    store.getState().patchSession('resume-a', { messages: [...messages, { id: 'next', role: 'user', content: 'next question' }] });
-    store.getState().sealSession('resume-a');
-    assert.equal(sync.pushed[0].seq, 8);
-    assert.equal(sync.pushed[0].role, 'user');
-    await store.getState().flushSession('resume-a');
-  }
-}
-
 function testImportResumeValidation() {
   const normalized = validateAndNormalizeImportedResume({
     name: "Imported Resume",
@@ -611,13 +196,13 @@ function testImportResumeValidation() {
     shareId: "public-share",
     shareRole: "VIEWER",
     info: {
-      fullName: "Ada Lovelace",
+      fullName: "Alex Chen",
     },
     sections: {
       experience: [
         {
           id: "exp-1",
-          company: "Analytical Engines",
+          company: "Example Lantern Lab",
           extraBackendField: "kept",
         },
       ],
@@ -634,7 +219,7 @@ function testImportResumeValidation() {
   assert.equal(normalized.isPublic, undefined);
   assert.equal(normalized.shareId, undefined);
   assert.equal(normalized.shareRole, undefined);
-  assert.equal(normalized.info.fullName, "Ada Lovelace");
+  assert.equal(normalized.info.fullName, "Alex Chen");
   assert.equal(normalized.info.email, "");
   assert.equal(normalized.sections.experience[0].visible, true);
   assert.equal(normalized.sections.experience[0].extraBackendField, "kept");
@@ -773,36 +358,6 @@ function testUtilityFunctions() {
     generateShortHash("completely-different-version"),
   );
 
-  assert.equal(getInitials("Ada Lovelace", null), "AL");
-  assert.equal(getInitials("  Grace   Hopper  ", null), "GH");
-  assert.equal(getInitials("Kai", null), "KA");
-  assert.equal(getInitials(null, "user@example.com"), "US");
-  assert.equal(getInitials(null, null), "");
-}
-
-function testMcpAccessHelpers() {
-  assert.equal(getMcpApiUrl("https://example.com"), "https://example.com/api");
-  assert.equal(
-    getMcpApiUrl("https://example.com/api/"),
-    "https://example.com/api",
-  );
-  assert.equal(shellQuote("abc'def"), "'abc'\\''def'");
-  assert.deepEqual(normalizeCloudResumes([{ id: "1", name: "Resume A" }]), [
-    { id: "1", title: "Resume A" },
-  ]);
-  assert.deepEqual(
-    normalizeCloudResumes({ data: { data: [{ id: "2", title: "Resume B" }] } }),
-    [{ id: "2", title: "Resume B" }],
-  );
-  assert.deepEqual(normalizeCloudResumes([{ title: "missing id" }]), []);
-  assert.equal(
-    getApiErrorMessage({
-      isAxiosError: true,
-      response: { data: { message: "Nope" } },
-    }),
-    "Nope",
-  );
-  assert.equal(getApiErrorMessage(new Error("plain")), null);
 }
 
 function testAiLib() {
@@ -819,7 +374,7 @@ function testAiLib() {
 
   const target: EditableTarget = {
     sectionKey: "experience",
-    itemId: "google",
+    itemId: "lantern",
     fieldKey: "summary",
     kind: "html",
     label: "Selected segment",
@@ -850,15 +405,15 @@ function testAiLib() {
   const current: Section = {
     experience: [
       {
-        id: "google",
+        id: "lantern",
         visible: true,
-        company: "Google",
+        company: "Example Lantern Lab",
         summary: beforeSummary,
       },
       {
-        id: "bytedance",
+        id: "cedar",
         visible: true,
-        company: "ByteDance",
+        company: "Example Cedar Studio",
         summary: "<p>Unchanged</p>",
       },
     ],
@@ -867,15 +422,15 @@ function testAiLib() {
   const proposed: Section = {
     experience: [
       {
-        id: "google",
+        id: "lantern",
         visible: true,
-        company: "Google",
+        company: "Example Lantern Lab",
         summary: rewrittenSummary,
       },
       {
-        id: "bytedance",
+        id: "cedar",
         visible: true,
-        company: "ByteDance",
+        company: "Example Cedar Studio",
         summary: "<p>Unchanged</p>",
       },
     ],
@@ -1307,60 +862,7 @@ function testDiffFieldCoverage() {
   );
 }
 
-async function testSourceIconProxy() {
-  const originalFetch = globalThis.fetch;
-  const requests: string[] = [];
-  try {
-    globalThis.fetch = async (input) => {
-      requests.push(String(input));
-      return new Response(new Uint8Array([0, 0, 1, 0]), {
-        headers: { 'Content-Type': 'image/x-icon' },
-      });
-    };
-    for (const domain of [
-      '127.0.0.1',
-      'localhost',
-      'example.com/../../x',
-      'example.com@evil.com',
-      'x.internal',
-    ]) {
-      const response = await getSourceIcon(
-        new Request(
-          `https://app.example/api/source-icon?domain=${encodeURIComponent(domain)}`,
-        ),
-      );
-      assert.equal(response.status, 400);
-    }
-    assert.equal(requests.length, 0);
-    const icon = await getSourceIcon(
-      new Request('https://app.example/api/source-icon?domain=github.com'),
-    );
-    assert.equal(icon.status, 200);
-    assert.deepEqual(requests, [
-      'https://icons.duckduckgo.com/ip3/github.com.ico',
-    ]);
-    assert.equal(icon.headers.get('Content-Type'), 'image/x-icon');
-    globalThis.fetch = async () =>
-      new Response('<html>error</html>', {
-        headers: { 'Content-Type': 'text/html' },
-      });
-    assert.equal(
-      (
-        await getSourceIcon(
-          new Request('https://app.example/api/source-icon?domain=github.com'),
-        )
-      ).status,
-      404,
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-}
-
-/**
- * 搜索行的三条正确性问题（见 `docs/specs/search-and-citations/design-brief.md` §4.0）：
- * 按次归属、完成态时态、失败/空/额度可见。三条都是「界面在对用户说假话」，不是观感。
- */
+/** 搜索结果必须按调用归属，区分完成、失败和空结果。 */
 
 function testCitationSources() {
   const sources = normalizeCitationSources([
@@ -1410,11 +912,11 @@ function testCitationSources() {
   );
   assert.deepEqual(
     siteFaviconCandidates("https://jobs.example.com/role", "https://cdn.example.com/icon.png"),
-    ["https://cdn.example.com/icon.png", "https://jobs.example.com/favicon.ico", "/api/source-icon?domain=jobs.example.com"],
+    ["https://cdn.example.com/icon.png", "https://jobs.example.com/favicon.ico"],
   );
   assert.deepEqual(
     siteFaviconCandidates("https://jobs.example.com/role", "https://jobs.example.com/favicon.ico"),
-    ["https://jobs.example.com/favicon.ico", "/api/source-icon?domain=jobs.example.com"],
+    ["https://jobs.example.com/favicon.ico"],
   );
   assert.equal(
     linkCitationMarkers("公开要求 [2]，未知 [9]。", sources),
@@ -1535,10 +1037,7 @@ function testCitationSources() {
   assert.doesNotMatch(missingCitationMarkup, /\[(?:2|9|14)\]/);
 }
 
-/**
- * 搜索行的三条正确性问题（见 `docs/specs/search-and-citations/design-brief.md` §4.0）：
- * 按次归属、完成态时态、失败/空/额度可见。三条都是「界面在对用户说假话」，不是观感。
- */
+/** 搜索结果必须按调用归属，区分完成、失败和空结果。 */
 function testSearchLine() {
   const sources = normalizeCitationSources([
     {
@@ -1593,7 +1092,7 @@ function testSearchLine() {
 
   // 界面上显示这条来源**自己的标题**——那是 provider 本来就返回的真数据。曾经这里是一张
   // 手写的域名→站点名映射表，删了：它只覆盖写表时想到的那些站，会造出一半说「牛客网」、
-  // 一半说 `jobs.bytedance.com` 的两类观感，而区别只在于当时有没有想到那个域名。
+  // 一半说 `jobs.cedar.com` 的两类观感，而区别只在于当时有没有想到那个域名。
   assert.equal(sourceHeadline(sources[0]!), "牛客结果");
   assert.equal(sourceHeadline(sources[1]!), "另一站");
   // 没有标题才依次退到 provider 的 sourceName、再到域名。
@@ -1682,16 +1181,16 @@ function testSearchLine() {
     toolCallId: "f",
     toolName: "web_search",
     done: true,
-    subject: "字节跳动 2027 前端 校招",
+    subject: "Example Lantern Lab 2027 前端 校招",
     citationIds: [1],
   });
-  assert.match(withQuery, /字节跳动 2027 前端 校招/);
+  assert.match(withQuery, /Example Lantern Lab 2027 前端 校招/);
   assert.match(withQuery, /aria-expanded="false"/);
   const unavailable = render({
     toolCallId: "g",
     toolName: "web_search",
     done: true,
-    subject: "字节跳动",
+    subject: "Example Lantern Lab",
     searchStatus: "unavailable",
   });
   assert.match(unavailable, /搜索暂时不可用/);
@@ -1749,48 +1248,6 @@ function testCodeHighlight() {
   assert.equal(block[0]?.[0]?.kind, "com");
   assert.equal(block[1]?.[0]?.kind, "com");
   assert.equal(kindOf(block, "const"), "kw");
-}
-
-function testAfterAuthUrl() {
-  // The middleware puts the original path in `redirect_url`. Nothing read it,
-  // so a lapsed session on /billing/return?orderId=… came back to /dashboard
-  // and the order id was gone — no polling, and no sync, which is the only
-  // thing that captures a PayPal payment from the browser.
-  assert.equal(
-    afterAuthUrl("redirect_url=%2Fbilling%2Freturn%3ForderId%3Dcmxyz"),
-    "/billing/return?orderId=cmxyz",
-  );
-  assert.equal(afterAuthUrl(""), "/dashboard");
-  assert.equal(afterAuthUrl(null), "/dashboard");
-  assert.equal(afterAuthUrl("foo=bar"), "/dashboard");
-
-  // Same-origin paths only: a freshly signed-in session must not be bounced
-  // off the site by a crafted link.
-  assert.equal(
-    afterAuthUrl("redirect_url=https%3A%2F%2Fevil.example"),
-    "/dashboard",
-  );
-  assert.equal(afterAuthUrl("redirect_url=%2F%2Fevil.example"), "/dashboard");
-  assert.equal(afterAuthUrl("redirect_url=%2F%5Cevil.example"), "/dashboard");
-  assert.equal(
-    afterAuthUrl("redirect_url=javascript%3Aalert(1)"),
-    "/dashboard",
-  );
-
-  // The URL parser strips tab/LF/CR before resolving, so a prefix check on
-  // '//' is not enough — these resolved to https://evil.example.
-  assert.equal(
-    afterAuthUrl("redirect_url=%2F%09%2F%2Fevil.example"),
-    "/dashboard",
-  );
-  assert.equal(
-    afterAuthUrl("redirect_url=%2F%0A%2F%2Fevil.example"),
-    "/dashboard",
-  );
-  assert.equal(
-    afterAuthUrl("redirect_url=%2F%0D%2F%2Fevil.example"),
-    "/dashboard",
-  );
 }
 
 function testSectionOwnership() {
@@ -2045,17 +1502,11 @@ function testErrorCopy() {
   assert.ok(!unknown.title.includes("errors."));
 }
 
-/**
- * BFF 那一跳：**白名单本身就是安全边界**。
- *
- * 之前是整体替换（连码都丢了），改成透传又会把上游写给运营的英文、以及这个部署配了哪些
- * 支付渠道，一路送到买家屏幕上——commercial 那次事故泄漏的正是「available: paypal」。
- * 所以是投影，不是代理。
- */
+/** 上游错误只保留机器字段，避免把提供方诊断显示为用户文案。 */
 function testBffErrorProjection() {
   const upstream = JSON.stringify({
     code: 429,
-    message: "Plan change unavailable: configured channels are paypal, alipay",
+    message: "Provider request failed: diagnostic details omitted",
     error: "QuotaExceededError",
     errorCode: "quota_exceeded",
     subCode: "daily_cap",
@@ -2075,7 +1526,7 @@ function testBffErrorProjection() {
   });
   // 上游原文一个字都不许过来。
   assert.ok(!("message" in projected));
-  assert.ok(!JSON.stringify(projected).includes("paypal"));
+  assert.ok(!JSON.stringify(projected).includes("diagnostic details"));
 
   // 老后端：只有状态码，`error` 退到一个机器可读的标识而不是英文散文。
   assert.deepEqual(
@@ -2489,13 +1940,13 @@ function testAgentCapabilityWidgets() {
 
   const company = normalizeResearchWidgetProps(
     {
-      title: "Acme · 前端工程师",
+      title: "Example Lantern Lab · 前端工程师",
       groups: {
         business_context: [
           {
             text: "公开招聘页面仍在更新",
             url: "https://jobs.example.com/frontend",
-            sourceName: "Acme Careers",
+            sourceName: "Example Lantern Lab Careers",
             date: "2026-08-14",
           },
         ],
@@ -2532,7 +1983,7 @@ function testAgentCapabilityWidgets() {
         widgetId: "job-research-current-wire-shape",
         kind: "job_research",
         props: {
-          message: "字节跳动 · 前端工程师",
+          message: "Example Lantern Lab · 前端工程师",
           groups: [
             {
               title: "岗位门槛",
@@ -2572,7 +2023,7 @@ function testAgentCapabilityWidgets() {
       onAction: () => undefined,
     }),
   );
-  assert.match(jobResearchMarkup, /字节跳动 · 前端工程师/);
+  assert.match(jobResearchMarkup, /Example Lantern Lab · 前端工程师/);
   assert.match(jobResearchMarkup, /React\/Vue 深度与复杂项目架构经验/);
   assert.match(jobResearchMarkup, /data-citation-id="11"/);
   assert.match(jobResearchMarkup, /data-citation-id="12"/);
@@ -2588,7 +2039,7 @@ function testAgentCapabilityWidgets() {
     applications: [
       {
         id: "app-1",
-        company: "Acme",
+        company: "Example Lantern Lab",
         role: "Frontend Engineer",
         status: "interview",
         sourceUrl: "https://jobs.example.com/frontend",
@@ -2615,7 +2066,7 @@ function testAgentCapabilityWidgets() {
     applications: [
       {
         id: "a1",
-        company: "Acme",
+        company: "Example Lantern Lab",
         role: "Frontend Engineer",
         status: "INTERVIEW",
         fields: {
@@ -2725,250 +2176,9 @@ function testAgentCapabilityWidgets() {
   assert.doesNotMatch(recordsMarkup, /Very strong|No communication/);
 }
 
-function testStreamingTextBuffer() {
-  let scheduled: (() => void) | null = null;
-  let scheduledDelay = 0;
-  let cancelled = 0;
-  const frames: { content: string; reasoning: string }[] = [];
-  const buffer = createStreamingTextBuffer({
-    onFrame: (snapshot) => frames.push(snapshot),
-    schedule: (callback, delayMs) => {
-      scheduled = callback;
-      scheduledDelay = delayMs;
-      return {} as ReturnType<typeof setTimeout>;
-    },
-    cancel: () => {
-      cancelled += 1;
-    },
-  });
-
-  for (let index = 0; index < 120; index += 1) buffer.appendContent("字");
-  buffer.appendReasoning("正在整理");
-  assert.equal(frames.length, 0, "provider token 不应逐个触发 React 帧");
-  assert.equal(scheduledDelay, STREAM_RENDER_INTERVAL_MS);
-  assert.ok(scheduled, "首个 token 应安排一个合并帧");
-  (scheduled as () => void)();
-  assert.equal(frames.length, 1, "同一时间窗内的 token 只发布一次");
-  assert.equal(frames[0].content.length, 120);
-  assert.equal(frames[0].reasoning, "正在整理");
-
-  buffer.appendContent("。");
-  const final = buffer.flush();
-  assert.equal(cancelled, 1, "完成时应取消尚未执行的计时器");
-  assert.equal(frames.length, 2, "flush 应立即发布最后一个未显示帧");
-  assert.equal(final.content, `${"字".repeat(120)}。`);
-}
-
 /**
  * 封段：时间线要的是「这一段」，复制要的是「全文」，两者必须同时成立。
  */
-function testStreamingBufferSeal() {
-  const frames: { content: string; tail: string }[] = [];
-  const buffer = createStreamingTextBuffer({
-    onFrame: (snapshot) =>
-      frames.push({ content: snapshot.content, tail: snapshot.tail }),
-    schedule: (callback) => {
-      callback();
-      return {} as ReturnType<typeof setTimeout>;
-    },
-    cancel: () => {},
-  });
-
-  buffer.appendContent("我先去查一下 JD。");
-  assert.equal(buffer.sealContent(), "我先去查一下 JD。", "封段返回本段");
-  assert.equal(
-    buffer.sealContent(),
-    "",
-    "连着封两次不该把同一段再吐一遍——那会造出一个重复的空转节拍",
-  );
-
-  /*
-   * 封段之后**发出去的那一帧**里 tail 必须已经空了。
-   *
-   * 这条是补的：原来只断言返回值与事后 snapshot，而 bug 藏在帧里——先用封口前的快照
-   * 落帧、再推进封口位，overlay 就留着一条陈旧的 tail。工具执行期间模型不产字、不会有
-   * 新帧来覆盖它，于是同一句话在工具行前后各渲染一遍（时间线一份、overlay 一份）。
-   */
-  assert.equal(
-    frames.at(-1)?.tail,
-    "",
-    "封段后必须再落一帧把 tail 清空，否则这段文字会同时留在时间线和 overlay 里",
-  );
-  assert.equal(
-    frames.at(-1)?.content,
-    "我先去查一下 JD。",
-    "清 tail 不能顺手把全文也清了——复制/重新生成读的是 content",
-  );
-
-  buffer.appendContent("查完了，三处差距。");
-  const snap = buffer.snapshot();
-  assert.equal(snap.tail, "查完了，三处差距。", "tail 只含未封段的部分");
-  assert.equal(
-    snap.content,
-    "我先去查一下 JD。查完了，三处差距。",
-    "content 始终是全文：封段不能把复制/重新生成读的那份切碎",
-  );
-}
-
-function testVoiceOutcome() {
-  const rejected = (appError: Record<string, unknown>) =>
-    Object.assign(new Error("Request failed with status code 409"), {
-      appError,
-    });
-
-  // 窗口到点后重连被拒：本场时间用完了，走正常收尾进复盘，不是错误卡。
-  assert.deepEqual(
-    classifyVoiceFailure(
-      rejected({
-        errorCode: "conflict",
-        subCode: "interview_window_closed",
-        httpStatus: 409,
-      }),
-    ),
-    { kind: "finished" },
-  );
-  assert.deepEqual(
-    classifyVoiceFailure(
-      rejected({
-        errorCode: "conflict",
-        subCode: "interview_connection_limit",
-        httpStatus: 409,
-      }),
-    ),
-    { kind: "error", errorCode: "connection_limit" },
-  );
-  assert.deepEqual(
-    classifyVoiceFailure(
-      rejected({ errorCode: "quota_exceeded", httpStatus: 402 }),
-    ),
-    { kind: "error", errorCode: "quota" },
-  );
-  assert.deepEqual(
-    classifyVoiceFailure(rejected({ httpStatus: 402 })),
-    { kind: "error", errorCode: "quota" },
-  );
-  assert.deepEqual(
-    classifyVoiceFailure(new Error("NotAllowedError: Permission denied")),
-    { kind: "error", errorCode: "mic_denied" },
-  );
-  assert.deepEqual(
-    classifyVoiceFailure(new Error("could not establish pc connection")),
-    { kind: "error", errorCode: "connection" },
-  );
-  assert.deepEqual(classifyVoiceFailure("boom"), {
-    kind: "error",
-    errorCode: "connection",
-  });
-
-  // 服务端到点删房是这一场结束了；自己断开或网络断开仍回到 idle，由页面决定要不要重连。
-  assert.equal(phaseAfterDisconnect(DisconnectReason.ROOM_DELETED), "finished");
-  assert.equal(
-    phaseAfterDisconnect(DisconnectReason.CLIENT_INITIATED),
-    "idle",
-  );
-  assert.equal(phaseAfterDisconnect(undefined), "idle");
-
-  // 每个会落到错误卡上的码两种语言都要有文案，否则落回通用的「语音断了」。
-  for (const copy of [zhCopy, enCopy]) {
-    const voiceError = copy.aiLab.interview.voiceError as Record<
-      string,
-      string
-    >;
-    for (const code of ["connection", "quota", "connection_limit"]) {
-      assert.ok(voiceError[code], `missing voiceError.${code}`);
-    }
-  }
-}
-
-function testInterviewTurnMerge() {
-  const opening = "欢迎来到字节跳动前端开发工程师（校招）岗位的模拟面试。";
-
-  // 开场白两边都有：服务端 `start` 返回它，worker 再把同一段念出来、转写送回来。
-  assert.deepEqual(
-    mergeInterviewTurns(
-      [{ role: "interviewer", text: opening }],
-      [{ role: "interviewer", text: opening, segmentId: "seg-1" }],
-    ),
-    [{ role: "interviewer", text: opening, segmentId: "seg-1" }],
-    "开场白只能出现一次——留带 segmentId 的那条，补发的定稿要靠它认领",
-  );
-
-  // 只比对接缝。面试官在一场里重复追问同一句是正常的（中间隔着你的回答），
-  // 往深了比会把那种催问也吃掉。
-  const merged = mergeInterviewTurns(
-    [
-      { role: "interviewer", text: "说说这个项目" },
-      { role: "candidate", text: "嗯……" },
-    ],
-    [{ role: "interviewer", text: "说说这个项目" }],
-  );
-  assert.equal(
-    merged.length,
-    3,
-    "隔着回答的重复追问必须保留，那是催问不是重复",
-  );
-
-  assert.deepEqual(
-    mergeInterviewTurns([], [{ role: "interviewer", text: opening }]),
-    [{ role: "interviewer", text: opening }],
-    "任一侧为空时原样拼接",
-  );
-
-  // 同样的文字但说话人不同（你复述了面试官的问题）不该被当成重复。
-  assert.equal(
-    mergeInterviewTurns(
-      [{ role: "candidate", text: opening }],
-      [{ role: "interviewer", text: opening }],
-    ).length,
-    2,
-    "说话人不同就不是同一句话",
-  );
-}
-
-function testCaptionPacing() {
-  // 面试官整句一次性到达（框架的英文分词对中文失效，就是这么来的），
-  // 一帧只能吐出这一帧该吐的量——不能整块放出去跑到声音前面。
-  const oneFrame = nextShownChars(0, 40, 1 / 60);
-  assert.ok(
-    oneFrame > 0 && oneFrame < 1,
-    `一帧(16ms)只该吐不到一个字，实际 ${oneFrame}`,
-  );
-
-  // 一秒该吐 CHARS_PER_SECOND 个字。这个值是实测我们那把音色的语速（5.2-5.6 字/秒）。
-  assert.equal(
-    nextShownChars(0, 100, 1),
-    CHARS_PER_SECOND,
-    "配速必须等于实测语速，快了字就跑到声音前面",
-  );
-
-  // 已经追平就不动，别越过已收到的文本。
-  assert.equal(nextShownChars(20, 20, 1), 20, "追平后不再前进");
-  assert.equal(nextShownChars(0, 3, 1), 3, "不能越过已收到的字数");
-
-  // **整句先到是常态。** 无论一次到达多少字，一帧仍然只吐一帧的量——
-  // 曾经加过「落后太多就跳着追」的上限，那会让 40-50 字的正常句子每次跳掉大半。
-  assert.equal(
-    nextShownChars(0, 200, 1 / 60),
-    nextShownChars(0, 40, 1 / 60),
-    "一帧吐多少与整句多长无关，否则长句会被瞬间放出去",
-  );
-
-  // 「还没开口」与「已经念完」都是 active=false，但含义相反。
-  //
-  // 文本永远先于音频到达（LLM 出字 → TTS 合成 → 才响），所以开口前必然有一段
-  // active=false 且文本已满的窗口。把它当成「念完了」就会整句一次性吐出，
-  // 然后才开始念——这正是线上看到的症状，而它不会报任何错。
-  assert.equal(
-    nextStage("waiting", false),
-    "waiting",
-    "还没出声就得继续等，当成「念完」会让字幕整句蹦出来",
-  );
-  assert.equal(nextStage("waiting", true), "running", "出声即开跑");
-  assert.equal(nextStage("running", false), "done", "停声即收尾");
-  assert.equal(nextStage("done", false), "done", "收完了不回头");
-  assert.equal(nextStage("done", true), "running", "同一段又出声则继续跑");
-}
-
 /**
  * GenUI 卡片的落点与裁决。
  *
@@ -3177,7 +2387,7 @@ function testWidgetPlacement() {
   );
   assert.equal(settled[1].widget?.status, "cancelled");
 
-  const answer = { school: 'Human university' };
+  const answer = { school: 'Example Lantern University' };
   const formMessages: ChatMessage[] = [
     {
       id: 'form-owner',
@@ -3214,7 +2424,7 @@ function testWidgetPlacement() {
     }),
   );
   assert.ok(
-    restored.includes('Human university'),
+    restored.includes('Example Lantern University'),
     'history must retain the submitted answer',
   );
   assert.equal(
@@ -3226,7 +2436,7 @@ function testWidgetPlacement() {
 
 // 有状态的卡用固定 widgetId，「改一次面板」原本总是回去更新十几轮之前那张——
 // 用户在最新回复里什么都看不到。跨轮时必须**搬过来**，且全流程仍只有一张。
-{
+test("Stateful widgets move to the latest assistant turn", () => {
   const older: ChatMessage[] = [
     {
       id: "m1",
@@ -3279,7 +2489,7 @@ function testWidgetPlacement() {
     1,
     "同一轮不该堆出两张",
   );
-}
+});
 
 function testPackedTrajectoryRanges() {
   const { totalActiveMs, ranges } = packTrajectoryRanges(
@@ -3357,49 +2567,34 @@ function testFontFaceWeightRanges() {
   }
 }
 
-async function main() {
-  await testAiSessionStore();
-  testImportResumeValidation();
-  testUtilityFunctions();
-  testMcpAccessHelpers();
-  testAiLib();
-  testAiFailuresAreVisible();
-  testCanvasReachability();
-  testDiffFieldCoverage();
-  testCitationSources();
-  await testSourceIconProxy();
-  testSearchLine();
-  testCodeHighlight();
-  testAfterAuthUrl();
-  testImportedItemIds();
-  testResumeMigrations();
-  testCustomSections();
-  testSectionOwnership();
-  testSectionOrderCoercion();
-  testErrorCopyCoverage();
-  testErrorNormalize();
-  testErrorCopy();
-  testBffErrorProjection();
-  testTasksCard();
-  testMarkdownSource();
-  testInterruptPlan();
-  testAnalysisImprovementActions();
-  testAgentToolVerbCoverage();
-  testAgentCapabilityWidgets();
-  testStreamingTextBuffer();
-  testStreamingBufferSeal();
-  testInterviewTurnMerge();
-  testVoiceOutcome();
-  testCaptionPacing();
-  testWidgetPlacement();
-  testRecommendationCardStates();
-  testSessionStateEnvelope();
-  testEffectiveEffort();
-  testPackedTrajectoryRanges();
-  testFontFaceWeightRanges();
-}
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+test("Import Resume Validation", testImportResumeValidation);
+test("Utility Functions", testUtilityFunctions);
+test("Ai Lib", testAiLib);
+test("Imported Item Ids", testImportedItemIds);
+test("Resume Migrations", testResumeMigrations);
+test("Custom Sections", testCustomSections);
+test("Ai Failures Are Visible", testAiFailuresAreVisible);
+test("Canvas Reachability", testCanvasReachability);
+test("Diff Field Coverage", testDiffFieldCoverage);
+test("Citation Sources", testCitationSources);
+test("Search Line", testSearchLine);
+test("Code Highlight", testCodeHighlight);
+test("Section Ownership", testSectionOwnership);
+test("Section Order Coercion", testSectionOrderCoercion);
+test("Error Copy Coverage", testErrorCopyCoverage);
+test("Error Normalize", testErrorNormalize);
+test("Error Copy", testErrorCopy);
+test("Bff Error Projection", testBffErrorProjection);
+test("Tasks Card", testTasksCard);
+test("Markdown Source", testMarkdownSource);
+test("Interrupt Plan", testInterruptPlan);
+test("Analysis Improvement Actions", testAnalysisImprovementActions);
+test("Agent Tool Verb Coverage", testAgentToolVerbCoverage);
+test("Agent Capability Widgets", testAgentCapabilityWidgets);
+test("Recommendation Card States", testRecommendationCardStates);
+test("Session State Envelope", testSessionStateEnvelope);
+test("Effective Effort", testEffectiveEffort);
+test("Widget Placement", testWidgetPlacement);
+test("Packed Trajectory Ranges", testPackedTrajectoryRanges);
+test("Font Face Weight Ranges", testFontFaceWeightRanges);
