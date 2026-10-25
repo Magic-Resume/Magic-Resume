@@ -70,3 +70,6 @@ apps/web/public/template-lab-reference.local.json
 apps/landing/.content-cache/
 apps/landing/src/content/articles/remote/
 apps/landing/src/content/articles/remote-staging-*/
+
+# Ephemeral agent runtime state.
+apps/agent/data/
