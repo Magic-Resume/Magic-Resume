@@ -1,6 +1,6 @@
 # Contributing to Magic Resume
 
-Thanks for your interest in contributing! Contributions of every size are welcome — bug fixes, new templates, docs, translations, or features.
+Thanks for your interest in contributing! Contributions of every size are welcome — bug fixes, templates, AI Lab skills, docs, translations, or features.
 
 **English** · [简体中文](./CONTRIBUTING.zh-CN.md)
 
@@ -10,7 +10,8 @@ Thanks for your interest in contributing! Contributions of every size are welcom
 
 - **Report a bug** or request a feature — open an [issue](https://github.com/Magic-Resume/Magic-Resume/issues).
 - **Fix a bug** or **build a feature** — open a Pull Request.
-- **Add a template** — see [`packages/resume-templates`](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/resume-templates).
+- **Add a template** — templates live in [`packages/resume-templates`](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/resume-templates) of magic-resume-kit.
+- **Write or improve an AI Lab skill** — see [AI Lab and the agent](#ai-lab-and-the-agent).
 - **Improve translations** — see [Translations](#translations).
 - **Improve the docs** — including this file and the READMEs.
 
@@ -20,12 +21,12 @@ For anything non-trivial, opening an issue first to discuss the approach saves e
 
 ## Prerequisites
 
-- **Node.js** `>= 20`
+- **Node.js** `>= 22.13`
 - **pnpm** `>= 10.28.1` (this repo pins `pnpm@10.28.1` via `packageManager`)
 
 ## Local setup
 
-Magic Resume runs fully in the browser — no backend, database or `.env` file needed.
+The editor runs entirely in the browser and needs no database or `.env` file. Only AI Lab needs the agent in `apps/agent`, which `pnpm run dev` starts as well.
 
 ```bash
 # 1. Fork, then clone your fork
@@ -37,7 +38,7 @@ pnpm install
 pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). See the [README](./README.md#monorepo) for the monorepo layout.
+Open [http://localhost:3000](http://localhost:3000). To use AI Lab, copy `apps/web/.env.example` to `apps/web/.env.local`, uncomment `AI_BACKEND_URL=http://localhost:4000`, restart, and add your model key in **Settings → Model**. See the [README](./README.md#repository-layout) for the repository layout.
 
 ---
 
@@ -56,6 +57,7 @@ Open [http://localhost:3000](http://localhost:3000). See the [README](./README.m
    ```bash
    pnpm run lint
    pnpm run test
+   pnpm --filter @magic-resume/agent typecheck   # when you change apps/agent
    ```
 
    > The `pre-commit` hook also runs `lint` + `build` automatically. Don't bypass it with `--no-verify`.
@@ -74,7 +76,7 @@ This repo enforces **gitmoji + [Conventional Commits](https://www.conventionalco
 
 - **emoji** — a gitmoji shortcode (`:sparkles:`) or the unicode char (`✨`). Must be a valid code from [gitmoji.dev](https://gitmoji.dev).
 - **type** — exactly one of: `build · ci · chore · docs · feat · fix · perf · refactor · revert · style · test · wip` (lowercase).
-- **scope** — optional, lowercase workspace name: `web`, `mcp`, `resume-schema`, `resume-templates`, `docs`.
+- **scope** — optional, lowercase workspace name: `web`, `agent`, `genui`, `landing`, `docs`. Schema, template, design-system and MCP changes belong in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit).
 - **subject** — imperative ("add", not "added"), no trailing period, whole header ≤ 100 chars.
 
 Body and footer are optional; if present, precede each with a blank line.
@@ -103,7 +105,7 @@ Full list: [gitmoji.dev](https://gitmoji.dev).
 ```bash
 # ✅ pass
 :sparkles: feat(web): add resume share link generator
-:bug: fix(mcp): handle empty patch in update_resume_content
+:bug: fix(agent): keep item ids when translating a resume
 :memo: docs: rewrite contributing guide
 
 # ❌ fail
@@ -119,6 +121,17 @@ echo ":sparkles: feat(web): add resume share link generator" | npx --no -- commi
 ```
 
 Exit `0` means it's valid; a non-zero exit prints the rule that failed.
+
+---
+
+## AI Lab and the agent
+
+`apps/agent` is the backend AI Lab talks to. Its architecture is described in [docs/specs/agent-backend/design.md](./docs/specs/agent-backend/design.md), and the protocol between the editor and the agent in [docs/reference/ai-backend.md](./docs/reference/ai-backend.md). Change the two sides together: a new event or field must work in the editor and be documented in the contract.
+
+- **Skills** are Markdown in `apps/agent/skills/<name>/SKILL.md`, with optional `references/` and `assets/`. The frontmatter's `allowed-tools` is enforced, so list every tool the skill needs. Keep instructions general and never put real people's data in examples; use clearly fictional names and `example.com` addresses.
+- **Tests** use Node's test runner and a fake OpenAI-compatible server, so they need no API key: `pnpm --filter @magic-resume/agent test`. Add a scenario test for any change to what the agent streams or stores.
+- **Trying it with a real model**: `apps/agent/README.md` describes a smoke test against any OpenAI-compatible endpoint. To use a model server on your own machine, start the agent with `AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true`.
+- **Never log or persist model keys**, and keep the resume out of Ask mode. Reviews check both.
 
 ---
 
