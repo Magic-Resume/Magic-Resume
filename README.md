@@ -1,25 +1,22 @@
 <div align="center">
   <a href="https://magic-resume.cn">
-    <img width="128" alt="Magic Resume" src="./apps/web/public/magic-resume-mark.png">
+    <img width="112" alt="Magic Resume" src="./apps/web/public/magic-resume-mark.png">
   </a>
 
   <h1>Magic Resume</h1>
 
-  <p><strong>The open-source resume editor.</strong><br/>Local resume storage, with an optional AI Lab using your own model key and backend.</p>
+  <p><strong>An open-source resume editor with a self-hosted AI agent.</strong><br/>Your resumes stay in your browser. The AI runs on your own model key.</p>
 
   <p>
-    <a href="https://magic-resume.cn"><strong>Get Started »</strong></a>
+    <a href="#quick-start"><strong>Quick start</strong></a>
     &nbsp;·&nbsp;
     <a href="./README.zh-CN.md">简体中文</a>
     &nbsp;·&nbsp;
-    <a href="https://magic-resume.cn">Official Site</a>
+    <a href="https://magic-resume.cn">magic-resume.cn</a>
     &nbsp;·&nbsp;
-    <a href="https://github.com/Magic-Resume/Magic-Resume/issues">Feedback</a>
+    <a href="https://github.com/Magic-Resume/Magic-Resume/issues">Report an issue</a>
   </p>
 
-  <!-- SHIELD GROUP -->
-
-  [![][vercel-shield]][vercel-link]
   [![][github-stars-shield]][github-stars-link]
   [![][github-forks-shield]][github-forks-link]
   [![][github-contributors-shield]][github-contributors-link]
@@ -30,192 +27,240 @@
 
 <br/>
 
-![Banner](./apps/web/public/magic-resume-preview.png)
-
-<br/>
+![The Magic Resume editor: content on the left, a live print preview in the middle, template and layout controls on the right](./docs/images/readme/editor.png)
 
 **Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
 
 > Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams.
 
-This repository is the MIT-licensed local editor with an optional BYOK AI Lab. Editing and export need no account or backend. Resumes and one conversation per resume stay in IndexedDB. When you use AI, your messages, relevant resume content, attachments and model key are sent through the app to your own AI backend. Cloud sync and managed AI are part of [magic-resume.cn](https://magic-resume.cn).
+This repository is the open-source edition. It contains the editor and **AI Lab**, together with the agent service that powers it. There is no account and no resume library on a server: resumes and one conversation per resume live in your browser's IndexedDB, and AI Lab calls the model provider you configure with your own key. Interviews and multi-device cloud sync are part of the hosted product at [magic-resume.cn](https://magic-resume.cn).
 
-## Open source vs magic-resume.cn
+<details>
+<summary><strong>Table of contents</strong></summary>
 
-Same editor and templates; the hosted product manages the AI backend and adds accounts and sync.
+- [Features](#features)
+- [Quick start](#quick-start)
+- [How AI Lab works](#how-ai-lab-works)
+- [Configuration](#configuration)
+- [Open source and magic-resume.cn](#open-source-and-magic-resumecn)
+- [Repository layout](#repository-layout)
+- [Tech stack](#tech-stack)
+- [MCP](#mcp)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
-| | Open source (this repo) | magic-resume.cn |
-|---|---|---|
-| License | MIT, free forever | Free tier + paid plans |
-| Account | Not required | Required |
-| Data storage | Your browser's IndexedDB only | Encrypted cloud storage, exportable anytime |
-| Multi-device sync | No | Yes |
-| AI Lab | BYOK + your own compatible backend; no interviews or memory | Managed AI, interviews and memory |
-| Backend | Optional for AI; deploy separately | Hosted for you |
-| Templates | 20, identical | 20, identical |
-
-> [!NOTE]
-> Version 3 removes accounts, cloud sync and billing. AI Lab uses BYOK through a configurable backend; this repository provides the UI and proxy, not the backend implementation. See the [CHANGELOG](./CHANGELOG.md) for what changed.
-
----
+</details>
 
 ## Features
 
-- **Real-time preview**: the page re-renders as you type, at print fidelity.
-- **20 templates**: ATS-friendly, each with color, font, spacing and layout controls.
-- **Custom sections**: add, rename, reorder and hide sections; edit rich text with Tiptap.
-- **JSON view**: inspect the resume's raw data and download it.
-- **Import and export**: import Magic Resume JSON locally; parse PDF, Word, images and Markdown with AI. Export to PDF, PNG or JSON.
-- **Local-first**: resumes and chat history persist in IndexedDB. Only explicit AI operations send content to your configured backend. No analytics are sent.
-- **Light and dark themes, English and Chinese UI.**
+### Editor
 
----
+- **Live preview at print fidelity.** The page re-renders as you type; exports match what you see.
+- **20 templates.** ATS-friendly, each with its own color, font, density, spacing and layout controls, on A4 or Letter.
+- **Flexible sections.** Add, rename, reorder and hide sections; rich text with Tiptap; custom fields.
+- **Import and export.** Open Magic Resume JSON offline. Export to PDF, PNG or JSON.
+- **Local-first.** Everything is stored in IndexedDB. Nothing leaves the browser unless you use AI.
+- **Light and dark themes, English and Chinese.**
 
-## Templates
+### AI Lab
 
-Twenty hand-crafted, ATS-friendly templates, each fully customizable (color, font, spacing, layout):
+![AI Lab: a conversation panel with skill shortcuts, the collaboration mode and the selected model](./docs/images/readme/ai-lab.png)
 
-`classic` · `azurill` · `bronzor` · `chikorita` · `ditto` · `gengar` · `orange-modern` · `clean-minimal` · `teal-professional` · `red-accent` · `golden-elegant` · `product-ops-focus` · `compact-cn-photo` · `executive-band` · `timeline-pro` · `skills-first` · `serif-minimal` · `slate-sidebar` · `cn-formal-photo` · `blue-line`
+- **Proposals, not overwrites.** Every change the AI makes appears as a diff on the canvas, with a reason for each edit. You accept or skip changes one by one; nothing is saved until you accept.
+- **Skills.** Create a resume from scratch, optimize it for a job description, analyze it, score its fit against a role, or translate it. Each skill is a plain Markdown file you can read and change.
+- **Three modes.** *Co-create* proposes edits, *Plan* reads the resume and proposes a plan without changing it, and *Ask* answers general questions without seeing your resume at all. The boundary is enforced by the backend, not only by the prompt.
+- **Asks when it needs to.** When a fact is missing, such as the target role, the agent shows a structured form, pauses, and continues once you answer. The pause survives a page reload or a server restart.
+- **Import any resume.** PDF, Word, images, Markdown or plain text. Scanned documents are read by a vision model.
+- **Your own model.** Any OpenAI-compatible API, with presets for common providers. The key is encrypted in the browser and sent only with each request; the server never stores it.
+- **No made-up experience.** The agent checks every proposed resume against your source material and flags employers, dates, credentials or numbers it cannot find there.
 
----
+## Quick start
 
-## Quick Start
+### Docker Compose (recommended)
+
+Runs the editor and the agent together. Requires Docker with Compose v2.
+
+```bash
+git clone https://github.com/Magic-Resume/Magic-Resume.git
+cd Magic-Resume
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000), go to **Settings → Model**, choose a provider, enter your API key and model, test the connection and save. AI Lab is then ready.
+
+The editor listens on `127.0.0.1:3000`. The agent has no published port and is reachable only from the editor container; its sessions are kept in the `agent-data` volume.
+
+### Local development
+
+Requires Node.js 22.13 or later and pnpm 10.28.
 
 ```bash
 git clone https://github.com/Magic-Resume/Magic-Resume.git
 cd Magic-Resume
 pnpm install
-pnpm run dev
+cp apps/web/.env.example apps/web/.env.local   # then uncomment AI_BACKEND_URL=http://localhost:4000
+pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). No `.env` file is needed; `apps/web/.env.example` lists the few optional settings.
+`pnpm dev` starts the editor on [http://localhost:3000](http://localhost:3000) and the agent on `http://127.0.0.1:4000`. Editing works without the agent; only AI Lab needs it.
 
----
+To point the agent at a model server on your own machine or network (for example a local OpenAI-compatible proxy), start it with `AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true`. This switch is ignored when `NODE_ENV=production`.
 
-## Self-Hosting
+### Editor only
 
-Editing needs only a Next.js server. To enable AI, set `AI_BACKEND_URL` to your compatible backend and add a key in Settings → Model. See the [backend contract](./docs/reference/ai-backend.md). Pick one:
-
-**Docker**
+The editor is a standard Next.js app and runs without the agent:
 
 ```bash
-docker build -f apps/web/Dockerfile -t magic-resume .
-docker run -p 3000:3000 magic-resume
+docker build -f apps/web/Dockerfile -t magic-resume-web .
+docker run -p 3000:3000 magic-resume-web
 ```
-
-**Vercel**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMagic-Resume%2FMagic-Resume)
 
+To enable AI Lab later, run the agent somewhere the editor can reach and set `AI_BACKEND_URL` on the editor.
+
+## How AI Lab works
+
+```mermaid
+flowchart LR
+  browser["Browser<br/>editor · IndexedDB"] -->|same-origin requests| web["Next.js routes<br/>apps/web"]
+  web -->|AI_BACKEND_URL| agent["Agent<br/>apps/agent"]
+  agent -->|your key| provider["Your model provider<br/>OpenAI-compatible API"]
+  agent --- store[("SQLite<br/>session checkpoints")]
+```
+
+- **The browser owns the resume.** Each request carries a snapshot of the current resume (except in Ask mode). The agent works on a draft and returns proposals; the browser saves what you accept. The draft lives only in the session's checkpoint and is deleted with it.
+- **The agent** (`apps/agent`) is a [DeepAgents](https://github.com/langchain-ai/deepagentsjs) harness on LangGraph with a Fastify HTTP layer. It mounts the skills directory read-only, gives the model a scratch workspace holding the resume draft, and runs a middleware chain that enforces the run budget, mode boundaries, each skill's tool allowlist, resume schema validation and the fabrication check.
+- **Sessions** are LangGraph checkpoints in SQLite, so a paused form, a page reload or a restart resumes where it left off. Idle sessions expire after seven days.
+- **Your key** stays in the request: it is never logged, written to a checkpoint or stored on disk. The agent resolves the provider's address once per request, pins the connection to it, refuses private network addresses and does not follow redirects.
+- **The protocol** between the editor and the agent is documented in [docs/reference/ai-backend.md](./docs/reference/ai-backend.md), and the agent's design in [docs/specs/agent-backend/design.md](./docs/specs/agent-backend/design.md). You can replace the agent with your own implementation of the same contract.
+
+> [!IMPORTANT]
+> The agent has no user accounts. Keep it on a private network, as Docker Compose does, or put authentication in front of it before exposing it to other people.
+
+## Configuration
+
+Model settings (provider, key, base URL, model, output limit, reasoning strength) are configured per browser in **Settings → Model**. Server settings are environment variables; all are optional.
+
 <details>
-<summary><strong>Environment variables (all optional)</strong></summary>
+<summary><strong>Editor (<code>apps/web</code>)</strong></summary>
 
 <br/>
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `AI_BACKEND_URL` | — | Server-only origin of the agent, without `/api`. AI requests return 503 when it is unset. |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public origin, used for `robots.txt` and page metadata. |
-| `APP_PUBLIC_URL` | — | Same as above, read at request time, so one image can serve several domains. |
-| `AI_BACKEND_URL` | — | Server-only origin of your own AI backend; missing configuration returns 503 for AI requests. |
-| `NEXT_PUBLIC_DOCS_URL` | — | Target of the "Help center" menu item; the item is hidden when unset. |
+| `APP_PUBLIC_URL` | — | Same as above, read at request time so one image can serve several domains. |
+| `NEXT_PUBLIC_DOCS_URL` | — | Target of the "Help center" menu item; hidden when unset. |
 
 </details>
 
----
+<details>
+<summary><strong>Agent (<code>apps/agent</code>)</strong></summary>
+
+<br/>
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `HOST` / `PORT` | `127.0.0.1` / `4000` | Listen address. |
+| `AGENT_DATA_DIR` | `./data` | SQLite checkpoints and other runtime state. |
+| `AGENT_SKILLS_DIR` | bundled `skills/` | Directory of skills to mount. |
+| `AGENT_MAX_MODEL_CALLS` / `AGENT_MAX_TOOL_CALLS` | `40` / `60` | Budget per turn, shared with sub-agents. |
+| `AGENT_IDLE_TIMEOUT_MS` | `120000` | Longest silence from the model before a turn fails. |
+| `AGENT_RUN_TIMEOUT_MS` | `900000` | Upper bound for one turn. |
+| `AGENT_SESSION_TTL_HOURS` | `168` | Idle sessions are deleted after this. |
+| `AGENT_BODY_LIMIT_BYTES` | `2097152` | Largest accepted JSON request. |
+| `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false` | Allow model servers on private networks. Ignored in production. |
+
+See [`apps/agent/README.md`](./apps/agent/README.md) for the full list, how to write a skill, and a smoke test against a real model.
+
+</details>
+
+## Open source and magic-resume.cn
+
+The editor and templates are the same; the hosted product runs the AI for you and adds accounts, sync and interviews.
+
+| | Open source (this repository) | magic-resume.cn |
+|---|---|---|
+| License | MIT | Free tier and paid plans |
+| Account | Not required | Required |
+| Resume storage | Your browser (IndexedDB) | Encrypted cloud storage, exportable at any time |
+| Multi-device sync | — | Yes |
+| AI | AI Lab with your own model key, on the bundled agent | Managed models, mock interviews and memory |
+| Templates | 20 | 20 |
+
+## Repository layout
+
+A pnpm and Turborepo monorepo. The shared schema, templates, design system, icons, utilities and the MCP server are published from [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) as `@magic-resume-kit/*` and pinned here by exact version.
+
+| Path | Description |
+|---|---|
+| `apps/web` | The editor and AI Lab (Next.js) |
+| `apps/agent` | The AI Lab agent (Fastify, DeepAgents, SQLite) |
+| `apps/agent/skills` | Skills and the agent's standing instructions, as Markdown |
+| `apps/landing` | Marketing site for magic-resume.cn (Astro) |
+| `apps/docs` | Documentation site (Mintlify) |
+| `packages/genui` | AI Lab cards and widgets |
+| `packages/tsconfig` | Shared TypeScript configuration |
+
+```bash
+pnpm dev                                    # editor and agent
+pnpm build                                  # build every workspace
+pnpm lint                                   # lint and architecture checks
+pnpm test                                   # tests
+pnpm --filter @magic-resume/agent test      # one workspace
+```
+
+## Tech stack
+
+| Area | Technology |
+|---|---|
+| Editor | [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [Tailwind CSS 4](https://tailwindcss.com/), [Radix UI](https://www.radix-ui.com/), [Tiptap](https://tiptap.dev/), [Zustand](https://zustand-demo.pmnd.rs/), [i18next](https://www.i18next.com/) |
+| Documents | [React-PDF](https://react-pdf.org/), [PDF.js](https://mozilla.github.io/pdf.js/), [Zod](https://zod.dev/) schemas |
+| Agent | [DeepAgents](https://github.com/langchain-ai/deepagentsjs), [LangGraph](https://langchain-ai.github.io/langgraphjs/), [LangChain](https://js.langchain.com/), [Fastify](https://fastify.dev/), SQLite |
+| Tooling | [pnpm](https://pnpm.io/), [Turborepo](https://turbo.build/), ESLint, Docker |
 
 ## MCP
 
-`@magic-resume-kit/mcp` is a Model Context Protocol server that lets AI tools (Claude Code, Cursor, Windsurf) read and patch resumes through schema-aware JSON Patch. It talks to a Magic Resume account over its API, so it works with magic-resume.cn; the local editor in this repository has no server for it to reach. See [docs/reference/mcp.md](./docs/reference/mcp.md).
-
----
-
-## Roadmap
-
-A small open-source backend implementation is planned separately. The BYOK UI and [HTTP/SSE contract](./docs/reference/ai-backend.md) are available now; pointing at an ordinary model API alone is insufficient because the backend must implement the agent protocol.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Monorepo | [Turborepo](https://turbo.build/), [pnpm](https://pnpm.io/) |
-| Framework | [Next.js 16](https://nextjs.org/) (App Router, Turbopack) |
-| Language | [TypeScript](https://www.typescriptlang.org/) |
-| Styling | [Tailwind CSS 4](https://tailwindcss.com/) |
-| UI | [Radix UI](https://www.radix-ui.com/), [React Aria](https://react-spectrum.adobe.com/react-aria/) |
-| Animation | [Framer Motion](https://www.framer.com/motion/) |
-| State | [Zustand](https://zustand-demo.pmnd.rs/) |
-| Storage | [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
-| Editor | [Tiptap](https://tiptap.dev/) |
-| PDF | [React-PDF](https://react-pdf.org/), [PDF.js](https://mozilla.github.io/pdf.js/) |
-| Schema | [Zod](https://zod.dev/) |
-| i18n | [i18next](https://www.i18next.com/) |
-
----
-
-## Monorepo
-
-Public package sources, tests and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit); this repository pins npm version 1.0.1. MCP is installed separately from the editor.
-
-| Workspace | Description |
-|---|---|
-| `apps/web` | The editor (Next.js) |
-| `apps/landing` | Marketing site for magic-resume.cn (Astro) |
-| `apps/docs` | Documentation site (Mintlify) |
-| `@magic-resume-kit/resume-schema` (npm) | Shared Zod schemas, types and sample data |
-| `@magic-resume-kit/resume-templates` (npm) | Template DSL, renderer and registry |
-| `packages/genui` | AI Lab components and widgets |
-| `@magic-resume-kit/design-system` (npm) | Design tokens and shared styles |
-| `@magic-resume-kit/icons` (npm) | Icon set |
-| `@magic-resume-kit/utils` (npm) | Small helpers (`cn`, time, color) |
-| `@magic-resume-kit/mcp` (npm) | `@magic-resume-kit/mcp`, stdio MCP server and CLI |
-| `packages/tsconfig` | Shared TypeScript configs |
+[`@magic-resume-kit/mcp`](./docs/reference/mcp.md) is a Model Context Protocol server that lets AI coding tools such as Claude Code, Codex and Cursor read and edit resumes through schema-aware JSON Patch. It connects to a magic-resume.cn account; the local editor in this repository has no account API for it to reach.
 
 ```bash
-pnpm install            # install everything
-pnpm run dev            # start all workspaces
-pnpm run lint           # lint and architecture checks
-pnpm run test           # test
-
-# target a single workspace
-pnpm --filter @magic-resume/web dev
 npx -y @magic-resume-kit/mcp@1.0.1 --help
 ```
 
----
+## Roadmap
+
+- [x] Local-first editor with 20 templates
+- [x] AI Lab on your own model key, with a self-hosted agent
+- [x] Resumable sessions, structured forms and approvals
+- [x] Import from PDF, Word, images and Markdown
+- [ ] Attachments in conversations
+- [ ] Optional web search with your own search API key, for company and role research
+
+Ideas and requests are welcome in [issues](https://github.com/Magic-Resume/Magic-Resume/issues).
 
 ## Contributing
 
-Contributions of every size are welcome — bug fixes, new templates, docs, translations, or features.
-
-Please read the **[Contributing Guide](./CONTRIBUTING.md)** for local setup, the branch workflow, and the enforced **gitmoji + Conventional Commits** convention. For bugs or ideas, feel free to file an [issue](https://github.com/Magic-Resume/Magic-Resume/issues) first.
+Contributions of every size are welcome: bug fixes, templates, skills, translations, docs and features. Read the [contributing guide](./CONTRIBUTING.md) for local setup, the branch workflow and the commit convention (gitmoji with Conventional Commits). For anything non-trivial, open an issue first to agree on the approach.
 
 <a href="https://github.com/Magic-Resume/Magic-Resume/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Magic-Resume/Magic-Resume" alt="contributors" />
+  <img src="https://contrib.rocks/image?repo=Magic-Resume/Magic-Resume" alt="Contributors" />
 </a>
 
----
-
-## Star History
+## Star history
 
 <a href="https://star-history.com/#Magic-Resume/Magic-Resume&Date">
-  <img src="https://api.star-history.com/svg?repos=Magic-Resume/Magic-Resume&type=Date" alt="Star History Chart" width="600" />
+  <img src="https://api.star-history.com/svg?repos=Magic-Resume/Magic-Resume&type=Date" alt="Star history chart" width="600" />
 </a>
 
----
+## License
 
-<div align="center">
-
-Copyright © 2026 [Magic Resume Team](https://github.com/Magic-Resume) · [MIT](./LICENSE) licensed.
-
-</div>
+[MIT](./LICENSE) © 2026 [Magic Resume Team](https://github.com/Magic-Resume)
 
 <!-- LINK GROUP -->
 
-[official-site]: https://magic-resume.cn
-[vercel-shield]: https://img.shields.io/badge/vercel-online-55b467?labelColor=black&logo=vercel&style=flat-square
-[vercel-link]: https://magic-resume.cn
 [github-contributors-shield]: https://img.shields.io/github/contributors/Magic-Resume/Magic-Resume?color=c4f042&labelColor=black&style=flat-square
 [github-contributors-link]: https://github.com/Magic-Resume/Magic-Resume/graphs/contributors
 [github-forks-shield]: https://img.shields.io/github/forks/Magic-Resume/Magic-Resume?color=8ae8ff&labelColor=black&style=flat-square
