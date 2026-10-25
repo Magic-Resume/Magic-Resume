@@ -17,6 +17,7 @@ import { AgentError } from '../contracts/errors.js';
 import type { DocumentFile } from '../document/input.js';
 import { extractDocument } from '../document/extract.js';
 import { parseJsonOutput, type createDirectModel } from '../model/direct.js';
+import { stripTags } from '../text.js';
 
 export function importProgress(
   phase: 'extracting' | 'analyzing',
@@ -48,7 +49,7 @@ function hasContent(resume: typeof resumeSchema._output) {
           ([key, value]) =>
             key !== 'id' &&
             typeof value === 'string' &&
-            value.replace(/<[^>]*>/g, '').trim(),
+            stripTags(value).trim(),
         ),
       ),
     )
@@ -154,13 +155,11 @@ export async function parseResumeDocument(
     if (attempt === 2)
       throw new AgentError(422, 'invalid_input', 'resume_parse_invalid');
     const errors = !result.success
-      ? result.error.issues
-          .slice(0, 20)
-          .map((issue) => ({
-            path: issue.path.join('.') || '(root)',
-            code: issue.code,
-            message: issue.message,
-          }))
+      ? result.error.issues.slice(0, 20).map((issue) => ({
+          path: issue.path.join('.') || '(root)',
+          code: issue.code,
+          message: issue.message,
+        }))
       : [
           {
             path: '(root)',
