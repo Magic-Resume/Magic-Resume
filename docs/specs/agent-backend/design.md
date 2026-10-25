@@ -13,7 +13,7 @@ related: [reference/ai-backend]
 
 # 开源 AI 后端（apps/agent）架构设计
 
-`apps/agent` 是编辑器 AI Lab 的自部署后端，实现 [`docs/reference/ai-backend.md`](../../reference/ai-backend.md) 约定的全部接口。用户自带模型 key（BYOK），单用户、本地或私有网络部署，没有账号、计费和云端存储。
+`apps/agent` 是编辑器 AI 助手 Polaris 的自部署后端，实现 [`docs/reference/ai-backend.md`](../../reference/ai-backend.md) 约定的全部接口。用户自带模型 key（BYOK），单用户、本地或私有网络部署，没有账号、计费和云端存储。
 
 它不是「转发一次模型调用」的薄层，而是一个完整的 agent：**DeepAgents harness**（LangGraph 主循环）加上虚拟文件系统、按需加载的技能、工具、审批暂停与续跑、检查点、预算和故障恢复，并把运行过程翻译成编辑器能渲染的事件流。
 

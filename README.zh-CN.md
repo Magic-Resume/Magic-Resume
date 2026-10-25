@@ -171,6 +171,12 @@ flowchart LR
 | `AGENT_IDLE_TIMEOUT_MS` | `120000` | 模型最长无输出时间，超过即判定本轮失败。 |
 | `AGENT_RUN_TIMEOUT_MS` | `900000` | 单轮时长上限。 |
 | `AGENT_SESSION_TTL_HOURS` | `168` | 闲置会话超过这个时间后删除。 |
+| `AGENT_ATTACHMENT_TTL_HOURS` | `24` | 对话附件的有效小时数，过期后删除。 |
+| `AGENT_ATTACHMENT_SECRET` | 启动时随机生成 | 可选的固定 HMAC 密钥，至少 32 字符；读取地址最长有效 15 分钟。 |
+| `AGENT_MAX_SEARCHES` | `5` | 每轮搜索次数上限，同时计入共享工具预算。 |
+| `SEARCH_PROVIDER` | — | 可选 `tavily`、`brave` 或 `searxng`；配置不完整时不提供搜索及研究技能。 |
+| `SEARCH_API_KEY` | — | Tavily 和 Brave 必填。 |
+| `SEARCH_BASE_URL` | 服务商默认地址 | 可覆盖 API 基址；SearXNG 必填，不默认使用公开实例。私网地址沿用模型的非生产显式放行规则。 |
 | `AGENT_BODY_LIMIT_BYTES` | `2097152` | 可接受的最大 JSON 请求体。 |
 | `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false` | 允许连接内网的模型服务；生产环境下不生效。 |
 
@@ -236,8 +242,8 @@ npx -y @magic-resume-kit/mcp@1.0.1 --help
 - [x] 使用自己模型 Key 的 Polaris，以及可自部署的 agent
 - [x] 可续跑的会话、结构化表单与审批
 - [x] 从 PDF、Word、图片和 Markdown 导入
-- [ ] 对话附件
-- [ ] 可选的联网搜索（自带搜索服务 Key），用于公司与岗位调研
+- [x] 对话附件
+- [x] 可选的联网搜索（自带搜索服务 Key），用于公司与岗位调研
 
 欢迎在 [issues](https://github.com/Magic-Resume/Magic-Resume/issues) 里提想法和需求。
 
