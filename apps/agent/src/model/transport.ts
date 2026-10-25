@@ -46,15 +46,22 @@ export async function resolveModelAddresses(
   allowPrivate: boolean,
   signal: AbortSignal,
   resolver: ModelResolver = lookup,
+  purpose: 'model' | 'source' = 'model',
 ): Promise<Address[]> {
+  const reject = (reason: string) =>
+    new AgentError(
+      400,
+      purpose === 'model' ? 'misconfigured' : 'invalid_input',
+      `${purpose}_${reason}`,
+    );
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.username ||
     url.password ||
-    url.search ||
+    (purpose === 'model' && url.search) ||
     url.hash
   ) {
-    throw new AgentError(400, 'misconfigured', 'model_url_invalid');
+    throw reject('url_invalid');
   }
   const hostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
   if (
@@ -63,7 +70,7 @@ export async function resolveModelAddresses(
       hostname.replace(/\.$/, '').endsWith('.localhost') ||
       hostname.replace(/\.$/, '') === 'metadata.google.internal')
   ) {
-    throw new AgentError(400, 'misconfigured', 'model_host_blocked');
+    throw reject('host_blocked');
   }
   let addresses: Address[];
   try {
@@ -75,7 +82,7 @@ export async function resolveModelAddresses(
         );
   } catch {
     signal.throwIfAborted();
-    throw new AgentError(400, 'misconfigured', 'model_dns_failed');
+    throw reject('dns_failed');
   }
   if (
     addresses.length === 0 ||
@@ -86,7 +93,7 @@ export async function resolveModelAddresses(
         (!allowPrivate && !isPublicAddress(address)),
     )
   ) {
-    throw new AgentError(400, 'misconfigured', 'model_host_blocked');
+    throw reject('host_blocked');
   }
   return addresses;
 }
@@ -98,6 +105,7 @@ export async function createModelTransport(
   signal: AbortSignal,
   resolver?: ModelResolver,
   idleTimeoutMs = 120_000,
+  purpose: 'model' | 'source' = 'model',
 ) {
   const base = new URL(baseUrl);
   const addresses = await resolveModelAddresses(
@@ -105,6 +113,7 @@ export async function createModelTransport(
     allowPrivate,
     signal,
     resolver,
+    purpose,
   );
   const selected = addresses[0];
   const hostname = base.hostname.replace(/^\[|\]$/g, '').toLowerCase();
@@ -116,7 +125,11 @@ export async function createModelTransport(
       input instanceof Request ? input.url : String(input),
     );
     if (target.origin !== base.origin || target.username || target.password) {
-      throw new AgentError(400, 'misconfigured', 'model_origin_changed');
+      throw new AgentError(
+        400,
+        purpose === 'model' ? 'misconfigured' : 'invalid_input',
+        `${purpose}_origin_changed`,
+      );
     }
     const idle = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -135,6 +148,7 @@ export async function createModelTransport(
     const requestSignal = AbortSignal.any([
       signal,
       idle.signal,
+      ...(input instanceof Request ? [input.signal] : []),
       ...(init?.signal ? [init.signal] : []),
     ]);
     const dispatcher = new Agent({
@@ -166,7 +180,11 @@ export async function createModelTransport(
       );
       if (response.status >= 300 && response.status < 400) {
         await response.body?.cancel();
-        throw new AgentError(400, 'misconfigured', 'model_redirect_blocked');
+        throw new AgentError(
+          400,
+          purpose === 'model' ? 'misconfigured' : 'invalid_input',
+          `${purpose}_redirect_blocked`,
+        );
       }
       void dispatcher
         .close()

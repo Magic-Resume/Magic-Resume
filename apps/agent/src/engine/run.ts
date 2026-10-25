@@ -210,15 +210,8 @@ export class RunEngine {
         async *stream(): AsyncGenerator<StreamItem> {
           started = true;
           if (harness.skill)
-            yield {
-              event: {
-                type: 'skill_loaded',
-                payload: {
-                  skill: harness.skill,
-                  path: `/skills/${harness.skill}/SKILL.md`,
-                },
-              },
-            };
+            for (const event of mapper.skillLoaded(harness.skill))
+              yield { event };
           try {
             const events = harness.agent.streamEvents(input, {
               version: 'v2',

@@ -6,7 +6,7 @@ export interface ModelRequest {
   model: string;
   messages: Array<{
     role: string;
-    content: string;
+    content: string | Array<Record<string, unknown>>;
     tool_calls?: Array<{
       id: string;
       function: { name: string; arguments: string };
