@@ -5,13 +5,12 @@ import { RESUME_PATH, toolPath } from '../workspace/files.js';
 import { proposedContent } from './resume-json.js';
 import { contentText } from './common.js';
 export const NAME = 'ResumeVerification';
-// Tool results that carry the user's own material: form and choice answers, and
-// attachments the user handed over. Facts found there are not new.
-const EVIDENCE_TOOLS = new Set([
-  'request_form',
-  'ask_choice',
-  'read_attachment',
-]);
+// Tool results that carry the user's own answers. Facts found there are not new.
+const EVIDENCE_TOOLS = new Set(['request_form', 'ask_choice']);
+/** Attachment text lives outside graph state, so the check asks the attachment context for it. */
+export interface AttachmentEvidence {
+  evidence(): Promise<{ text: string; unreadable: boolean }>;
+}
 const factKeys =
   /company|employer|organization|school|institution|issuer|certificate|date|degree/i;
 function collect(
@@ -57,7 +56,10 @@ export function newFacts(
     )
     .slice(0, 40);
 }
-export function createResumeVerification(baseline: unknown) {
+export function createResumeVerification(
+  baseline: unknown,
+  attachments?: AttachmentEvidence,
+) {
   return createMiddleware({
     name: NAME,
     wrapToolCall: async (request, handler) => {
@@ -90,7 +92,23 @@ export function createResumeVerification(baseline: unknown) {
       } catch {
         return result;
       }
-      const suspectedFabrications = newFacts(baseline, candidate, evidence);
+      let suspectedFabrications = newFacts(baseline, candidate, evidence);
+      if (suspectedFabrications.length && attachments) {
+        const material = await attachments.evidence();
+        suspectedFabrications = newFacts(
+          baseline,
+          candidate,
+          `${evidence}\n${material.text}`,
+        );
+        // A scan or image the model read cannot be checked here; say so instead of flagging its facts.
+        if (suspectedFabrications.length && material.unreadable) {
+          await dispatchCustomEvent('resume_verification', {
+            status: 'degraded',
+            reason: 'attachment_unverifiable',
+          });
+          return result;
+        }
+      }
       if (suspectedFabrications.length) {
         await dispatchCustomEvent('resume_verification', {
           status: 'flagged',

@@ -140,7 +140,7 @@ export function createHarness(options: HarnessOptions) {
     createSkillFirewall(catalog, skill),
     createSkillWriteGuard(),
     createResumeJson(),
-    createResumeVerification(resume),
+    createResumeVerification(resume, options.attachments),
   ];
   const systemPrompt = [
     instructions(options.mode, agentMode, hasCheckpoint),

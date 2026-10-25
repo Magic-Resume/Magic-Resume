@@ -352,6 +352,18 @@ test('read_attachment paginates actual PDF pages and stores only a reference res
   assert.match(String(result.result), /attachmentRead/);
   assert.doesNotMatch(String(result.result), /First page evidence/);
   await assert.rejects(context.tool.invoke({ key: a.key, limit: 8001 }));
+  const evidence = await context.evidence();
+  assert.match(evidence.text, /First page evidence[\s\S]*Second page evidence/);
+  assert.equal(evidence.unreadable, false);
+  const image = await attachment(f, 'resume.png', 'image/png');
+  const withImage = [...refs, { key: image.key, name: image.name }];
+  const mixed = await createAttachmentContext(
+    new AttachmentStore(f.settings),
+    withImage,
+    withImage,
+    signal(),
+  );
+  assert.equal((await mixed.evidence()).unreadable, true);
 });
 
 for (const storage of ['memory', 'sqlite'] as const) {
