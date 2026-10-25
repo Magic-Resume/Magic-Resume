@@ -6,10 +6,12 @@ allowBuilds:
   sharp: set this to true or false
   unrs-resolver: set this to true or false
 onlyBuiltDependencies:
+  - better-sqlite3
   - esbuild
   - sharp
   - unrs-resolver
 patchedDependencies:
+  "langchain@1.5.10": patches/langchain@1.5.10.patch
   "@react-pdf/layout@4.6.1": patches/@react-pdf__layout@4.6.1.patch
   "@react-pdf/render@4.5.1": patches/@react-pdf__render@4.5.1.patch
   "@react-pdf/textkit@6.3.0": patches/@react-pdf__textkit@6.3.0.patch

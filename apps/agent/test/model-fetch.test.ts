@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readSettings } from '../src/config.js';
-import { AgentError } from '../src/errors.js';
+import { AgentError } from '../src/contracts/errors.js';
 import {
   createModelTransport,
   isPublicAddress,
   resolveModelAddresses,
-} from '../src/model-fetch.js';
+} from '../src/model/transport.js';
 import { startFakeModel } from './fake-model.js';
 
 test('rejects local, private, metadata and non-routable IPs, including alternate encodings', async () => {

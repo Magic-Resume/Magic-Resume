@@ -1,0 +1,42 @@
+--- a/dist/agents/middleware/hitl.js
++++ b/dist/agents/middleware/hitl.js
+@@ -489,14 +489,16 @@
+ 					const toolCall = interruptToolCalls[i];
+ 					const interruptConfig = resolvedConfigs[toolCall.name];
+ 					const { revisedToolCall, toolMessage } = processDecision(decision, toolCall, interruptConfig);
+-					if (revisedToolCall && (!hasRejectedToolCalls || decision.type === "reject")) revisedToolCalls.push(revisedToolCall);
++					if (revisedToolCall) revisedToolCalls.push(revisedToolCall);
+ 					if (toolMessage) artificialToolMessages.push(toolMessage);
+ 				}
+ 				/**
+ 				* Update the AI message to only include approved tool calls
+ 				*/
+ 				if (AIMessage.isInstance(lastMessage)) lastMessage.tool_calls = revisedToolCalls;
+-				const jumpTo = hasRejectedToolCalls ? "model" : void 0;
++				const answeredIds = new Set(artificialToolMessages.map((message) => message.tool_call_id));
++				const hasPendingToolCalls = revisedToolCalls.some((call) => !answeredIds.has(call.id));
++				const jumpTo = hasRejectedToolCalls && !hasPendingToolCalls ? "model" : void 0;
+ 				return {
+ 					messages: [lastMessage, ...artificialToolMessages],
+ 					jumpTo
+--- a/dist/agents/middleware/hitl.cjs
++++ b/dist/agents/middleware/hitl.cjs
+@@ -489,14 +489,16 @@
+ 					const toolCall = interruptToolCalls[i];
+ 					const interruptConfig = resolvedConfigs[toolCall.name];
+ 					const { revisedToolCall, toolMessage } = processDecision(decision, toolCall, interruptConfig);
+-					if (revisedToolCall && (!hasRejectedToolCalls || decision.type === "reject")) revisedToolCalls.push(revisedToolCall);
++					if (revisedToolCall) revisedToolCalls.push(revisedToolCall);
+ 					if (toolMessage) artificialToolMessages.push(toolMessage);
+ 				}
+ 				/**
+ 				* Update the AI message to only include approved tool calls
+ 				*/
+ 				if (_langchain_core_messages.AIMessage.isInstance(lastMessage)) lastMessage.tool_calls = revisedToolCalls;
+-				const jumpTo = hasRejectedToolCalls ? "model" : void 0;
++				const answeredIds = new Set(artificialToolMessages.map((message) => message.tool_call_id));
++				const hasPendingToolCalls = revisedToolCalls.some((call) => !answeredIds.has(call.id));
++				const jumpTo = hasRejectedToolCalls && !hasPendingToolCalls ? "model" : void 0;
+ 				return {
+ 					messages: [lastMessage, ...artificialToolMessages],
+ 					jumpTo

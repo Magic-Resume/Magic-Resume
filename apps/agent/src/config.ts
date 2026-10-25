@@ -1,60 +1,24 @@
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { z } from 'zod';
-import { AgentError } from './errors.js';
 
-export const modelConfigSchema = z.object({
-  source: z.literal('byok').default('byok'),
-  apiKey: z
-    .string()
-    .trim()
-    .min(1)
-    .max(8192)
-    .regex(/^[^\r\n]+$/),
-  baseUrl: z
-    .string()
-    .trim()
-    .min(1)
-    .max(2048)
-    .url()
-    .refine((raw) => {
-      try {
-        const url = new URL(raw);
-        return (
-          ['http:', 'https:'].includes(url.protocol) &&
-          !url.username &&
-          !url.password &&
-          !url.search &&
-          !url.hash
-        );
-      } catch {
-        return false;
-      }
-    })
-    .transform((raw) => raw.replace(/\/+$/, '')),
-  modelName: z.string().trim().min(1).max(256),
-  maxTokens: z.number().int().positive().max(1_048_576).optional(),
-  effort: z.enum(['low', 'medium', 'high']).optional(),
-});
-
-export type ModelConfig = z.infer<typeof modelConfigSchema>;
-
-export function parseModelConfig(value: unknown): ModelConfig {
-  const result = modelConfigSchema.safeParse(value);
-  if (!result.success) {
-    throw new AgentError(400, 'misconfigured', 'model_config_invalid');
-  }
-  return result.data;
-}
-
+const milliseconds = (fallback: number) =>
+  z.coerce.number().int().positive().max(3_600_000).default(fallback);
 const environmentSchema = z.object({
   NODE_ENV: z.string().default('development'),
   HOST: z.string().min(1).default('127.0.0.1'),
   PORT: z.coerce.number().int().min(0).max(65535).default(4000),
-  AGENT_MODEL_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
+  AGENT_DATA_DIR: z.string().min(1).default('./data'),
+  AGENT_SKILLS_DIR: z
+    .string()
     .min(1)
-    .max(3_600_000)
-    .default(120_000),
+    .default(fileURLToPath(new URL('../skills/', import.meta.url))),
+  AGENT_MAX_MODEL_CALLS: z.coerce.number().int().min(1).max(100).default(40),
+  AGENT_MAX_TOOL_CALLS: z.coerce.number().int().positive().max(300).default(60),
+  AGENT_IDLE_TIMEOUT_MS: milliseconds(120_000),
+  AGENT_RUN_TIMEOUT_MS: milliseconds(900_000),
+  AGENT_FIRST_EVENT_WAIT_MS: milliseconds(15_000),
+  AGENT_SESSION_TTL_HOURS: z.coerce.number().positive().max(8760).default(168),
   AGENT_BODY_LIMIT_BYTES: z.coerce
     .number()
     .int()
@@ -72,7 +36,14 @@ export function readSettings(env: NodeJS.ProcessEnv = process.env) {
   return {
     host: data.HOST,
     port: data.PORT,
-    modelTimeoutMs: data.AGENT_MODEL_TIMEOUT_MS,
+    dataDir: resolve(data.AGENT_DATA_DIR),
+    skillsDir: resolve(data.AGENT_SKILLS_DIR),
+    maxModelCalls: data.AGENT_MAX_MODEL_CALLS,
+    maxToolCalls: data.AGENT_MAX_TOOL_CALLS,
+    idleTimeoutMs: data.AGENT_IDLE_TIMEOUT_MS,
+    runTimeoutMs: data.AGENT_RUN_TIMEOUT_MS,
+    firstEventWaitMs: data.AGENT_FIRST_EVENT_WAIT_MS,
+    sessionTtlHours: data.AGENT_SESSION_TTL_HOURS,
     bodyLimitBytes: data.AGENT_BODY_LIMIT_BYTES,
     privateHostsRequested: data.AGENT_ALLOW_PRIVATE_MODEL_HOSTS === 'true',
     allowPrivateModelHosts:

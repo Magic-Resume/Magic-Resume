@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseModelConfig, readSettings } from '../src/config.js';
-import { AgentError } from '../src/errors.js';
-import { parseChatRequest } from '../src/request.js';
+import { readSettings } from '../src/config.js';
+import { parseModelConfig } from '../src/contracts/model-config.js';
+import { AgentError } from '../src/contracts/errors.js';
+import { parseChatRequest } from '../src/contracts/requests.js';
 
 const config = {
   apiKey: 'example-test-key',

@@ -1,11 +1,8 @@
 import { once } from 'node:events';
 import type { ServerResponse } from 'node:http';
-import type { ErrorPayload } from './errors.js';
+import type { AgentEvent } from './contracts/events.js';
 
-export type ChatEvent =
-  | { type: 'run_started' | 'done' }
-  | { type: 'message_chunk' | 'reasoning_chunk'; content: string }
-  | { type: 'error'; payload: ErrorPayload };
+export type ChatEvent = AgentEvent;
 
 export function createEventEncoder(runId: string) {
   let sequence = 0;

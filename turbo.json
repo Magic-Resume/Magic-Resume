@@ -24,7 +24,14 @@
         "NODE_ENV",
         "HOST",
         "PORT",
-        "AGENT_MODEL_TIMEOUT_MS",
+        "AGENT_DATA_DIR",
+        "AGENT_SKILLS_DIR",
+        "AGENT_MAX_MODEL_CALLS",
+        "AGENT_MAX_TOOL_CALLS",
+        "AGENT_IDLE_TIMEOUT_MS",
+        "AGENT_RUN_TIMEOUT_MS",
+        "AGENT_FIRST_EVENT_WAIT_MS",
+        "AGENT_SESSION_TTL_HOURS",
         "AGENT_BODY_LIMIT_BYTES",
         "AGENT_ALLOW_PRIVATE_MODEL_HOSTS"
       ]
