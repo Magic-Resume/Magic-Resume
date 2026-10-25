@@ -98,6 +98,13 @@ export function modelError(error: unknown, signal?: AbortSignal): AgentError {
     );
   }
   if (status === 400 || status === 422) {
+    if (
+      /vision|image|multimodal/.test(`${code} ${message}`) &&
+      /unsupported|not support|not capable|only.*text|text.only|only supported.*(?:model|vision)/.test(
+        `${code} ${message}`,
+      )
+    )
+      return new AgentError(400, 'misconfigured', 'model_vision_unsupported');
     return new AgentError(400, 'invalid_input', 'model_request_rejected');
   }
   return new AgentError(502, 'upstream_unavailable', 'model_unavailable');

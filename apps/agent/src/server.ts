@@ -8,6 +8,9 @@ import { Persistence } from './persistence/store.js';
 import { chatRoute } from './http/chat.route.js';
 import { approveRoute } from './http/approve.route.js';
 import { sessionRoutes } from './http/session.route.js';
+import { editRoutes } from './http/edit.route.js';
+import { pdfRoute } from './http/pdf.route.js';
+import { testLlmRoute } from './http/test-llm.route.js';
 
 interface ServerOptions {
   settings?: Settings;
@@ -81,5 +84,8 @@ export function buildServer({
   chatRoute(app, engine);
   approveRoute(app, engine);
   sessionRoutes(app, engine.sessions);
+  editRoutes(app, settings, resolver);
+  pdfRoute(app, settings, resolver);
+  testLlmRoute(app, settings, resolver);
   return app;
 }

@@ -1,0 +1,18 @@
+Alex Chen
+Frontend Engineer
+alex@example.com | +1 555 0100
+
+Experience
+Example Lantern Lab | Engineer | 2022 - 2024
+Implemented accessible forms and input validation.
+Documented component behavior and tested keyboard navigation.
+
+Education
+Example Meadow College | Computing | 2018 - 2022
+
+Project
+Example booking page | Coursework | 2021
+Built and tested form validation in a student team.
+
+Skills
+HTML, CSS, TypeScript
