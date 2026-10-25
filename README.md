@@ -171,6 +171,12 @@ Model settings (provider, key, base URL, model, output limit, reasoning strength
 | `AGENT_IDLE_TIMEOUT_MS` | `120000` | Longest silence from the model before a turn fails. |
 | `AGENT_RUN_TIMEOUT_MS` | `900000` | Upper bound for one turn. |
 | `AGENT_SESSION_TTL_HOURS` | `168` | Idle sessions are deleted after this. |
+| `AGENT_ATTACHMENT_TTL_HOURS` | `24` | Uploaded conversation files expire after this many hours. |
+| `AGENT_ATTACHMENT_SECRET` | random at startup | Optional stable HMAC secret, at least 32 characters; read URLs last up to 15 minutes. |
+| `AGENT_MAX_SEARCHES` | `5` | Search calls per turn, within the shared tool budget. |
+| `SEARCH_PROVIDER` | — | Optional `tavily`, `brave` or `searxng`; incomplete settings disable search and research skills. |
+| `SEARCH_API_KEY` | — | Required for Tavily and Brave. |
+| `SEARCH_BASE_URL` | provider default | Optional API base override; required for SearXNG, with no default public instance. Private hosts follow the model opt-in rule. |
 | `AGENT_BODY_LIMIT_BYTES` | `2097152` | Largest accepted JSON request. |
 | `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false` | Allow model servers on private networks. Ignored in production. |
 
@@ -236,8 +242,8 @@ npx -y @magic-resume-kit/mcp@1.0.1 --help
 - [x] Polaris on your own model key, with a self-hosted agent
 - [x] Resumable sessions, structured forms and approvals
 - [x] Import from PDF, Word, images and Markdown
-- [ ] Attachments in conversations
-- [ ] Optional web search with your own search API key, for company and role research
+- [x] Attachments in conversations
+- [x] Optional web search with your own search API key, for company and role research
 
 Ideas and requests are welcome in [issues](https://github.com/Magic-Resume/Magic-Resume/issues).
 

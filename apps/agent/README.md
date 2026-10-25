@@ -11,6 +11,8 @@ A self-hosted, single-user BYOK backend for the local resume editor. It runs a D
 - `src/harness`: the sole `createDeepAgent` call, native planning, filesystem, skills and delegation; nine ordered policies enforce budgets, retries, recovery, permission modes, skill tool restrictions, read-only skill files, resume validation and fact verification.
 - `src/model`: OpenAI-compatible Chat Completions, reasoning deltas, one-time unsupported-effort negotiation, DNS-pinned outbound fetch, redirect rejection and per-connection idle timeouts. Retries occur only before output, for transient failures.
 - `src/document`: bounded upload/download readers and cancellable PDF/DOCX extraction workers. Import, snippet editing and connection tests call the model directly without constructing a harness or session.
+- `src/attachments`: private disk storage, signed read capabilities, expiry collection and request-local attachment materialization at the model boundary.
+- `src/search`: optional REST search adapters using the controlled transport; search counts and citation numbers are shared across root and delegated tasks within a turn.
 - `src/persistence`: SQLite graph checkpoints and `turns` / `approvals` metadata in the same database. Each run constructs a fresh harness and model; keys and provider configuration stay in request-local closures.
 
 The virtual filesystem mounts shipped skills at `/skills/` and uses graph state for the remaining paths. The browser's current snapshot seeds `/workspace/resume.json` at each new turn; existing drafts are not silently treated as accepted changes. Complete resume metadata omitted by the browser is filled from the public schema package's defaults. Writes are schema-validated before producing RFC 6902 preview `resume_patch` events and one final authoritative `resume_update` proposal, including when pausing for input. Preview compatibility is tested against the editor's actual patch projection.
@@ -49,7 +51,49 @@ Implemented endpoints:
 | POST   | `/api/chat/edit`                | Compatibility alias for the same snippet handler       |
 | POST   | `/api/test-llm`                 | JSON connection result and image capability hint       |
 
-Attachments and web search belong to a later milestone. A one-shot chat without `sessionId` has no checkpointer or blocking form/choice tools. When required evidence is missing it asks in text.
+A one-shot chat without `sessionId` has no checkpointer or blocking form/choice tools. When required evidence is missing it asks in text.
+
+## Conversation attachments
+
+Upload multipart `file` to `POST /api/uploads/attachment` for `{ data: { key, filename, contentType } }`, then post `{ key }` to `/api/uploads/attachment/read-url` for `{ data: { url, expiresAt } }`. The editor uses its `/api/backend` proxy and requests a URL only at send time. Chat accepts `{ id, name, contentType, sourceUrl }` attachments, at most **three per turn**. PDF, PNG, JPEG and WebP are accepted, bounded to **10 MiB per file while consuming the stream**. Byte signatures determine the stored type even when extensions or MIME declarations disagree. Files and metadata live privately under random 256-bit keys in `AGENT_DATA_DIR/attachments/`; cleaned display names never determine paths.
+
+`GET /api/uploads/attachment/:key?expires=…&signature=…` verifies an HMAC-SHA256 signature covering origin, path and expiry and returns the file with caching disabled. URLs last up to **15 minutes**, shortened when the file expires sooner. `AGENT_ATTACHMENT_SECRET` optionally supplies a stable secret of at least 32 characters. Otherwise a fresh random secret is generated at startup, invalidating old URLs on restart; existing keys can request new URLs. Neither secrets nor signed URLs are logged.
+
+Chat validates agent-issued URLs and reads directly from disk, with no DNS/HTTP request to itself. Invalid or expired signatures cannot fall back to HTTP. External URLs use the import download policy: public addresses only, pinned DNS, no credentials/fragments/redirects, allowed MIME and bounded declared/actual size. The private-model opt-in never relaxes external document downloads. Downloaded attachments are sniffed and stored under a new key with the same TTL as uploads.
+
+The prompt lists the current names, actual types and page counts. PDF extraction prefers text and falls back to ordered images for scans, preserving import limits (20 text pages, five vision pages, 200,000 text characters and 10 MiB rendered images). Images become image parts in user input. Image rejection returns `model_vision_unsupported`; attachments are never silently dropped. Ask can read files supplied with its question without receiving a resume or earlier resume-derived context.
+
+`read_attachment({ key, page?, offset?, limit? })` reads one 1-based PDF page from a 0-based character offset, default 4,000 and maximum 8,000 characters. Results expose `pageCount`, `totalCharacters`, `nextOffset` and `nextPage`. Image-only files report their mode and provide images instead of claiming to have text. All source content is explicitly untrusted data.
+
+Checkpoint messages retain name/key references and read coordinates. Extracted source text and images are materialized only in request-local memory for model input; the service does not write them into checkpoint messages or workspace source files. Later turns and approvals reopen references; earlier images are loaded on demand with `read_attachment`. Generated answers remain ordinary messages. Expired files return `attachment_expired`, missing/deleted files `attachment_not_found`, bad signatures `attachment_signature_invalid`, and expired URLs `attachment_url_expired`. Refresh an expired URL; re-upload an expired or missing file. Reads enforce `AGENT_ATTACHMENT_TTL_HOURS` (default 24) immediately; startup and periodic sweeps delete expired files. Session release does not delete attachments.
+
+## Optional web search
+
+Without complete search settings there is no `web_search`, no `company-research` / `job-research` in skill discovery or direct reads, and no advertised search capability. Startup logs state enabled/disabled and the provider name without credentials.
+
+Choose one configuration in the agent's private environment file:
+
+```dotenv
+# Tavily: also supply your SEARCH_API_KEY through the environment.
+SEARCH_PROVIDER=tavily
+# Default base: https://api.tavily.com; appends /search.
+
+# Or Brave, also with SEARCH_API_KEY:
+# SEARCH_PROVIDER=brave
+# Default base: https://api.search.brave.com/res/v1; appends /web/search.
+
+# Or your own SearXNG, with JSON output enabled:
+# SEARCH_PROVIDER=searxng
+# SEARCH_BASE_URL=http://127.0.0.1:8080
+# NODE_ENV=development
+# AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true
+```
+
+`SEARCH_BASE_URL` can override a provider base and retain a path prefix. SearXNG requires an explicit base and never defaults to a public instance. Search endpoints use controlled DNS-pinned, redirect-blocked transport. Private endpoints require both non-production and `AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true`; production ignores the flag. Responses are capped at 2 MiB with a 30-second request deadline inside the run deadline. Search keys remain in HTTP headers, outside checkpoints and errors.
+
+`web_search({ query, count? })` accepts up to 500 query characters and 1–10 results (default five). Each search consumes the shared tool budget plus `AGENT_MAX_SEARCHES` (default five per turn, shared with delegated tasks, reset on approval). Normalized results contain title, URL, snippet and source site with stable per-turn citation numbers. `source_update` provides frontend-compatible visible external sources tied to the tool lifecycle ID. `tool_result.payload.result.status` reports success, empty results, errors or exhausted budget. Failures do not fabricate sources or prevent an otherwise useful answer.
+
+The two research skills require linked evidence, labelled source statements versus inference, explicit uncertainty and existing `company_research` / `job_research` cards. Company research covers business, scale, recent developments and team/technology signals. Job research scopes responsibilities, skills, terminology and publicly sourced comparable compensation. Search and attachment data cannot grant permission to modify a resume. REST adapters follow the [Tavily search API](https://docs.tavily.com/documentation/api-reference/endpoint/search), [Brave web search API](https://api-dashboard.search.brave.com/app/documentation/web-search/query) and [SearXNG search API](https://docs.searxng.org/dev/search_api.html).
 
 ## Import, snippet editing and connection tests
 
@@ -93,7 +137,7 @@ All configuration comes from environment variables; `.env.example` lists the com
 | Variable                          | Default              | Meaning                                                                 |
 | --------------------------------- | -------------------- | ----------------------------------------------------------------------- |
 | `HOST` / `PORT`                   | `127.0.0.1` / `4000` | Listen address                                                          |
-| `AGENT_DATA_DIR`                  | `./data`             | Directory containing `checkpoints.sqlite` and SQLite WAL files          |
+| `AGENT_DATA_DIR`                  | `./data`             | Directory containing SQLite runtime state and private attachments      |
 | `AGENT_SKILLS_DIR`                | packaged `skills/`   | Read-only skill catalog                                                 |
 | `AGENT_MAX_MODEL_CALLS`           | `40`                 | Shared root, subagent and assessment budget, including the final answer |
 | `AGENT_MAX_TOOL_CALLS`            | `60`                 | Shared tool budget                                                      |
@@ -101,8 +145,14 @@ All configuration comes from environment variables; `.env.example` lists the com
 | `AGENT_RUN_TIMEOUT_MS`            | `900000`             | Whole HTTP run limit                                                    |
 | `AGENT_FIRST_EVENT_WAIT_MS`       | `15000`              | Maximum delay before SSE headers open                                   |
 | `AGENT_SESSION_TTL_HOURS`         | `168`                | Expire inactive runtime threads; browser history has its own lifetime   |
+| `AGENT_ATTACHMENT_TTL_HOURS`      | `24`                 | Expire conversation files independently of sessions                     |
+| `AGENT_ATTACHMENT_SECRET`         | random per startup   | Optional stable HMAC signing secret, minimum 32 characters              |
+| `AGENT_MAX_SEARCHES`              | `5`                  | Shared searches per turn, also counted as tools                         |
+| `SEARCH_PROVIDER`                 | unset                | Optional `tavily`, `brave` or `searxng`; incomplete settings remove search |
+| `SEARCH_API_KEY`                  | unset                | Required for Tavily/Brave; unused for SearXNG                            |
+| `SEARCH_BASE_URL`                 | provider default     | Optional base override; required for SearXNG, no public-instance default |
 | `AGENT_BODY_LIMIT_BYTES`          | `2097152`            | HTTP JSON body limit                                                    |
-| `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false`              | Allow local/private model endpoints in non-production environments only |
+| `AGENT_ALLOW_PRIVATE_MODEL_HOSTS` | `false`              | Allow private model/search endpoints only outside production           |
 
 The server logs a fixed warning and ignores private-host opt-in in production. Public outbound model endpoints are DNS-validated once per run and every connection is pinned to the validated address; redirects are rejected. Inherited tracing and verbose provider logging are disabled.
 
@@ -114,11 +164,11 @@ Docker Compose stores runtime state in the `agent-data` volume and does not publ
 
 Add `skills/<name>/SKILL.md` with YAML frontmatter containing `name`, `description` and `allowed-tools`. The name must match its directory. Include goal, appropriate and inappropriate uses, prerequisites, steps, completion criteria, failure handling and output constraints. Put concise supporting material under `references/` or `assets/`.
 
-The five conversational skills cover creation, optimization, analysis, fit and translation; the sixth, `resume-parse`, is invoked directly by import with no tools. DeepAgents discovers descriptions and reads full bodies on demand. Add a mode mapping in `src/harness/skills/catalog.ts` only when adding an explicit UI entry. User-defined skill IDs are ignored with a fixed warning in this release.
+The five resume conversation skills cover creation, optimization, analysis, fit and translation; `resume-parse` is invoked directly by import with no tools. Complete search configuration enables two additional research skills. DeepAgents discovers available descriptions and reads full bodies on demand. Add a mode mapping in `src/harness/skills/catalog.ts` only when adding an explicit UI entry. User-defined skill IDs are ignored with a fixed warning in this release.
 
 Creation, optimization and translation register 3–5 user-facing todos before work and update them after every completed step. Simple answers and one-step edits do not need a plan. First plans emit both `agent_plan` and `plan_update` for the editor's checklist. Each skill emits `skill_loaded` once per run even when mode activation is followed by reading its file. Shipped references explain evidence, scoring, translation preservation and optional source collection.
 
-`read_file`, `ls`, `glob`, `grep` and `write_todos` are always available to a loaded skill. Other tools require its explicit `allowed-tools` declaration. Loading a different skill replaces the previous active permission set; analysis and fit cannot acquire write access from an earlier skill. The mode boundary remains stronger than a skill's declaration.
+`read_file`, `ls`, `glob`, `grep` and `write_todos` are always available to a loaded skill. `read_attachment` is also permitted when attachment references are present. Other tools require an explicit `allowed-tools` declaration. Loading a different skill replaces the previous active permission set; analysis and fit cannot acquire write access from an earlier skill. The mode boundary remains stronger than a skill's declaration.
 
 The Zod widget registry mirrors every frontend card name for compatibility. `push_ui` exposes the supported non-blocking cards only. Forms and choices use native interrupts; unavailable application features are never simulated with cards. Merged card updates are validated as complete cards before publication.
 
@@ -127,12 +177,14 @@ The Zod widget registry mirrors every frontend card name for compatibility. `pus
 1. Start a local OpenAI-compatible proxy that supports streamed Chat Completions and function tools. Record its `/v1` base URL, model name and key. Confirm the proxy is reachable from the agent process.
 2. Start the agent with `NODE_ENV=development AGENT_ALLOW_PRIVATE_MODEL_HOSTS=true pnpm --filter @magic-resume/agent dev`. A local URL such as `http://127.0.0.1:8080/v1` is an example; use the proxy's actual address. Production intentionally refuses that private destination.
 3. Configure the web server with `AI_BACKEND_URL=http://127.0.0.1:4000`. In **Settings → Model**, enter the proxy URL, model and key, test the connection, then save. Check both text connectivity and the image capability result when importing scans or pictures.
-4. Open a fictional resume in AI Lab, select **Optimize**, and supply a short target JD. Expect a skill read, resume read, checklist, field reasons, preview patches and one final proposal. Check that IDs, custom fields and untouched sections survive. The saved document should change only after accepting the review.
+4. Open a fictional resume in Polaris, select **Optimize**, and supply a short target JD. Expect a skill read, resume read, checklist, field reasons, preview patches and one final proposal. Check that IDs, custom fields and untouched sections survive. The saved document should change only after accepting the review.
 5. Repeat without a JD. Expect a `job_info` form and `awaiting_input` from the session endpoint. Stop and restart only the agent, retaining `AGENT_DATA_DIR`; submit the form and confirm continuation. Repeat with a skipped form and verify no invented JD or resume facts appear.
 6. Exercise Plan and Ask. Plan must not produce resume mutations. Ask must send no resume snapshot, resume ID or previous resume-derived context to the proxy. Stop an active generation and verify the proxy request is cancelled.
 7. Regenerate a second turn and verify the new thread begins after the first turn. Repeat an approval operation and verify HTTP 409. Check a rejected key, a transient provider failure and an idle stream; errors must contain fixed codes rather than provider text or credentials.
 8. Import the fictional files under `test/fixtures/`: text PDF, scanned PDF, DOCX, PNG/JPEG/WebP, Markdown and text. Scans and images need a vision model. Expect extraction/analysis progress and a valid imported document; cancel once and verify the upstream stops. Text-model image rejection must show a configuration failure, never an empty imported resume.
 9. Select a sentence for a quick edit and check that surrounding text survives and the difference requires review. Repeat with an empty/invalid model result or rejected key and verify a fixed error with no saved change.
+10. Attach `test/fixtures/resume.pdf` with a question that requires reading its text. Expect `read_attachment` and an answer grounded in the file. Repeat with `attachment-pages.pdf` and ask about the second page, then with a PNG and scanned PDF using a vision model. Repeat in Ask and confirm no resume data is sent. Refresh and ask to reread an attachment; delete or expire one and expect a re-upload request. A text-only model must reject image input explicitly.
+11. For real search, prepare a Tavily/Brave API key or a reachable SearXNG instance with JSON output enabled. Set only the chosen provider's variables above and restart only the agent. Ask for a company brief and a role brief with sources; expect search tools, visible source links and the appropriate research card with labelled inference. Confirm links support each claim and unknowns remain explicit. Set `AGENT_MAX_SEARCHES=1` to exercise exhaustion, then remove search configuration and confirm the tool and both skills disappear. Private SearXNG needs the development opt-in; production must reject it even with the flag set.
 
 Keep real keys out of checked-in fixtures and shell command arguments. Long answers are bounded by idle gaps and the separate whole-run limit. Unsupported `reasoning_effort` is omitted after one explicit rejection; unsupported tools or malformed argument streams still require a capable proxy/model and may produce a partial result rather than a completed rewrite.
 
@@ -147,3 +199,5 @@ docker build -f apps/agent/Dockerfile -t magic-resume-agent .
 ```
 
 Tests use a scripted local OpenAI-compatible server, not real provider credentials. They cover each policy and tool, frontend event and card-name contracts, transient errors and cancellation, and all ten HTTP scenarios with MemorySaver and SQLite. The SQLite approval test closes and rebuilds the server against the same real database file. Import tests use real document extraction and assert that the model receives the actual text or image payload. Additional checks cover multipart boundaries, streaming size rejection, source policy/pinning, schema repairs, both edit aliases, image probing and the real connection deadline. Committed document fixtures use fictional people and organizations; `test/fixtures/generate.py` can regenerate them with Pillow, reportlab and python-docx, which are not runtime dependencies.
+
+Attachment tests use real PDF extraction, page/character pagination, image requests, signed GETs, chunked upload limits, disk-only reads and TTL collection. Conversation tests inspect SQLite checkpoints and reopen files after server recreation. Search tests call local HTTP services for all three providers, verify private/redirect/size/cancellation rules, shared limits, optional skill removal, research-card pushes and the editor's actual citation normalization.
