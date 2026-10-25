@@ -27,6 +27,7 @@ related: [CONVENTIONS.md]
 
 | 文档 | 状态 | 更新 | 摘要 |
 |---|---|---:|---|
+| [开源 AI 后端架构](specs/agent-backend/design.md) | Accepted | 2026-10-25 | apps/agent 的完整架构：DeepAgents harness、技能目录、中间件链、工具、事件映射、检查点与会话、档位边界、简历提案、测试策略与 M1–M4 切分。 |
 | [GEO 方案](specs/geo/spec.md) | Draft | 2026-08-05 | 面向答案引擎的可引用性建设：清不实声明、统一实体定义、llms.txt 与对比表，站外痕迹与验证方法。 |
 | [Landing 优化方案](specs/landing-optimization/spec.md) | Proposed | 2026-08-05 | 死资产清理、首屏 JS 移出关键路径、结构化数据补齐，以及默认语言 / 价格展示 / 社会证明三项决策。 |
 | [Stage-First Editor Relayout](specs/editor-relayout/design.md) | Draft | 2026-07-03 | Design brief for restructuring the editor around a stage-first workflow. |
