@@ -5,11 +5,32 @@ import { AgentError } from '../contracts/errors.js';
 import { createDirectModel } from '../model/direct.js';
 import type { ModelResolver } from '../model/transport.js';
 
-// A 64x64 solid blue square: the probe checks image content rather than just
-// HTTP acceptance. A single pixel is too small; providers rescale it and models
-// misread its color.
-export const VISION_PROBE_IMAGE =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAS0lEQVR42u3PQQkAAAgAsetfWiP4FgYrsGqeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBA4LMf88OL0EKXAAAAAAElFTkSuQmCC';
+// 64x64 solid squares, one picked at random per probe, so a text-only model that
+// ignores the image cannot pass by guessing. A single pixel is too small:
+// providers rescale it and models misread its color.
+export const VISION_PROBES = [
+  {
+    color: 'RED',
+    image:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAS0lEQVR42u3PQQkAAAgAsetfWiP4FgYrsKZeS0BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEDgsqnc8OJg6Ln3AAAAAElFTkSuQmCC',
+  },
+  {
+    color: 'GREEN',
+    image:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATElEQVR42u3PQQkAAAgAseufwqhG8C0MVmA1/SYgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcFlT0gCXrcLQywAAAABJRU5ErkJggg==',
+  },
+  {
+    color: 'BLUE',
+    image:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAS0lEQVR42u3PQQkAAAgAsetfWiP4FgYrsGqeExAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBA4LMf88OL0EKXAAAAAAElFTkSuQmCC',
+  },
+] as const;
+export function pickVisionProbe(random: () => number = Math.random) {
+  return (
+    VISION_PROBES[Math.floor(random() * VISION_PROBES.length)] ??
+    VISION_PROBES[0]
+  );
+}
 const VISION_PROBE_TIMEOUT_MS = 12_000;
 export async function testModel(
   config: ModelConfig,
@@ -33,18 +54,19 @@ export async function testModel(
       throw new AgentError(502, 'upstream_unavailable', 'model_empty_response');
     const latencyMs = Math.round(performance.now() - started);
     let supportsImage = false;
+    const visionProbe = pickVisionProbe();
     try {
       const probe = await model.generate(
         [
           new SystemMessage(
-            'Identify the color in the supplied image. Reply with exactly RED, GREEN, or BLUE. If you cannot read images, reply UNSUPPORTED.',
+            'Name the color that fills the supplied image with one English word. If you cannot see an image, reply UNSUPPORTED.',
           ),
           new HumanMessage({
             content: [
-              { type: 'text', text: 'What color is this pixel?' },
+              { type: 'text', text: 'What color is this image?' },
               {
                 type: 'image_url',
-                image_url: { url: VISION_PROBE_IMAGE, detail: 'low' },
+                image_url: { url: visionProbe.image, detail: 'low' },
               },
             ],
           }),
@@ -52,7 +74,9 @@ export async function testModel(
         undefined,
         AbortSignal.timeout(VISION_PROBE_TIMEOUT_MS),
       );
-      supportsImage = /\bBLUE\b/.test(probe.toUpperCase());
+      supportsImage = new RegExp(`\\b${visionProbe.color}\\b`).test(
+        probe.toUpperCase(),
+      );
     } catch {
       /* Image probing is optional and cannot turn a working text connection into failure. */
     }

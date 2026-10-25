@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fixture, waitFor } from './helpers.js';
-import { VISION_PROBE_IMAGE } from '../src/engine/test-model.js';
+import { VISION_PROBES } from '../src/engine/test-model.js';
 
 function connectionBody(
   f: Awaited<ReturnType<typeof fixture>>,
@@ -12,7 +12,9 @@ function connectionBody(
 }
 
 test('connection test uses model, makes one small image probe and returns measured latency', async (t) => {
-  // Models answer in their own casing and punctuation; "Blue." still means blue.
+  // Index 2 is the blue square. Models answer in their own casing and
+  // punctuation; "Blue." still means blue.
+  t.mock.method(Math, 'random', () => 0.9);
   const f = await fixture(t, 'memory', [{ text: 'OK' }, { text: 'Blue.' }]);
   const response = await f.post(
     '/api/test-llm',
@@ -37,11 +39,22 @@ test('connection test uses model, makes one small image probe and returns measur
   assert.equal(images.length, 1);
   assert.equal(
     (images[0].image_url as { url: string }).url,
-    VISION_PROBE_IMAGE,
+    VISION_PROBES[2].image,
   );
-  assert.ok(
-    Buffer.from(VISION_PROBE_IMAGE.split(',')[1], 'base64').length < 200,
-  );
+  for (const probe of VISION_PROBES)
+    assert.ok(Buffer.from(probe.image.split(',')[1], 'base64').length < 200);
+});
+
+test('a model that names the wrong color does not support images', async (t) => {
+  // A text-only provider may drop the image and answer anyway; a guess that
+  // misses the randomly chosen color must not count as vision.
+  t.mock.method(Math, 'random', () => 0);
+  const f = await fixture(t, 'memory', [{ text: 'OK' }, { text: 'BLUE' }]);
+  const response = await f.post('/api/test-llm', connectionBody(f));
+  assert.equal(response.status, 200);
+  const value = await response.json();
+  assert.equal(value.ok, true);
+  assert.equal(value.supportsImage, false);
 });
 
 test('failed or ignored image input does not fail the text connection', async (t) => {
