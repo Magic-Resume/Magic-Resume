@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-// Entity drift check (docs/specs/geo/spec.md §3; Magic-Core geo-visibility W0).
+// Entity drift check (docs/specs/geo/spec.md §3).
 // apps/landing/src/data/entity.ts is the one definition of what Magic Resume
 // is. Every other surface that states it must carry it word for word, because
 // answer engines build an entity by cross-checking those surfaces. Run with

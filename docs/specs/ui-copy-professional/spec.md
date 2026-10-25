@@ -314,4 +314,4 @@ PR #227 按 `docs/reviews/2026-09-26-ui-copy-audit.md` 重构了文案。那份�
 
 **不在本次范围**
 
-- Core 侧模型生成的语气：`Magic-Resume-Core` 的 `analyze-resume.tool.ts` 在分数 ≥ 60 时允许「a light, warm touch」（`VERDICT_LEVITY_FLOOR`）。前端 fallback 已是专业语气，但模型实时生成的评语仍可能带俏皮，需要在 Core 另开改动统一。
+- 后端模型生成的语气：简历分析工具在分数 ≥ 60 时允许「a light, warm touch」。前端 fallback 已是专业语气，但模型实时生成的评语仍可能带俏皮，需要在后端另开改动统一。

@@ -15,7 +15,7 @@ type Translate = (
 /**
  * 码 → 这次失败该显示的话。
  *
- * 文案归前端（ADR-0018）：这个产品里语言是客户端运行时开关（`setPreferredLanguage` 只调
+ * 文案归前端：这个产品里语言是客户端运行时开关（`setPreferredLanguage` 只调
  * `changeLanguage`，不刷新也不重发请求），而 agent 的错误会进聊天记录并持久化——服务端
  * 本地化的串会留下一份永远改不回来的中英混排会话历史。
  *

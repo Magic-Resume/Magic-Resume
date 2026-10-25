@@ -204,7 +204,7 @@ GEO = SEO（让 AI 搜得到你）+ RAG（让 AI 愿意引用你）
 
 ## 7. 新内容评审清单（W3）
 
-来源：[Magic-Core `docs/specs/geo-visibility/design.md` §6.4](../../../../Magic-Resume-Core/docs/specs/geo-visibility/design.md#64-内容格式规范所有新内容的评审清单)。所有新内容逐项评审：
+所有新内容逐项评审：
 
 - [ ] **结论先行**：第一段用 2–3 句给出结论，脱离上下文也能完整引用。
 - [ ] **短句**：关键事实用短陈述句表达（参考：被引用句子平均约 9 个词），每段只写一个事实。
