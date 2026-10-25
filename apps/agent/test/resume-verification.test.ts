@@ -50,7 +50,7 @@ test('ResumeVerification flags new organizations, credentials, dates and metrics
   assert.match(JSON.stringify(captured.result), /Confirm their source/);
 });
 
-test('ResumeVerification accepts facts the user supplied in an attachment', async () => {
+test('ResumeVerification checks new facts against attachment text, and degrades for unreadable attachments', async () => {
   const fromAttachment = {
     ...resume,
     sections: {
@@ -65,33 +65,56 @@ test('ResumeVerification accepts facts the user supplied in an attachment', asyn
       ],
     },
   };
-  const attachmentText =
-    'Example Harbor Studio | Frontend Intern | 2024.05 - 2024.09\nCut page load time by 30%.';
-  const request = toolRequest(
-    'write_file',
-    {
-      file_path: '/workspace/resume.json',
-      content: JSON.stringify(fromAttachment),
-    },
-    {
-      state: {
-        files: seedResume(resume),
-        messages: [
-          new HumanMessage('Rewrite my resume from the attached PDF.'),
-          new ToolMessage({
-            content: attachmentText,
-            name: 'read_attachment',
-            tool_call_id: 'call-attachment',
-          }),
-        ],
+  const write = () =>
+    toolRequest(
+      'write_file',
+      {
+        file_path: '/workspace/resume.json',
+        content: JSON.stringify(fromAttachment),
       },
-    },
+      {
+        state: {
+          files: seedResume(resume),
+          messages: [
+            new HumanMessage('Rewrite my resume from the attached PDF.'),
+            // Graph state keeps only a reference to what was read, never the text.
+            new ToolMessage({
+              content: '{"attachmentRead":{"name":"resume.pdf"}}',
+              name: 'read_attachment',
+              tool_call_id: 'call-attachment',
+            }),
+          ],
+        },
+      },
+    );
+  const attachments = (text: string, unreadable = false) => ({
+    evidence: () => Promise.resolve({ text, unreadable }),
+  });
+  const verified = await captureCustom(() =>
+    Promise.resolve(
+      runTool(
+        createResumeVerification(
+          resume,
+          attachments(
+            'Example Harbor Studio | Frontend Intern | 2024.05 - 2024.09\nCut page load time by 30%.',
+          ),
+        ),
+        write(),
+      ),
+    ),
   );
-  const captured = await captureCustom(() =>
-    Promise.resolve(runTool(createResumeVerification(resume), request)),
+  assert.deepEqual(verified.events, []);
+  const unreadable = await captureCustom(() =>
+    Promise.resolve(
+      runTool(createResumeVerification(resume, attachments('', true)), write()),
+    ),
   );
-  assert.ok(
-    !captured.events.some((event) => event.name === 'resume_verification'),
-    JSON.stringify(captured.events),
+  assert.deepEqual(
+    unreadable.events.map((event) => event.data),
+    [{ status: 'degraded', reason: 'attachment_unverifiable' }],
+  );
+  assert.doesNotMatch(
+    JSON.stringify(unreadable.result),
+    /Confirm their source/,
   );
 });

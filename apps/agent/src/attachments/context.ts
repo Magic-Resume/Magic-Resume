@@ -188,6 +188,21 @@ export async function createAttachmentContext(
       },
     ),
     read,
+    /** Full text of every attachment in the conversation, for fact checks; graph state keeps only references. */
+    async evidence(): Promise<{ text: string; unreadable: boolean }> {
+      const texts: string[] = [];
+      let unreadable = false;
+      for (const key of allowed.keys()) {
+        try {
+          const source = await load(key);
+          if (source.kind === 'images') unreadable = true;
+          else texts.push(source.text);
+        } catch {
+          unreadable = true;
+        }
+      }
+      return { text: texts.join('\n'), unreadable };
+    },
     async hydrate(messages: BaseMessage[]): Promise<BaseMessage[]> {
       const hydrated: BaseMessage[] = [];
       for (const message of messages) {
