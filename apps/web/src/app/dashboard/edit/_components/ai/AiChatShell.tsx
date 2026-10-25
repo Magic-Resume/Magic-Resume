@@ -1145,29 +1145,36 @@ export default function AiChatShell({
           } else if (ev.type === "resume_verification") {
             // 反捏造闸门（确定性校验）的产出。后端一直在算，前端此前没有分支消费，
             // 校验结果跑完就丢了。走 widget 通道落成一张提示卡，不拦截改动。
-            const items = (
-              ev.payload as
-                | {
-                    suspectedFabrications?: unknown;
-                    status?: unknown;
-                    reason?: unknown;
-                  }
-                | undefined
-            )?.suspectedFabrications;
+            const verification = ev.payload as
+              | {
+                  suspectedFabrications?: unknown;
+                  status?: unknown;
+                  reason?: unknown;
+                }
+              | undefined;
+            const items = verification?.suspectedFabrications;
             if (Array.isArray(items) && items.length) {
               upsertWidget(`verification:${ev.runId ?? "run"}`, {
                 kind: "fabrication_notice",
                 props: { items },
               });
-            } else if (
-              (ev.payload as { status?: unknown } | undefined)?.status ===
-              "degraded"
-            ) {
+            } else if (verification?.status === "degraded") {
+              // 附件是扫描件或图片时读不出文字，没法核对；文案要说清是附件的原因，不是缺简历。
+              const attachment =
+                verification.reason === "attachment_unverifiable";
               upsertWidget(`verification:${ev.runId ?? "run"}`, {
                 kind: "fabrication_notice",
                 props: {
-                  title: t("aiLab.widgets.verification.degradedTitle"),
-                  body: t("aiLab.widgets.verification.degradedBody"),
+                  title: t(
+                    attachment
+                      ? "aiLab.widgets.verification.attachmentTitle"
+                      : "aiLab.widgets.verification.degradedTitle",
+                  ),
+                  body: t(
+                    attachment
+                      ? "aiLab.widgets.verification.attachmentBody"
+                      : "aiLab.widgets.verification.degradedBody",
+                  ),
                 },
               });
             }

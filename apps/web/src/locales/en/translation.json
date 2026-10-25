@@ -1932,7 +1932,11 @@
         "title": "Sources not found for the following",
         "body": "The following names were introduced in this edit and do not appear in your original resume or this conversation. Verify them before sending.",
         "degradedTitle": "This edit was not fact-checked",
-        "degradedBody": "No usable original resume was available, so the edit could not be fact-checked. Load or reopen the resume before asking AI to edit it, to avoid adding unverified information."
+        "degradedBody": "No usable original resume was available, so the edit could not be fact-checked. Load or reopen the resume before asking AI to edit it, to avoid adding unverified information.",
+        "attachmentTitle": "The attachment was not fact-checked",
+        "attachmentBody": "The attachment is a scan or an image, so new names and figures in this edit could not be checked against it. Compare them with the attachment before sending.",
+        "showMore": "Show {{count}} more",
+        "collapse": "Show less"
       },
       "research": {
         "title": "Job research",
