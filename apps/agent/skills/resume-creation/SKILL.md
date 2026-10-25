@@ -20,6 +20,10 @@ Creation requires cocreate mode. If no resume exists, read `assets/blank-resume.
 
 ## Procedure
 
+Before collecting or drafting, call `write_todos` with 3–5 user-facing steps, such as confirm the target, gather evidence, draft sections, and check the proposal. Mark the current step in_progress. After each completed step, call `write_todos` again with the full updated list. Do not mark skipped or blocked work as completed; describe the remaining gap.
+
+Read `references/collection.md` for questions, skip handling and early-career sources.
+
 1. Read the current source when present. Reuse facts already supplied instead of asking for them again.
 2. Use `request_form` with `create_target`, then `create_inventory`.
 3. Collect one entry at a time with `create_education`, `create_experience`, `create_project`, and `create_skills`, only for the materials the user has. Each step can be skipped. Use `ask_choice` only when another entry is a necessary decision.

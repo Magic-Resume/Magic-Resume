@@ -54,15 +54,15 @@ test('the backend Zod registry has exactly the frontend card names', async () =>
     true,
   );
 });
-test('five skills have valid discovery metadata, explicit permissions and complete procedure sections', async () => {
+test('workflow and import skills have valid metadata, explicit permissions and complete procedure sections', async () => {
   const catalog = loadSkillCatalog(readSettings({}).skillsDir);
   assert.deepEqual(
     [...catalog.keys()].sort(),
-    Object.values(MODE_SKILL).sort(),
+    [...Object.values(MODE_SKILL), 'resume-parse'].sort(),
   );
   for (const [name, meta] of catalog) {
     assert.ok(meta.description);
-    assert.ok(meta.allowedTools.length);
+    assert.equal(meta.allowedTools.length === 0, name === 'resume-parse');
     const source = await readFile(
       `${readSettings({}).skillsDir}/${name}/SKILL.md`,
       'utf8',

@@ -26,6 +26,7 @@ export function failureEvents(
 export class EventMapper {
   private readonly childRuns = new Set<string>();
   private readonly toolInputs = new Map<string, Record<string, unknown>>();
+  private readonly loadedSkills = new Set<string>();
   private planned = false;
   private begun = false;
   begin(): AgentEvent[] {
@@ -34,6 +35,16 @@ export class EventMapper {
     return [{ type: 'run_started' }];
   }
   constructor(private readonly resumes: ResumeAccumulator) {}
+  skillLoaded(skill: string): AgentEvent[] {
+    if (this.loadedSkills.has(skill)) return [];
+    this.loadedSkills.add(skill);
+    return [
+      {
+        type: 'skill_loaded',
+        payload: { skill, path: `/skills/${skill}/SKILL.md` },
+      },
+    ];
+  }
   isChild(event: GraphEvent) {
     return Boolean(
       event.parent_ids?.some((id) => this.childRuns.has(id)) ||
@@ -216,10 +227,7 @@ export class EventMapper {
         name === 'read_file' &&
         /^\/skills\/[^/]+\/SKILL\.md$/.test(path)
       )
-        result.push({
-          type: 'skill_loaded',
-          payload: { skill: path.split('/')[2], path },
-        });
+        result.push(...this.skillLoaded(path.split('/')[2]));
       if (!failed && name === 'web_search') {
         const sources = Array.isArray(output.sources) ? output.sources : [];
         result.push({

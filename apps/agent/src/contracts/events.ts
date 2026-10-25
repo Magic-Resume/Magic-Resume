@@ -75,6 +75,17 @@ export type AgentEvent =
       };
     }
   | {
+      type: 'tool_result';
+      payload: {
+        kind: 'pdf_progress';
+        phase: 'extracting' | 'analyzing';
+        charCount?: number;
+        fields?: string[];
+        mode?: 'vision';
+        pageCount?: number;
+      };
+    }
+  | {
       type: 'tool_completed';
       payload: { toolCallId?: string; toolName: string };
     }
