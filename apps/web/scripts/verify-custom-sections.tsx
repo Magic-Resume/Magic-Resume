@@ -65,7 +65,7 @@ const resume = {
         visible: true,
         name: LEGACY_ITEM_NAME,
         date: CUSTOM_DATE,
-        summary: '<ul><li>熟练使用 Claude Code、Cursor、Codex</li><li>英语 CET-4、CET-6</li></ul>',
+        summary: '<ul><li>熟练使用 Claude Code、Cursor、Codex</li><li>外语 CET-4、CET-6</li></ul>',
         customFields: [
           { id: 'cf1', name: CUSTOM_FIELD_NAME, value: CUSTOM_FIELD_VALUE },
         ],

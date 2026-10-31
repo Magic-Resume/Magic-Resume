@@ -9,6 +9,7 @@ import Seo from '@/components/Seo.astro';
 import SiteVerification from '@/components/SiteVerification.astro';
 import RefForward from '@/components/RefForward.astro';
 import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
+import { SHARE_IMAGE_PATH } from '@/consts';
 
 interface Props {
   locale: Locale;
@@ -36,10 +37,8 @@ const alternates = LOCALES.map((loc) => ({
   href: new URL(`/${loc}`, Astro.site).href,
 }));
 const xDefault = new URL(`/${DEFAULT_LOCALE}`, Astro.site).href;
-// Purpose-built share card: 1200×630 (the aspect every platform crops to) as
-// JPEG. The old source was a 2940×1592 PNG at 691 KB — large enough that
-// crawlers with a fetch budget would time out and render no card at all.
-const ogImage = new URL('/magic-resume-og.jpg', Astro.site).href;
+// Keep the current editor screenshot separate from earlier cached covers.
+const ogImage = new URL(SHARE_IMAGE_PATH, Astro.site).href;
 ---
 
 <!doctype html>

@@ -1,7 +1,7 @@
 ---
 import { articleAuthorSchema, getAuthor } from '@/data/authors.mjs';
 import { DEFAULT_LOCALE } from '@/i18n/ui';
-import { ORGANIZATION_ID } from '@/consts';
+import { ORGANIZATION_ID, SHARE_IMAGE_PATH } from '@/consts';
 
 interface Alternate {
   lang: string;
@@ -33,7 +33,7 @@ const {
   author,
   authorSlug,
   alternates = [],
-  image = new URL('/magic-resume-og.jpg', Astro.site).href,
+  image = new URL(SHARE_IMAGE_PATH, Astro.site).href,
 } = Astro.props;
 
 const xDefault = alternates.find((alt) => alt.lang === (DEFAULT_LOCALE === 'zh' ? 'zh-CN' : DEFAULT_LOCALE))?.href
