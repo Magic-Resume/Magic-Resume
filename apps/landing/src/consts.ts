@@ -66,6 +66,8 @@ export function dashboardLink(placement: CtaPlacement, locale: Locale): string {
  */
 export const ORGANIZATION_ID = 'https://www.magic-resume.cn/#organization';
 
+export const SHARE_IMAGE_PATH = '/magic-resume-editor-20261031.jpg';
+
 export const GITHUB = {
   repo: 'https://github.com/Magic-Resume/Magic-Resume',
   issues: 'https://github.com/Magic-Resume/Magic-Resume/issues',
