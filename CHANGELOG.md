@@ -2,6 +2,11 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v3.0.1](https://github.com/Magic-Resume/Magic-Resume/compare/v3.0.0...v3.0.1) (2026-10-31)
+
+## 🐛 Bug Fixes
+- [`f633c10`](https://github.com/Magic-Resume/Magic-Resume/commit/f633c10)  fix(landing): refresh editor share cover (#272) (Issues: [`#272`](https://github.com/Magic-Resume/Magic-Resume/issues/272))
+
 # [v3.0.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.8.1...v3.0.0) (2026-10-25)
 
 ## ✨ New Features
