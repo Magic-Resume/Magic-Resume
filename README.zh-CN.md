@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://magic-resume.cn">
-    <img width="112" alt="知遇 Kenmet" src="./apps/web/public/magic-resume-mark.png">
+    <img width="112" alt="知遇" src="./apps/web/public/magic-resume-mark.png">
   </a>
 
-  <h1>知遇 Kenmet</h1>
+  <h1>知遇</h1>
 
   <p><strong>开源的简历编辑器，自带可自部署的 AI agent。</strong><br/>简历只保存在你的浏览器里，AI 用你自己的模型 Key。</p>
 
@@ -31,7 +31,7 @@
 
 **知遇（原名 Magic Resume）是开源的 AI 求职工作台：AI 就地提出简历修改建议，你逐条决定采纳或跳过。** MIT 协议内核，20 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
 
-> 知遇 Kenmet（原名 Magic Resume，magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立项目。
+> 知遇（原名 Magic Resume，magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立项目。
 
 本仓库是开源版，包含编辑器、AI 简历助手 **Polaris**，以及驱动 Polaris 的 agent 服务。不需要账号，服务器上也没有简历库：简历和每份简历唯一的对话都保存在浏览器的 IndexedDB 里，Polaris 用你自己的 Key 调用你配置的模型服务商。模拟面试和多设备云同步由托管版 [magic-resume.cn](https://magic-resume.cn) 提供。
 

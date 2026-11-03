@@ -70,7 +70,7 @@ export const ORGANIZATION_ID = 'https://www.magic-resume.cn/#organization';
 
 /** A page title with the brand suffix for its locale. */
 export function brandTitle(title: string, locale: Locale): string {
-  return `${title} | ${BRAND.title[locale]}`;
+  return `${title} | ${BRAND.display[locale]}`;
 }
 
 export const SHARE_IMAGE_PATH = '/magic-resume-editor-20261031.jpg';
