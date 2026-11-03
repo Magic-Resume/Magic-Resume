@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://magic-resume.cn">
-    <img width="112" alt="Magic Resume" src="./apps/web/public/magic-resume-mark.png">
+    <img width="112" alt="知遇 Kenmet" src="./apps/web/public/magic-resume-mark.png">
   </a>
 
-  <h1>Magic Resume</h1>
+  <h1>知遇 Kenmet</h1>
 
   <p><strong>An open-source resume editor with a self-hosted AI agent.</strong><br/>Your resumes stay in your browser. The AI runs on your own model key.</p>
 
@@ -29,9 +29,9 @@
 
 ![Polaris, the AI resume assistant: describe what to change, pick a skill, or choose the collaboration mode and model](./docs/images/readme/ai-lab.png)
 
-**Magic Resume is an open-source AI resume workbench: the AI proposes edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
+**Kenmet (formerly Magic Resume) is an open-source AI job-search workbench: the AI proposes resume edits in place and you accept or skip each one.** MIT-licensed core, 20 templates, six modes (create, optimize, analyze, translate, interview, export), cloud sync.
 
-> Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams.
+> Kenmet (formerly Magic Resume, magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent projects maintained by different teams.
 
 This repository is the open-source edition. It contains the editor and **Polaris**, the AI resume assistant, together with the agent service that powers it. There is no account and no resume library on a server: resumes and one conversation per resume live in your browser's IndexedDB, and Polaris calls the model provider you configure with your own key. Interviews and multi-device cloud sync are part of the hosted product at [magic-resume.cn](https://magic-resume.cn).
 
@@ -61,7 +61,7 @@ This repository is the open-source edition. It contains the editor and **Polaris
 - **Live preview at print fidelity.** The page re-renders as you type; exports match what you see.
 - **20 templates.** ATS-friendly, each with its own color, font, density, spacing and layout controls, on A4 or Letter.
 - **Flexible sections.** Add, rename, reorder and hide sections; rich text with Tiptap; custom fields.
-- **Import and export.** Open Magic Resume JSON offline. Export to PDF, PNG or JSON.
+- **Import and export.** Open Kenmet JSON offline. Export to PDF, PNG or JSON.
 - **Local-first.** Everything is stored in IndexedDB. Nothing leaves the browser unless you use AI.
 - **Light and dark themes, English and Chinese.**
 
@@ -264,7 +264,7 @@ Contributions of every size are welcome: bug fixes, templates, skills, translati
 
 ## License
 
-[MIT](./LICENSE) © 2026 [Magic Resume Team](https://github.com/Magic-Resume)
+[MIT](./LICENSE) © 2026 [Kenmet Team](https://github.com/Magic-Resume)
 
 <!-- LINK GROUP -->
 

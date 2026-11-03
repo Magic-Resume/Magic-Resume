@@ -1,6 +1,6 @@
-# Magic Resume docs
+# Kenmet docs
 
-The contributor & integrator handbook for **Magic Resume** — running it, hacking
+The contributor & integrator handbook for **Kenmet** — running it, hacking
 on it, and wiring AI tools (MCP) into it. Built with [Mintlify](https://mintlify.com),
 bilingual (English / 中文). Migrated off Nextra.
 

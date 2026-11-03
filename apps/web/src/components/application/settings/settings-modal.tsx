@@ -10,7 +10,7 @@ import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
  * Product settings modal shell.
  *
  * The installed example shipped complete demo pages and its own global theme.
- * Magic Resume only consumes the shell: the two-phase mount, backdrop fade and
+ * Kenmet only consumes the shell: the two-phase mount, backdrop fade and
  * scale/blur panel transitions stay consistent with the product motion rules, while
  * navigation and page content remain owned by the product.
  */

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 /**
- * The product logomark — the Magic Resume brand mark, shared with the Astro
+ * The product logomark — the Kenmet brand mark, shared with the Astro
  * marketing site (apps/landing). Rendered as a clean point of light on the black
  * workbench: no tile, no border, just the mark scaled to `size`.
  */

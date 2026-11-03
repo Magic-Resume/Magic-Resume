@@ -1,13 +1,13 @@
 ---
 title: Introduction
-description: "Magic Resume is an open-source, AI-native resume platform, and this page covers its system architecture, deployment modes, and tech stack."
+description: "Kenmet is an open-source, AI-native resume platform, and this page covers its system architecture, deployment modes, and tech stack."
 ---
 
 Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
 
-The Magic Resume documentation site is the contributor and integrator handbook. The `Magic-Resume` repo holds the frontend, the MCP server, and the shared schema, while the backend runs as a **separate deployment**.
+The Kenmet documentation site is the contributor and integrator handbook. The `Magic-Resume` repo holds the frontend, the MCP server, and the shared schema, while the backend runs as a **separate deployment**.
 
-**Magic Resume** is an open-source, AI-native resume platform built around three ideas:
+**Kenmet** is an open-source, AI-native resume platform built around three ideas:
 
 - **Local-first by default** — all resume data lives in IndexedDB. No account or backend is required to run the app. Cloud sync is opt-in.
 - **Schema-first templates** — every resume is a typed Zod value. Templates render from a shared schema, and AI tools edit resumes via JSON Patch against that schema (no guessing).
@@ -19,7 +19,7 @@ This site is the contributor and integrator handbook. If you want to use the hos
 
 This repo holds the frontend, the MCP server, and the shared schema. The backend runs as a **separate deployment**. The frontend talks to **one gateway origin**, which routes `/api/*` by path prefix to the backend services.
 
-![Magic Resume system topology](/images/topology.png)
+![Kenmet system topology](/images/topology.png)
 
 ### 1. `Magic-Resume` (this repo)
 

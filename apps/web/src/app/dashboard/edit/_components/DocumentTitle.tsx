@@ -5,7 +5,7 @@ import { useResumeDocumentStore } from '@/store/resume/document';
 
 // Static SSR fallback (mirrors metaConfig.Edit) — used before a resume loads
 // and restored when leaving the editor.
-const DEFAULT_TITLE = '编辑简历 - 在线简历编辑器 | Magic Resume';
+const DEFAULT_TITLE = '编辑简历 - 在线简历编辑器 | 知遇 Kenmet';
 
 /**
  * Syncs the browser tab title with the active resume's name.
@@ -16,7 +16,7 @@ export default function DocumentTitle() {
   const name = useResumeDocumentStore((s) => s.activeResume?.name);
 
   useEffect(() => {
-    document.title = name ? `${name} | Magic Resume` : DEFAULT_TITLE;
+    document.title = name ? `${name} | 知遇 Kenmet` : DEFAULT_TITLE;
   }, [name]);
 
   useEffect(

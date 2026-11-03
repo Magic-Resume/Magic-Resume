@@ -1,5 +1,5 @@
 ---
-title: Magic Resume Schema
+title: Kenmet Schema
 type: architecture
 status: Living
 owner: kaihuang
@@ -11,7 +11,7 @@ repos: [Magic-Resume]
 related: [architecture/template-system]
 ---
 
-# Magic Resume Schema
+# Kenmet Schema
 
 > Public packages moved to [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) on 2026-10-25. The `packages/resume-schema`, `packages/resume-templates`, `packages/design-system`, `packages/icons`, `packages/utils` and `packages/mcp` source paths and package build commands below refer to that repository. The editor consumes published `@magic-resume-kit/*` packages; its local workspaces are listed in the root README.
 

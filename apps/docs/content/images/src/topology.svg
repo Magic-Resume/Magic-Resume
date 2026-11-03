@@ -17,7 +17,7 @@ text{font-family:'PingFang SC','Helvetica Neue',Arial,sans-serif;fill:#202124}
 </style>
 <defs><marker id="a" markerWidth="11" markerHeight="11" refX="8" refY="4" orient="auto"><path d="M0 0L9 4L0 8Z" fill="#546e7a"/></marker></defs>
 <rect width="1080" height="620" fill="#fff"/>
-<text x="540" y="36" text-anchor="middle" class="title">Magic Resume · system topology</text>
+<text x="540" y="36" text-anchor="middle" class="title">Kenmet · system topology</text>
 <text x="540" y="59" text-anchor="middle" class="sub">Two entry points (browser, AI tool) reach one gateway origin, which routes /api/* by path prefix</text>
 
 <!-- clients -->

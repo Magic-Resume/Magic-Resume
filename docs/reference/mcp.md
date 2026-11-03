@@ -1,5 +1,5 @@
 ---
-title: Magic Resume MCP
+title: Kenmet MCP
 type: reference
 status: Living
 owner: kaihuang
@@ -11,15 +11,15 @@ repos: [Magic-Resume]
 related: [architecture/overview]
 ---
 
-# Magic Resume MCP
+# Kenmet MCP
 
-`@magic-resume-kit/mcp` is a local stdio MCP package for Claude Code, Codex, and other MCP-compatible AI tools. It does not require Magic Resume to run a separate public MCP server port.
+`@magic-resume-kit/mcp` is a local stdio MCP package for Claude Code, Codex, and other MCP-compatible AI tools. It does not require Kenmet to run a separate public MCP server port.
 
 Source and releases: [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/mcp). Install this package separately; the local editor has no account API for MCP to connect to.
 
 ## Setup
 
-Create a personal access token in the hosted Magic Resume app, then configure the CLI:
+Create a personal access token in the hosted Kenmet app, then configure the CLI:
 
 ```bash
 npx -y @magic-resume-kit/mcp config set --api-url "https://your-api.example.com/api" --pat "mr_pat_xxx"
@@ -76,7 +76,7 @@ Prompts tell AI clients to follow the same safe flow: list, read, preview patch,
 
 ## Boundary
 
-MCP calls Magic Resume Core API over HTTP using PAT authentication:
+MCP calls the Kenmet Core API over HTTP using PAT authentication:
 
 ```text
 Authorization: Bearer <personal-access-token>

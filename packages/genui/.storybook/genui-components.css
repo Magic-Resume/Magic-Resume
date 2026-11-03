@@ -1,7 +1,7 @@
 @layer components {
   /* Agent Progress — measured reconstruction of Web UI's collapsible work block.
      The card geometry and interactions stay unchanged; only its surface color
-     follows Magic Resume's semantic raised background. */
+     follows Kenmet's semantic raised background. */
   .agent-progress-stage {
     display: grid;
     width: 100%;

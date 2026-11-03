@@ -1,11 +1,11 @@
 ---
 name: magic-resume
-description: How AI agents integrate with Magic Resume — read and safely edit a user's resumes through the native MCP server (@magic-resume-kit/mcp). Covers install, auth (PAT), and the patch-based editing contract.
+description: How AI agents integrate with Kenmet — read and safely edit a user's resumes through the native MCP server (@magic-resume-kit/mcp). Covers install, auth (PAT), and the patch-based editing contract.
 ---
 
-# Magic Resume integration skill
+# Kenmet integration skill
 
-Magic Resume is an open-source, AI-native resume platform. AI tools integrate
+Kenmet (知遇, formerly Magic Resume) is an open-source, AI-native job-search platform. AI tools integrate
 through its **native MCP server** (`@magic-resume-kit/mcp`), a stdio process your
 tool spawns — the same data layer the web app uses. These docs are for
 **developers/integrators**, not end users of the hosted product.

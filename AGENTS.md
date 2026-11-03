@@ -2,7 +2,7 @@
 
 ## Project
 
-Magic Resume is a Turborepo monorepo for a local-first resume editor, Polaris (the BYOK AI assistant) with its self-hosted agent, and the marketing and docs sites. Shared resume packages and MCP are maintained in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) and published on npm as `@magic-resume-kit/*`.
+Kenmet (知遇, formerly Magic Resume) is a Turborepo monorepo for a local-first resume editor, Polaris (the BYOK AI assistant) with its self-hosted agent, and the marketing and docs sites. Shared resume packages and MCP are maintained in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) and published on npm as `@magic-resume-kit/*`.
 
 ## Workspaces
 
@@ -13,7 +13,7 @@ Magic Resume is a Turborepo monorepo for a local-first resume editor, Polaris (t
 - `@magic-resume-kit/resume-templates`: template DSL, renderer, registry, manifests, and template assets convention. Consumed from npm with an exact version.
 - `packages/genui`: shared components and widgets for Polaris. Keep its Tailwind `@source` and Docker dependency entry.
 - `@magic-resume-kit/design-system`, `@magic-resume-kit/icons`, `@magic-resume-kit/utils`: npm dependencies for tokens and styles, icons, and small helpers. Keep Tailwind scanning the installed package `dist` directories.
-- `@magic-resume-kit/mcp`: independently installed stdio MCP CLI/server, maintained in the kit repository. It talks to the Magic Resume API through PATs, not the local editor's IndexedDB; it is not a Web dependency.
+- `@magic-resume-kit/mcp`: independently installed stdio MCP CLI/server, maintained in the kit repository. It talks to the Kenmet API through PATs, not the local editor's IndexedDB; it is not a Web dependency.
 - `packages/tsconfig`: shared TypeScript configs.
 
 ## Commands

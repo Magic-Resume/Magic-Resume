@@ -1,4 +1,4 @@
-# Contributing to Magic Resume
+# Contributing to Kenmet
 
 Thanks for your interest in contributing! Contributions of every size are welcome — bug fixes, templates, Polaris skills, docs, translations, or features.
 
@@ -152,7 +152,7 @@ pnpm --filter @magic-resume/web i18n:check
 3. Link any related issue (e.g. `Closes #123`).
 4. Make sure CI, lint, and tests are green.
 
-A maintainer will review as soon as they can. Thanks for helping make Magic Resume better! 🎉
+A maintainer will review as soon as they can. Thanks for helping make Kenmet better! 🎉
 
 ---
 
