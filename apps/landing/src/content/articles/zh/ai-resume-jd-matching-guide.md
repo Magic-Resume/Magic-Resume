@@ -9,7 +9,7 @@ hreflang:
     href: https://www.magic-resume.cn/zh/blog/ai-resume-jd-matching-guide
   - lang: en
     href: https://www.magic-resume.cn/en/blog/ai-resume-jd-matching-guide
-author: Magic Resume Editorial
+author: 知遇编辑部
 datePublished: 2026-08-29
 dateModified: 2026-08-29
 primaryIntent: 简历 JD 匹配
@@ -46,7 +46,7 @@ JD 匹配不是把职位描述里的词复制到简历里，而是把岗位要�
 
 一个可靠的 AI 简历工作流应该展示：匹配到的 JD 片段、建议修改、修改理由和未覆盖的要求。你确认后再采纳。这样既能提高 ATS 可读性，也能保留自己的语气和事实。
 
-Magic Resume 的 [JD 匹配工具](/zh/tools/jd-matcher)会把岗位信号和简历段落并排展示；你可以先用合成示例体验，再把结果带回自己的简历。完成修改后，记得导出一份 PDF 并人工通读。
+知遇的 [JD 匹配工具](/zh/tools/jd-matcher)会把岗位信号和简历段落并排展示；你可以先用合成示例体验，再把结果带回自己的简历。完成修改后，记得导出一份 PDF 并人工通读。
 
 ### 最后检查清单
 

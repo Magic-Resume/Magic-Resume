@@ -9,7 +9,7 @@ hreflang:
     href: https://www.magic-resume.cn/zh/blog/ats-resume-checklist
   - lang: en
     href: https://www.magic-resume.cn/en/blog/ats-resume-checklist
-author: Magic Resume Editorial
+author: 知遇编辑部
 datePublished: 2026-08-28
 dateModified: 2026-08-28
 primaryIntent: ATS 简历检查
@@ -32,6 +32,6 @@ ATS 主要读取简历里的文本和结构，不会因为“看起来像 ATS”
 7. **篇幅克制**：删掉与目标岗位无关的旧内容，给最相关的证据留空间。
 8. **人工通读**：检查拼写、链接、数字和公司名称；自动化只能减少重复劳动，不能替你承担事实责任。
 
-[Magic Resume 模板页](/zh/tools/resume-templates)提供了适合不同岗位的起点。模板只是版式，真正影响匹配的是你写出的证据和它们的顺序。
+[知遇模板页](/zh/tools/resume-templates)提供了适合不同岗位的起点。模板只是版式，真正影响匹配的是你写出的证据和它们的顺序。
 
 如果某个模板在浏览器里看起来正常、复制出来却顺序混乱，就不要带着它投递。先修复结构，再谈颜色和装饰。

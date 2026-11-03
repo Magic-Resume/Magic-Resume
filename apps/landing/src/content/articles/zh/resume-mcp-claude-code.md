@@ -9,7 +9,7 @@ hreflang:
     href: https://www.magic-resume.cn/zh/blog/resume-mcp-claude-code
   - lang: en
     href: https://www.magic-resume.cn/en/blog/resume-mcp-claude-code
-author: Magic Resume Editorial
+author: 知遇编辑部
 datePublished: 2026-08-27
 dateModified: 2026-10-18
 primaryIntent: resume MCP Claude Code
@@ -21,7 +21,7 @@ sources:
 
 ## 先说结论
 
-Resume MCP 是一个让 AI 编程工具通过标准协议读取和修改 Magic Resume 简历的本地连接器。安全的使用方式不是把整份简历交给模型自由重写，而是：读取明确范围、预览结构化补丁、确认后再写入。
+Resume MCP 是一个让 AI 编程工具通过标准协议读取和修改知遇中简历的本地连接器。安全的使用方式不是把整份简历交给模型自由重写，而是：读取明确范围、预览结构化补丁、确认后再写入。
 
 ### 它能做什么
 
@@ -30,12 +30,12 @@ Resume MCP 是一个让 AI 编程工具通过标准协议读取和修改 Magic R
 - 在写入前生成 patch preview，展示将改变的字段。
 - 写入后继续用网页编辑器检查并导出 PDF。
 
-MCP 是连接层，不是新的简历数据库；权限和数据边界仍由 Magic Resume 的 API 与本地配置决定。不要把个人访问令牌提交到代码仓库，也不要把真实简历粘贴到公开 issue。
+MCP 是连接层，不是新的简历数据库；权限和数据边界仍由知遇的 API 与本地配置决定。不要把个人访问令牌提交到代码仓库，也不要把真实简历粘贴到公开 issue。
 
 ### 推荐的最小流程
 
 1. 从 npm 安装 [`@magic-resume-kit/mcp`](https://www.npmjs.com/package/@magic-resume-kit/mcp)，MCP 客户端里用 `npx -y @magic-resume-kit/mcp mcp` 启动；源码在 magic-resume-kit 的 [packages/mcp](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/mcp)。
-2. 在 Magic Resume 创建个人访问令牌，并只授予必要范围。
+2. 在知遇创建个人访问令牌，并只授予必要范围。
 3. 在 Claude Code、Cursor 或 Windsurf 中配置本地 MCP server。
 4. 先问“列出我的简历”，确认连接到的是正确账户。
 5. 要求模型先生成预览，再决定是否应用修改。

@@ -1,7 +1,7 @@
 ---
 import { articleAuthorSchema, getAuthor } from '@/data/authors.mjs';
 import { DEFAULT_LOCALE } from '@/i18n/ui';
-import { ORGANIZATION_ID, SHARE_IMAGE_PATH } from '@/consts';
+import { ORGANIZATION_ID, SHARE_IMAGE_PATH, organizationSchema } from '@/consts';
 
 interface Alternate {
   lang: string;
@@ -40,14 +40,7 @@ const xDefault = alternates.find((alt) => alt.lang === (DEFAULT_LOCALE === 'zh' 
   ?? new URL(`/${DEFAULT_LOCALE}`, Astro.site).href;
 const inLanguage = locale === 'zh' ? 'zh-CN' : 'en';
 const graph: Record<string, unknown>[] = [
-  {
-    '@type': 'Organization',
-    '@id': ORGANIZATION_ID,
-    name: 'Magic Resume',
-    url: new URL('/', Astro.site).href,
-    logo: new URL('/magic-resume-mark.png', Astro.site).href,
-    sameAs: ['https://github.com/Magic-Resume/Magic-Resume'],
-  },
+  organizationSchema(Astro.site!),
   {
     '@type': type === 'article' ? 'Article' : type === 'software' ? 'SoftwareApplication' : 'WebPage',
     '@id': `${canonical}#${type}`,

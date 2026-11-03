@@ -6,6 +6,9 @@
 /** @type {Author[]} */
 export const authors = [];
 
+/** Byline for articles without a registered author. */
+export const EDITORIAL_AUTHOR = { zh: '知遇编辑部', en: 'Kenmet Editorial' };
+
 /** @param {string | undefined} slug */
 export function getAuthor(slug) {
   return authors.find((author) => author.slug === slug);
@@ -25,9 +28,11 @@ export function articleAuthorSchema(author, locale, site) {
     sameAs: author.sameAs,
   } : {
     // Same @id as the page's Organization node, so the name must match it too:
-    // one @id carrying two names reads as two conflicting entities.
+    // one @id carrying two names reads as two conflicting entities. Literal
+    // because sync-content runs this file without type stripping; check-entity
+    // asserts it equals BRAND.name.
     '@type': 'Organization',
     '@id': 'https://www.magic-resume.cn/#organization',
-    name: 'Magic Resume',
+    name: '知遇',
   };
 }

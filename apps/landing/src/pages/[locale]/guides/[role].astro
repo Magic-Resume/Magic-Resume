@@ -2,7 +2,7 @@
 import GuideExamples from '@/components/content/GuideExamples.mjs';
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import { getGuides, guideHref, type GuidePage } from '@/lib/knowledge';
-import { dashboardLink } from '@/consts';
+import { brandTitle, dashboardLink } from '@/consts';
 export async function getStaticPaths() {
   return (await getGuides()).map((guide) => ({ params: { locale: guide.locale, role: guide.role }, props: { guide } }));
 }
@@ -12,7 +12,7 @@ const zh = guide.locale === 'zh';
 const title = zh ? `${guide.title}简历写法指南` : `${guide.title} resume writing guide`;
 const description = zh ? '用岗位写法要点和编辑示例，写清行动、范围与结果。' : 'Describe actions, scope and results with writing tips and editorial examples.';
 ---
-<ContentLayout locale={guide.locale} title={`${title} | Magic Resume`} description={description} canonical={new URL(guideHref(guide), Astro.site).href}>
+<ContentLayout locale={guide.locale} title={brandTitle(title, guide.locale)} description={description} canonical={new URL(guideHref(guide), Astro.site).href}>
   <article class="mx-auto max-w-[880px] px-5 py-14 md:px-6 md:py-24">
     <p class="eyebrow">{zh ? '岗位写法指南' : 'Role writing guide'}</p>
     <h1 class="type-heading-lg mt-4 text-ink">{title}</h1>

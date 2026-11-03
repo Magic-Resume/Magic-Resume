@@ -3,7 +3,7 @@ import ContentLayout from '@/layouts/ContentLayout.astro';
 import { MagicResumeRenderer } from '@magic-resume-kit/resume-templates/renderer/MagicResumeRenderer';
 import { templateIds, templateFacts, previewResume } from '@/data/templates';
 import { LOCALES } from '@/i18n/ui';
-import { dashboardLink } from '@/consts';
+import { brandTitle, dashboardLink } from '@/consts';
 
 export function getStaticPaths() {
   return LOCALES.flatMap((locale) => templateIds.map((id) => ({ params: { locale, id }, props: { locale, id } })));
@@ -16,7 +16,7 @@ const description = zh ? `${facts.name}：${facts.twoColumn ? '双栏' : '单栏
 const path = `/${locale}/templates/${id}`;
 const alternates = LOCALES.map((loc) => ({ lang: loc === 'zh' ? 'zh-CN' : loc, href: new URL(`/${loc}/templates/${id}`, Astro.site).href }));
 ---
-<ContentLayout locale={locale} title={`${title} | Magic Resume`} description={description} canonical={new URL(path, Astro.site).href} alternates={alternates}>
+<ContentLayout locale={locale} title={brandTitle(title, locale)} description={description} canonical={new URL(path, Astro.site).href} alternates={alternates}>
   <article class="mx-auto max-w-[1100px] px-5 py-14 md:px-6 md:py-24">
     <a href={`/${locale}/tools/resume-templates`} class="text-muted hover:text-ink">← {zh ? '简历模板' : 'Resume templates'}</a>
     <p class="eyebrow mt-8">{zh ? '模板详情' : 'Template details'} · {id}</p>

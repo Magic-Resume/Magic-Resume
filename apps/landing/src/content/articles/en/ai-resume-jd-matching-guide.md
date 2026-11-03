@@ -9,7 +9,7 @@ hreflang:
     href: https://www.magic-resume.cn/en/blog/ai-resume-jd-matching-guide
   - lang: zh-CN
     href: https://www.magic-resume.cn/zh/blog/ai-resume-jd-matching-guide
-author: Magic Resume Editorial
+author: Kenmet Editorial
 datePublished: 2026-08-29
 dateModified: 2026-08-29
 primaryIntent: resume job description matching
@@ -46,7 +46,7 @@ When you do not have a number, use scope, scale, time span, or before/after chan
 
 A trustworthy AI resume workflow shows the matched job-description passage, the proposed edit, the reason, and the requirements that remain uncovered. You accept the change only after checking it. That improves ATS readability without replacing your voice or facts.
 
-The [Magic Resume JD matching tool](/en/tools/jd-matcher) places job signals beside resume sections. Try the synthetic example first, then apply the verified changes to your own resume and read the exported PDF once more.
+The [Kenmet JD matching tool](/en/tools/jd-matcher) places job signals beside resume sections. Try the synthetic example first, then apply the verified changes to your own resume and read the exported PDF once more.
 
 ### Final checklist
 
