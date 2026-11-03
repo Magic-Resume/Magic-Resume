@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://magic-resume.cn">
-    <img width="112" alt="知遇 Kenmet" src="./apps/web/public/magic-resume-mark.png">
+    <img width="112" alt="Kenmet" src="./apps/web/public/magic-resume-mark.png">
   </a>
 
-  <h1>知遇 Kenmet</h1>
+  <h1>Kenmet</h1>
 
   <p><strong>An open-source resume editor with a self-hosted AI agent.</strong><br/>Your resumes stay in your browser. The AI runs on your own model key.</p>
 

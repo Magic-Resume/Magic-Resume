@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "知遇 Kenmet — AI 求职工作台"
+    "title": "知遇 — AI 求职工作台"
   },
   "nav": {
     "features": "功能",
@@ -185,7 +185,7 @@
       },
       {
         "q": "知遇和魔方简历（magicv.art）是同一个项目吗？",
-        "a": "不是。知遇 Kenmet（原名 Magic Resume，magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立项目。"
+        "a": "不是。知遇（原名 Magic Resume，magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立项目。"
       }
     ]
   },
@@ -197,7 +197,7 @@
     "github": "GitHub",
     "issues": "问题反馈",
     "contributors": "贡献者",
-    "copyright": "© {year} 知遇 Kenmet. 保留所有权利"
+    "copyright": "© {year} 知遇. 保留所有权利"
   },
   "landing": {
     "demo": "交互预览 · 示例简历",

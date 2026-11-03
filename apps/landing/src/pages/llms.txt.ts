@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ site }) => {
   const articles = await getArticles();
   const campus = await getCampus();
   const guides = await getGuides();
-  const body = `# ${BRAND.wordmark}
+  const body = `# ${BRAND.display.zh} ${BRAND.display.en}
 
 > ${en.meta.description}
 
