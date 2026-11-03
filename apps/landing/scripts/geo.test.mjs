@@ -85,10 +85,16 @@ test('collection sources gate includes publication and revision dates, after the
   assert.equal(articleSchema.safeParse({ ...article, authorSlug: 'unregistered' }).success, false);
 });
 
+test('an article without a byline is credited to the editorial team in its own language', () => {
+  assert.equal(articleSchema.parse(article).author, '知遇编辑部');
+  assert.equal(articleSchema.parse({ ...article, locale: 'en' }).author, 'Kenmet Editorial');
+  assert.equal(articleSchema.parse({ ...article, author: 'A named writer' }).author, 'A named writer');
+});
+
 test('empty authors ship no people; a registered author resolves to a localized biography URL', () => {
   assert.deepEqual(authors, []);
   assert.deepEqual(articleAuthorSchema(undefined, 'zh', 'https://preview.example'), {
-    '@type': 'Organization', '@id': 'https://www.magic-resume.cn/#organization', name: 'Magic Resume',
+    '@type': 'Organization', '@id': 'https://www.magic-resume.cn/#organization', name: '知遇',
   });
   const fixture = { slug: 'test-author', name: 'Test fixture', bio: 'Only a test fixture', url: 'https://example.org', sameAs: ['https://example.org/profile'] };
   for (const locale of ['zh', 'en']) {

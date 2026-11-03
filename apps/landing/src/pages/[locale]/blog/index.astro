@@ -4,6 +4,7 @@ import FeaturedArticle from '@/components/content/FeaturedArticle.astro';
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@/i18n/ui';
 import { getArticles } from '@/lib/articles';
+import { brandTitle } from '@/consts';
 
 export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { locale }, props: { locale } }));
@@ -13,7 +14,7 @@ const localeParam = Astro.params.locale;
 if (!isLocale(localeParam)) return Astro.redirect(`/${DEFAULT_LOCALE}/blog`);
 const locale = localeParam as Locale;
 const entries = await getArticles(locale);
-const title = locale === 'zh' ? '求职与 AI 简历文章 | Magic Resume' : 'Resume and job-search guides | Magic Resume';
+const title = brandTitle(locale === 'zh' ? '求职与 AI 简历文章' : 'Resume and job-search guides', locale);
 const description = locale === 'zh'
   ? '围绕 AI 简历、ATS、岗位 JD 匹配和 Resume MCP 的实操文章'
   : 'Practical guides about AI resumes, ATS checks, job-description matching, and Resume MCP.';

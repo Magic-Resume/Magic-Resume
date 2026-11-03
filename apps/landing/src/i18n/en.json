@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Magic Resume — an AI-native resume workbench"
+    "title": "Kenmet — an AI-native job-search workbench"
   },
   "nav": {
     "features": "Features",
@@ -148,7 +148,7 @@
   "openSource": {
     "eyebrow": "Open source",
     "title": "Built in the open",
-    "desc": "The Magic Resume core is MIT-licensed and built with its community. Read the code, open an issue, or star the repository",
+    "desc": "The Kenmet core is open source as the Magic-Resume repository, MIT-licensed and built with its community. Read the code, open an issue, or star the repository",
     "starCta": "Star on GitHub",
     "starsLabel": "stars",
     "contributorsLabel": "Contributors"
@@ -181,20 +181,24 @@
         "a": "The previews are interactive examples using sample data that show how the workbench works. Select Start creating to work on your own resume in the app."
       },
       {
-        "q": "Is Magic Resume the same project as the Magic Resume at magicv.art?",
-        "a": "No. Magic Resume (magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent open-source projects maintained by different teams."
+        "q": "How is Kenmet related to Magic Resume?",
+        "a": "Kenmet (知遇) is the new name of Magic Resume (magic-resume.cn), renamed in November 2026. The website, your account, and your resumes stay the same."
+      },
+      {
+        "q": "Is Kenmet the same project as the Magic Resume at magicv.art?",
+        "a": "No. Kenmet (formerly Magic Resume, magic-resume.cn) and the Magic Resume at magicv.art (魔方简历) are two independent projects maintained by different teams."
       }
     ]
   },
   "footer": {
-    "brandSubtitle": "An AI-native resume workbench",
+    "brandSubtitle": "An AI-native job-search workbench",
     "product": "Product",
     "builder": "Online builder",
     "project": "Project",
     "github": "GitHub",
     "issues": "Issues",
     "contributors": "Contributors",
-    "copyright": "© {year} Magic Resume. All rights reserved"
+    "copyright": "© {year} Kenmet. All rights reserved"
   },
   "landing": {
     "demo": "Interactive preview · Sample resume",
@@ -579,8 +583,8 @@
   },
   "team": {
     "eyebrow": "Contributors",
-    "title": "The people behind Magic Resume",
-    "subtitle": "Magic Resume is open source. These are its contributors",
+    "title": "The people behind Kenmet",
+    "subtitle": "Kenmet is open source. These are its contributors",
     "cta": "Contribute",
     "maintainer": "Maintainer",
     "commits": "{n} commits"

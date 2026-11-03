@@ -2,7 +2,7 @@
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import { campusHref, type CampusPage } from '@/lib/knowledge';
 import { pathKey } from '@/lib/public-knowledge.mjs';
-import { dashboardLink } from '@/consts';
+import { brandTitle, dashboardLink } from '@/consts';
 interface Props { page: CampusPage }
 const { page } = Astro.props;
 const title = `${page.title}校招时间线`;
@@ -10,7 +10,7 @@ const canonical = new URL(campusHref(page), Astro.site).href;
 const modified = new Date(Math.max(...page.entries.map((row) => Date.parse(row.updatedAt))));
 const schema = { '@context': 'https://schema.org', '@type': 'ItemList', name: title, url: canonical, itemListElement: page.entries.map((row, index) => ({ '@type': 'ListItem', position: index + 1, name: `${row.company}：${row.title}`, url: row.sourceUrl })) };
 ---
-<ContentLayout locale="zh" title={`${title} | Magic Resume`} description="已发布的校招进度、申请时间和官方来源。请以来源页面的最新信息为准。" canonical={canonical} modified={modified}>
+<ContentLayout locale="zh" title={brandTitle(title, 'zh')} description="已发布的校招进度、申请时间和官方来源。请以来源页面的最新信息为准。" canonical={canonical} modified={modified}>
   <script is:inline type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, '\u003c')} />
   <article class="mx-auto max-w-[1100px] px-5 py-14 md:px-6 md:py-24">
     <p class="eyebrow">校招时间线</p>

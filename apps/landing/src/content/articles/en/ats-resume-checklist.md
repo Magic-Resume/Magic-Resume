@@ -9,7 +9,7 @@ hreflang:
     href: https://www.magic-resume.cn/en/blog/ats-resume-checklist
   - lang: zh-CN
     href: https://www.magic-resume.cn/zh/blog/ats-resume-checklist
-author: Magic Resume Editorial
+author: Kenmet Editorial
 datePublished: 2026-08-28
 dateModified: 2026-08-28
 primaryIntent: ATS resume checklist
@@ -32,6 +32,6 @@ An ATS mostly reads the text and structure of a resume. It does not approve a do
 7. **Focused length**: remove old, irrelevant details so the strongest evidence has room.
 8. **Human review**: check spelling, links, numbers, and company names. Automation can reduce repetition; it cannot take responsibility for your facts.
 
-The [Magic Resume template guide](/en/tools/resume-templates) gives you a sensible starting layout for different roles. A template is only the frame—the evidence and its order do the matching work.
+The [Kenmet template guide](/en/tools/resume-templates) gives you a sensible starting layout for different roles. A template is only the frame—the evidence and its order do the matching work.
 
 If a template looks fine in a browser but copies into a scrambled text order, do not submit it yet. Fix the structure before tuning color or decoration.

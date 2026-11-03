@@ -2,6 +2,7 @@
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import { authors, authorHref, articleAuthorSchema, type Author } from '@/data/authors.mjs';
 import { LOCALES, type Locale } from '@/i18n/ui';
+import { brandTitle } from '@/consts';
 
 export function getStaticPaths() {
   return authors.flatMap((author) => LOCALES.map((locale) => ({
@@ -17,7 +18,7 @@ const alternates = LOCALES.map((loc) => ({
 }));
 const schema = { '@context': 'https://schema.org', ...articleAuthorSchema(author, locale, Astro.site!) };
 ---
-<ContentLayout locale={locale} title={`${author.name} | Magic Resume`} description={author.bio} canonical={canonical} alternates={alternates}>
+<ContentLayout locale={locale} title={brandTitle(author.name, locale)} description={author.bio} canonical={canonical} alternates={alternates}>
   <article class="mx-auto max-w-[760px] px-5 py-14 md:px-6 md:py-24">
     <p class="eyebrow">{locale === 'zh' ? '作者' : 'Author'}</p>
     <h1 class="type-heading-lg mt-4 text-ink">{author.name}</h1>

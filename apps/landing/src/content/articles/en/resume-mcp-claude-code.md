@@ -1,6 +1,6 @@
 ---
 title: "Edit a Resume with Claude Code: What Resume MCP Is and How to Use It Safely"
-description: "Resume MCP connects Magic Resume to MCP-compatible AI tools while keeping schema validation, patch previews, and user confirmation in the loop."
+description: "Resume MCP connects Kenmet to MCP-compatible AI tools while keeping schema validation, patch previews, and user confirmation in the loop."
 locale: en
 slug: resume-mcp-claude-code
 canonical: https://www.magic-resume.cn/en/blog/resume-mcp-claude-code
@@ -9,7 +9,7 @@ hreflang:
     href: https://www.magic-resume.cn/en/blog/resume-mcp-claude-code
   - lang: zh-CN
     href: https://www.magic-resume.cn/zh/blog/resume-mcp-claude-code
-author: Magic Resume Editorial
+author: Kenmet Editorial
 datePublished: 2026-08-27
 dateModified: 2026-10-18
 primaryIntent: resume MCP Claude Code
@@ -21,7 +21,7 @@ sources:
 
 ## The short answer
 
-Resume MCP is a local connector that lets AI coding tools read and edit Magic Resume resumes through a standard protocol. The safe workflow is not a free-form rewrite: read a defined scope, preview a structured patch, and write only after you confirm it.
+Resume MCP is a local connector that lets AI coding tools read and edit Kenmet resumes through a standard protocol. The safe workflow is not a free-form rewrite: read a defined scope, preview a structured patch, and write only after you confirm it.
 
 ### What it can do
 
@@ -30,12 +30,12 @@ Resume MCP is a local connector that lets AI coding tools read and edit Magic Re
 - Produce a patch preview that shows exactly which fields will change.
 - Return to the web editor to review and export a PDF after writing.
 
-MCP is a connection layer, not a second resume database. Permissions and data boundaries still come from the Magic Resume API and your local configuration. Never commit a personal access token or paste a real resume into a public issue.
+MCP is a connection layer, not a second resume database. Permissions and data boundaries still come from the Kenmet API and your local configuration. Never commit a personal access token or paste a real resume into a public issue.
 
 ### A minimal setup flow
 
 1. Install [`@magic-resume-kit/mcp`](https://www.npmjs.com/package/@magic-resume-kit/mcp) from npm and start it in your MCP client with `npx -y @magic-resume-kit/mcp mcp`; the source lives in [packages/mcp](https://github.com/Magic-Resume/magic-resume-kit/tree/main/packages/mcp) of the magic-resume-kit repository.
-2. Create a personal access token in Magic Resume with the smallest useful scope.
+2. Create a personal access token in Kenmet with the smallest useful scope.
 3. Configure the local MCP server in Claude Code, Cursor, or Windsurf.
 4. Ask it to “list my resumes” and confirm the account.
 5. Ask for a preview before applying any edit.

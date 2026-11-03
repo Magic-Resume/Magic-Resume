@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Magic Resume — AI Native 简历工作台"
+    "title": "知遇 Kenmet — AI 求职工作台"
   },
   "nav": {
     "features": "功能",
@@ -147,7 +147,7 @@
   "openSource": {
     "eyebrow": "开源",
     "title": "在开放中构建",
-    "desc": "Magic Resume 内核采用 MIT 协议，与社区共同构建；欢迎阅读源码、提交 Issue 或为项目 Star",
+    "desc": "知遇的内核以 Magic-Resume 仓库开源，采用 MIT 协议，与社区共同构建；欢迎阅读源码、提交 Issue 或为项目 Star",
     "starCta": "在 GitHub 上 Star",
     "starsLabel": "颗星",
     "contributorsLabel": "贡献者"
@@ -180,20 +180,24 @@
         "a": "此处使用示例数据演示交互，帮助了解工作台的使用方式；点击「开始制作」即可进入应用编辑自己的简历"
       },
       {
-        "q": "Magic Resume 和魔方简历（magicv.art）是同一个项目吗？",
-        "a": "不是。Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。"
+        "q": "知遇和 Magic Resume 是什么关系？",
+        "a": "知遇就是原来的 Magic Resume（magic-resume.cn），2026 年 11 月更名；网址、账号和简历都不变。"
+      },
+      {
+        "q": "知遇和魔方简历（magicv.art）是同一个项目吗？",
+        "a": "不是。知遇 Kenmet（原名 Magic Resume，magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立项目。"
       }
     ]
   },
   "footer": {
-    "brandSubtitle": "一个 AI Native 的简历工作台",
+    "brandSubtitle": "一个 AI Native 的求职工作台",
     "product": "产品",
     "builder": "在线制作",
     "project": "项目",
     "github": "GitHub",
     "issues": "问题反馈",
     "contributors": "贡献者",
-    "copyright": "© {year} Magic Resume. 保留所有权利"
+    "copyright": "© {year} 知遇 Kenmet. 保留所有权利"
   },
   "landing": {
     "demo": "交互预览 · 示例简历",
@@ -578,8 +582,8 @@
   },
   "team": {
     "eyebrow": "贡献者",
-    "title": "Magic Resume 背后的人",
-    "subtitle": "Magic Resume 是开源项目，以下为项目贡献者",
+    "title": "知遇背后的人",
+    "subtitle": "知遇是开源项目，以下为项目贡献者",
     "cta": "参与贡献",
     "maintainer": "维护者",
     "commits": "{n} 次提交"

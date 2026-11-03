@@ -11,6 +11,10 @@
  *   SoftwareApplication — what the product is, in the page's own language.
  *   Organization      — the publisher, under the shared ORGANIZATION_ID that
  *                       content pages and the docs site use as well.
+ *
+ * Every node is named BRAND.name in both locales, with the old name kept as an
+ * alternateName: the @ids are shared across locales, and one @id carrying two
+ * names reads as two entities.
  *   SoftwareSourceCode — the MIT-licensed repository behind the product.
  *
  * Deliberately absent:
@@ -23,7 +27,8 @@
 import type { Copy, Locale } from '@/i18n/ui';
 import { pricingSchema, type PricingResult } from '@/data/pricing';
 import { loadSoftwareVersion } from '@/data/software-version';
-import { GITHUB, ORGANIZATION_ID } from '@/consts';
+import { GITHUB, ORGANIZATION_ID, organizationSchema as organizationNode } from '@/consts';
+import { BRAND } from '@/data/entity';
 
 interface Props {
   copy: Copy;
@@ -54,12 +59,7 @@ const softwareId = `${siteUrl.replace(/\/$/, '')}/#software`;
 
 const organizationSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
-  '@id': ORGANIZATION_ID,
-  name: 'Magic Resume',
-  url: siteUrl,
-  logo: new URL('/magic-resume-mark.png', siteUrl).href,
-  sameAs: [GITHUB.repo],
+  ...organizationNode(siteUrl),
 };
 
 const appSchema = {
@@ -68,7 +68,8 @@ const appSchema = {
   '@id': softwareId,
   ...pricingSchema(pricing),
   ...(softwareVersion ? { softwareVersion } : {}),
-  name: 'Magic Resume',
+  name: BRAND.name,
+  alternateName: [...BRAND.alternateName],
   url: canonical,
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
@@ -88,7 +89,8 @@ const appSchema = {
 const sourceSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareSourceCode',
-  name: 'Magic Resume',
+  name: BRAND.name,
+  alternateName: [...BRAND.alternateName],
   codeRepository: GITHUB.repo,
   license: 'https://opensource.org/licenses/MIT',
   programmingLanguage: 'TypeScript',

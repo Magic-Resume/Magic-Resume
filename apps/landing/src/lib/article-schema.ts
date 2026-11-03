@@ -1,5 +1,5 @@
 import { z } from 'astro/zod';
-import { getAuthor } from '../data/authors.mjs';
+import { EDITORIAL_AUTHOR, getAuthor } from '../data/authors.mjs';
 import { hasRequiredSources } from './article-policy.mjs';
 
 export const articleSchema = z.object({
@@ -12,7 +12,7 @@ export const articleSchema = z.object({
     .array(z.object({ lang: z.string().min(2).max(16), href: z.string().url() }))
     .default([]),
   authorSlug: z.string().regex(/^[a-z0-9][a-z0-9-]*$/).refine((slug) => !!getAuthor(slug), 'Unknown author slug').optional(),
-  author: z.string().min(1).max(80).default('Magic Resume Editorial'),
+  author: z.string().min(1).max(80).optional(),
   datePublished: z.coerce.date(),
   dateModified: z.coerce.date(),
   primaryIntent: z.string().min(1).max(80),
@@ -26,4 +26,4 @@ export const articleSchema = z.object({
 }).refine(hasRequiredSources, {
   path: ['sources'],
   message: 'Articles published or modified after 2026-10-14 require at least one source',
-});
+}).transform((article) => ({ ...article, author: article.author ?? EDITORIAL_AUTHOR[article.locale] }));

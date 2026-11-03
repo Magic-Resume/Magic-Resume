@@ -3,6 +3,7 @@ import { templateIds, templateFacts } from '@/data/templates';
 import { getCampus, getGuides, campusHref, guideHref } from '@/lib/knowledge';
 import { getCopy, LOCALES } from '@/i18n/ui';
 import { GITHUB } from '@/consts';
+import { BRAND } from '@/data/entity';
 import { getTools } from '@/data/tools';
 import { articleHref, getArticles } from '@/lib/articles';
 
@@ -34,15 +35,16 @@ export const GET: APIRoute = async ({ site }) => {
   const articles = await getArticles();
   const campus = await getCampus();
   const guides = await getGuides();
-  const body = `# Magic Resume
+  const body = `# ${BRAND.wordmark}
 
 > ${en.meta.description}
 
 > ${zh.meta.description}
 
-Magic Resume is an open-source AI resume workbench. The self-hosted editor is
-local-first; the hosted edition adds built-in AI, cloud sync, and version
-history. Both editions ship the same ${templateIds.length} templates and six modes: create,
+Kenmet (知遇, formerly Magic Resume) is an open-source AI job-search workbench.
+The source code still lives in the Magic-Resume repository. The self-hosted
+editor is local-first; the hosted edition adds built-in AI, cloud sync, and
+version history. Both editions ship the same ${templateIds.length} templates and six modes: create,
 optimize, analyze, translate, interview, and export.
 
 The defining behaviour: the AI never rewrites a resume silently. Every change is

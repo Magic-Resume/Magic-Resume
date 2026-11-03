@@ -3,6 +3,7 @@ import { authorHref, getAuthor } from '@/data/authors.mjs';
 import { render } from 'astro:content';
 import ContentLayout from '@/layouts/ContentLayout.astro';
 import { DEFAULT_LOCALE, isLocale, type Locale } from '@/i18n/ui';
+import { brandTitle } from '@/consts';
 import { articleAlternates, articleHref, articleSlug, getArticles } from '@/lib/articles';
 
 export async function getStaticPaths() {
@@ -25,7 +26,7 @@ const author = getAuthor(entry.data.authorSlug ?? entry.data.author);
 
 <ContentLayout
   locale={locale}
-  title={`${entry.data.title} | Magic Resume`}
+  title={brandTitle(entry.data.title, locale)}
   description={entry.data.description}
   canonical={canonical}
   alternates={alternates}

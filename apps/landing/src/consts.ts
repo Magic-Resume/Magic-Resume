@@ -1,4 +1,5 @@
 import type { Locale } from '@/i18n/ui';
+import { BRAND } from '@/data/entity';
 
 // Cross-app links. Leave PUBLIC_WEB_ORIGIN empty for same-origin deployments,
 // or set it to the real web service origin when landing is deployed separately.
@@ -60,11 +61,17 @@ export function dashboardLink(placement: CtaPlacement, locale: Locale): string {
 }
 
 /**
- * The one @id for Magic Resume as an organization. Landing, content pages and
- * the docs site (docs.json `seo.organization.id`) all point at it, so engines
- * merge them into one entity; the GEO site check asserts it too.
+ * The one @id for the organization. Landing, content pages and the docs site
+ * (docs.json `seo.organization.id`) all point at it, so engines merge them into
+ * one entity; the GEO site check asserts it too. It outlived the rename on
+ * purpose: a new @id would start a new entity from zero.
  */
 export const ORGANIZATION_ID = 'https://www.magic-resume.cn/#organization';
+
+/** A page title with the brand suffix for its locale. */
+export function brandTitle(title: string, locale: Locale): string {
+  return `${title} | ${BRAND.title[locale]}`;
+}
 
 export const SHARE_IMAGE_PATH = '/magic-resume-editor-20261031.jpg';
 
@@ -77,6 +84,19 @@ export const GITHUB = {
   owner: 'Magic-Resume',
   name: 'Magic-Resume',
 } as const;
+
+/** The Organization node every page emits; the old name stays as an alternateName. */
+export function organizationSchema(site: string | URL) {
+  return {
+    '@type': 'Organization',
+    '@id': ORGANIZATION_ID,
+    name: BRAND.name,
+    alternateName: [...BRAND.alternateName],
+    url: new URL('/', site).href,
+    logo: new URL('/magic-resume-mark.png', site).href,
+    sameAs: [GITHUB.repo],
+  };
+}
 
 export const CONTACT_EMAIL = 'linmoeqc@qq.com';
 

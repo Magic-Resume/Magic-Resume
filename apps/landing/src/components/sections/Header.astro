@@ -1,6 +1,7 @@
 ---
 import type { Copy, Locale } from '@/i18n/ui';
 import { dashboardLink } from '@/consts';
+import { BRAND } from '@/data/entity';
 
 interface Props {
   copy: Copy;
@@ -21,7 +22,7 @@ const nav = copy.nav;
       <span class="flex h-7 w-7 items-center justify-center">
         <img src="/magic-resume-mark.png" alt="" aria-hidden="true" width="28" height="28" class="h-7 w-7 object-contain" />
       </span>
-      <span class="landing-wordmark">Magic Resume</span>
+      <span class="landing-wordmark">{BRAND.wordmark}</span>
     </a>
 
     <nav class="landing-morph-nav hidden md:flex" aria-label={locale === 'zh' ? '主导航' : 'Primary navigation'}>

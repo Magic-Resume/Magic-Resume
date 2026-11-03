@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { fetchPages, validDate, httpUrl } from './content-api.mjs';
 import { hasRequiredSources } from '../src/lib/article-policy.mjs';
-import { getAuthor } from '../src/data/authors.mjs';
+import { EDITORIAL_AUTHOR, getAuthor } from '../src/data/authors.mjs';
 import { syncKnowledge } from './sync-knowledge.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -60,7 +60,7 @@ function toMarkdown(article) {
     article.canonical ? `canonical: ${yamlQuote(article.canonical)}` : null,
     hreflang.length ? 'hreflang:' : 'hreflang: []',
     ...hreflang.filter((item) => item && item.lang && item.href).map((item) => `  - lang: ${yamlQuote(item.lang)}\n    href: ${yamlQuote(item.href)}`),
-    `author: ${yamlQuote(article.author || 'Magic Resume Editorial')}`,
+    `author: ${yamlQuote(article.author || EDITORIAL_AUTHOR[article.locale])}`,
     article.authorSlug ? `authorSlug: ${yamlQuote(article.authorSlug)}` : null,
     `datePublished: ${yamlQuote(article.datePublished)}`,
     `dateModified: ${yamlQuote(article.dateModified)}`,
