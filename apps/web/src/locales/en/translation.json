@@ -1,4 +1,7 @@
 {
+  "brand": {
+    "name": "Kenmet"
+  },
   "account": {
     "menu": {
       "title": "Settings and help",

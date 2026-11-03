@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 /**
@@ -27,16 +28,16 @@ export function BrandMark({ size = 34, className }: { size?: number; className?:
   );
 }
 
-/** Wordmark set in the brand typeface (Sora via --font-brand); a confident weight
- *  duo in one bright tone reads sharper than the old washed two-tone gray. */
+/** Wordmark set in the brand typeface (Sora via --font-brand): 知遇 in Chinese,
+ *  Kenmet in English — one name per language, never both. */
 export function BrandWordmark({ className }: { className?: string }) {
+  const { t } = useTranslation();
   return (
     <span
       className={cn('select-none whitespace-nowrap text-mr-subtitle leading-none tracking-[-0.01em]', className)}
       style={{ fontFamily: 'var(--font-brand), system-ui, sans-serif' }}
     >
-      <span className="font-bold text-neutral-50">{'Magic'}</span>
-      <span className="font-normal text-neutral-300">{' Resume'}</span>
+      <span className="font-bold text-neutral-50">{t('brand.name')}</span>
     </span>
   );
 }
