@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>知遇 Kenmet</title>
+  <defs>
+    <linearGradient id="kenmet-mark" gradientUnits="userSpaceOnUse" x1="96" y1="420" x2="420" y2="96">
+      <stop offset="0" stop-color="#6d5cf6"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(256 256) scale(1.18) translate(-283.5 -248.5)">
+    <g fill="none" stroke="url(#kenmet-mark)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M140 112 V400"/>
+      <path d="M146 268 L318 140"/>
+      <path d="M200 252 L352 400"/>
+    </g>
+    <path d="M404 58 C415.2 108.8 415.2 108.8 466 120 C415.2 131.2 415.2 131.2 404 182 C392.8 131.2 392.8 131.2 342 120 C392.8 108.8 392.8 108.8 404 58 Z" fill="#38bdf8"/>
+  </g>
+</svg>
