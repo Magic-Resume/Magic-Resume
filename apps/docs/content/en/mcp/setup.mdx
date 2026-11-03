@@ -26,7 +26,7 @@ This writes `~/.magic-resume/mcp.json`. If you're running the Core gateway local
 ```bash
 claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
-This adds Magic Resume to the user-scoped MCP list. Restart Claude Code so it picks up the new server.
+This adds Kenmet to the user-scoped MCP list. Restart Claude Code so it picks up the new server.
 </Tab>
 <Tab title="Cursor">
 Open `~/.cursor/mcp.json` (create if missing) and add:
@@ -55,7 +55,7 @@ The server speaks the standard MCP protocol over stdin/stdout — no flags neede
 </Step>
 
 <Step title="Verify">
-In your AI tool, ask: *"List my Magic Resume resumes."* The model should call `list_resumes` and return your list. If it errors, run `npx -y @magic-resume-kit/mcp config print` and confirm the API URL and PAT are correct.
+In your AI tool, ask: *"List my Kenmet resumes."* The model should call `list_resumes` and return your list. If it errors, run `npx -y @magic-resume-kit/mcp config print` and confirm the API URL and PAT are correct.
 </Step>
 </Steps>
 

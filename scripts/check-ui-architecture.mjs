@@ -7,7 +7,7 @@ import process from 'node:process';
  *
  * This deliberately checks source and documentation rather than generated
  * output. Git history is the archive for migration context; active files must
- * only expose Magic Resume's own names and seams.
+ * only expose Kenmet's own names and seams.
  */
 
 const root = process.cwd();

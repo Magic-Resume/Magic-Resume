@@ -19,9 +19,9 @@ related: [CONVENTIONS.md]
 
 | 文档 | 状态 | 更新 | 摘要 |
 |---|---|---:|---|
-| [Magic Resume Frontend Monorepo & MCP Architecture](architecture/overview.md) | Living | 2026-07-03 | Frontend monorepo workspace layout, dependency direction, MCP package boundary, and migration phases. |
-| [Magic Resume Schema](architecture/schema.md) | Living | 2026-07-03 | Shared resume schema exports, template ID contract, content compatibility, and JSON schema generation. |
-| [Magic Resume Template System](architecture/template-system.md) | Living | 2026-07-03 | Template registry, preview assets, template authoring flow, and web integration boundaries. |
+| [Kenmet Frontend Monorepo & MCP Architecture](architecture/overview.md) | Living | 2026-07-03 | Frontend monorepo workspace layout, dependency direction, MCP package boundary, and migration phases. |
+| [Kenmet Schema](architecture/schema.md) | Living | 2026-07-03 | Shared resume schema exports, template ID contract, content compatibility, and JSON schema generation. |
+| [Kenmet Template System](architecture/template-system.md) | Living | 2026-07-03 | Template registry, preview assets, template authoring flow, and web integration boundaries. |
 
 ## Specs
 
@@ -37,7 +37,7 @@ related: [CONVENTIONS.md]
 
 | 文档 | 状态 | 更新 | 摘要 |
 |---|---|---:|---|
-| [Magic Resume MCP](reference/mcp.md) | Living | 2026-10-25 | Setup, exposed MCP tools/resources/prompts, editing rules, and runtime boundary notes. |
+| [Kenmet MCP](reference/mcp.md) | Living | 2026-10-25 | Setup, exposed MCP tools/resources/prompts, editing rules, and runtime boundary notes. |
 | [BYOK AI backend contract](reference/ai-backend.md) | Living | 2026-10-25 | What a self-hosted AI backend must implement for Polaris — the AI_BACKEND_URL entry, proxied routes, request config and stream events. |
 | [公共包接入](reference/public-packages-integration.md) | Living | 2026-10-25 | 本仓库依赖 magic-resume-kit 的哪些公共包、版本怎么固定与升级、怎么对着本地 kit 联调。 |
 

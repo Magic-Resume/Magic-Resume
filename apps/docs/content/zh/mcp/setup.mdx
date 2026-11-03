@@ -26,7 +26,7 @@ npx -y @magic-resume-kit/mcp config set \
 ```bash
 claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
 ```
-这会把 Magic Resume 加进用户级 MCP 列表。重启 Claude Code 让它读到新服务器。
+这会把知遇加进用户级 MCP 列表。重启 Claude Code 让它读到新服务器。
 </Tab>
 <Tab title="Cursor">
 打开 `~/.cursor/mcp.json`（没有就创建），加：
@@ -55,7 +55,7 @@ npx -y @magic-resume-kit/mcp mcp
 </Step>
 
 <Step title="验证">
-在 AI 工具里问一句：*"列一下我的 Magic Resume 简历。"* 模型应该调 `list_resumes` 并返回你的列表。如果报错，跑 `npx -y @magic-resume-kit/mcp config print` 确认 API URL 和 PAT 没填错。
+在 AI 工具里问一句：*"列一下我的知遇简历。"* 模型应该调 `list_resumes` 并返回你的列表。如果报错，跑 `npx -y @magic-resume-kit/mcp config print` 确认 API URL 和 PAT 没填错。
 </Step>
 </Steps>
 

@@ -359,7 +359,7 @@ export default function ImportResumeDialog({ open, onOpenChange }: ImportResumeD
                     >
                       <span className="flex items-center gap-2">
                         <FileJson size={15} className="text-sky-400 shrink-0" />
-                        {'Magic Resume JSON'}
+                        {t('importDialog.typeJson', { defaultValue: '知遇 JSON' })}
                       </span>
                     </SelectItem>
                     {AI_TYPES.map((type) => (

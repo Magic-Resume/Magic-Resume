@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://magic-resume.cn">
-    <img width="112" alt="Magic Resume" src="./apps/web/public/magic-resume-mark.png">
+    <img width="112" alt="知遇 Kenmet" src="./apps/web/public/magic-resume-mark.png">
   </a>
 
-  <h1>Magic Resume</h1>
+  <h1>知遇 Kenmet</h1>
 
   <p><strong>开源的简历编辑器，自带可自部署的 AI agent。</strong><br/>简历只保存在你的浏览器里，AI 用你自己的模型 Key。</p>
 
@@ -29,9 +29,9 @@
 
 ![Polaris AI 简历助手：描述想改的内容、调用技能，或切换协作模式与模型](./docs/images/readme/ai-lab.png)
 
-**Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。** MIT 协议内核，20 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
+**知遇（原名 Magic Resume）是开源的 AI 求职工作台：AI 就地提出简历修改建议，你逐条决定采纳或跳过。** MIT 协议内核，20 套模板，六种工作模式（创建、优化、分析、翻译、面试、导出），多设备云同步。
 
-> Magic Resume（magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立开源项目。
+> 知遇 Kenmet（原名 Magic Resume，magic-resume.cn）与 magicv.art 的 Magic Resume（魔方简历）是两个由不同团队维护的独立项目。
 
 本仓库是开源版，包含编辑器、AI 简历助手 **Polaris**，以及驱动 Polaris 的 agent 服务。不需要账号，服务器上也没有简历库：简历和每份简历唯一的对话都保存在浏览器的 IndexedDB 里，Polaris 用你自己的 Key 调用你配置的模型服务商。模拟面试和多设备云同步由托管版 [magic-resume.cn](https://magic-resume.cn) 提供。
 
@@ -61,7 +61,7 @@
 - **实时预览，所见即打印。** 边输入边重新排版，导出结果与预览一致。
 - **20 套模板。** 对 ATS 友好，每套都可以单独调整颜色、字体、内容密度、间距和版式，支持 A4 与 Letter。
 - **灵活的模块。** 增删、重命名、排序、隐藏模块；Tiptap 富文本；自定义字段。
-- **导入与导出。** 离线打开 Magic Resume JSON；导出 PDF、PNG 或 JSON。
+- **导入与导出。** 离线打开知遇 JSON；导出 PDF、PNG 或 JSON。
 - **本地优先。** 所有数据存在 IndexedDB，除非你使用 AI，任何内容都不会离开浏览器。
 - **深色与浅色主题，中文与英文界面。**
 
@@ -264,7 +264,7 @@ npx -y @magic-resume-kit/mcp@1.0.1 --help
 
 ## 许可证
 
-[MIT](./LICENSE) © 2026 [Magic Resume Team](https://github.com/Magic-Resume)
+[MIT](./LICENSE) © 2026 [知遇团队](https://github.com/Magic-Resume)
 
 <!-- LINK GROUP -->
 

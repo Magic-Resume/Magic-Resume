@@ -157,7 +157,7 @@
     "invite": {
       "copied": "已复制",
       "savePoster": "保存邀请海报",
-      "posterAlt": "Magic Resume 邀请海报",
+      "posterAlt": "知遇邀请海报",
       "posterError": "海报生成失败，请重试",
       "rule": "好友完成首次 AI 对话后，奖励将自动发放至双方账户；为防止批量注册，奖励以首次实际使用为发放条件",
       "stats": {
@@ -297,7 +297,7 @@
     "mcp": {
       "title": "MCP 接入",
       "accessTitle": "AI 编程工具接入",
-      "description": "创建个人访问令牌，将 Magic Resume 连接至 Claude Code、Codex 或其他兼容 MCP 的 AI 工具；完整令牌仅显示一次",
+      "description": "创建个人访问令牌，将知遇连接至 Claude Code、Codex 或其他兼容 MCP 的 AI 工具；完整令牌仅显示一次",
       "refresh": "刷新",
       "tokenNamePlaceholder": "令牌名称",
       "defaultResumePlaceholder": "默认简历",
@@ -1218,6 +1218,7 @@
     "description": "选择或拖放文件以创建新简历",
     "typeLabel": "文件类型",
     "typePlaceholder": "选择文件类型…",
+    "typeJson": "知遇 JSON",
     "dropzone": {
       "active": "在此处放下文件…",
       "default": "将文件拖放到此处，或点击选择文件",
@@ -1472,7 +1473,7 @@
   },
   "common": {
     "loading": "加载中…",
-    "logoAlt": "Magic Resume 徽标",
+    "logoAlt": "知遇徽标",
     "userAvatarAlt": "用户头像",
     "manualSave": "手动保存",
     "info": {
@@ -1828,7 +1829,7 @@
         "title": "来源",
         "web": "网页 · {{count}}",
         "memory": "记忆 · {{count}}",
-        "memoryHint": "来自 Magic Resume 内部的面试经验与简历范例库，无外部链接",
+        "memoryHint": "来自知遇内部的面试经验与简历范例库，无外部链接",
         "close": "关闭来源",
         "toggle": "查看本轮回答引用的来源"
       }

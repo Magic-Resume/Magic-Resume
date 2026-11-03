@@ -157,7 +157,7 @@
     "invite": {
       "copied": "Copied",
       "savePoster": "Save invite poster",
-      "posterAlt": "Magic Resume invite poster",
+      "posterAlt": "Kenmet invite poster",
       "posterError": "Poster generation failed. Please try again.",
       "rule": "Rewards are credited to both accounts automatically after your friend completes their first AI chat. To prevent bulk sign-ups, rewards require one actual use.",
       "stats": {
@@ -297,7 +297,7 @@
     "mcp": {
       "title": "MCP access",
       "accessTitle": "AI coding access",
-      "description": "Create a personal access token to connect Magic Resume to Claude Code, Codex, or any MCP-compatible AI tool. The full token is shown only once.",
+      "description": "Create a personal access token to connect Kenmet to Claude Code, Codex, or any MCP-compatible AI tool. The full token is shown only once.",
       "refresh": "Refresh",
       "tokenNamePlaceholder": "Token name",
       "defaultResumePlaceholder": "Default resume",
@@ -1218,6 +1218,7 @@
     "description": "Select or drop a file below to create a new resume.",
     "typeLabel": "File type",
     "typePlaceholder": "Select a file type…",
+    "typeJson": "Kenmet JSON",
     "dropzone": {
       "active": "Drop the file here…",
       "default": "Drag and drop a file here, or click to select",
@@ -1472,7 +1473,7 @@
   },
   "common": {
     "loading": "Loading…",
-    "logoAlt": "Magic Resume logo",
+    "logoAlt": "Kenmet logo",
     "userAvatarAlt": "User avatar",
     "manualSave": "Manual save",
     "info": {
@@ -1828,7 +1829,7 @@
         "title": "Sources",
         "web": "Web · {{count}}",
         "memory": "Memory · {{count}}",
-        "memoryHint": "From Magic Resume's internal interview and resume libraries. No public link is available.",
+        "memoryHint": "From Kenmet's internal interview and resume libraries. No public link is available.",
         "close": "Close sources",
         "toggle": "View the sources cited in this answer"
       }

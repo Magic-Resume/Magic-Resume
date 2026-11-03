@@ -2,7 +2,7 @@ import { create } from 'storybook/theming';
 
 const genuiTheme = create({
   base: 'dark',
-  brandTitle: 'Magic Resume · GenUI',
+  brandTitle: '知遇 Kenmet · GenUI',
   brandTarget: '_self',
   fontBase:
     '"Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif',

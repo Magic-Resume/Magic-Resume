@@ -91,7 +91,7 @@ Preview thumbnails are static assets at `apps/web/public/templates/jpg/{template
 
 ### MCP package (`@magic-resume-kit/mcp`, maintained in the kit repository)
 
-A **Node.js ESM** package — no React, no browser APIs, no IndexedDB. It communicates with the Magic Resume API (magic-resume.cn) using Personal Access Tokens (PATs).
+A **Node.js ESM** package — no React, no browser APIs, no IndexedDB. It communicates with the Kenmet API (magic-resume.cn) using Personal Access Tokens (PATs).
 
 Config is stored at `~/.magic-resume/mcp.json` (set via `magic-resume config set --api-url <url> --pat <token>`).
 

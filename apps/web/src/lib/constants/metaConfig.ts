@@ -4,14 +4,14 @@ import { Metadata } from "next";
 const metaConfig: { [key: string]: Metadata } = {
   'Landing': {
     title: {
-      default: "Magic Resume - 开源 AI 简历工作台",
-      template: `%s | Magic Resume`,
+      default: "知遇 Kenmet - 开源 AI 求职工作台",
+      template: `%s | 知遇 Kenmet`,
     },
     // 实体定义的唯一来源是 apps/landing/src/data/entity.ts（原文见
     // docs/specs/geo/spec.md §3）。答案引擎靠交叉印证建立实体认知，说法不一致
     // 就建不起稳定实体；scripts/check-entity.mjs 会在这里和常量不一致时让
     // `pnpm lint` 失败。改定义请先改常量。
-    description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，六种工作模式，多设备云同步。",
+    description: "知遇（原名 Magic Resume）是开源的 AI 求职工作台：AI 就地提出简历修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，六种工作模式，多设备云同步。",
     keywords: [
       "AI简历制作", "智能简历生成器", "开源简历工具", "在线简历编辑器",
       "简历模板", "简历优化", "AI简历", "程序员简历", "产品经理简历",
@@ -19,9 +19,9 @@ const metaConfig: { [key: string]: Metadata } = {
       "简历生成器", "求职简历", "简历设计", "简历下载", "简历导出"
     ],
     openGraph: {
-      title: "Magic Resume - 开源 AI 简历工作台",
-      description: "Magic Resume 是开源的 AI 简历工作台：AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，六种工作模式，多设备云同步。",
-      siteName: "Magic Resume",
+      title: "知遇 Kenmet - 开源 AI 求职工作台",
+      description: "知遇（原名 Magic Resume）是开源的 AI 求职工作台：AI 就地提出简历修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，六种工作模式，多设备云同步。",
+      siteName: "知遇 Kenmet",
       locale: 'zh_CN',
       type: 'website',
       images: [
@@ -29,13 +29,13 @@ const metaConfig: { [key: string]: Metadata } = {
           url: '/magic-resume-preview.png',
           width: 1200,
           height: 630,
-          alt: 'Magic Resume - 开源 AI 简历工作台'
+          alt: '知遇 Kenmet - 开源 AI 求职工作台'
         }
       ]
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Magic Resume - 开源 AI 简历工作台',
+      title: '知遇 Kenmet - 开源 AI 求职工作台',
       description: 'AI 就地提出修改建议，你逐条决定采纳或跳过。MIT 协议内核，20 套模板，多设备云同步。',
       images: ['/magic-resume-preview.png'],
       // creator: 未填 —— 原值 '@MagicResume' 未经核实。错误的 handle 会把权重
@@ -67,7 +67,7 @@ const metaConfig: { [key: string]: Metadata } = {
   // 注释直接发出去，删掉比留着安全。真要加这个页面时，数字从 templateIds
   // 取长度，不要手写。
   'Dashboard': {
-    title: "我的简历 - 简历管理中心 | Magic Resume",
+    title: "我的简历 - 简历管理中心 | 知遇 Kenmet",
     description: "管理你的所有简历，查看简历数据分析，使用 AI 工具针对目标岗位打磨内容",
     robots: {
       index: false,
@@ -75,7 +75,7 @@ const metaConfig: { [key: string]: Metadata } = {
     },
   },
   'Edit': {
-    title: "编辑简历 - 在线简历编辑器 | Magic Resume",
+    title: "编辑简历 - 在线简历编辑器 | 知遇 Kenmet",
     description: "在线编辑与排版简历，实时双屏预览，就地审阅并采纳修改建议",
     robots: {
       index: false,

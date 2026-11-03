@@ -1,5 +1,5 @@
 ---
-title: Magic Resume Frontend Monorepo & MCP Architecture
+title: Kenmet Frontend Monorepo & MCP Architecture
 type: architecture
 status: Living
 owner: kaihuang
@@ -11,13 +11,13 @@ repos: [Magic-Resume]
 related: []
 ---
 
-# Magic Resume Frontend Monorepo & MCP Architecture
+# Kenmet Frontend Monorepo & MCP Architecture
 
 > Public packages moved to [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) on 2026-10-25. The `packages/resume-schema`, `packages/resume-templates`, `packages/design-system`, `packages/icons`, `packages/utils` and `packages/mcp` source paths and package build commands below refer to that repository. The editor consumes published `@magic-resume-kit/*` packages; its local workspaces are listed in the root README.
 
 ## Summary
 
-Magic Resume's frontend repository will evolve from a single Next.js application into a Turborepo monorepo. The first version keeps the existing product behavior intact while creating clear workspace boundaries for the web app, the official MCP/CLI package, shared resume schemas, and shared TypeScript configuration.
+Kenmet's frontend repository will evolve from a single Next.js application into a Turborepo monorepo. The first version keeps the existing product behavior intact while creating clear workspace boundaries for the web app, the official MCP/CLI package, shared resume schemas, and shared TypeScript configuration.
 
 This document defines the target repository shape and the engineering boundaries for the MCP integration. It is a technical architecture note only; it does not change runtime behavior by itself.
 
@@ -89,7 +89,7 @@ Magic-Resume/
 
 ### `apps/web`
 
-`apps/web` owns the existing Magic Resume web application.
+`apps/web` owns the existing Kenmet web application.
 
 It contains the Next.js App Router application, dashboard, resume editor, sharing pages, Polaris UI, localization files, frontend state stores, and browser-only persistence logic. Existing app-level assets and configuration files move here with the application.
 
@@ -97,7 +97,7 @@ The web app may depend on shared packages, especially `packages/resume-schema` a
 
 ### `packages/mcp`
 
-`packages/mcp` owns the official Magic Resume MCP and CLI package.
+`packages/mcp` owns the official Kenmet MCP and CLI package.
 
 It provides:
 
@@ -222,7 +222,7 @@ The MCP package calls the Core API over HTTP. It does not directly read or write
 
 The Core API remains the source of truth for cloud resumes, authentication, authorization, encrypted persistence, cache invalidation, sharing state, and version history.
 
-The MCP package should authenticate with a personal access token issued by the Magic Resume web app and verified by the API.
+The MCP package should authenticate with a personal access token issued by the Kenmet web app and verified by the API.
 
 MCP write operations should call structured API endpoints instead of sending arbitrary frontend state mutations. The API should validate ownership, token scope, resume shape, and expected update timestamps before applying changes.
 

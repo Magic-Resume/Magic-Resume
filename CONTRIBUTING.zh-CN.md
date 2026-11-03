@@ -1,4 +1,4 @@
-# 为 Magic Resume 做贡献
+# 为知遇做贡献
 
 感谢你有兴趣参与贡献！我们欢迎任何形式的贡献 —— 修复 Bug、新增模板、编写 Polaris 技能、完善文档、补充翻译或开发新功能。
 
@@ -152,7 +152,7 @@ pnpm --filter @magic-resume/web i18n:check
 3. 关联相关 Issue（如 `Closes #123`）。
 4. 确保 CI、lint 与测试全绿。
 
-维护者会尽快 Review。感谢你让 Magic Resume 变得更好！🎉
+维护者会尽快 Review。感谢你让知遇变得更好！🎉
 
 ---
 

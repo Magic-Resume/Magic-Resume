@@ -1,6 +1,6 @@
 # @magic-resume/genui
 
-Magic Resume Agent / GenUI 的渲染包：契约、宿主、动效、通用控件和生产卡片。
+知遇 Agent / GenUI 的渲染包：契约、宿主、动效、通用控件和生产卡片。
 
 ## 边界
 
