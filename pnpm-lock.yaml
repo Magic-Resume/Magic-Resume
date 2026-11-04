@@ -70,8 +70,8 @@ importers:
         specifier: 1.6.2
         version: 1.6.2(@langchain/core@1.2.14(@opentelemetry/api@1.9.1)(openai@7.43.0(undici@6.29.1)(ws@8.22.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76))(ws@8.22.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)))(undici@6.29.1)(ws@8.22.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
       '@magic-resume-kit/resume-schema':
-        specifier: 1.0.1
-        version: 1.0.1
+        specifier: 1.0.2
+        version: 1.0.2
       better-sqlite3:
         specifier: 12.10.0
         version: 12.10.0
@@ -140,14 +140,14 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       '@magic-resume-kit/design-system':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       '@magic-resume-kit/resume-schema':
-        specifier: 1.0.1
-        version: 1.0.1
+        specifier: 1.0.2
+        version: 1.0.2
       '@magic-resume-kit/resume-templates':
-        specifier: 1.0.1
-        version: 1.0.1(react-dom@19.2.7(react@19.2.7))(react-i18next@15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3))(react@19.2.7)
+        specifier: 1.1.1
+        version: 1.1.1(react-dom@19.2.7(react@19.2.7))(react-i18next@15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3))(react@19.2.7)
       astro:
         specifier: ^5.2.5
         version: 5.18.2(@types/node@20.19.41)(jiti@2.7.0)(lightningcss@1.33.0)(rollup@4.62.2)(sass@1.105.2)(tsx@4.22.4)(typescript@5.9.3)(yaml@2.9.0)
@@ -207,20 +207,20 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       '@magic-resume-kit/design-system':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       '@magic-resume-kit/icons':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       '@magic-resume-kit/resume-schema':
-        specifier: 1.0.1
-        version: 1.0.1
+        specifier: 1.0.2
+        version: 1.0.2
       '@magic-resume-kit/resume-templates':
-        specifier: 1.0.1
-        version: 1.0.1(react-dom@19.2.7(react@19.2.7))(react-i18next@15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3))(react@19.2.7)
+        specifier: 1.1.1
+        version: 1.1.1(react-dom@19.2.7(react@19.2.7))(react-i18next@15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3))(react@19.2.7)
       '@magic-resume-kit/utils':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       '@magic-resume/genui':
         specifier: workspace:*
         version: link:../../packages/genui
@@ -412,14 +412,14 @@ importers:
   packages/genui:
     dependencies:
       '@magic-resume-kit/design-system':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       '@magic-resume-kit/icons':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       '@magic-resume-kit/utils':
-        specifier: 1.0.1
-        version: 1.0.1(react@19.2.7)
+        specifier: 1.0.2
+        version: 1.0.2(react@19.2.7)
       framer-motion:
         specifier: ^12.17.0
         version: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1733,23 +1733,31 @@ packages:
     peerDependencies:
       react: '>=19'
 
-  '@magic-resume-kit/icons@1.0.1':
-    resolution: {integrity: sha512-b/ZPq23dXmfulSAK8Oo9XEBzpYNRzju9+GaRbNpwieCswgt+BRwRrBktlLb0v3UDuO3/rhjaD2dVLQYV5ZWobQ==}
+  '@magic-resume-kit/design-system@1.0.2':
+    resolution: {integrity: sha512-Fay+hUf93uehESp7cWYO0gXMfv7Tq7pS/NQ/zMnqOohK0yJ9OjjpB30+UHr3EQmo5wG3TtVJJgZVRQce6pjsOg==}
+    peerDependencies:
+      react: '>=19'
+
+  '@magic-resume-kit/icons@1.0.2':
+    resolution: {integrity: sha512-Usr9GUAIZDOBxUGe8tKHjsnRHHB33t8lzY17Vhjp7Ztf8DH0v3qvQjc7Gy0HU/peYpmwRl0qPwkW0q9K6XkBGQ==}
     peerDependencies:
       react: '>=19'
 
   '@magic-resume-kit/resume-schema@1.0.1':
     resolution: {integrity: sha512-xtxCl07peq2nUo1yIAA50U+zXFwgWulTpVhBiXBKOfohx1dfVkHeF7kdG5dtFCQS4aeUDH70NiMQQiN2J4jOWQ==}
 
-  '@magic-resume-kit/resume-templates@1.0.1':
-    resolution: {integrity: sha512-oC7EOfhk4gpqOsHueMZSrrTRkt8Kc5WOYz1J4zlUVq5uOv5F+BRV/6Gv0ybJV4jHFKLE+E1rg0Iau0HAO65Spg==}
+  '@magic-resume-kit/resume-schema@1.0.2':
+    resolution: {integrity: sha512-QWtKBo20puygih0ViSbZg6TRFqSTs0T2IACnpt1hfivQDltznbecVghGsFt8Qr4RVI8Ofto4BnnlXht84mHLFg==}
+
+  '@magic-resume-kit/resume-templates@1.1.1':
+    resolution: {integrity: sha512-zrDd2TiazW6LrQPEli1wR2mqqOX9wg1TrOgXomKGa1PVMwP58z/bEa5+J2Enab8Bv36RN3lMzfyiLQbk5LghyA==}
     peerDependencies:
       react: '>=19'
       react-dom: '>=19'
       react-i18next: ^15.5.2
 
-  '@magic-resume-kit/utils@1.0.1':
-    resolution: {integrity: sha512-0Y9ssHWNtGy/tRIQZOBcJkrxGrddQM2nY0oZRou8tsc9v7WaRjZJlqNVRde1sTP0Q+N+7Rd2BAcEIcHPs4VthA==}
+  '@magic-resume-kit/utils@1.0.2':
+    resolution: {integrity: sha512-Y5ZDdHTwWcqz1D9yHtWNPet137j2KvDb8wDGkcuYiWcb4kfue2Zd/g5faOKkqXvr9dSRaEv+0uDX/SMZl8nX0g==}
 
   '@microlink/react-json-view@1.31.20':
     resolution: {integrity: sha512-gNLkGvjFDeAqVGvK3H7lfoDqetn/9lW2ugiYiJhchc7jQU1ZaKsZnt97ANluXWFfd/wifoA9TrVOTsUXwXCJwA==}
@@ -9653,7 +9661,14 @@ snapshots:
       react: 19.2.7
       tailwind-merge: 3.6.0
 
-  '@magic-resume-kit/icons@1.0.1(react@19.2.7)':
+  '@magic-resume-kit/design-system@1.0.2(react@19.2.7)':
+    dependencies:
+      class-variance-authority: 0.7.1
+      clsx: 2.1.1
+      react: 19.2.7
+      tailwind-merge: 3.6.0
+
+  '@magic-resume-kit/icons@1.0.2(react@19.2.7)':
     dependencies:
       '@hugeicons/core-free-icons': 1.2.1
       '@hugeicons/react': 1.1.10(react@19.2.7)
@@ -9663,10 +9678,14 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  '@magic-resume-kit/resume-templates@1.0.1(react-dom@19.2.7(react@19.2.7))(react-i18next@15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3))(react@19.2.7)':
+  '@magic-resume-kit/resume-schema@1.0.2':
     dependencies:
-      '@magic-resume-kit/icons': 1.0.1(react@19.2.7)
-      '@magic-resume-kit/resume-schema': 1.0.1
+      zod: 3.25.76
+
+  '@magic-resume-kit/resume-templates@1.1.1(react-dom@19.2.7(react@19.2.7))(react-i18next@15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3))(react@19.2.7)':
+    dependencies:
+      '@magic-resume-kit/icons': 1.0.2(react@19.2.7)
+      '@magic-resume-kit/resume-schema': 1.0.2
       '@react-pdf/renderer': 4.5.1(react@19.2.7)
       dompurify: 3.4.7
       lodash.get: 4.4.2
@@ -9678,9 +9697,9 @@ snapshots:
       react-i18next: 15.7.4(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.9.3)
       react-pdf-html: 2.1.5(@react-pdf/renderer@4.5.1(react@19.2.7))(react@19.2.7)
 
-  '@magic-resume-kit/utils@1.0.1(react@19.2.7)':
+  '@magic-resume-kit/utils@1.0.2(react@19.2.7)':
     dependencies:
-      '@magic-resume-kit/design-system': 1.0.1(react@19.2.7)
+      '@magic-resume-kit/design-system': 1.0.2(react@19.2.7)
     transitivePeerDependencies:
       - react
 
@@ -13122,7 +13141,7 @@ snapshots:
       '@next/eslint-plugin-next': 16.4.2(eslint@9.39.4(jiti@2.7.0))
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.71.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint@9.39.4(jiti@2.7.0)))(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.71.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint@9.39.4(jiti@2.7.0)))(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.7.0))
@@ -13153,7 +13172,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.71.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint@9.39.4(jiti@2.7.0)))(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@2.7.0)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.71.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint@9.39.4(jiti@2.7.0)))(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3
@@ -13175,7 +13194,7 @@ snapshots:
     optionalDependencies:
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.71.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint@9.39.4(jiti@2.7.0)))(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import-x@4.17.1(@typescript-eslint/utils@8.71.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint@9.39.4(jiti@2.7.0)))(eslint-plugin-import@2.32.0(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
