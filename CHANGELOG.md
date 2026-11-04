@@ -2,6 +2,8 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v3.1.1](https://github.com/Magic-Resume/Magic-Resume/compare/v3.1.0...v3.1.1) (2026-11-04)
+
 # [v3.1.0](https://github.com/Magic-Resume/Magic-Resume/compare/v3.0.1...v3.1.0) (2026-11-03)
 
 ## ✨ New Features
