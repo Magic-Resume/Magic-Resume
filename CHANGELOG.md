@@ -2,6 +2,12 @@
 
 All notable changes to Magic Resume are documented in this file.
 
+# [v3.1.0](https://github.com/Magic-Resume/Magic-Resume/compare/v3.0.1...v3.1.0) (2026-11-03)
+
+## ✨ New Features
+- [`5b8c618`](https://github.com/Magic-Resume/Magic-Resume/commit/5b8c618)  feat(landing): rename the landing to 知遇 / Kenmet 
+- [`5d197c0`](https://github.com/Magic-Resume/Magic-Resume/commit/5d197c0)  feat: rename README, web app and docs site to 知遇 / Kenmet
+
 # [v3.0.0](https://github.com/Magic-Resume/Magic-Resume/compare/v2.8.1...v3.0.0) (2026-10-25)
 
 ## ✨ New Features
